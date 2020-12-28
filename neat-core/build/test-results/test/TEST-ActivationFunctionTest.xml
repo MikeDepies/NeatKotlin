@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ActivationFunctionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2020-12-28T22:17:43" hostname="MICHAEL" time="0.019">
-  <properties/>
-  <testcase name="identity function" classname="ActivationFunctionTest" time="0.018"/>
-  <testcase name="modified sig function x approaches -infinity" classname="ActivationFunctionTest" time="0.0"/>
-  <testcase name="modified sig function approaches +infinity" classname="ActivationFunctionTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
