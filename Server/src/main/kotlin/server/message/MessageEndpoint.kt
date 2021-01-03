@@ -1,13 +1,16 @@
 import kotlinx.serialization.json.Json
+import server.message.JsonUserMessage
+import server.message.Message
+import server.message.TypedUserMessage
 
 /*
 
-RawMessage -> PlayerResolution -> [Endpoint Resolution -> Message ValueType Resolution]
+RawMessage -> PlayerResolution -> [Endpoint Resolution -> server.message.Message ValueType Resolution]
 
 A player can only join one game at a time?
 Do we want a typical messageHandler approach for communication?
 
-Message:
+server.message.Message:
     ConnectingMessage
     ConnectedMessage/
  */
@@ -21,8 +24,8 @@ Message:
 sealed class MessageEndpoint
 data class SimpleMessageEndpoint<R, S : SessionScope>(
     val endpoint: String,
-    val handler: suspend S.(TypedPlayerMessage<R>) -> Unit,
-    val adapter: MessageAdapter<R, JsonPlayerMessage>,
+    val handler: suspend S.(TypedUserMessage<R>) -> Unit,
+    val adapter: MessageAdapter<R, JsonUserMessage>,
     val sessionScope: S) : MessageEndpoint()
 
-inline class MessageAdapter<R, M : Message>(val transform: suspend Json.(M) -> TypedPlayerMessage<R>?)
+inline class MessageAdapter<R, M : Message>(val transform: suspend Json.(M) -> TypedUserMessage<R>?)

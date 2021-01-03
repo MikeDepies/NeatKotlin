@@ -186,7 +186,8 @@ data class SimpleNeatMutator2(
         if (!hasNode(connectionGene.outNode))
             error("No matching node to connect to ${connectionGene.outNode}")
         if (connections.any { it.inNode == connectionGene.inNode && it.outNode == connectionGene.outNode })
-            error("Can not add a connection gene between already connected nodes")
+            return
+//            error("Can not add a connection gene between already connected nodes")
         connectionMap[connectionGene.innovation] = connectionGene
 //        _connectableNodes -= PotentialConnection(connectionGene.inNode, connectionGene.outNode)
     }

@@ -29,34 +29,34 @@ class ClientWebSocketManager(
         webSocket(endpoint) {
             log.info { "Received token from client" }
             val webSocketServerSession = this
-            val token = sessionAuthenticator.authenticate(webSocketServerSession)
-            if (token is TokenValidationResponse.Success) {
-                val user = User(token.userId)
-                val userSession = UserSession(webSocketServerSession, json)
-                try {
-                    clientRegistry.register(user, userSession)
-                    val message =
-                        ClientMessage("user.token", buildJsonObject { put("token", token.token) }).toServerMessage(user)
-                    log.info { "Sending token message to game server: $message" }
-                    sendToServer(message)
-                    while (true) {
-                        val clientMessage = incoming.receive().toClientMessage() ?: continue
-                        log.info { "Received message from client $clientMessage" }
-                        sendToServer(clientMessage.toServerMessage(user))
-                    }
-                } catch (e: Exception) {
-                    log.warn(e) { "Connection terminated..." }
-                } finally {
-                    clientRegistry.unregister(user, userSession)
+//            val token = sessionAuthenticator.authenticate(webSocketServerSession)
+//            if (token is TokenValidationResponse.Success) {
+            val user = User("guest")
+            val userSession = UserSession(webSocketServerSession, json)
+            try {
+                clientRegistry.register(user, userSession)
+//                val message =
+//                    ClientMessage("user.token", buildJsonObject { put("token", token.token) }).toServerMessage(user)
+//                log.info { "Sending token message to game server: $message" }
+//                sendToServer(message)
+                while (true) {
+                    val clientMessage = incoming.receive().toClientMessage() ?: continue
+//                    log.info { "Received message from client $clientMessage" }
+                    sendToServer(clientMessage.toServerMessage(user))
                 }
-            } else {
-                close(
-                    CloseReason(
-                        CloseReason.Codes.PROTOCOL_ERROR,
-                        "server.client.User is not recognized."
-                    )
-                )
+            } catch (e: Exception) {
+                log.warn(e) { "Connection terminated..." }
+            } finally {
+                clientRegistry.unregister(user, userSession)
             }
+//            } else {
+//                close(
+//                    CloseReason(
+//                        CloseReason.Codes.PROTOCOL_ERROR,
+//                        "server.client.User is not recognized."
+//                    )
+//                )
+//            }
         }
 
     }
@@ -84,7 +84,7 @@ private fun ClientMessage.toServerMessage(user: User): JsonObject = buildJsonObj
 }
 
 fun clientMessage(jsonObject: JsonObject): ClientMessage {
-    log.info { "Attempting to receive json message from client $jsonObject" }
+//    log.info { "Attempting to receive json message from client $jsonObject" }
     return ClientMessage(
         jsonObject["subject"]!!.jsonPrimitive.content,
         jsonObject.getOrDefault("data", buildJsonObject {}).jsonObject

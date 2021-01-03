@@ -1,10 +1,11 @@
 package server.message.endpoints
 
-import JsonPlayerMessage
+import server.message.JsonUserMessage
 import MessageAdapter
 import SessionScope
 import SimpleMessageEndpoint
-import TypedPlayerMessage
+import UserRef
+import server.message.TypedUserMessage
 import UserTokenResolver
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -16,9 +17,17 @@ class EndpointProvider(
     val userTokenResolver: UserTokenResolver,
     val scope: Scope
 ) {
+    @JvmName("registerEndpointSimple")
+    suspend inline fun <reified R : Any> SequenceScope<SimpleMessageEndpoint<R, SessionScope>>.registerEndpoint(
+        endpoint: String,
+        noinline handler: suspend SessionScope.(TypedUserMessage<R>) -> Unit
+    ) {
+        yield(this@EndpointProvider.registerEndpoint(endpoint, handler))
+    }
+
     suspend inline fun <reified R : Any, reified S : SessionScope> SequenceScope<SimpleMessageEndpoint<R, S>>.registerEndpoint(
         endpoint: String,
-        noinline handler: suspend S.(TypedPlayerMessage<R>) -> Unit
+        noinline handler: suspend S.(TypedUserMessage<R>) -> Unit
     ) {
         yield(this@EndpointProvider.registerEndpoint(endpoint, handler))
     }
@@ -26,15 +35,21 @@ class EndpointProvider(
 
 inline fun <reified R : Any, reified S : SessionScope> EndpointProvider.registerEndpoint(
     endpoint: String,
-    noinline handler: suspend S.(TypedPlayerMessage<R>) -> Unit
+    noinline handler: suspend S.(TypedUserMessage<R>) -> Unit
 ): SimpleMessageEndpoint<R, S> {
-    val adapter: suspend Json.(JsonPlayerMessage) -> TypedPlayerMessage<R>? = { simpleMessage ->
-
-        TypedPlayerMessage(
-            userTokenResolver.resolve(simpleMessage.playerRef),
-            simpleMessage.topic,
-            Json.decodeFromJsonElement(simpleMessage.data)
-        )
+    val adapter: suspend Json.(JsonUserMessage) -> TypedUserMessage<R>? = { simpleMessage ->
+        try {
+            TypedUserMessage(
+                UserRef(simpleMessage.userRef),
+//            userTokenResolver.resolve(simpleMessage.userRef),
+                simpleMessage.topic,
+                Json.decodeFromJsonElement(simpleMessage.data)
+            )
+        }
+        catch (e : Exception) {
+            e.printStackTrace()
+            error("failure in endpoint adaption")
+        }
     }
     return SimpleMessageEndpoint(endpoint, handler, MessageAdapter(adapter), scope.get())
 }

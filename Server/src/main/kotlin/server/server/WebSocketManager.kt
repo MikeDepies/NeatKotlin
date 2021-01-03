@@ -1,8 +1,8 @@
 package server.server
 
 import ClientRegistry
-import JsonPlayerMessage
-import Message
+import server.message.JsonUserMessage
+import server.message.Message
 import MessageEndpointRegistry
 import WebSocketClient
 import io.ktor.application.*
@@ -30,18 +30,18 @@ class WebSocketManager(
         }
     }
 
-    private suspend fun DefaultWebSocketServerSession.startListenLoop(messageConsumer: suspend (JsonPlayerMessage) -> Unit) {
+    private suspend fun DefaultWebSocketServerSession.startListenLoop(messageConsumer: suspend (JsonUserMessage) -> Unit) {
         while (true) {
             val frame = incoming.receive()
             if (frame is Frame.Text) {
                 val simpleMessage = simpleMessage(frame)
-                log.info { "SimpleMessage: $simpleMessage" }
-                if (simpleMessage != null && simpleMessage is JsonPlayerMessage) {
+                log.trace { "server.message.SimpleMessage: $simpleMessage" }
+                if (simpleMessage != null && simpleMessage is JsonUserMessage) {
                     messageConsumer(simpleMessage)
                 } else {
                     log.warn {
                         """
-                        Message could not be processed into a simpleMessage.
+                        server.message.Message could not be processed into a simpleMessage.
                         message: ${previewMessage(frame)}
                     """.trimIndent()
                     }

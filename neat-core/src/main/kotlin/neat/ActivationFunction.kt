@@ -18,4 +18,6 @@ fun baseActivationFunctions(): List<ActivationGene> {
 object Activation {
     val identity = ActivationGene("identity", identity())
     val sigmoidal = ActivationGene("sigmoidal", SigmoidalTransferFunction)
+
+    val activationMap = baseActivationFunctions().toMap { it.name }
 }

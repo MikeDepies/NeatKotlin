@@ -1,3 +1,6 @@
+package server.message
+
+import UserRef
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -19,29 +22,29 @@ data class SimpleMessage(
  * in the message handling pipeline.
  */
 @Serializable
-@SerialName("playerMessage")
-data class JsonPlayerMessage(
-    val playerRef: String,
+@SerialName("userMessage")
+data class JsonUserMessage(
+    val userRef: String,
     override val topic: String,
     val data: JsonElement
 ) : Message()
 
 /**
- * The Typed message is a SimpleMessage that has had its data adapted
+ * The Typed message is a server.message.SimpleMessage that has had its data adapted
  * and resolved the playerRef string into an actual PlayerRef class.
  *
  * This is the class most message endpoint handlers will be working with.
  */
 @Serializable
-data class TypedPlayerMessage<T>(
-    val playerRef: UserRef,
+data class TypedUserMessage<T>(
+    val userRef: UserRef,
     override val topic: String,
     val data: T
 ) : Message()
 
 @Serializable
-data class TypedPlayerGroupMessage<T>(
-    val players: List<UserRef>,
+data class TypedUserGroupMessage<T>(
+    val users: List<UserRef>,
     override val topic: String,
     val data: T
 ) : Message()

@@ -86,7 +86,7 @@ class ServerWebSocketManager(
 
     suspend fun send(message: JsonObject) {
         val stringMessage = json.encodeToString(JsonObject.serializer(), message)
-        logger.info { "Sending message to server $stringMessage" }
+//        logger.info { "Sending message to server $stringMessage" }
         gameServer?.send(stringMessage) //?: addQueuedMessage(stringMessage)
     }
 }

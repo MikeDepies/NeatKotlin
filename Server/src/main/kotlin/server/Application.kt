@@ -1,18 +1,34 @@
 package server
+
 import Auth0Config
-import applicationModule
+import Simulation
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
+import neat.ModelScore
+import neat.SpeciationController
+import neat.model.NeatMutator
+import neat.toMap
+import neat.toModelScores
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import org.slf4j.event.Level
+import recievedAnyMessages
+import server.message.endpoints.toModel
 import server.server.WebSocketManager
+import java.io.File
 import java.time.Duration
+import java.time.Instant.now
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -64,9 +80,49 @@ fun Application.module(testing: Boolean = false) {
             }
         })
     }
-
+    val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
+    val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
+    runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
+    val (initialPopulation, evaluationArena, populationEvolver, adjustedFitness) = get<Simulation>()
+    launch(Dispatchers.IO) {
+        var population = initialPopulation
+        while (!recievedAnyMessages) {
+            delay(100)
+        }
+        while (true) {
+            launch(Dispatchers.IO) {
+                val modelPopulationPersist = population.toModel()
+                val savePopulationFile = runFolder.resolve("${populationEvolver.generation}.json")
+                val encodedModel = Json { prettyPrint = true }.encodeToString(modelPopulationPersist)
+                savePopulationFile.bufferedWriter().use {
+                    it.write(encodedModel)
+                    it.flush()
+                }
+            }
+            val modelScores = evaluationArena.evaluatePopulation(population).toModelScores(adjustedFitness)
+            populationEvolver.sortPopulationByAdjustedScore(modelScores)
+            populationEvolver.updateScores(modelScores)
+            var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
+            populationEvolver.speciate(newPopulation)
+            while (newPopulation.size < population.size) {
+                newPopulation = newPopulation + newPopulation.first().clone()
+            }
+            population = newPopulation
+        }
+    }
+}
 
+private fun sortModelsByAdjustedFitness(
+    speciationController: SpeciationController,
+    modelScoreList: List<ModelScore>
+): List<ModelScore> {
+    val adjustedPopulationScore = modelScoreList.toMap { modelScore -> modelScore.neatMutator }
+    val fitnessForModel: (NeatMutator) -> Float = { neatMutator ->
+        adjustedPopulationScore.getValue(neatMutator).adjustedFitness
+    }
+    speciationController.sortSpeciesByFitness(fitnessForModel)
+    return modelScoreList
 }
 
 fun previewMessage(frame: Frame.Text): String {
