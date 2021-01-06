@@ -9,6 +9,7 @@ class PopulationEvolver(
     val neatExperiment: NeatExperiment,
     var generation: Int = 0
 ) {
+
     fun speciate(population: List<NeatMutator>) {
         speciationController.speciate(population, speciesLineage, generation++)
     }
@@ -31,7 +32,7 @@ class PopulationEvolver(
 
     fun evolveNewPopulation(scoredPopulation: List<ModelScore>): List<NeatMutator> {
         val mutationEntries = mutationDictionary()
-        val weightedReproduction = weightedReproduction(mutationEntries, .6f, .4f)
+        val weightedReproduction = weightedReproduction(mutationEntries, .6f, .3f)
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation)
     }
 
@@ -45,4 +46,6 @@ class PopulationEvolver(
             .1f chanceToMutate mutateNodeActivationFunction(),
         )
     }
+
+
 }

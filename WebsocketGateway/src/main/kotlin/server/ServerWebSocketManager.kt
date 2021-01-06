@@ -46,7 +46,7 @@ class ServerWebSocketManager(
                                 )
                             }
                             is MessageType.SingleUser -> {
-                                logger.info { "$messageType" }
+//                                logger.info { "$messageType" }
                                 clientRegistry[messageType.user]?.send(messageType.payload)
                             }
                             null -> {
@@ -76,7 +76,7 @@ class ServerWebSocketManager(
         return when (this) {
             is Frame.Text -> {
                 val message = readText()
-                logger.info { "received server message: $message" }
+//                logger.info { "received server message: $message" }
                 val jsonObject = json.decodeFromString(JsonObject.serializer(), message)
                 jsonObject.messageType()
             }

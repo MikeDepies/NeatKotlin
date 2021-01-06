@@ -8,6 +8,7 @@ import WebSocketClient
 import io.ktor.application.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.routing.*
+import io.ktor.util.*
 import io.ktor.websocket.*
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -58,6 +59,7 @@ class WebSocketManager(
                 try {
                     startListenLoop(messageEndpointRegistry::execute)
                 } catch (e: Exception) {
+                    log.error(e)
                     //Exceptions are how the client typically disconnects, does not mean an error.
                     //Though with this case, our client is just a single webservice atm, so it does probably indicate an issue
 //                log.warn(e) { "Client disconnect." }

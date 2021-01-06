@@ -67,7 +67,7 @@ val applicationModule = module {
         }
     }
     single { EvaluationArena() }
-    factory { simulation(evaluationArena = get()) }
+    single { simulation(evaluationArena = get()) }
 }
 
 
@@ -86,9 +86,10 @@ fun simulation(randomSeed: Int = 2056, evaluationArena: EvaluationArena): Simula
     var simpleNeatExperiment = simpleNeatExperiment(Random(randomSeed), 0, 0, activationFunctions)
     val population = if (file.exists()) {
         val string = file.bufferedReader().lineSequence().joinToString("\n")
-//        log.info { string }
+        log.info { "Loading population from file" }
         val populationModel =
             Json {}.decodeFromString<List<NeatModel>>(string)
+        log.info { "population loaded with size of: ${populationModel.size}" }
         val maxNodeInnovation = populationModel.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
         val maxInnovation = populationModel.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
         simpleNeatExperiment = simpleNeatExperiment(Random(randomSeed), maxInnovation, maxNodeInnovation, activationFunctions)
@@ -96,7 +97,7 @@ fun simulation(randomSeed: Int = 2056, evaluationArena: EvaluationArena): Simula
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            25,
+            100,
             input(53, true),
             10,
             Activation.sigmoidal

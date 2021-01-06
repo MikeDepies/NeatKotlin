@@ -1,4 +1,3 @@
-import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import neat.*
@@ -6,11 +5,10 @@ import neat.model.NeatMutator
 import org.koin.core.scope.Scope
 import server.message.BroadcastMessage
 import server.message.endpoints.EndpointProvider
+import java.time.Duration
 import java.time.Instant
 import java.time.Instant.now
-import kotlin.math.ln
-import kotlin.math.pow
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 private val log = KotlinLogging.logger { }
 var recievedAnyMessages = false
@@ -33,7 +31,21 @@ fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *
     registerEndpoint<NoData, SimulationSessionScope>("simulation.reset.game") {
         val evaluationArena = get<EvaluationArena>().resetEvaluation()
     }
+
+
+    registerEndpoint<NoData, SimulationSessionScope>("simulation.pause") {
+        val evaluationArena = get<EvaluationArena>()
+        val sim = get<Simulation>()
+        evaluationArena.pause()
+    }
+
+    registerEndpoint<NoData, SimulationSessionScope>("simulation.resume") {
+        val evaluationArena = get<EvaluationArena>()
+        evaluationArena.resetEvaluation()
+        evaluationArena.resume()
+    }
 }
+
 @Serializable
 object NoData
 
@@ -47,7 +59,12 @@ data class Simulation(
     val adjustedFitnessCalculation: AdjustedFitnessCalculation
 )
 
-class EvaluationController(val agentStart: Instant, val player1: PlayerDataUpdate, val player2: PlayerDataUpdate)
+class EvaluationController(
+    val agentStart: Instant,
+    val player1: PlayerDataUpdate,
+    val player2: PlayerDataUpdate,
+    var distance: Float
+)
 
 class EvaluationArena() {
     var activeModel: NeatMutator? = null
@@ -55,6 +72,7 @@ class EvaluationArena() {
     var evaluationController: EvaluationController? = null
     var lastFrame: FrameUpdate? = null
     var lastAgent: ActivatableNetwork? = null
+    var pauseSimulation = false
     suspend fun evaluatePopulation(population: List<NeatMutator>): List<FitnessModel<NeatMutator>> {
         val size = population.size
         log.info { "Starting to evaluate population($size)" }
@@ -67,63 +85,153 @@ class EvaluationArena() {
     suspend fun evaluateModel(model: NeatMutator): FitnessModel<NeatMutator> {
         val agent = model.toNetwork().also { activeAgent = it; activeModel = model }
         log.info { "Evaluation for new model has begun" }
-        delay(3000)
+//        delay(3000)
         log.info { "Grace period gone" }
-        evaluationController = EvaluationController(now(), lastFrame!!.player1, lastFrame!!.player2)
-        var framesShield = 0
+
+        evaluationController =
+            EvaluationController(now(), lastFrame!!.player1, lastFrame!!.player2, evaluationController?.distance ?: 0f)
+        var damageDoneTime: Instant? = null
+        var stockTakenTime: Instant? = null
+        var distanceTime: Instant? = null
+        val timeAvailable = 1f
+        val damageTimeFrame = 2.5f
+        val stockTakeTimeFrame = 10f
+        val noTimeGainDistance = 88f
+        val linearTimeGainDistanceStart = noTimeGainDistance
+        val linearTimeGainDistanceEnd = 176f
+        val linearTimeGainDistance = linearTimeGainDistanceEnd - linearTimeGainDistanceStart
+        var distanceTimeGain = 0f
+        var lastDamage = 0f
+        var cumulativeDamage = 0f
+        var secondTime = now()
+        var lastAiStock = evaluationController?.player1?.stock ?: 4
+        var lastOpponentStock = evaluationController?.player2?.stock ?: 4
+        var lastPercent = evaluationController?.player1?.percent ?: 0
+        var gameLostFlag = false
+        evaluationController?.let { secondTime = it.agentStart }
         while (true) {
-            delay(5)
+            val now = now()
+            val damageDoneFrame = damageDone().toFloat()
+            val percentFrame = lastFrame?.player1?.percent ?: 0
+            val aiStockFrame = lastFrame?.player1?.stock ?: 4
+            val opponentStockFrame = lastFrame?.player2?.stock ?: 4
+            val wasDamageDealt = cumulativeDamage > 0
+            val distance = distance()
+            val wasOneStockLost = (lastAiStock - aiStockFrame) == 1
+            val wasGameLost = (lastAiStock - aiStockFrame) == -3
+            val shouldPenalizeCumulativeDamage = wasGameLost || wasOneStockLost
 
-            val stocksTaken = evaluationController!!.player2.stock - (lastFrame!!.player2.stock)
-            val remainingDamage = if (stocksTaken == 0) {
-                (lastFrame!!.player2.percent) - (evaluationController!!.player2.percent)
-            } else (lastFrame?.player2?.percent ?: 0)
-            val secondsAlive = (now().epochSecond - (evaluationController?.agentStart?.epochSecond ?: 0L)).toDouble()
-            val lnTimeScore = ln(
-                secondsAlive +.0000001
-            )
-            if (lastFrame?.action1?.isShield == true) framesShield++
-            val topPercent = 100
-            val percentScore = topPercent - lastFrame!!.player1.percent
-            val lostStock = lastFrame!!.player1.stock < evaluationController!!.player1.stock
-            val damageDone = (lastFrame?.player2?.percent ?: 0) - (evaluationController?.player2?.percent ?: 0)
-            val damageTaken = (lastFrame?.player1?.percent ?: 0) - (evaluationController?.player1?.percent ?: 0)
-            val damageDifference = (damageDone - damageTaken).toFloat()
-            val score = ((stocksTaken * stocksTaken) * 1000) + (remainingDamage.toFloat()).pow(6f) + (lnTimeScore * 2) * lnTimeScore - when {
-                lostStock && stocksTaken == 0 -> {
-                    (percentScore * percentScore) * 10
-                }
-                else -> 0
-            } - framesShield * ln(framesShield.toFloat() + .00000001) - when {
-                stocksTaken == 0 && !lostStock -> {
-                    damageDifference * damageDifference
-                }
-                else -> 0f
+            if (distanceTime != null && Duration.between(distanceTime, now).seconds > distanceTimeGain) {
+                distanceTime = null
+                distanceTimeGain = 0f
             }
-//            log.info { "${lastFrame!!.player1.stock} < ${evaluationController!!.player1.stock}"  }
 
-            val tookThresholdDamage = damageTaken > 12
+            if (damageDoneFrame > lastDamage) {
+                damageDoneTime = now
 
-            val tookDamage = (lastFrame?.player1?.percent ?: 0) > evaluationController?.player1?.percent ?: 0
-            if (lostStock || tookThresholdDamage) {
+                val damage = if (gameLostFlag) 0f.also { gameLostFlag = false } else damageDoneFrame - lastDamage
+
+                log.info {
+                    """DamageAccumulation: $cumulativeDamage + $damage -> (${cumulativeDamage + damage})
+                            |StockDelta: $lastAiStock - $aiStockFrame -> ${lastAiStock - aiStockFrame}
+                        """.trimMargin()
+                }
+
+                cumulativeDamage += damage
+            }
+
+            val wasOneStockTaken = (lastOpponentStock - opponentStockFrame) == 1
+            if (wasOneStockTaken) {
+                val doubledDamage = cumulativeDamage * 2
                 log.info {
                     """
-                Evaluation for model has finished:
-                    stocksTaken: ${stocksTaken}
-                    standingDamage: ${remainingDamage}
-                    lostStock: ${lostStock}
-                    tookDamage: ${tookDamage}
-                    tookThresholdDamage: $tookThresholdDamage
-                    shieldFrames: $framesShield
-                    damageTaken: $damageTaken
-                    damageDone: $damageDone
-                    damageDifference: $damageDifference
-                    secondsAlive: ${secondsAlive}
-                    secondsLnScore: ${lnTimeScore}
-                    score: ${score}
-            """.trimIndent()
+                            Stock taken: $lastOpponentStock -> $opponentStockFrame ($wasOneStockTaken)
+                            Damage: $lastDamage -> $damageDoneFrame
+                            CumulativeDamage: $cumulativeDamage -> $doubledDamage
+                        """.trimIndent()
                 }
-                return FitnessModel(model, score.toFloat())
+                cumulativeDamage = doubledDamage
+                stockTakenTime = now
+            }
+
+
+            if (lastAiStock != aiStockFrame) {
+                log.info { "Stocks not equal! $lastAiStock -> $aiStockFrame" }
+            }
+            if (shouldPenalizeCumulativeDamage)
+                log.info { "Stock was lost: $cumulativeDamage > 0 (${cumulativeDamage > 0})" }
+            if (shouldPenalizeCumulativeDamage && cumulativeDamage > 0) {
+                val sqrt = sqrt(cumulativeDamage)
+                log.info {
+                    """
+                        Stock Lost: $lastAiStock -> $aiStockFrame ($wasOneStockLost)
+                        Percent: $lastPercent -> $percentFrame
+                        CumulativeDamage: $cumulativeDamage -> $sqrt
+                    """.trimIndent()
+                }
+                cumulativeDamage = sqrt
+            }
+            if (wasGameLost) {
+                gameLostFlag = true
+                lastDamage = 0f
+                evaluationController =
+                    evaluationController!!.run { EvaluationController(agentStart, player1.copy(percent = 0), player2.copy(percent = 0), distance) }
+            }
+
+
+            lastDamage = damageDoneFrame
+            lastOpponentStock = opponentStockFrame
+            lastAiStock = aiStockFrame
+            lastPercent = percentFrame
+            evaluationController?.let {
+                if (Duration.between(secondTime, now).toMillis() > 300) {
+                    secondTime = now
+                    if (distance >= linearTimeGainDistanceStart && distance < linearTimeGainDistanceEnd) {
+                        val x = (distance - linearTimeGainDistanceStart) / linearTimeGainDistance
+                        if (distanceTimeGain == 0f && x > 0f) {
+                            distanceTime = now
+                        }
+                        distanceTimeGain += x
+                        if (distanceTimeGain > 8) distanceTimeGain = 8f
+                    }
+                }
+            }
+
+            val timeElapsedSinceBonus = if (stockTakenTime != null) {
+                Duration.between(stockTakenTime, now).seconds > stockTakeTimeFrame
+            } else true
+            val timeElapsedSinceDamage = if (damageDoneTime != null) {
+                Duration.between(damageDoneTime, now).seconds > damageTimeFrame + distanceTimeGain
+            } else false
+            val timeElapsed =
+                (Duration.between(evaluationController!!.agentStart, now).seconds > timeAvailable + distanceTimeGain)
+            val score = cumulativeDamage.pow(2)
+            if ((timeElapsed && !wasDamageDealt || wasDamageDealt && timeElapsedSinceDamage && timeElapsedSinceBonus) && !pauseSimulation) {
+                log.info {
+                    """
+                    ${
+                        if (stockTakenTime != null) "timeElapsedSinceStock: ${
+                            Duration.between(
+                                stockTakenTime,
+                                now
+                            ).seconds
+                        } ($timeElapsedSinceBonus)" else ""
+                    }
+                    ${
+                        if (damageDoneTime != null) "timeElapsedSinceDamage: ${
+                            Duration.between(
+                                damageDoneTime,
+                                now
+                            ).seconds
+                        } ($timeElapsedSinceDamage)" else ""
+                    }
+                    timeGain: ${distanceTimeGain}
+                    timeElapsed: ${Duration.between(evaluationController!!.agentStart, now).seconds} ($timeElapsed)
+                    damageDone: $cumulativeDamage ($wasDamageDealt)
+                    score: $score
+                """.trimIndent()
+                }
+                return FitnessModel(model, score)
             }
         }
     }
@@ -132,12 +240,17 @@ class EvaluationArena() {
         val agent = activeAgent
         if (lastAgent != agent) {
             lastAgent = agent
-            evaluationController = EvaluationController(now(), frameUpdate.player1, frameUpdate.player2)
-        }
+            evaluationController =
+                EvaluationController(now(), frameUpdate.player1, frameUpdate.player2, distance = frameUpdate.distance)
+        } else evaluationController?.distance = frameUpdate.distance
         this.lastFrame = frameUpdate
-        if (agent != null) {
-            agent.evaluate(frameUpdate.flatten())
-            return agent.output().toFrameOutput()
+        if (agent != null && !pauseSimulation) {
+            try {
+                agent.evaluate(frameUpdate.flatten())
+                return agent.output().toFrameOutput()
+            } catch (e: Exception) {
+                log.error(e) { "failed to evaluate agent" }
+            }
         }
 
         return null
@@ -146,15 +259,41 @@ class EvaluationArena() {
     fun resetEvaluation() {
         lastFrame?.let {
             log.info { "Reset eval controller - new match" }
-            evaluationController = EvaluationController(now(), it.player1, it.player2)
+            evaluationController = EvaluationController(now(), it.player1.copy(percent = 0), it.player2.copy(percent = 0), distance())
         }
     }
+
+    private fun distance() = evaluationController?.distance ?: 0f
+
+    fun pause() {
+        pauseSimulation = true
+    }
+
+    fun resume() {
+        pauseSimulation = false
+    }
 }
+
+private fun EvaluationArena.damageDone() =
+    (lastFrame?.player2?.percent ?: 0) - (evaluationController?.player2?.percent ?: 0)
+
+private fun EvaluationArena.lostStock() = lastFrame!!.player1.stock < evaluationController!!.player1.stock
 
 private fun List<Float>.toFrameOutput(): FrameOutput {
     fun bool(index: Int) = get(index).roundToInt() > 0
     fun clamp(index: Int) = get(index).let { if (it < 0) 0f else if (it > 1) 1f else it }
-    return FrameOutput(bool(0), bool(1), bool(2), bool(3), clamp(4), clamp(5), clamp(6), clamp(7), clamp(8), clamp(9))
+    return FrameOutput(
+        a = bool(0),
+        b = bool(1),
+        y = bool(2),
+        z = bool(3),
+        cStickX = clamp(4),
+        cStickY = clamp(5),
+        mainStickX = clamp(6),
+        mainStickY = clamp(7),
+        leftShoulder = if (clamp(8).roundToInt() == 1) (clamp(8) - .5f) * 2 else 0f,
+        rightShoulder = clamp(9)
+    )
 }
 
 

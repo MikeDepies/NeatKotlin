@@ -6,7 +6,7 @@ import mu.KotlinLogging
 private val log = KotlinLogging.logger {  }
 class UserManager(private val userSessions: MutableList<UserSession>) {
     suspend fun send(payload: JsonObject) {
-        log.info { "sending payload $payload to ${userSessions.size} user sessions" }
+//        log.info { "sending payload $payload to ${userSessions.size} user sessions" }
         userSessions.forEach {
             it.send(payload)
         }
