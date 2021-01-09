@@ -67,14 +67,16 @@ val applicationModule = module {
         }
     }
     single { EvaluationArena() }
-    single { simulation(evaluationArena = get()) }
+    single { simulation(evaluationArena = get()/*, takeSize = 20*/) }
 }
 
+interface Agent
+class NEATAgent : Agent
 
-fun simulation(randomSeed: Int = 2056, evaluationArena: EvaluationArena): Simulation {
+fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSize: Int? = null): Simulation {
     val activationFunctions = listOf(Activation.identity, Activation.sigmoidal)
 
-    val sharingFunction = shFunction(3f)
+    val sharingFunction = shFunction(10f)
     val distanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
@@ -83,23 +85,26 @@ fun simulation(randomSeed: Int = 2056, evaluationArena: EvaluationArena): Simula
     val speciesLineage = SpeciesLineage()
     val scoreKeeper = SpeciesScoreKeeper()
     val file = File("population.json")
-    var simpleNeatExperiment = simpleNeatExperiment(Random(randomSeed), 0, 0, activationFunctions)
+    val random = Random(randomSeed)
+    var simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions)
     val population = if (file.exists()) {
         val string = file.bufferedReader().lineSequence().joinToString("\n")
         log.info { "Loading population from file" }
         val populationModel =
-            Json {}.decodeFromString<List<NeatModel>>(string)
+            Json {}.decodeFromString<List<NeatModel>>(string).let {
+                if (takeSize == null || takeSize > it.size) it else it.shuffled(random).take(takeSize)
+            }
         log.info { "population loaded with size of: ${populationModel.size}" }
         val maxNodeInnovation = populationModel.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
         val maxInnovation = populationModel.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
-        simpleNeatExperiment = simpleNeatExperiment(Random(randomSeed), maxInnovation, maxNodeInnovation, activationFunctions)
-        populationModel.map { it.NeatMutator() }
+        simpleNeatExperiment = simpleNeatExperiment(random, maxInnovation, maxNodeInnovation, activationFunctions)
+        populationModel.map { it.toNeatMutator() }
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            100,
+            200,
             input(53, true),
-            10,
+            9,
             Activation.sigmoidal
         )
     }
@@ -109,21 +114,21 @@ fun simulation(randomSeed: Int = 2056, evaluationArena: EvaluationArena): Simula
     return Simulation(population, evaluationArena, populationEvolver, adjustedFitnessCalculation)
 }
 
-private fun PopulationModel.neatMutatorList(): List<NeatMutator> {
-    return this.models.map { it.NeatMutator() }
+fun PopulationModel.neatMutatorList(): List<NeatMutator> {
+    return this.models.map { it.toNeatMutator() }
 }
 
-private fun NeatModel.NeatMutator() = simpleNeatMutator(nodes.map { it.nodeGene() }, connections.map { it.connectionGene() })
+fun NeatModel.toNeatMutator() = simpleNeatMutator(nodes.map { it.nodeGene() }, connections.map { it.connectionGene() })
 
-private fun ConnectionGeneModel.connectionGene(): ConnectionGene {
+fun ConnectionGeneModel.connectionGene(): ConnectionGene {
     return ConnectionGene(inNode, outNode, weight, enabled, innovation)
 }
 
-private fun NodeGeneModel.nodeGene(): NodeGene {
+fun NodeGeneModel.nodeGene(): NodeGene {
     return NodeGene(node, nodeType.nodeType(), Activation.activationMap.getValue(activationFunction))
 }
 
-private fun NodeTypeModel.nodeType(): NodeType = when (this) {
+fun NodeTypeModel.nodeType(): NodeType = when (this) {
     Input -> NodeType.Input
     Hidden -> NodeType.Hidden
     Output -> NodeType.Output

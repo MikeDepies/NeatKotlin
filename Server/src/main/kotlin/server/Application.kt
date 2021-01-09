@@ -10,6 +10,7 @@ import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -21,12 +22,13 @@ import neat.toModelScores
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import org.slf4j.event.Level
-import recievedAnyMessages
+import receivedAnyMessages
+import server.message.endpoints.SpeciesLineageModel
+import server.message.endpoints.SpeciesScoreKeeperModel
 import server.message.endpoints.toModel
 import server.server.WebSocketManager
 import java.io.File
 import java.time.Duration
-import java.time.Instant.now
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -87,18 +89,29 @@ fun Application.module(testing: Boolean = false) {
     val (initialPopulation, evaluationArena, populationEvolver, adjustedFitness) = get<Simulation>()
     launch(Dispatchers.IO) {
         var population = initialPopulation
-        while (!recievedAnyMessages) {
+        while (!receivedAnyMessages) {
             delay(100)
         }
         while (true) {
             launch(Dispatchers.IO) {
                 val modelPopulationPersist = population.toModel()
                 val savePopulationFile = runFolder.resolve("${populationEvolver.generation}.json")
-                val encodedModel = Json { prettyPrint = true }.encodeToString(modelPopulationPersist)
+                val json = Json { prettyPrint = true }
+                val encodedModel = json.encodeToString(modelPopulationPersist)
                 savePopulationFile.bufferedWriter().use {
                     it.write(encodedModel)
                     it.flush()
                 }
+                val manifestFile = runFolder.resolve("manifest.json")
+                val manifestData = Manifest(
+                    populationEvolver.scoreKeeper.toModel(),
+                    populationEvolver.speciesLineage.toModel()
+                )
+                manifestFile.bufferedWriter().use {
+                    it.write(json.encodeToString(manifestData))
+                    it.flush()
+                }
+
             }
             val modelScores = evaluationArena.evaluatePopulation(population).toModelScores(adjustedFitness)
             populationEvolver.sortPopulationByAdjustedScore(modelScores)
@@ -136,3 +149,6 @@ fun previewMessage(frame: Frame.Text): String {
         }
     }
 }
+
+@Serializable
+data class Manifest(val scoreKeeperModel: SpeciesScoreKeeperModel, val scoreLineageModel: SpeciesLineageModel)

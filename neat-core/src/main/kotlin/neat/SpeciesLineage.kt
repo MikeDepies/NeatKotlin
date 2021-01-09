@@ -23,6 +23,8 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
     fun updateMascot(species: Species, mascot: NeatMutator) {
         map[species] = map.getValue(species).copy(mascot = mascot)
     }
+
+    val speciesLineageMap = map.toMap()
 }
 
 class SpeciesScoreKeeper {
@@ -44,6 +46,8 @@ class SpeciesScoreKeeper {
     fun bestSpecies(): Species? {
         return scoreMap.maxByOrNull { it.value.fitness }?.key
     }
+
+    val speciesScoreMap = scoreMap.toMap()
 }
 
 /**

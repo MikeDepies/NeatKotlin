@@ -1,17 +1,23 @@
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
-import neat.*
+import neat.ActivatableNetwork
+import neat.AdjustedFitnessCalculation
+import neat.FitnessModel
 import neat.model.NeatMutator
+import neat.toNetwork
 import org.koin.core.scope.Scope
 import server.message.BroadcastMessage
 import server.message.endpoints.EndpointProvider
 import java.time.Duration
 import java.time.Instant
 import java.time.Instant.now
-import kotlin.math.*
+import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 private val log = KotlinLogging.logger { }
-var recievedAnyMessages = false
+var receivedAnyMessages = false
 fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *>> {
     registerEndpoint<FrameUpdate, SimulationSessionScope>("simulation.frame.update") {
         val evaluationArena = get<EvaluationArena>()
@@ -24,7 +30,7 @@ fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *
             )
         }
 
-        recievedAnyMessages = true
+        receivedAnyMessages = true
 //        messageWriter.sendAllMessage()
     }
 
@@ -82,12 +88,13 @@ class EvaluationArena() {
         }
     }
 
+    fun gracePeriodHitBonus(t: Float, gracePeriod: Float, bonus: Int = 20): Float {
+        return bonus * (1 - (t / gracePeriod))
+    }
+
     suspend fun evaluateModel(model: NeatMutator): FitnessModel<NeatMutator> {
         val agent = model.toNetwork().also { activeAgent = it; activeModel = model }
         log.info { "Evaluation for new model has begun" }
-//        delay(3000)
-        log.info { "Grace period gone" }
-
         evaluationController =
             EvaluationController(now(), lastFrame!!.player1, lastFrame!!.player2, evaluationController?.distance ?: 0f)
         var damageDoneTime: Instant? = null
@@ -95,13 +102,13 @@ class EvaluationArena() {
         var stockLostTime: Instant? = null
         var distanceTime: Instant? = null
         var doubleDeathQuick = false
-        val timeAvailable = 4f
-        var damageTimeFrame = 2.5f
-        var timeGainMax = 7f
+        val timeAvailable = .5f
+        var damageTimeFrame = 1.5f
+        var timeGainMax = 5f
         val stockTakeTimeFrame = 10f
-        val noTimeGainDistance = 132f
+        val noTimeGainDistance = 44f
         val linearTimeGainDistanceStart = noTimeGainDistance
-        val linearTimeGainDistanceEnd = 176f
+        val linearTimeGainDistanceEnd = 100f
         val linearTimeGainDistance = linearTimeGainDistanceEnd - linearTimeGainDistanceStart
         var distanceTimeGain = 0f
         var lastDamageDealt = 0f
@@ -111,11 +118,17 @@ class EvaluationArena() {
         var lastAiStock = evaluationController?.player1?.stock ?: 4
         var lastOpponentStock = evaluationController?.player2?.stock ?: 4
         var lastPercent = evaluationController?.player1?.percent ?: 0
+        var lastOpponentPercent = evaluationController?.player2?.percent ?: 0
         var gameLostFlag = false
+        var currentStockDamageDealt = 0f
+        var bonusGraceDamageApplied = false
+        var earlyKillBonusApplied = false
+        var gracePeriodEnded = false
         evaluationController?.let { secondTime = it.agentStart }
         while (true) {
             val now = now()
             val damageDoneFrame = damageDone().toFloat()
+            val opponentPercentFrame = lastFrame?.player1?.percent ?: 0
             val percentFrame = lastFrame?.player1?.percent ?: 0
             val aiStockFrame = lastFrame?.player1?.stock ?: 4
             val opponentStockFrame = lastFrame?.player2?.stock ?: 4
@@ -129,23 +142,53 @@ class EvaluationArena() {
                 distanceTime = null
                 distanceTimeGain = 0f
             }
+            if (distanceTime != null && distance > linearTimeGainDistanceEnd) {
+                distanceTime = null
+                distanceTimeGain = 0f
+            }
 
             if (damageDoneFrame > lastDamageDealt) {
                 damageDoneTime = now
 
                 val damage = if (gameLostFlag) 0f.also { gameLostFlag = false } else damageDoneFrame - lastDamageDealt
 
+                val secondsAiPlay = evaluationController?.let { Duration.between(it.agentStart, now).seconds } ?: 0
+                log.info { "Damage at $secondsAiPlay seconds" }
                 log.info {
                     """DamageAccumulation: $cumulativeDamageDealt + $damage -> (${cumulativeDamageDealt + damage})
                             |StockDelta: $lastAiStock - $aiStockFrame -> ${lastAiStock - aiStockFrame}
                         """.trimMargin()
                 }
-
+                currentStockDamageDealt += damage
                 cumulativeDamageDealt += damage
+                if (secondsAiPlay < 2) {
+                    bonusGraceDamageApplied = true
+                    val gracePeriodHitBonus = gracePeriodHitBonus(
+                        t = secondsAiPlay.toFloat(),
+                        gracePeriod = timeAvailable,
+                        bonus = 10
+                    )
+                    log.info { "Grace period damage bonus: $cumulativeDamageDealt + $gracePeriodHitBonus -> (${cumulativeDamageDealt + gracePeriodHitBonus})" }
+                    cumulativeDamageDealt += gracePeriodHitBonus
+                }
             }
 
-            val wasOneStockTaken = (lastOpponentStock - opponentStockFrame) == 1
+            val wasOneStockTaken = (lastOpponentStock) != opponentStockFrame
             if (wasOneStockTaken) {
+                if (lastOpponentPercent < 100f) {
+                    val earlyKillBonus =
+                        sqrt(((100f - lastOpponentPercent) / max(1f, currentStockDamageDealt)) * 2).pow(2)
+                    log.info {
+                        """
+                        PercentCap: 100
+                        LastEnemyPercent: $lastOpponentPercent
+                        currentDamageDealt: $currentStockDamageDealt
+                        Early Kill: $cumulativeDamageDealt + $earlyKillBonus -> (${cumulativeDamageDealt + earlyKillBonus})
+                    """.trimIndent()
+                    }
+                    cumulativeDamageDealt += earlyKillBonus
+                    earlyKillBonusApplied = true
+                } else log.info { "Kill but percent was over 100." }
                 val doubledDamage = cumulativeDamageDealt * 2
                 log.info {
                     """
@@ -154,8 +197,10 @@ class EvaluationArena() {
                             CumulativeDamage: $cumulativeDamageDealt -> $doubledDamage
                         """.trimIndent()
                 }
+
                 cumulativeDamageDealt = doubledDamage
                 stockTakenTime = now
+
             }
 
 
@@ -180,6 +225,7 @@ class EvaluationArena() {
                 }
                 stockLostTime = now
                 cumulativeDamageDealt = sqrt
+                currentStockDamageDealt = 0f
             }
             if (wasGameLost) {
                 gameLostFlag = true
@@ -195,25 +241,37 @@ class EvaluationArena() {
                     }
             }
 
-            if (lastPercent < percentFrame) cumulativeDamageTaken+= percentFrame - lastPercent
+            if (lastPercent < percentFrame) cumulativeDamageTaken += percentFrame - lastPercent
 
-
+            if (evaluationController?.agentStart.let { Duration.between(now, it).seconds } > timeAvailable) {
+                gracePeriodEnded = true
+                log.info { "Grace period gone" }
+            }
             lastDamageDealt = damageDoneFrame
             lastOpponentStock = opponentStockFrame
             lastAiStock = aiStockFrame
             lastPercent = percentFrame
+            lastOpponentPercent = opponentPercentFrame
             evaluationController?.let {
-                if (Duration.between(secondTime, now).toMillis() > 300) {
+                val distanceTimeStep = .06f
+                if (Duration.between(secondTime, now).toMillis() > 100) {
                     secondTime = now
                     if (distance >= linearTimeGainDistanceStart && distance < linearTimeGainDistanceEnd) {
                         val x = (distance - linearTimeGainDistanceStart) / linearTimeGainDistance
                         if (distanceTimeGain == 0f && x > 0f) {
                             distanceTime = now
                         }
-                        distanceTimeGain += x
-
-                        if (distanceTimeGain > timeGainMax) distanceTimeGain = timeGainMax
+                        distanceTimeGain += (1 - x) * distanceTimeStep
+                    } else {
+                        distanceTimeGain += distanceTimeStep
                     }
+                    log.trace {
+                        """
+                        distance:   $distance
+                        distanceTimeGain:   $distanceTimeGain
+                        """.trimIndent()
+                    }
+                    if (distanceTimeGain > timeGainMax) distanceTimeGain = timeGainMax
                 }
             }
 
@@ -253,6 +311,8 @@ class EvaluationArena() {
                     timeElapsed: ${Duration.between(evaluationController!!.agentStart, now).seconds} ($timeElapsed)
                     damageTaken: $cumulativeDamageTaken ($cumulativeDmgRatio)
                     damageDone: $cumulativeDamageDealt ($wasDamageDealt)
+                    earlyKill: $earlyKillBonusApplied
+                    graceHit: $bonusGraceDamageApplied
                     score: $score
                     finalScore: $scoreWithPercentRatioModifier
                 """.trimIndent()
@@ -319,7 +379,7 @@ private fun List<Float>.toFrameOutput(): FrameOutput {
         mainStickX = clamp(6),
         mainStickY = clamp(7),
         leftShoulder = if (clamp(8).roundToInt() == 1) (clamp(8) - .5f) * 2 else 0f,
-        rightShoulder = clamp(9)
+        rightShoulder = 0f//clamp(9)
     )
 }
 
