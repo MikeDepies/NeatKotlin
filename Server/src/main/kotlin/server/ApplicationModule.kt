@@ -70,9 +70,6 @@ val applicationModule = module {
     single { simulation(evaluationArena = get()/*, takeSize = 20*/) }
 }
 
-interface Agent
-class NEATAgent : Agent
-
 fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSize: Int? = null): Simulation {
     val activationFunctions = listOf(Activation.identity, Activation.sigmoidal)
 

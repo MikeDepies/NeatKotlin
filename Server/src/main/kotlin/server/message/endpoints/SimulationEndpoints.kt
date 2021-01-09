@@ -79,6 +79,7 @@ class EvaluationArena() {
     var lastFrame: FrameUpdate? = null
     var lastAgent: ActivatableNetwork? = null
     var pauseSimulation = false
+    var resetSimulationForAgent = false
     suspend fun evaluatePopulation(population: List<NeatMutator>): List<FitnessModel<NeatMutator>> {
         val size = population.size
         log.info { "Starting to evaluate population($size)" }
@@ -126,6 +127,23 @@ class EvaluationArena() {
         var gracePeriodEnded = false
         evaluationController?.let { secondTime = it.agentStart }
         while (true) {
+            if (resetSimulationForAgent) {
+                resetSimulationForAgent = false
+                distanceTimeGain = 0f
+                lastDamageDealt = 0f
+                cumulativeDamageDealt = 0f
+                cumulativeDamageTaken = 0f
+                secondTime = now()
+                lastAiStock = evaluationController?.player1?.stock ?: 4
+                lastOpponentStock = evaluationController?.player2?.stock ?: 4
+                lastPercent = evaluationController?.player1?.percent ?: 0
+                lastOpponentPercent = evaluationController?.player2?.percent ?: 0
+                gameLostFlag = false
+                currentStockDamageDealt = 0f
+                bonusGraceDamageApplied = false
+                earlyKillBonusApplied = false
+                gracePeriodEnded = false
+            }
             val now = now()
             val damageDoneFrame = damageDone().toFloat()
             val opponentPercentFrame = lastFrame?.player1?.percent ?: 0
@@ -347,6 +365,7 @@ class EvaluationArena() {
             log.info { "Reset eval controller - new match" }
             evaluationController =
                 EvaluationController(now(), it.player1.copy(percent = 0), it.player2.copy(percent = 0), distance())
+            resetSimulationForAgent = true
         }
     }
 
