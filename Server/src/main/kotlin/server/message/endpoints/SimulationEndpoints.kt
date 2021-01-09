@@ -301,7 +301,7 @@ class EvaluationArena() {
             } else false
             val timeElapsed =
                 (Duration.between(evaluationController!!.agentStart, now).seconds > timeAvailable + distanceTimeGain)
-            val score = if (cumulativeDamageDealt < 10) 0f else cumulativeDamageDealt.pow(2)
+            val score = if (cumulativeDamageDealt < 7) 0f else cumulativeDamageDealt.pow(2)
             val cumulativeDmgRatio = cumulativeDamageDealt / max(cumulativeDamageTaken, 1f)
             val scoreWithPercentRatioModifier = score * cumulativeDmgRatio
             val damageClockActive = wasDamageDealt && timeElapsedSinceDamage && timeElapsedSinceBonus
