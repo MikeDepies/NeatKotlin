@@ -156,6 +156,7 @@ class EvaluationArena() {
             val wasStockButNotGameLost = (lastAiStock - aiStockFrame) == 1
             val wasGameLost = (lastAiStock - aiStockFrame) == -3
             val stockLoss = wasGameLost || wasStockButNotGameLost
+            val aiOnGround = lastFrame?.player1?.isGround ?: false
 
             if (distanceTime != null && Duration.between(distanceTime, now).seconds > distanceTimeGain) {
                 distanceTime = null
@@ -307,7 +308,7 @@ class EvaluationArena() {
             val scoreWithPercentRatioModifier = score * cumulativeDmgRatio
             val damageClockActive = wasDamageDealt && timeElapsedSinceDamage && timeElapsedSinceBonus
             val gracePeriodClockActive = timeElapsed && !wasDamageDealt
-            if ((gracePeriodClockActive || damageClockActive || doubleDeathQuick || stockLoss || brokenNetwork) && !pauseSimulation) {
+            if (((gracePeriodClockActive || damageClockActive) && aiOnGround || stockLoss || brokenNetwork) && !pauseSimulation) {
                 if (brokenNetwork) {
                     brokenNetwork = false
                     log.info { "Killing broken network" }
