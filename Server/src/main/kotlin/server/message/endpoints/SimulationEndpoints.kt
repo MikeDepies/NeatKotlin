@@ -156,7 +156,7 @@ class EvaluationArena() {
             val wasStockButNotGameLost = (lastAiStock - aiStockFrame) == 1
             val wasGameLost = (lastAiStock - aiStockFrame) == -3
             val stockLoss = wasGameLost || wasStockButNotGameLost
-            val aiOnGround = lastFrame?.player1?.isGround ?: false
+            val aiOnGround = lastFrame?.player1?.onGround ?: false
 
             if (distanceTime != null && Duration.between(distanceTime, now).seconds > distanceTimeGain) {
                 distanceTime = null
