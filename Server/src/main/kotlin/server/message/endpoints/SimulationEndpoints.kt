@@ -80,6 +80,7 @@ class EvaluationArena() {
     var lastAgent: ActivatableNetwork? = null
     var pauseSimulation = false
     var resetSimulationForAgent = false
+    var brokenNetwork = false
     suspend fun evaluatePopulation(population: List<NeatMutator>): List<FitnessModel<NeatMutator>> {
         val size = population.size
         log.info { "Starting to evaluate population($size)" }
@@ -193,7 +194,7 @@ class EvaluationArena() {
 
             val wasOneStockTaken = (lastOpponentStock) != opponentStockFrame
             if (wasOneStockTaken) {
-                if (lastOpponentPercent < 100f) {
+                if (lastOpponentPercent < 100f && currentStockDamageDealt > 0) {
                     val earlyKillBonus =
                         sqrt(((100f - lastOpponentPercent) / max(1f, currentStockDamageDealt)) * 2).pow(2)
                     log.info {
@@ -301,30 +302,36 @@ class EvaluationArena() {
             } else false
             val timeElapsed =
                 (Duration.between(evaluationController!!.agentStart, now).seconds > timeAvailable + distanceTimeGain)
-            val score = if (cumulativeDamageDealt < 7) 0f else cumulativeDamageDealt.pow(2)
+            val score = if (cumulativeDamageDealt < 8) 0f else cumulativeDamageDealt.pow(2)
             val cumulativeDmgRatio = cumulativeDamageDealt / max(cumulativeDamageTaken, 1f)
             val scoreWithPercentRatioModifier = score * cumulativeDmgRatio
             val damageClockActive = wasDamageDealt && timeElapsedSinceDamage && timeElapsedSinceBonus
             val gracePeriodClockActive = timeElapsed && !wasDamageDealt
-            if ((gracePeriodClockActive || damageClockActive || doubleDeathQuick || stockLoss) && !pauseSimulation) {
-                log.info {
-                    """
+            if ((gracePeriodClockActive || damageClockActive || doubleDeathQuick || stockLoss || brokenNetwork) && !pauseSimulation) {
+                if (brokenNetwork) {
+                    brokenNetwork = false
+                    log.info { "Killing broken network" }
+                    return FitnessModel(model, -1f)
+                }
+                else {
+                    log.info {
+                        """
                     ${
-                        if (stockTakenTime != null) "timeElapsedSinceStock: ${
-                            Duration.between(
-                                stockTakenTime,
-                                now
-                            ).seconds
-                        } ($timeElapsedSinceBonus)" else ""
-                    }
+                            if (stockTakenTime != null) "timeElapsedSinceStock: ${
+                                Duration.between(
+                                    stockTakenTime,
+                                    now
+                                ).seconds
+                            } ($timeElapsedSinceBonus)" else ""
+                        }
                     ${
-                        if (damageDoneTime != null) "timeElapsedSinceDamage: ${
-                            Duration.between(
-                                damageDoneTime,
-                                now
-                            ).seconds
-                        } ($timeElapsedSinceDamage)" else ""
-                    }
+                            if (damageDoneTime != null) "timeElapsedSinceDamage: ${
+                                Duration.between(
+                                    damageDoneTime,
+                                    now
+                                ).seconds
+                            } ($timeElapsedSinceDamage)" else ""
+                        }
                     timeGain: $distanceTimeGain
                     timeElapsed: ${Duration.between(evaluationController!!.agentStart, now).seconds} ($timeElapsed)
                     damageTaken: $cumulativeDamageTaken ($cumulativeDmgRatio)
@@ -334,8 +341,10 @@ class EvaluationArena() {
                     score: $score
                     finalScore: $scoreWithPercentRatioModifier
                 """.trimIndent()
+                    }
+                    return FitnessModel(model, scoreWithPercentRatioModifier)
                 }
-                return FitnessModel(model, scoreWithPercentRatioModifier)
+
             }
         }
     }
@@ -353,6 +362,7 @@ class EvaluationArena() {
                 agent.evaluate(frameUpdate.flatten())
                 return agent.output().toFrameOutput()
             } catch (e: Exception) {
+                brokenNetwork = true
                 log.error(e) { "failed to evaluate agent" }
             }
         }

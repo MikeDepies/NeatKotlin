@@ -87,7 +87,15 @@ class SimpleNeatExperiment(
     }
 
     override fun mutateAddNode(neatMutator: NeatMutator) {
-        val randomConnection = neatMutator.connections.random(random)
+        fun getRandomConnectionGeneWithValidNodes(): ConnectionGene {
+            var rConnection = neatMutator.connections.random(random)
+            while(!neatMutator.hasNode(rConnection.inNode) || !neatMutator.hasNode(rConnection.outNode)) {
+                rConnection = neatMutator.connections.random(random)
+            }
+            return rConnection
+        }
+
+        val randomConnection = getRandomConnectionGeneWithValidNodes()
         val node = NodeGene(nextNode(), NodeType.Hidden, activationFunctions.random(random))
         val copiedConnection = randomConnection.copy(innovation = nextInnovation(), inNode = node.node)
         val newEmptyConnection = ConnectionGene(randomConnection.inNode, node.node, 1f, true, nextInnovation())
