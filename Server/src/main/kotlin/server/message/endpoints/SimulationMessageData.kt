@@ -13,8 +13,8 @@ data class PlayerDataUpdate(
     val percent: Int,
     val facingRight: Boolean,//10
     val ecb: EnvironmentalCollisionBox, //<-8
-    val isGround: Boolean,
-    val isHitStun: Boolean//20
+    val onGround: Boolean,
+    val hitStun: Boolean//20
 )
 
 @Serializable
