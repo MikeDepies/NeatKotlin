@@ -308,7 +308,7 @@ class EvaluationArena() {
             val scoreWithPercentRatioModifier = score * cumulativeDmgRatio
             val damageClockActive = wasDamageDealt && timeElapsedSinceDamage && timeElapsedSinceBonus
             val gracePeriodClockActive = timeElapsed && !wasDamageDealt
-            val stockLostScore = if (stockLoss) scoreWithPercentRatioModifier - 1 else scoreWithPercentRatioModifier
+            val stockKeptScoreBonus = if (stockLoss) scoreWithPercentRatioModifier else scoreWithPercentRatioModifier + 1
             if ((gracePeriodClockActive || damageClockActive || doubleDeathQuick || stockLoss || brokenNetwork) && !pauseSimulation) {
                 if (brokenNetwork) {
                     brokenNetwork = false
@@ -342,10 +342,10 @@ class EvaluationArena() {
                     stockLost: $stockLoss
                     score: $score
                     percentModifierScore: $scoreWithPercentRatioModifier
-                    stockLostScore: $stockLostScore
+                    stockLostScore: $stockKeptScoreBonus
                 """.trimIndent()
                     }
-                    return FitnessModel(model, stockLostScore)
+                    return FitnessModel(model, stockKeptScoreBonus)
                 }
 
             }
