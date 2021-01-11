@@ -12,7 +12,9 @@ data class PlayerDataUpdate(
     val speedY: Float,
     val percent: Int,
     val facingRight: Boolean,//10
-    val ecb: EnvironmentalCollisionBox //8
+    val ecb: EnvironmentalCollisionBox, //<-8
+    val onGround: Boolean,
+    val hitStun: Boolean//20
 )
 
 @Serializable
@@ -33,7 +35,7 @@ data class ActionData(//8
     val isShield: Boolean,
     val rangeBackward: Float,
     val rangeForward: Float,
-    val hitBoxCount: Int
+    val hitBoxCount: Int,
 )
 
 @Serializable
