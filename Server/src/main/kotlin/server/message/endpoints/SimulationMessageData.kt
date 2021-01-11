@@ -45,7 +45,8 @@ data class FrameUpdate(
     val player2: PlayerDataUpdate, //18
     val action1: ActionData, //8
     val action2: ActionData, //8
-    val distance: Float //1
+    val distance: Float, //1
+    val frame: Int
 )
 
 @Serializable
