@@ -350,6 +350,7 @@ class EvaluationArena() {
             val clocksExpired =
                 !(graceTimeActive || damageClockActive || hitStunClockActive || landingClockActive || opponentHitStunClockActive)
             val terminatePlayTime = (clocksExpired) && aiOnGround && !hitStun && !opponentHitStun
+            val stockKeptBonusScore = if (!stockLoss) scoreWithPercentRatioModifier +1 else scoreWithPercentRatioModifier
             if ((terminatePlayTime || stockLoss || brokenNetwork) && !pauseSimulation) {
                 if (brokenNetwork) {
                     brokenNetwork = false
@@ -383,10 +384,10 @@ class EvaluationArena() {
                     stockLost: $stockLoss
                     score: $score
                     percentModifierScore: $scoreWithPercentRatioModifier
-                    stockLostScore: $stockLostScore
+                    stockKeptScore: $stockKeptBonusScore
                 """.trimIndent()
                     }
-                    return FitnessModel(model, stockLostScore)
+                    return FitnessModel(model, stockKeptBonusScore)
                 }
 
             }
