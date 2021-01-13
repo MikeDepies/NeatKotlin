@@ -7,17 +7,20 @@ import io.ktor.http.cio.websocket.close
 import io.ktor.http.cio.websocket.readText
 import io.ktor.routing.routing
 import io.ktor.websocket.webSocket
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import mu.KotlinLogging
 import server.ServerWebSocketManager
 import server.SessionAuthenticator
 import server.TokenValidationResponse
 import server.UserSession
+import util.*
 import java.lang.Exception
 
 private val log = KotlinLogging.logger { }
 
+@Serializable
+data class UserConnectMessage(val clientId: String)
 class ClientWebSocketManager(
     private val application: Application,
     private val sessionAuthenticator: SessionAuthenticator,
@@ -31,7 +34,9 @@ class ClientWebSocketManager(
             val webSocketServerSession = this
 //            val token = sessionAuthenticator.authenticate(webSocketServerSession)
 //            if (token is TokenValidationResponse.Success) {
-            val user = User("guest")
+            val id = incoming.receive().safeCast<Frame.Text>()
+                ?.let { json.decodeFromString<UserConnectMessage>(it.readText()) } ?: error("Was not a text frame")
+            val user = User(id.clientId)
             val userSession = UserSession(webSocketServerSession, json)
             try {
                 clientRegistry.register(user, userSession)

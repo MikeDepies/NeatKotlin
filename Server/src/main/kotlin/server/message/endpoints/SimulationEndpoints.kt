@@ -104,7 +104,7 @@ class EvaluationArena() {
         var stockLostTime: Instant? = null
         var distanceTime: Instant? = null
         var doubleDeathQuick = false
-        val timeAvailable = .5f
+        val timeAvailable = 1.5f
         val hitStunTimeFrame = .200f
         val opponentHitStunTimeFrame = .200f
         val landingTimeFrame = .200f
@@ -167,6 +167,7 @@ class EvaluationArena() {
             val wasGameLost = (aiStockFrame) == 0 && lastAiStock == 1
             val stockLoss = wasGameLost || wasStockButNotGameLost
             val aiOnGround = lastFrame?.player1?.onGround ?: false
+            val opponentOnGround = lastFrame?.player2?.onGround ?: false
             val hitStun = lastFrame?.player1?.hitStun ?: false
             val opponentHitStun = lastFrame?.player2?.hitStun ?: false
 
@@ -260,6 +261,19 @@ class EvaluationArena() {
                 cumulativeDamageDealt = sqrt
                 currentStockDamageDealt = 0f
             }
+            if (wasGameLost) {
+                gameLostFlag = true
+                lastDamageDealt = 0f
+                evaluationController =
+                    evaluationController!!.run {
+                        EvaluationController(
+                            agentStart,
+                            player1.copy(percent = 0),
+                            player2.copy(percent = 0),
+                            distance
+                        )
+                    }
+            }
 
             if (lastPercent < percentFrame) cumulativeDamageTaken += percentFrame - lastPercent
 
@@ -336,7 +350,7 @@ class EvaluationArena() {
             } else false
             val clocksExpired =
                 !(graceTimeActive || damageClockActive || hitStunClockActive || landingClockActive || opponentHitStunClockActive)
-            val terminatePlayTime = (clocksExpired) && aiOnGround && !hitStun && !opponentHitStun
+            val terminatePlayTime = (clocksExpired) && aiOnGround && opponentOnGround && !hitStun && !opponentHitStun
             val stockKeptBonusScore =
                 if (!stockLoss) scoreWithPercentRatioModifier + 0 else scoreWithPercentRatioModifier
             if ((terminatePlayTime || stockLoss || brokenNetwork) && !pauseSimulation) {

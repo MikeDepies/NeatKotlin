@@ -27,6 +27,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
+import neat.mutation.*
 import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
@@ -35,7 +36,7 @@ import simulationEndpoints
 import java.io.File
 import kotlin.random.Random
 
-private val log = KotlinLogging.logger {  }
+private val log = KotlinLogging.logger { }
 
 val applicationModule = module {
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
@@ -70,10 +71,10 @@ val applicationModule = module {
     single { simulation(evaluationArena = get()/*, takeSize = 20*/) }
 }
 
-fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 579883, takeSize: Int? = null): Simulation {
+fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSize: Int? = null): Simulation {
     val activationFunctions = listOf(Activation.identity, Activation.sigmoidal)
 
-    val sharingFunction = shFunction(15f)
+    val sharingFunction = shFunction(10f)
     val distanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
@@ -98,8 +99,8 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 579883, takeS
         populationModel.map { it.toNeatMutator() }
     } else {
 
-        simpleNeatExperiment.generateInitialPopulation(
-            500,
+        simpleNeatExperiment.generateInitialPopulationWithOneButton(
+            200,
             input(53, true),
             9,
             Activation.sigmoidal
@@ -109,6 +110,23 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 579883, takeS
     val speciate = speciationController.speciate(population, speciesLineage, 0)
     val populationEvolver = PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment)
     return Simulation(population, evaluationArena, populationEvolver, adjustedFitnessCalculation)
+}
+
+fun NeatExperiment.generateInitialPopulationWithOneButton(
+    populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene
+): List<NeatMutator> {
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, function)
+    return (0 until populationSize).map {
+        val clone = neatMutator.clone()
+        val randomOutputNode = clone.outputNodes.random(random)
+        clone.connections
+            .forEach { connectionGene ->
+                if (randomOutputNode.node == connectionGene.outNode)
+                    mutateConnectionWeight(connectionGene)
+                else connectionGene.weight = 0f
+            }
+        clone
+    }
 }
 
 fun PopulationModel.neatMutatorList(): List<NeatMutator> {
