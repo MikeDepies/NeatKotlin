@@ -125,6 +125,10 @@ fun NeatExperiment.generateInitialPopulationWithOneButton(
                     mutateConnectionWeight(connectionGene)
                 else connectionGene.weight = 0f
             }
+
+        clone.connectionsFrom(clone.inputNodes[0]).filter { it.outNode != randomOutputNode.node }.forEach {
+            it.weight = -1f
+        }
         clone
     }
 }
@@ -147,4 +151,7 @@ fun NodeTypeModel.nodeType(): NodeType = when (this) {
     Input -> NodeType.Input
     Hidden -> NodeType.Hidden
     Output -> NodeType.Output
+}
+fun main() {
+    log.info { sigmoidalTransferFunction(-.5f) }
 }
