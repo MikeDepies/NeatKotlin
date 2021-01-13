@@ -135,6 +135,8 @@ class EvaluationArena() {
         var hitStunClock: Instant? = null
         var opponentHitStunClock: Instant? = null
         var landingClock: Instant? = null
+        var prevTookDamage = false
+        var inAirFromKnockBack = false
         evaluationController?.let { secondTime = it.agentStart }
         while (true) {
             if (resetSimulationForAgent) {
@@ -153,6 +155,7 @@ class EvaluationArena() {
                 bonusGraceDamageApplied = false
                 earlyKillBonusApplied = false
                 gracePeriodEnded = false
+                inAirFromKnockBack = false
             }
             val now = now()
             val damageDoneFrame = damageDone().toFloat()
@@ -163,15 +166,18 @@ class EvaluationArena() {
             val wasDamageDealt = cumulativeDamageDealt > 0
             val distance = distance()
             val wasStockButNotGameLost = (lastAiStock - aiStockFrame) == 1
-
+            val tookDamage = lastPercent < percentFrame
             val wasGameLost = (aiStockFrame) == 0 && lastAiStock == 1
             val stockLoss = wasGameLost || wasStockButNotGameLost
             val aiOnGround = lastFrame?.player1?.onGround ?: false
             val opponentOnGround = lastFrame?.player2?.onGround ?: false
             val hitStun = lastFrame?.player1?.hitStun ?: false
             val opponentHitStun = lastFrame?.player2?.hitStun ?: false
-
-
+            if (!inAirFromKnockBack)
+                inAirFromKnockBack = !aiOnGround && prevTookDamage
+            if (aiOnGround)
+                inAirFromKnockBack = false
+            val stockLostByKnockback = inAirFromKnockBack
             if (distanceTime != null && Duration.between(distanceTime, now).seconds > distanceTimeGain) {
                 distanceTime = null
                 distanceTimeGain = 0f
@@ -246,9 +252,10 @@ class EvaluationArena() {
             if (stockLoss && cumulativeDamageDealt > 0) {
                 damageTimeFrame -= .25f
                 timeGainMax -= 2f
-                val sqrt = sqrt(cumulativeDamageDealt)
+                val sqrt = if (inAirFromKnockBack) (cumulativeDamageDealt) / 2 else sqrt(cumulativeDamageDealt)
                 log.info {
                     """
+                        diedFromKnockBack: $inAirFromKnockBack
                         Stock Lost: $lastAiStock -> $aiStockFrame ($wasStockButNotGameLost)
                         CumulativeDamage: $cumulativeDamageDealt -> $sqrt
                     """.trimIndent()
@@ -304,6 +311,7 @@ class EvaluationArena() {
             prevHitStun = hitStun
             prevOpponentHitStun = opponentHitStun
             prevOnGround = aiOnGround
+            prevTookDamage = tookDamage
             evaluationController?.let {
                 val distanceTimeStep = .06f
                 if (Duration.between(secondTime, now).toMillis() > 100) {
