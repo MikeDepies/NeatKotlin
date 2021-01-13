@@ -406,7 +406,7 @@ class EvaluationArena() {
         this.lastFrame = frameUpdate
         if (agent != null && !pauseSimulation) {
             try {
-                agent.evaluate(frameUpdate.flatten())
+                agent.evaluate(frameUpdate.flatten(), true)
                 return agent.output().toFrameOutput()
             } catch (e: Exception) {
                 brokenNetwork = true
