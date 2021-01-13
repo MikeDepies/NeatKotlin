@@ -27,6 +27,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
+import neat.mutation.*
 import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
@@ -35,7 +36,7 @@ import simulationEndpoints
 import java.io.File
 import kotlin.random.Random
 
-private val log = KotlinLogging.logger {  }
+private val log = KotlinLogging.logger { }
 
 val applicationModule = module {
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
@@ -98,7 +99,7 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSiz
         populationModel.map { it.toNeatMutator() }
     } else {
 
-        simpleNeatExperiment.generateInitialPopulation(
+        simpleNeatExperiment.generateInitialPopulationWithOneButton(
             200,
             input(53, true),
             9,
@@ -109,6 +110,23 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSiz
     val speciate = speciationController.speciate(population, speciesLineage, 0)
     val populationEvolver = PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment)
     return Simulation(population, evaluationArena, populationEvolver, adjustedFitnessCalculation)
+}
+
+fun NeatExperiment.generateInitialPopulationWithOneButton(
+    populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene
+): List<NeatMutator> {
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, function)
+    return (0 until populationSize).map {
+        val clone = neatMutator.clone()
+        val randomOutputNode = clone.outputNodes.random(random)
+        clone.connections
+            .forEach { connectionGene ->
+                if (randomOutputNode.node == connectionGene.outNode)
+                    mutateConnectionWeight(connectionGene)
+                else connectionGene.weight = 0f
+            }
+        clone
+    }
 }
 
 fun PopulationModel.neatMutatorList(): List<NeatMutator> {

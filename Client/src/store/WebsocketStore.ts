@@ -9,8 +9,7 @@ import { createManagedWebsocket } from "../api/WebSocket/WebSocketCore"
 export const auth = createAuth()
 export const managedWebsocket = derived(auth.authData, (authData, set : (v : ManagedWebSocket | undefined) => void) => {
   if (authData) {
-    const AuthWebSocketFeature = createAuthWebSocketFeature(authData.accessToken)
-    const ws = createManagedWebsocket(WEBSOCKET, [AuthWebSocketFeature])
+    const ws = createManagedWebsocket(WEBSOCKET, [createClientIdFeature("dashboard")])
     set(ws)
   } else {
     set(undefined)
@@ -18,10 +17,12 @@ export const managedWebsocket = derived(auth.authData, (authData, set : (v : Man
 }, undefined)
 export const webSocket = lift<ManagedWebSocket, "websocket">(managedWebsocket, "websocket")
 export const message = lift<ManagedWebSocket, "message">(managedWebsocket, "message")
-function createAuthWebSocketFeature(token: string): WebSocketFeature {
+
+function createClientIdFeature(clientId: string): WebSocketFeature {
   return {
     onConnect: ws => {
-      ws.send(JSON.stringify({ token }))
+      ws.send(JSON.stringify({ clientId }))
     }
   }
 }
+
