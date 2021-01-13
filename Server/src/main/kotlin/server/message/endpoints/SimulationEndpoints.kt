@@ -110,7 +110,7 @@ class EvaluationArena() {
         val landingTimeFrame = .200f
         var damageTimeFrame = 1.5f
         var timeGainMax = 5f
-        val stockTakeTimeFrame = 1f
+        val stockTakeTimeFrame = 10f
         val noTimeGainDistance = 44f
         val linearTimeGainDistanceStart = noTimeGainDistance
         val linearTimeGainDistanceEnd = 100f
@@ -359,7 +359,8 @@ class EvaluationArena() {
             val clocksExpired =
                 !(graceTimeActive || damageClockActive || hitStunClockActive || landingClockActive || opponentHitStunClockActive)
             val terminatePlayTime = (clocksExpired) && aiOnGround && opponentOnGround && !hitStun && !opponentHitStun
-            val stockKeptBonusScore = if (!stockLoss) scoreWithPercentRatioModifier +1 else scoreWithPercentRatioModifier
+            val stockKeptBonusScore =
+                if (!stockLoss) scoreWithPercentRatioModifier + 0 else scoreWithPercentRatioModifier
             if ((terminatePlayTime || stockLoss || brokenNetwork) && !pauseSimulation) {
                 if (brokenNetwork) {
                     brokenNetwork = false
