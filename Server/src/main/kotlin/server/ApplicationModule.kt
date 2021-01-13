@@ -126,7 +126,8 @@ fun NeatExperiment.generateInitialPopulationWithOneButton(
                 else connectionGene.weight = 0f
             }
 
-        clone.connectionsFrom(clone.inputNodes[0]).filter { it.outNode != randomOutputNode.node }.forEach {
+        val analogOutputs = listOf(4, 5, 6, 7)
+        clone.connectionsFrom(clone.inputNodes[0]).filter { it.outNode != randomOutputNode.node }.filter { it.outNode !in analogOutputs }.forEach {
             it.weight = -1f
         }
         clone
