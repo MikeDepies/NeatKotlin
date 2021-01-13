@@ -104,7 +104,7 @@ class EvaluationArena() {
         var stockLostTime: Instant? = null
         var distanceTime: Instant? = null
         var doubleDeathQuick = false
-        val timeAvailable = 1.5f
+        val timeAvailable = .5f
         val hitStunTimeFrame = .200f
         val opponentHitStunTimeFrame = .200f
         val landingTimeFrame = .200f
@@ -260,19 +260,6 @@ class EvaluationArena() {
                 cumulativeDamageDealt = sqrt
                 currentStockDamageDealt = 0f
             }
-            if (wasGameLost) {
-                gameLostFlag = true
-                lastDamageDealt = 0f
-                evaluationController =
-                    evaluationController!!.run {
-                        EvaluationController(
-                            agentStart,
-                            player1.copy(percent = 0),
-                            player2.copy(percent = 0),
-                            distance
-                        )
-                    }
-            }
 
             if (lastPercent < percentFrame) cumulativeDamageTaken += percentFrame - lastPercent
 
@@ -350,7 +337,8 @@ class EvaluationArena() {
             val clocksExpired =
                 !(graceTimeActive || damageClockActive || hitStunClockActive || landingClockActive || opponentHitStunClockActive)
             val terminatePlayTime = (clocksExpired) && aiOnGround && !hitStun && !opponentHitStun
-            val stockKeptBonusScore = if (!stockLoss) scoreWithPercentRatioModifier +1 else scoreWithPercentRatioModifier
+            val stockKeptBonusScore =
+                if (!stockLoss) scoreWithPercentRatioModifier + 0 else scoreWithPercentRatioModifier
             if ((terminatePlayTime || stockLoss || brokenNetwork) && !pauseSimulation) {
                 if (brokenNetwork) {
                     brokenNetwork = false

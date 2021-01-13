@@ -70,10 +70,10 @@ val applicationModule = module {
     single { simulation(evaluationArena = get()/*, takeSize = 20*/) }
 }
 
-fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSize: Int? = null): Simulation {
+fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 579883, takeSize: Int? = null): Simulation {
     val activationFunctions = listOf(Activation.identity, Activation.sigmoidal)
 
-    val sharingFunction = shFunction(10f)
+    val sharingFunction = shFunction(15f)
     val distanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
@@ -99,7 +99,7 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSiz
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            200,
+            500,
             input(53, true),
             9,
             Activation.sigmoidal
