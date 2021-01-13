@@ -123,7 +123,7 @@ fun NeatExperiment.generateInitialPopulationWithOneButton(
             .forEach { connectionGene ->
                 if (randomOutputNode.node == connectionGene.outNode)
                     mutateConnectionWeight(connectionGene)
-                else connectionGene.weight = 0f
+                else connectionGene.weight = 1f
             }
 
         val analogOutputs = listOf(4, 5, 6, 7)
