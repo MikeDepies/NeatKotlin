@@ -104,16 +104,16 @@ class EvaluationArena() {
         var stockLostTime: Instant? = null
         var distanceTime: Instant? = null
         var doubleDeathQuick = false
-        val timeAvailable = 1.5f
+        val timeAvailable = .5f
         val hitStunTimeFrame = .200f
         val opponentHitStunTimeFrame = .200f
         val landingTimeFrame = .200f
-        var damageTimeFrame = 1.5f
-        var timeGainMax = 5f
+        var damageTimeFrame = .5f
+        var timeGainMax = 3f
         val stockTakeTimeFrame = 10f
         val noTimeGainDistance = 44f
         val linearTimeGainDistanceStart = noTimeGainDistance
-        val linearTimeGainDistanceEnd = 100f
+        val linearTimeGainDistanceEnd = 88f
         val linearTimeGainDistance = linearTimeGainDistanceEnd - linearTimeGainDistanceStart
         var distanceTimeGain = 0f
         var lastDamageDealt = 0f
@@ -205,7 +205,7 @@ class EvaluationArena() {
                     bonusGraceDamageApplied = true
                     val gracePeriodHitBonus = gracePeriodHitBonus(
                         t = secondsAiPlay.toFloat(),
-                        gracePeriod = timeAvailable,
+                        gracePeriod = 5f,
                         bonus = 10
                     )
                     log.info { "Grace period damage bonus: $cumulativeDamageDealt + $gracePeriodHitBonus -> (${cumulativeDamageDealt + gracePeriodHitBonus})" }
@@ -415,6 +415,12 @@ class EvaluationArena() {
         if (agent != null && !pauseSimulation) {
             try {
                 agent.evaluate(frameUpdate.flatten(), true)
+                log.trace {
+                    """
+                        ${agent.output()}
+                        ${agent.output().toFrameOutput()}
+                    """.trimIndent()
+                }
                 return agent.output().toFrameOutput()
             } catch (e: Exception) {
                 brokenNetwork = true
@@ -499,7 +505,7 @@ private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: Playe
         yield(speedXAttack)
         yield(speedY)
         yield(speedYAttack)
-        yield(facingRight.toFloat())
+        yield(if (facingRight) 1f else -1f)
         yield(percent.toFloat())
         yieldEnvironmentalCollisionBox(ecb)
     }

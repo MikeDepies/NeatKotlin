@@ -27,7 +27,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
-import neat.mutation.*
+import neat.mutation.mutateConnectionWeight
 import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
@@ -119,20 +119,29 @@ fun NeatExperiment.generateInitialPopulationWithOneButton(
     return (0 until populationSize).map {
         val clone = neatMutator.clone()
         val randomOutputNode = clone.outputNodes.random(random)
-        val analogOutputs = listOf(4, 5, 6, 7)
+        val analogOutputNodes = listOf(4, 5, 6, 7).map { clone.outputNodes[it] }
         clone.connections
             .forEach { connectionGene ->
                 if (randomOutputNode.node == connectionGene.outNode)
                     mutateConnectionWeight(connectionGene)
-                else connectionGene.weight = 1f
+                else connectionGene.weight = 0f
             }
 
-        clone.connectionsFrom(clone.inputNodes[0]).filter { it.outNode != randomOutputNode.node }.filter {
-            val index = clone.outputNodes.indexOfFirst { outNode -> outNode.node == it.outNode }
-            index !in analogOutputs
-        }.forEach {
-            it.weight = -1f
-        }
+//        clone.outputNodes.forEach {
+//            it.activationFunction = Activation.identity
+//        }
+
+        val connectionsFrom = clone.connectionsFrom(clone.inputNodes[0])
+        connectionsFrom
+            .filter { connectionGene -> connectionGene.outNode != randomOutputNode.node && analogOutputNodes.none { connectionGene.outNode == it.node } }
+            .forEach { connectionGene ->
+                connectionGene.weight = -1f
+            }
+//        connectionsFrom.filter { connectionGene ->
+//            analogOutputNodes.none { connectionGene.outNode == it.node }
+//        }.forEach { connectionGene ->
+//            connectionGene.weight = 0f
+//        }
         clone
     }
 }
