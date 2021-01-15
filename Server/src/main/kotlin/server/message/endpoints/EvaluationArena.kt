@@ -2,6 +2,7 @@ package server.message.endpoints
 
 import FrameOutput
 import FrameUpdate
+import com.oracle.util.Checksums.update
 import mu.*
 import neat.*
 import neat.model.*
@@ -75,8 +76,10 @@ class EvaluationArena() {
             }
 
             val simulationFrame = simulationState.createSimulationFrame(lastFrame)
-            block(simulationState, simulationFrame)
+
             with(simulationState) {
+                block(simulationFrame)
+                update(simulationFrame)
                 if ((finished(simulationFrame) || brokenNetwork) && !pauseSimulation) {
                     if (brokenNetwork) {
                         brokenNetwork = false

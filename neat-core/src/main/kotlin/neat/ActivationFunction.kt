@@ -15,16 +15,16 @@ fun piecewiseLinearFunction(xMin: Float, xMax: Float): (Float) -> Float = {
         else -> 0f
     }
 }
-
+fun lnSafe(x : Float) = if (x == 0f) ln(x + .0000000001f) else ln(x)
 fun bipolarSigmoid(x: Float): Float = (1 - exp(x)) / (1 + exp(x))
 fun leCunTanh(x: Float) = (1.7159f) * tanh((2f / 3f) * x)
 fun hardTanh(x: Float) = max(-1f, min(1f, x))
 fun relu(x: Float) = max(0f, x)
-fun complementaryLogLog(x: Float) = 1 - ln(-1 * ln(x))
+fun complementaryLogLog(x: Float) = if (x != 0f) 1 - lnSafe(-1 * lnSafe(x)) else 1 - ln(-1 * lnSafe(x))
 fun reluCos(x: Float) = max(0f, x) + cos(x)
 fun reluSin(x: Float) = max(0f, x) + sin(x)
-fun smoothRectifier(x: Float): Float = ln(1 + exp(x))
-fun logit(x: Float): Float = ln(x / (1 - x))
+fun smoothRectifier(x: Float): Float = lnSafe(1 + exp(x))
+fun logit(x: Float): Float = lnSafe(x / (1 - x))
 val Identity: ActivationFunction = { it }
 val SigmoidalTransferFunction: ActivationFunction = ::sigmoidalTransferFunction
 val StepFunction: ActivationFunction = ::stepFunction

@@ -111,6 +111,7 @@ fun Application.module(testing: Boolean = false) {
             }
             val modelScores = evaluationArena.evaluatePopulation(population) { simulationFrame ->
                 inAirFromKnockback(simulationFrame)
+                opponentInAirFromKnockback(simulationFrame)
                 processDamageDone(simulationFrame)
                 processStockTaken(simulationFrame)
                 processStockLoss(simulationFrame)
@@ -118,7 +119,6 @@ fun Application.module(testing: Boolean = false) {
                     gameLostFlag = true
                     lastDamageDealt = 0f
                 }
-                update(simulationFrame)
             }.toModelScores(adjustedFitness)
             populationEvolver.sortPopulationByAdjustedScore(modelScores)
             populationEvolver.updateScores(modelScores)
@@ -159,6 +159,20 @@ fun previewMessage(frame: Frame.Text): String {
 @Serializable
 data class Manifest(val scoreKeeperModel: SpeciesScoreKeeperModel, val scoreLineageModel: SpeciesLineageModel)
 
+fun SimulationState.opponentInAirFromKnockback(simulationFrameData: SimulationFrameData) {
+    if (!inAirFromKnockBack)
+        inAirFromKnockBack = !simulationFrameData.opponentOnGround && prevTookDamage
+    if (simulationFrameData.aiOnGround)
+        inAirFromKnockBack = false
+    if (distanceTime != null && Duration.between(distanceTime, simulationFrameData.now).seconds > distanceTimeGain) {
+        distanceTime = null
+        distanceTimeGain = 0f
+    }
+    if (distanceTime != null && simulationFrameData.distance > linearTimeGainDistanceEnd) {
+        distanceTime = null
+        distanceTimeGain = 0f
+    }
+}
 
 fun SimulationState.inAirFromKnockback(simulationFrameData: SimulationFrameData) {
     if (!inAirFromKnockBack)

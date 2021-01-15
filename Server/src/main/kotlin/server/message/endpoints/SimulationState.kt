@@ -152,6 +152,8 @@ class SimulationState(
         return ((terminatePlayTime || stockLoss))
     }
 
+
+
     var damageDoneTime: Instant? = null
     var stockTakenTime: Instant? = null
     var stockLostTime: Instant? = null
