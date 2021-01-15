@@ -21,7 +21,7 @@ class MessageEndpointRegistryImpl(
         private val json: Json) : MessageEndpointRegistry {
     override suspend fun execute(jsonUserMessage: JsonUserMessage) {
         val messageEndpoint = endpoints.first { it.match(jsonUserMessage) }
-//        log.info { messageEndpoint }
+//        server.message.endpoints.server.message.endpoints.log.info { messageEndpoint }
         //Adapt as any since we are trusting the endpoints are configured properly.
         //This will always be true if the endpoints are constructed with the register DSL
         val playerMessage = messageEndpoint.adapt<Any>(jsonUserMessage)

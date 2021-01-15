@@ -1,7 +1,7 @@
 package server
 
 import Auth0Config
-import Simulation
+import server.message.endpoints.Simulation
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
@@ -14,23 +14,19 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import neat.ModelScore
-import neat.SpeciationController
+import neat.*
 import neat.model.NeatMutator
-import neat.toMap
-import neat.toModelScores
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import org.slf4j.event.Level
-import receivedAnyMessages
-import server.message.endpoints.SpeciesLineageModel
-import server.message.endpoints.SpeciesScoreKeeperModel
-import server.message.endpoints.toModel
+import server.message.endpoints.receivedAnyMessages
+import server.message.endpoints.*
 import server.server.WebSocketManager
 import java.io.File
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.*
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -113,7 +109,19 @@ fun Application.module(testing: Boolean = false) {
                 }
 
             }
-            val modelScores = evaluationArena.evaluatePopulation(population).toModelScores(adjustedFitness)
+            val modelScores = evaluationArena.evaluatePopulation(population) { simulationFrame ->
+                var brokenNetwork = false
+                var pauseSimulation = false
+                inAirFromKnockback(simulationFrame)
+                processDamageDone(simulationFrame)
+                processStockTaken(simulationFrame)
+                processStockLoss(simulationFrame)
+                if (simulationFrame.wasGameLost) {
+                    gameLostFlag = true
+                    lastDamageDealt = 0f
+                }
+                update(simulationFrame)
+            }.toModelScores(adjustedFitness)
             populationEvolver.sortPopulationByAdjustedScore(modelScores)
             populationEvolver.updateScores(modelScores)
             var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
@@ -152,3 +160,111 @@ fun previewMessage(frame: Frame.Text): String {
 
 @Serializable
 data class Manifest(val scoreKeeperModel: SpeciesScoreKeeperModel, val scoreLineageModel: SpeciesLineageModel)
+
+
+fun SimulationState.inAirFromKnockback(simulationFrameData: SimulationFrameData) {
+    if (!inAirFromKnockBack)
+        inAirFromKnockBack = !simulationFrameData.aiOnGround && prevTookDamage
+    if (simulationFrameData.aiOnGround)
+        inAirFromKnockBack = false
+    if (distanceTime != null && Duration.between(distanceTime, simulationFrameData.now).seconds > distanceTimeGain) {
+        distanceTime = null
+        distanceTimeGain = 0f
+    }
+    if (distanceTime != null && simulationFrameData.distance > linearTimeGainDistanceEnd) {
+        distanceTime = null
+        distanceTimeGain = 0f
+    }
+}
+
+fun SimulationState.processDamageDone(simulationFrameData: SimulationFrameData) {
+    if (simulationFrameData.damageDoneFrame > lastDamageDealt) {
+        damageDoneTime = simulationFrameData.now
+
+        val damage = if (gameLostFlag) 0f.also {
+            gameLostFlag = false
+        } else simulationFrameData.damageDoneFrame - lastDamageDealt
+
+        val secondsAiPlay = Duration.between(agentStart, simulationFrameData.now).seconds
+        log.info { "Damage at $secondsAiPlay seconds" }
+        log.info {
+            """DamageAccumulation: $cumulativeDamageDealt + $damage -> (${cumulativeDamageDealt + damage})
+                            |StockDelta: $lastAiStock - ${simulationFrameData.aiStockFrame} -> ${lastAiStock - simulationFrameData.aiStockFrame}
+                        """.trimMargin()
+        }
+        currentStockDamageDealt += damage
+        cumulativeDamageDealt += damage
+        if (secondsAiPlay < 2) {
+            bonusGraceDamageApplied = true
+            val gracePeriodHitBonus = gracePeriodHitBonus(
+                t = secondsAiPlay.toFloat(),
+                gracePeriod = 2f,
+                bonus = 10
+            )
+            log.info { "Grace period damage bonus: $cumulativeDamageDealt + $gracePeriodHitBonus -> (${cumulativeDamageDealt + gracePeriodHitBonus})" }
+            cumulativeDamageDealt += gracePeriodHitBonus
+        }
+    }
+}
+
+fun SimulationState.processStockTaken(simulationFrameData: SimulationFrameData) {
+    if (simulationFrameData.wasOneStockTaken) {
+        if (lastOpponentPercent < 100f && currentStockDamageDealt > 0) {
+            val earlyKillBonus =
+                sqrt(((100f - lastOpponentPercent) / max(1f, currentStockDamageDealt)) * 2).pow(2)
+            log.info {
+                """
+                        PercentCap: 100
+                        LastEnemyPercent: $lastOpponentPercent
+                        currentDamageDealt: $currentStockDamageDealt
+                        Early Kill: $cumulativeDamageDealt + $earlyKillBonus -> (${cumulativeDamageDealt + earlyKillBonus})
+                    """.trimIndent()
+            }
+            cumulativeDamageDealt += earlyKillBonus
+            earlyKillBonusApplied = true
+        } else log.info { "Kill but percent was over 100." }
+        val doubledDamage = cumulativeDamageDealt * 2
+        log.info {
+            """
+                            Stock taken: $lastOpponentStock -> ${simulationFrameData.opponentStockFrame} (${simulationFrameData.wasOneStockTaken})
+                            Damage: $lastDamageDealt -> ${simulationFrameData.damageDoneFrame}
+                            CumulativeDamage: $cumulativeDamageDealt -> $doubledDamage
+                        """.trimIndent()
+        }
+
+        cumulativeDamageDealt = doubledDamage
+        stockTakenTime = simulationFrameData.now
+
+    }
+}
+
+fun SimulationState.processStockLoss(simulationFrameData: SimulationFrameData) {
+    if (lastAiStock != simulationFrameData.aiStockFrame) {
+        log.info { "Stocks not equal! $lastAiStock -> ${simulationFrameData.aiStockFrame}" }
+    }
+    if (simulationFrameData.stockLoss)
+        log.info { "Stock was lost: $cumulativeDamageDealt > 0 (${cumulativeDamageDealt > 0}) - ${simulationFrameData.stockLoss} - ${simulationFrameData.wasStockButNotGameLost}" }
+    if (simulationFrameData.stockLoss && cumulativeDamageDealt > 0) {
+        damageTimeFrame -= .25f
+        timeGainMax -= 2f
+        val sqrt = if (inAirFromKnockBack) (cumulativeDamageDealt) / 2 else sqrt(cumulativeDamageDealt)
+        log.info {
+            """
+                diedFromKnockBack: $inAirFromKnockBack
+                Stock Lost: $lastAiStock -> ${simulationFrameData.aiStockFrame} (${simulationFrameData.wasStockButNotGameLost})
+                CumulativeDamage: $cumulativeDamageDealt -> $sqrt
+            """.trimIndent()
+        }
+        if (stockLostTime != null && Duration.between(simulationFrameData.now, stockLostTime).seconds < 4) {
+            log.info { "Double quick death... be gone" }
+            doubleDeathQuick = true
+        }
+        stockLostTime = simulationFrameData.now
+        cumulativeDamageDealt = sqrt
+        currentStockDamageDealt = 0f
+    }
+}
+
+fun gracePeriodHitBonus(t: Float, gracePeriod: Float, bonus: Int = 20): Float {
+    return bonus * (1 - (t / gracePeriod))
+}

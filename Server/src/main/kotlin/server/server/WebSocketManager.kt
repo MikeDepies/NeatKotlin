@@ -62,7 +62,7 @@ class WebSocketManager(
                     log.error(e)
                     //Exceptions are how the client typically disconnects, does not mean an error.
                     //Though with this case, our client is just a single webservice atm, so it does probably indicate an issue
-//                log.warn(e) { "Client disconnect." }
+//                server.message.endpoints.server.message.endpoints.log.warn(e) { "Client disconnect." }
                 } finally {
                     clientRegistry -= webSocketSession
                 }

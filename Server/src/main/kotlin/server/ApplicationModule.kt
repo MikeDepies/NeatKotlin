@@ -3,7 +3,7 @@ package server
 import AuthService
 import AuthServiceAuth0
 import ClientRegistry
-import EvaluationArena
+import server.message.endpoints.EvaluationArena
 import MessageEndpointRegistry
 import MessageEndpointRegistryImpl
 import MessageWriter
@@ -11,8 +11,8 @@ import MessageWriterImpl
 import PopulationEvolver
 import SessionScope
 import SessionScopeImpl
-import Simulation
-import SimulationSessionScope
+import server.message.endpoints.Simulation
+import server.message.endpoints.SimulationSessionScope
 import UserTokenResolver
 import UserTokenResolverImpl
 import io.ktor.client.*
@@ -32,7 +32,7 @@ import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
 import server.server.WebSocketManager
-import simulationEndpoints
+import server.message.endpoints.simulationEndpoints
 import java.io.File
 import kotlin.random.Random
 
