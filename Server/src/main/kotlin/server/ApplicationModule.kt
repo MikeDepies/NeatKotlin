@@ -68,7 +68,7 @@ val applicationModule = module {
         }
     }
     single { EvaluationArena() }
-    single { simulation(evaluationArena = get()/*, takeSize = 20*/) }
+    single { simulation(evaluationArena = get(), takeSize = 300) }
 }
 
 fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSize: Int? = null): Simulation {
