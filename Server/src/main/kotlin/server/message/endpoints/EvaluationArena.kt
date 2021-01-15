@@ -61,7 +61,12 @@ class EvaluationArena() {
             lastFrame?.player2?.stock ?: 4,
             lastFrame?.player1?.percent ?: 0,
             lastFrame?.player2?.percent ?: 0,
-            agentStart = Instant.now()
+            3f,
+            .5f,
+            .5f,
+            3f,
+            agentStart = Instant.now(),
+            cumulativeDamageDealt = 16f
         )
         while (true) {
             if (resetSimulationForAgent) {
@@ -79,10 +84,8 @@ class EvaluationArena() {
                         FitnessModel(model, -1f)
                     } else {
                         val score = if (cumulativeDamageDealt < 8) 0f else cumulativeDamageDealt.pow(2)
-                        val cumulativeDmgRatio = cumulativeDamageDealt / max(cumulativeDamageTaken, 1f)
+                        val cumulativeDmgRatio = max(cumulativeDamageDealt, 1f) / max(cumulativeDamageTaken, 1f)
                         val scoreWithPercentRatioModifier = score * cumulativeDmgRatio
-                        val stockKeptBonusScore =
-                            if (!simulationFrame.stockLoss) scoreWithPercentRatioModifier + 0 else scoreWithPercentRatioModifier
                         log.info {
                             """
                     timeGain: $distanceTimeGain
@@ -94,10 +97,9 @@ class EvaluationArena() {
                     stockLost: ${simulationFrame.stockLoss}
                     score: $score
                     percentModifierScore: $scoreWithPercentRatioModifier
-                    stockKeptScore: $stockKeptBonusScore
                 """.trimIndent()
                         }
-                        FitnessModel(model, stockKeptBonusScore)
+                        FitnessModel(model, scoreWithPercentRatioModifier)
                     }
                 }
             }

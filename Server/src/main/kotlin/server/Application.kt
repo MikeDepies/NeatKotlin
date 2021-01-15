@@ -110,8 +110,6 @@ fun Application.module(testing: Boolean = false) {
 
             }
             val modelScores = evaluationArena.evaluatePopulation(population) { simulationFrame ->
-                var brokenNetwork = false
-                var pauseSimulation = false
                 inAirFromKnockback(simulationFrame)
                 processDamageDone(simulationFrame)
                 processStockTaken(simulationFrame)
@@ -188,13 +186,11 @@ fun SimulationState.processDamageDone(simulationFrameData: SimulationFrameData) 
         val secondsAiPlay = Duration.between(agentStart, simulationFrameData.now).seconds
         log.info { "Damage at $secondsAiPlay seconds" }
         log.info {
-            """DamageAccumulation: $cumulativeDamageDealt + $damage -> (${cumulativeDamageDealt + damage})
-                            |StockDelta: $lastAiStock - ${simulationFrameData.aiStockFrame} -> ${lastAiStock - simulationFrameData.aiStockFrame}
-                        """.trimMargin()
+            "DamageAccumulation: $cumulativeDamageDealt + $damage -> (${cumulativeDamageDealt + damage})"
         }
         currentStockDamageDealt += damage
         cumulativeDamageDealt += damage
-        if (secondsAiPlay < 2) {
+        if (secondsAiPlay < 0) {
             bonusGraceDamageApplied = true
             val gracePeriodHitBonus = gracePeriodHitBonus(
                 t = secondsAiPlay.toFloat(),
@@ -247,7 +243,7 @@ fun SimulationState.processStockLoss(simulationFrameData: SimulationFrameData) {
     if (simulationFrameData.stockLoss && cumulativeDamageDealt > 0) {
         damageTimeFrame -= .25f
         timeGainMax -= 2f
-        val sqrt = if (inAirFromKnockBack) (cumulativeDamageDealt) / 2 else sqrt(cumulativeDamageDealt)
+        val sqrt = if (inAirFromKnockBack) (cumulativeDamageDealt) / 8 else sqrt(cumulativeDamageDealt)
         log.info {
             """
                 diedFromKnockBack: $inAirFromKnockBack
