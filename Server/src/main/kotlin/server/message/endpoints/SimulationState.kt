@@ -26,9 +26,10 @@ class SimulationState(
     var agentStart: Instant
 ) {
     fun reset(frame: FrameUpdate?) {
+        log.info { "Reset" }
         distanceTimeGain = 0f
         lastDamageDealt = 0f
-        cumulativeDamageDealt = 0f
+        cumulativeDamageDealt = 16f
         cumulativeDamageTaken = 0f
         secondTime = Instant.now()
         agentStart = Instant.now()
@@ -63,6 +64,7 @@ class SimulationState(
             opponentHitStunClock = Instant.now()
             log.info { "Opponent is out of hitstun" }
         }
+        if (lastPercent < percentFrame) cumulativeDamageTaken += percentFrame - lastPercent
         lastDamageDealt = damageDoneFrame
         lastOpponentStock = opponentStockFrame
         lastAiStock = aiStockFrame
@@ -72,7 +74,7 @@ class SimulationState(
         prevOpponentHitStun = opponentHitStun
         prevOnGround = aiOnGround
         prevTookDamage = tookDamage
-        if (lastPercent < percentFrame) cumulativeDamageTaken += percentFrame - lastPercent
+
         val distanceTimeStep = .06f
         if (Duration.between(secondTime, now).toMillis() > 100) {
             secondTime = now
@@ -98,12 +100,14 @@ class SimulationState(
     fun createSimulationFrame(lastFrame: FrameUpdate?): SimulationFrameData {
         val aiStockFrame = lastFrame?.player1?.stock ?: 4
         val percentFrame = lastFrame?.player1?.percent ?: 0
-        val wasStockButNotGameLost = (lastAiStock - aiStockFrame) == 1 && aiStockFrame == 0
+        val wasStockButNotGameLost = (lastAiStock - aiStockFrame) == 1 && aiStockFrame != 0
         val wasGameLost = (aiStockFrame) == 0 && lastAiStock == 1
         val opponentStockFrame = lastFrame?.player2?.stock ?: 4
+//        log.info { "${lastFrame?.player2?.percent ?: 0} - ${lastOpponentPercent}" }
+        val opponentPercentFrame = lastFrame?.player2?.percent ?: 0
         return SimulationFrameData(
-            damageDoneFrame = damageDone(lastFrame).toFloat(),
-            opponentPercentFrame = lastFrame?.player1?.percent ?: 0,
+            damageDoneFrame = damageDone(opponentPercentFrame).toFloat(),
+            opponentPercentFrame = opponentPercentFrame,
             percentFrame = percentFrame,
             aiStockFrame = aiStockFrame,
             opponentStockFrame = opponentStockFrame,
@@ -123,8 +127,8 @@ class SimulationState(
         )
     }
 
-    private fun damageDone(lastFrame: FrameUpdate?) =
-        (lastFrame?.player2?.percent ?: 0) - (lastFrame?.player2?.percent ?: 0)
+    private fun damageDone(opponentPercentFrame: Int) =
+        opponentPercentFrame - lastOpponentPercent
 
     fun finished(simulationFrameData: SimulationFrameData): Boolean = with(simulationFrameData) {
         val timeElapsedSinceBonus = if (stockTakenTime != null) {

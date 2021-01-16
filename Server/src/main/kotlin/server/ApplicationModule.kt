@@ -68,11 +68,11 @@ val applicationModule = module {
         }
     }
     single { EvaluationArena() }
-    single { simulation(evaluationArena = get(), takeSize = 300) }
+    single { simulation(evaluationArena = get()) }
 }
 
 fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 2056, takeSize: Int? = null): Simulation {
-    val activationFunctions = listOf(Activation.identity, Activation.sigmoidal)
+    val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
 
     val sharingFunction = shFunction(10f)
     val distanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)

@@ -15,7 +15,16 @@ data class EvaluationData(val simulationFrameData: SimulationFrameData)
 
 private fun List<Float>.toFrameOutput(): FrameOutput {
     fun bool(index: Int) = get(index).roundToInt() > 0
-    fun clamp(index: Int) = get(index).let { if (it < 0) 0f else if (it > 1) 1f else it }
+    fun clamp(index: Int) = get(index).let {
+        when {
+            it < 0 -> 0f
+            it > 1 -> 1f
+            it.isNaN() -> 0f
+            it.isInfinite() -> 1f
+            else -> it
+        }
+    }
+    val leftShoulderActivation = clamp(8)
     return FrameOutput(
         a = bool(0),
         b = bool(1),
@@ -25,7 +34,11 @@ private fun List<Float>.toFrameOutput(): FrameOutput {
         cStickY = clamp(5),
         mainStickX = clamp(6),
         mainStickY = clamp(7),
-        leftShoulder = if (clamp(8).roundToInt() == 1) (clamp(8) - .5f) * 2 else 0f,
+        leftShoulder = when {
+            leftShoulderActivation > .8f -> 1f
+            leftShoulderActivation < .2f -> 0f
+            else -> ((leftShoulderActivation - .2f)/.6f)
+        },
         rightShoulder = 0f//clamp(9)
     )
 }
@@ -48,6 +61,7 @@ class EvaluationArena() {
         log.info { "Starting to evaluate population($size)" }
         return population.mapIndexed { index, neatMutator ->
             log.info { "${index + 1} / $size" }
+            activeAgent = neatMutator.toNetwork()
             evaluateModel(neatMutator, block)
         }
     }
@@ -56,6 +70,7 @@ class EvaluationArena() {
         model: NeatMutator,
         block: suspend SimulationState.(SimulationFrameData) -> Unit
     ): FitnessModel<NeatMutator> {
+
         log.info { "Evaluation for new model has begun" }
         val simulationState = SimulationState(
             lastFrame?.player1?.stock ?: 4,
@@ -84,7 +99,7 @@ class EvaluationArena() {
                     if (brokenNetwork) {
                         brokenNetwork = false
                         log.info { "Killing broken network" }
-                        FitnessModel(model, -1f)
+                        return FitnessModel(model, -1f)
                     } else {
                         val score = if (cumulativeDamageDealt < 8) 0f else cumulativeDamageDealt.pow(2)
                         val cumulativeDmgRatio = max(cumulativeDamageDealt, 1f) / max(cumulativeDamageTaken, 1f)
@@ -102,7 +117,7 @@ class EvaluationArena() {
                     percentModifierScore: $scoreWithPercentRatioModifier
                 """.trimIndent()
                         }
-                        FitnessModel(model, scoreWithPercentRatioModifier)
+                        return FitnessModel(model, scoreWithPercentRatioModifier)
                     }
                 }
             }

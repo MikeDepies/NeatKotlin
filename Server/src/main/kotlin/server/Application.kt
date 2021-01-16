@@ -190,12 +190,13 @@ fun SimulationState.inAirFromKnockback(simulationFrameData: SimulationFrameData)
 }
 
 fun SimulationState.processDamageDone(simulationFrameData: SimulationFrameData) {
-    if (simulationFrameData.damageDoneFrame > lastDamageDealt) {
+//    log.info { simulationFrameData.damageDoneFrame }
+    if (simulationFrameData.damageDoneFrame > 0) {
         damageDoneTime = simulationFrameData.now
 
         val damage = if (gameLostFlag) 0f.also {
             gameLostFlag = false
-        } else simulationFrameData.damageDoneFrame - lastDamageDealt
+        } else simulationFrameData.damageDoneFrame
 
         val secondsAiPlay = Duration.between(agentStart, simulationFrameData.now).seconds
         log.info { "Damage at $secondsAiPlay seconds" }
@@ -221,7 +222,7 @@ fun SimulationState.processStockTaken(simulationFrameData: SimulationFrameData) 
     if (simulationFrameData.wasOneStockTaken) {
         if (lastOpponentPercent < 100f && currentStockDamageDealt > 0) {
             val earlyKillBonus =
-                sqrt(((100f - lastOpponentPercent) / max(1f, currentStockDamageDealt)) * 2).pow(2)
+                (((100f - lastOpponentPercent) / max(1f, currentStockDamageDealt)) * 12)
             log.info {
                 """
                         PercentCap: 100
