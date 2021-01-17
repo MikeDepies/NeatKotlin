@@ -28,10 +28,10 @@ fun NeatMutator.computationSequence(
         var activeSet = inputNodes.toSet()
         val model = this@computationSequence
         fun networkNotFullyActivated() = (activationSet.size + outputNodes.size) < nodes.size
-        while (networkNotFullyActivated()) {
+        while (networkNotFullyActivated() && activeSet.isNotEmpty()) {
             val capturedSet = activeSet
             val connections = capturedSet.flatMap { node ->
-                connectionsFrom(node)
+                connectionsFrom(node).filter { it.enabled }
             }
 
             val nextNodeMap = connections.groupBy {
