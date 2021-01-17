@@ -1,8 +1,9 @@
 package server.message.endpoints
 
 import FrameUpdate
-import mu.*
-import java.time.*
+import mu.KotlinLogging
+import java.time.Duration
+import java.time.Instant
 
 private val log = KotlinLogging.logger {}
 
@@ -21,15 +22,17 @@ class SimulationState(
     val noTimeGainDistance: Float = 44f,
     val linearTimeGainDistanceEnd: Float = 100f,
     var distanceTimeGain: Float = 0f,
-    var cumulativeDamageDealt: Float = 0f,
+    var baseCumulativeDamageDealt: Float = 0f,
+
     var cumulativeDamageTaken: Float = 0f,
     var agentStart: Instant
 ) {
+    var cumulativeDamageDealt: Float = baseCumulativeDamageDealt
     fun reset(frame: FrameUpdate?) {
         log.info { "Reset" }
         distanceTimeGain = 0f
         lastDamageDealt = 0f
-        cumulativeDamageDealt = 16f
+        cumulativeDamageDealt = baseCumulativeDamageDealt
         cumulativeDamageTaken = 0f
         secondTime = Instant.now()
         agentStart = Instant.now()

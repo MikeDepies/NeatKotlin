@@ -1,7 +1,6 @@
 package server
 
 import Auth0Config
-import server.message.endpoints.Simulation
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
@@ -14,19 +13,22 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import neat.*
+import neat.ModelScore
+import neat.SpeciationController
 import neat.model.NeatMutator
+import neat.toMap
+import neat.toModelScores
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import org.slf4j.event.Level
-import server.message.endpoints.receivedAnyMessages
 import server.message.endpoints.*
 import server.server.WebSocketManager
 import java.io.File
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.math.*
+import kotlin.math.max
+import kotlin.math.sqrt
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -91,7 +93,7 @@ fun Application.module(testing: Boolean = false) {
         while (true) {
             launch(Dispatchers.IO) {
                 val modelPopulationPersist = population.toModel()
-                val savePopulationFile = runFolder.resolve("${populationEvolver.generation}.json")
+                val savePopulationFile = runFolder.resolve("${populationEvolver.generation + 168}.json")
                 val json = Json { prettyPrint = true }
                 val encodedModel = json.encodeToString(modelPopulationPersist)
                 savePopulationFile.bufferedWriter().use {

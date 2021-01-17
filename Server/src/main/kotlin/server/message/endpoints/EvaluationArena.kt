@@ -2,12 +2,16 @@ package server.message.endpoints
 
 import FrameOutput
 import FrameUpdate
-import com.oracle.util.Checksums.update
-import mu.*
-import neat.*
-import neat.model.*
-import java.time.*
-import kotlin.math.*
+import mu.KotlinLogging
+import neat.ActivatableNetwork
+import neat.FitnessModel
+import neat.model.NeatMutator
+import neat.toNetwork
+import java.time.Duration
+import java.time.Instant
+import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 private val log = KotlinLogging.logger { }
 
@@ -70,7 +74,6 @@ class EvaluationArena() {
         model: NeatMutator,
         block: suspend SimulationState.(SimulationFrameData) -> Unit
     ): FitnessModel<NeatMutator> {
-
         log.info { "Evaluation for new model has begun" }
         val simulationState = SimulationState(
             lastFrame?.player1?.stock ?: 4,
@@ -82,7 +85,7 @@ class EvaluationArena() {
             .5f,
             3f,
             agentStart = Instant.now(),
-            cumulativeDamageDealt = 16f
+            baseCumulativeDamageDealt = 12f
         )
         while (true) {
             if (resetSimulationForAgent) {
