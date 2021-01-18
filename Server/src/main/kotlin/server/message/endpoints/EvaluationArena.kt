@@ -17,13 +17,8 @@ private val log = KotlinLogging.logger { }
 
 data class EvaluationData(val simulationFrameData: SimulationFrameData)
 
-private fun List<Float>.toFrameOutput(): FrameOutput {
-    fun bool(index: Int) = get(index).let {
-        when {
-            it.isNaN() -> false
-            else -> it.roundToInt() > 0
-        }
-    }
+fun List<Float>.toFrameOutput(): FrameOutput {
+    fun bool(index: Int) = get(index).roundToInt() > 0
     fun clamp(index: Int) = get(index).let {
         when {
             it < 0 -> 0f
@@ -81,16 +76,16 @@ class EvaluationArena() {
     ): FitnessModel<NeatMutator> {
         log.info { "Evaluation for new model has begun" }
         val simulationState = SimulationState(
-            lastAiStock = lastFrame?.player1?.stock ?: 4,
-            lastOpponentStock = lastFrame?.player2?.stock ?: 4,
-            lastPercent = lastFrame?.player1?.percent ?: 0,
-            lastOpponentPercent = lastFrame?.player2?.percent ?: 0,
-            timeGainMax = 1f,
-            timeAvailable = 1.5f,
-            damageTimeFrame = 1.5f,
-            stockTakeTimeFrame = 5f,
+            lastFrame?.player1?.stock ?: 4,
+            lastFrame?.player2?.stock ?: 4,
+            lastFrame?.player1?.percent ?: 0,
+            lastFrame?.player2?.percent ?: 0,
+            3f,
+            .5f,
+            .5f,
+            3f,
             agentStart = Instant.now(),
-            baseCumulativeDamageDealt = 8f
+            baseCumulativeDamageDealt = 12f
         )
         while (true) {
             if (resetSimulationForAgent) {
@@ -110,17 +105,17 @@ class EvaluationArena() {
                         return FitnessModel(model, -1f)
                     } else {
                         val score = if (cumulativeDamageDealt < 8) 0f else cumulativeDamageDealt.pow(2)
-                        val cumulativeDmgRatio = max(cumulativeDamageDealt, 1f) / max(cumulativeDamageTaken/4f, 1f)
+                        val cumulativeDmgRatio = max(cumulativeDamageDealt, 1f) / max(cumulativeDamageTaken, 1f)
                         val scoreWithPercentRatioModifier = score * cumulativeDmgRatio
                         log.info {
                             """
                     timeGain: $distanceTimeGain
                     timeElapsed: ${Duration.between(agentStart, simulationFrame.now).seconds}
                     damageTaken: $cumulativeDamageTaken ($cumulativeDmgRatio)
-                    damageDone: $cumulativeDamageDealt (${simulationFrame.wasDamageDealt})
+                    damageDone: $cumulativeDamageDealt (${simulationFrame.aiDealDamage})
                     earlyKill: $earlyKillBonusApplied
                     graceHit: $bonusGraceDamageApplied
-                    stockLost: ${simulationFrame.stockLoss}
+                    stockLost: ${simulationFrame.aiLostStock}
                     score: $score
                     percentModifierScore: $scoreWithPercentRatioModifier
                 """.trimIndent()
@@ -165,4 +160,6 @@ class EvaluationArena() {
     fun resume() {
         pauseSimulation = false
     }
+//    val eventMap = mutableMapOf<EvaluationEvent, >()
+
 }
