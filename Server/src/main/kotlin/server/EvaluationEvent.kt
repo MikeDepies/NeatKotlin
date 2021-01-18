@@ -49,6 +49,8 @@ suspend fun Application.evaluationLoop(
     populationEvolver: PopulationEvolver,
     adjustedFitnessCalculation: AdjustedFitnessCalculation
 ) {
+    //Extract to koin
+    //hook up websockets
     val frameChannel = Channel<FrameUpdate>()
     val networkOutputChannel = Channel<FrameOutput>()
     var currentPopulation = initialPopulation

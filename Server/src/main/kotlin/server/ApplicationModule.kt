@@ -3,6 +3,8 @@ package server
 import AuthService
 import AuthServiceAuth0
 import ClientRegistry
+import FrameOutput
+import FrameUpdate
 import server.message.endpoints.EvaluationArena
 import MessageEndpointRegistry
 import MessageEndpointRegistryImpl
@@ -22,12 +24,14 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.features.websocket.*
+import kotlinx.coroutines.channels.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
 import neat.mutation.mutateConnectionWeight
+import org.koin.core.qualifier.*
 import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
@@ -39,6 +43,8 @@ import kotlin.random.Random
 private val log = KotlinLogging.logger { }
 
 val applicationModule = module {
+    single<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel()}
+    single<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel()}
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }
     single { SimulationSessionScope(this, get()) }
@@ -49,7 +55,6 @@ val applicationModule = module {
         }.toList()
         MessageEndpointRegistryImpl(endpoints, get())
     }
-    factory { FrameClockFactory() }
     single { EndpointProvider(get(), get(), this) }
     single<UserTokenResolver> { UserTokenResolverImpl(get()) }
     single<AuthService> { AuthServiceAuth0(get(), get()) }

@@ -1,12 +1,15 @@
 package server
 
 import Auth0Config
+import FrameOutput
+import FrameUpdate
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -18,6 +21,7 @@ import neat.SpeciationController
 import neat.model.NeatMutator
 import neat.toMap
 import neat.toModelScores
+import org.koin.core.qualifier.*
 import org.koin.ktor.ext.*
 import org.slf4j.event.Level
 import server.message.endpoints.*
@@ -79,6 +83,8 @@ fun Application.module(testing: Boolean = false) {
             }
         })
     }
+    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
+    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
@@ -86,58 +92,14 @@ fun Application.module(testing: Boolean = false) {
     val (initialPopulation, evaluationArena, populationEvolver, adjustedFitness) = get<Simulation>()
 
     launch(Dispatchers.IO) {
+        while (!receivedAnyMessages) {
+            delay(100)
+        }
         evaluationLoop(
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
             adjustedFitnessCalculation = adjustedFitness
         )
-    }
-    launch(Dispatchers.IO) {
-        var population = initialPopulation
-        while (!receivedAnyMessages) {
-            delay(100)
-        }
-        while (true) {
-            launch(Dispatchers.IO) {
-                val modelPopulationPersist = population.toModel()
-                val savePopulationFile = runFolder.resolve("${populationEvolver.generation + 168}.json")
-                val json = Json { prettyPrint = true }
-                val encodedModel = json.encodeToString(modelPopulationPersist)
-                savePopulationFile.bufferedWriter().use {
-                    it.write(encodedModel)
-                    it.flush()
-                }
-                val manifestFile = runFolder.resolve("manifest.json")
-                val manifestData = Manifest(
-                    populationEvolver.scoreKeeper.toModel(),
-                    populationEvolver.speciesLineage.toModel()
-                )
-                manifestFile.bufferedWriter().use {
-                    it.write(json.encodeToString(manifestData))
-                    it.flush()
-                }
-
-            }
-            val modelScores = evaluationArena.evaluatePopulation(population) { simulationFrame ->
-                inAirFromKnockback(simulationFrame)
-                opponentInAirFromKnockback(simulationFrame)
-                processDamageDone(simulationFrame)
-                processStockTaken(simulationFrame)
-                processStockLoss(simulationFrame)
-                if (simulationFrame.aiLoseGame) {
-                    gameLostFlag = true
-                    lastDamageDealt = 0f
-                }
-            }.toModelScores(adjustedFitness)
-            populationEvolver.sortPopulationByAdjustedScore(modelScores)
-            populationEvolver.updateScores(modelScores)
-            var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-            populationEvolver.speciate(newPopulation)
-            while (newPopulation.size < population.size) {
-                newPopulation = newPopulation + newPopulation.first().clone()
-            }
-            population = newPopulation
-        }
     }
 }
 
@@ -280,3 +242,53 @@ fun SimulationState.processStockLoss(simulationFrameData: SimulationFrameData) {
 fun gracePeriodHitBonus(t: Float, gracePeriod: Float, bonus: Int = 20): Float {
     return bonus * (1 - (t / gracePeriod))
 }
+
+/*
+launch(Dispatchers.IO) {
+        var population = initialPopulation
+        while (!receivedAnyMessages) {
+            delay(100)
+        }
+        while (true) {
+            launch(Dispatchers.IO) {
+                val modelPopulationPersist = population.toModel()
+                val savePopulationFile = runFolder.resolve("${populationEvolver.generation + 168}.json")
+                val json = Json { prettyPrint = true }
+                val encodedModel = json.encodeToString(modelPopulationPersist)
+                savePopulationFile.bufferedWriter().use {
+                    it.write(encodedModel)
+                    it.flush()
+                }
+                val manifestFile = runFolder.resolve("manifest.json")
+                val manifestData = Manifest(
+                    populationEvolver.scoreKeeper.toModel(),
+                    populationEvolver.speciesLineage.toModel()
+                )
+                manifestFile.bufferedWriter().use {
+                    it.write(json.encodeToString(manifestData))
+                    it.flush()
+                }
+
+            }
+            val modelScores = evaluationArena.evaluatePopulation(population) { simulationFrame ->
+                inAirFromKnockback(simulationFrame)
+                opponentInAirFromKnockback(simulationFrame)
+                processDamageDone(simulationFrame)
+                processStockTaken(simulationFrame)
+                processStockLoss(simulationFrame)
+                if (simulationFrame.aiLoseGame) {
+                    gameLostFlag = true
+                    lastDamageDealt = 0f
+                }
+            }.toModelScores(adjustedFitness)
+            populationEvolver.sortPopulationByAdjustedScore(modelScores)
+            populationEvolver.updateScores(modelScores)
+            var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
+            populationEvolver.speciate(newPopulation)
+            while (newPopulation.size < population.size) {
+                newPopulation = newPopulation + newPopulation.first().clone()
+            }
+            population = newPopulation
+        }
+    }
+ */
