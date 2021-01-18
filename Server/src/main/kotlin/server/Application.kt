@@ -83,8 +83,8 @@ fun Application.module(testing: Boolean = false) {
             }
         })
     }
-    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
-    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
+//    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
+//    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
