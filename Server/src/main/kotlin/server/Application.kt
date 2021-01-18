@@ -93,7 +93,7 @@ fun Application.module(testing: Boolean = false) {
         while (true) {
             launch(Dispatchers.IO) {
                 val modelPopulationPersist = population.toModel()
-                val savePopulationFile = runFolder.resolve("${populationEvolver.generation + 168}.json")
+                val savePopulationFile = runFolder.resolve("${populationEvolver.generation + 0}.json")
                 val json = Json { prettyPrint = true }
                 val encodedModel = json.encodeToString(modelPopulationPersist)
                 savePopulationFile.bufferedWriter().use {
