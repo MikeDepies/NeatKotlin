@@ -17,7 +17,7 @@ private val log = KotlinLogging.logger { }
 
 data class EvaluationData(val simulationFrameData: SimulationFrameData)
 
-private fun List<Float>.toFrameOutput(): FrameOutput {
+fun List<Float>.toFrameOutput(): FrameOutput {
     fun bool(index: Int) = get(index).roundToInt() > 0
     fun clamp(index: Int) = get(index).let {
         when {
@@ -112,10 +112,10 @@ class EvaluationArena() {
                     timeGain: $distanceTimeGain
                     timeElapsed: ${Duration.between(agentStart, simulationFrame.now).seconds}
                     damageTaken: $cumulativeDamageTaken ($cumulativeDmgRatio)
-                    damageDone: $cumulativeDamageDealt (${simulationFrame.wasDamageDealt})
+                    damageDone: $cumulativeDamageDealt (${simulationFrame.aiDealDamage})
                     earlyKill: $earlyKillBonusApplied
                     graceHit: $bonusGraceDamageApplied
-                    stockLost: ${simulationFrame.stockLoss}
+                    stockLost: ${simulationFrame.aiLostStock}
                     score: $score
                     percentModifierScore: $scoreWithPercentRatioModifier
                 """.trimIndent()
@@ -160,4 +160,6 @@ class EvaluationArena() {
     fun resume() {
         pauseSimulation = false
     }
+//    val eventMap = mutableMapOf<EvaluationEvent, >()
+
 }

@@ -58,7 +58,7 @@ class SimulationState(
             log.info { "Ai landed" }
         }
 
-        if (!hitStun && prevHitStun) {
+        if (!aiHitStun && prevHitStun) {
             hitStunClock = Instant.now()
             log.info { "Ai is out of hitstun" }
         }
@@ -67,16 +67,16 @@ class SimulationState(
             opponentHitStunClock = Instant.now()
             log.info { "Opponent is out of hitstun" }
         }
-        if (lastPercent < percentFrame) cumulativeDamageTaken += percentFrame - lastPercent
-        lastDamageDealt = damageDoneFrame
+        if (lastPercent < aiPercentFrame) cumulativeDamageTaken += aiPercentFrame - lastPercent
+        lastDamageDealt = aiDamageDoneFrame
         lastOpponentStock = opponentStockFrame
-        lastAiStock = aiStockFrame
-        lastPercent = percentFrame
+        lastAiStock = aiStockCount
+        lastPercent = aiPercentFrame
         lastOpponentPercent = opponentPercentFrame
-        prevHitStun = hitStun
+        prevHitStun = aiHitStun
         prevOpponentHitStun = opponentHitStun
         prevOnGround = aiOnGround
-        prevTookDamage = tookDamage
+        prevTookDamage = aiTookDamage
 
         val distanceTimeStep = .06f
         if (Duration.between(secondTime, now).toMillis() > 100) {
@@ -109,22 +109,22 @@ class SimulationState(
 //        log.info { "${lastFrame?.player2?.percent ?: 0} - ${lastOpponentPercent}" }
         val opponentPercentFrame = lastFrame?.player2?.percent ?: 0
         return SimulationFrameData(
-            damageDoneFrame = damageDone(opponentPercentFrame).toFloat(),
+            aiDamageDoneFrame = damageDone(opponentPercentFrame).toFloat(),
             opponentPercentFrame = opponentPercentFrame,
-            percentFrame = percentFrame,
-            aiStockFrame = aiStockFrame,
+            aiPercentFrame = percentFrame,
+            aiStockCount = aiStockFrame,
             opponentStockFrame = opponentStockFrame,
-            wasDamageDealt = cumulativeDamageDealt > 0,
+            aiDealDamage = cumulativeDamageDealt > 0,
             distance = lastFrame?.distance ?: 0f,
-            wasStockButNotGameLost = wasStockButNotGameLost,
-            tookDamage = lastPercent < percentFrame,
-            wasGameLost = wasGameLost,
-            stockLoss = wasGameLost || wasStockButNotGameLost,
+            aiStockLostButNotGame = wasStockButNotGameLost,
+            aiTookDamage = lastPercent < percentFrame,
+            aiLoseGame = wasGameLost,
+            aiLostStock = wasGameLost || wasStockButNotGameLost,
             aiOnGround = lastFrame?.player1?.onGround ?: false,
             opponentOnGround = lastFrame?.player2?.onGround ?: false,
-            hitStun = lastFrame?.player1?.hitStun ?: false,
+            aiHitStun = lastFrame?.player1?.hitStun ?: false,
             opponentHitStun = lastFrame?.player2?.hitStun ?: false,
-            wasOneStockTaken = (lastOpponentStock > opponentStockFrame),
+            aiTookStock = (lastOpponentStock > opponentStockFrame),
             frame = lastFrame?.frame ?: -1,
             now = Instant.now()
         )
@@ -142,7 +142,7 @@ class SimulationState(
         } else false
         val graceTimeActive =
             (Duration.between(agentStart, now).seconds <= timeAvailable + distanceTimeGain)
-        val damageClockActive = wasDamageDealt && timeElapsedSinceDamage && timeElapsedSinceBonus
+        val damageClockActive = aiDealDamage && timeElapsedSinceDamage && timeElapsedSinceBonus
         val landingClockActive = if (landingClock != null) {
             Duration.between(landingClock, now).toMillis() <= landingTimeFrame
         } else false
@@ -154,9 +154,9 @@ class SimulationState(
         } else false
         val clocksExpired =
             !(graceTimeActive || damageClockActive || hitStunClockActive || landingClockActive || opponentHitStunClockActive)
-        val terminatePlayTime = (clocksExpired) && aiOnGround && opponentOnGround && !hitStun && !opponentHitStun
+        val terminatePlayTime = (clocksExpired) && aiOnGround && opponentOnGround && !aiHitStun && !opponentHitStun
 
-        return ((terminatePlayTime || stockLoss))
+        return ((terminatePlayTime || aiLostStock))
     }
 
 
@@ -183,4 +183,5 @@ class SimulationState(
     var landingClock: Instant? = null
     var prevTookDamage = false
     var inAirFromKnockBack = false
+    var opponentInAirFromKnockBack = false
 }

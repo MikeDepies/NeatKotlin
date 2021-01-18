@@ -49,6 +49,7 @@ val applicationModule = module {
         }.toList()
         MessageEndpointRegistryImpl(endpoints, get())
     }
+    factory { FrameClockFactory() }
     single { EndpointProvider(get(), get(), this) }
     single<UserTokenResolver> { UserTokenResolverImpl(get()) }
     single<AuthService> { AuthServiceAuth0(get(), get()) }
@@ -67,6 +68,10 @@ val applicationModule = module {
             }
         }
     }
+
+    single { MeleeState(createEmptyFrameData()) }
+    single { FrameClockFactory() }
+    factory<Evaluator> { SimpleEvaluator(get(), 8f, get()) }
     single { EvaluationArena() }
     single { simulation(evaluationArena = get()) }
 }

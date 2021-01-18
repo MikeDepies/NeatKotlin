@@ -57,6 +57,3 @@ data class Simulation(
     val adjustedFitnessCalculation: AdjustedFitnessCalculation
 )
 
-class FrameClockFactory(val fps: Float = 60f) {
-    val frameTime get() = 1 / fps
-}

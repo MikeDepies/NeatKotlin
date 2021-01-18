@@ -18,8 +18,7 @@ import neat.SpeciationController
 import neat.model.NeatMutator
 import neat.toMap
 import neat.toModelScores
-import org.koin.ktor.ext.Koin
-import org.koin.ktor.ext.get
+import org.koin.ktor.ext.*
 import org.slf4j.event.Level
 import server.message.endpoints.*
 import server.server.WebSocketManager
@@ -85,6 +84,14 @@ fun Application.module(testing: Boolean = false) {
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
     val (initialPopulation, evaluationArena, populationEvolver, adjustedFitness) = get<Simulation>()
+
+    launch(Dispatchers.IO) {
+        evaluationLoop(
+            initialPopulation = initialPopulation,
+            populationEvolver = populationEvolver,
+            adjustedFitnessCalculation = adjustedFitness
+        )
+    }
     launch(Dispatchers.IO) {
         var population = initialPopulation
         while (!receivedAnyMessages) {
@@ -117,7 +124,7 @@ fun Application.module(testing: Boolean = false) {
                 processDamageDone(simulationFrame)
                 processStockTaken(simulationFrame)
                 processStockLoss(simulationFrame)
-                if (simulationFrame.wasGameLost) {
+                if (simulationFrame.aiLoseGame) {
                     gameLostFlag = true
                     lastDamageDealt = 0f
                 }
@@ -162,18 +169,10 @@ fun previewMessage(frame: Frame.Text): String {
 data class Manifest(val scoreKeeperModel: SpeciesScoreKeeperModel, val scoreLineageModel: SpeciesLineageModel)
 
 fun SimulationState.opponentInAirFromKnockback(simulationFrameData: SimulationFrameData) {
-    if (!inAirFromKnockBack)
-        inAirFromKnockBack = !simulationFrameData.opponentOnGround && prevTookDamage
-    if (simulationFrameData.aiOnGround)
-        inAirFromKnockBack = false
-    if (distanceTime != null && Duration.between(distanceTime, simulationFrameData.now).seconds > distanceTimeGain) {
-        distanceTime = null
-        distanceTimeGain = 0f
-    }
-    if (distanceTime != null && simulationFrameData.distance > linearTimeGainDistanceEnd) {
-        distanceTime = null
-        distanceTimeGain = 0f
-    }
+    if (!opponentInAirFromKnockBack)
+        opponentInAirFromKnockBack = !simulationFrameData.opponentOnGround && prevTookDamage
+    if (simulationFrameData.opponentOnGround)
+        opponentInAirFromKnockBack = false
 }
 
 fun SimulationState.inAirFromKnockback(simulationFrameData: SimulationFrameData) {
@@ -193,12 +192,12 @@ fun SimulationState.inAirFromKnockback(simulationFrameData: SimulationFrameData)
 
 fun SimulationState.processDamageDone(simulationFrameData: SimulationFrameData) {
 //    log.info { simulationFrameData.damageDoneFrame }
-    if (simulationFrameData.damageDoneFrame > 0) {
+    if (simulationFrameData.aiDamageDoneFrame > 0) {
         damageDoneTime = simulationFrameData.now
 
         val damage = if (gameLostFlag) 0f.also {
             gameLostFlag = false
-        } else simulationFrameData.damageDoneFrame
+        } else simulationFrameData.aiDamageDoneFrame
 
         val secondsAiPlay = Duration.between(agentStart, simulationFrameData.now).seconds
         log.info { "Damage at $secondsAiPlay seconds" }
@@ -221,7 +220,7 @@ fun SimulationState.processDamageDone(simulationFrameData: SimulationFrameData) 
 }
 
 fun SimulationState.processStockTaken(simulationFrameData: SimulationFrameData) {
-    if (simulationFrameData.wasOneStockTaken) {
+    if (simulationFrameData.aiTookStock) {
         if (lastOpponentPercent < 100f && currentStockDamageDealt > 0) {
             val earlyKillBonus =
                 (((100f - lastOpponentPercent) / max(1f, currentStockDamageDealt)) * 12)
@@ -239,8 +238,8 @@ fun SimulationState.processStockTaken(simulationFrameData: SimulationFrameData) 
         val doubledDamage = cumulativeDamageDealt * 2
         log.info {
             """
-                            Stock taken: $lastOpponentStock -> ${simulationFrameData.opponentStockFrame} (${simulationFrameData.wasOneStockTaken})
-                            Damage: $lastDamageDealt -> ${simulationFrameData.damageDoneFrame}
+                            Stock taken: $lastOpponentStock -> ${simulationFrameData.opponentStockFrame} (${simulationFrameData.aiTookStock})
+                            Damage: $lastDamageDealt -> ${simulationFrameData.aiDamageDoneFrame}
                             CumulativeDamage: $cumulativeDamageDealt -> $doubledDamage
                         """.trimIndent()
         }
@@ -252,19 +251,19 @@ fun SimulationState.processStockTaken(simulationFrameData: SimulationFrameData) 
 }
 
 fun SimulationState.processStockLoss(simulationFrameData: SimulationFrameData) {
-    if (lastAiStock != simulationFrameData.aiStockFrame) {
-        log.info { "Stocks not equal! $lastAiStock -> ${simulationFrameData.aiStockFrame}" }
+    if (lastAiStock != simulationFrameData.aiStockCount) {
+        log.info { "Stocks not equal! $lastAiStock -> ${simulationFrameData.aiStockCount}" }
     }
-    if (simulationFrameData.stockLoss)
-        log.info { "Stock was lost: $cumulativeDamageDealt > 0 (${cumulativeDamageDealt > 0}) - ${simulationFrameData.stockLoss} - ${simulationFrameData.wasStockButNotGameLost}" }
-    if (simulationFrameData.stockLoss && cumulativeDamageDealt > 0) {
+    if (simulationFrameData.aiLostStock)
+        log.info { "Stock was lost: $cumulativeDamageDealt > 0 (${cumulativeDamageDealt > 0}) - ${simulationFrameData.aiLostStock} - ${simulationFrameData.aiStockLostButNotGame}" }
+    if (simulationFrameData.aiLostStock && cumulativeDamageDealt > 0) {
         damageTimeFrame -= .25f
         timeGainMax -= 2f
         val sqrt = if (inAirFromKnockBack) (cumulativeDamageDealt) / 8 else sqrt(cumulativeDamageDealt)
         log.info {
             """
                 diedFromKnockBack: $inAirFromKnockBack
-                Stock Lost: $lastAiStock -> ${simulationFrameData.aiStockFrame} (${simulationFrameData.wasStockButNotGameLost})
+                Stock Lost: $lastAiStock -> ${simulationFrameData.aiStockCount} (${simulationFrameData.aiStockLostButNotGame})
                 CumulativeDamage: $cumulativeDamageDealt -> $sqrt
             """.trimIndent()
         }
