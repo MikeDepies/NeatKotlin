@@ -141,6 +141,9 @@ class Session:
     lastStockAi = 4
     lastStockOpponent = 4
     lastGamestate : GameState or None = None
+    cpu_level : 5
+    cpu_character : melee.Character.FOX
+    ai_character : melee.Character.PIKACHU
 
 
 def processMessage(message: Dict):

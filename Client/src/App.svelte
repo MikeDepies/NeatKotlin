@@ -44,19 +44,47 @@ interface EvaluationScore {
   score : number
 }
 
- interface AgentModelScore {}
- interface AgentModel {}
- interface Population {}
+interface EvaluationClock {
+  name: string,
+  frameLength: number,
+  startFrame: number,
+  framesRemaining: number,
+  expired: boolean
+}
+ interface AgentModel {
+   species: number,
+   runningScore: EvaluationScore,
+   startTime: Date,
+   clocks: EvaluationClock[]
+ }
+ interface Population {
+   generation : number,
+   agents : AgentModel[]
+ }
 
  const r = reader<SimulationEndpoints>(message)
  let currentGeneration = tweened(0)
+ let species = 0
+ let runningScore = 0
 </script>
 
 <div>
   <h1 class="text-2xl">Current Generation:</h1>
   <div>
     <div>
-      ${currentGeneration}
+      {$currentGeneration}
+    </div>
+  </div>
+</div>
+
+<div>
+  <h1>Active Agent</h1>
+  <div>
+    <div>
+      Species: {species}
+    </div>
+    <div>
+      runningScore: {runningScore}
     </div>
   </div>
 </div>

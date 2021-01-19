@@ -2,7 +2,7 @@ package server
 
 import Auth0Config
 import FrameOutput
-import FrameUpdate
+import MessageWriter
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
@@ -13,17 +13,16 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.ModelScore
 import neat.SpeciationController
 import neat.model.NeatMutator
 import neat.toMap
-import neat.toModelScores
 import org.koin.core.qualifier.*
 import org.koin.ktor.ext.*
 import org.slf4j.event.Level
+import server.message.*
 import server.message.endpoints.*
 import server.server.WebSocketManager
 import java.io.File
@@ -91,6 +90,7 @@ fun Application.module(testing: Boolean = false) {
     get<WebSocketManager>().attachWSRoute()
     val (initialPopulation, evaluationArena, populationEvolver, adjustedFitness) = get<Simulation>()
 
+    networkEvaluatorOutputBridgeLoop()
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)
@@ -100,6 +100,18 @@ fun Application.module(testing: Boolean = false) {
             populationEvolver = populationEvolver,
             adjustedFitnessCalculation = adjustedFitness
         )
+    }
+}
+
+private fun Application.networkEvaluatorOutputBridgeLoop() {
+    launch {
+        val frameOutputChannel = get<Channel<FrameOutput>>(qualifier<FrameOutput>())
+        frameOutputChannel.receive().let { frameOutput ->
+            get<MessageWriter>().sendAllMessage(
+                BroadcastMessage("simulation.frame.output", frameOutput),
+                FrameOutput.serializer()
+            )
+        }
     }
 }
 

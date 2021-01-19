@@ -84,7 +84,7 @@ val applicationModule = module {
 fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 90922, takeSize: Int? = null): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
 
-    val sharingFunction = shFunction(15f)
+    val sharingFunction = shFunction(5f)
     val distanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))

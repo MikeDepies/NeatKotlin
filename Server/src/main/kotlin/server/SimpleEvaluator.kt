@@ -12,24 +12,23 @@ class SimpleEvaluator(
     Evaluator {
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    private val damageClock = frameClockFactory.countDownClockSeconds(.5f)
-    private val graceClock = frameClockFactory.countDownClockSeconds(2f)
-    private val hitStunClock = frameClockFactory.countDownClockMilliseconds(2000)
-    private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds(2000)
-    private val landedClock = frameClockFactory.countDownClockMilliseconds(2000)
-    private val stockTakenClock = frameClockFactory.countDownClockSeconds(6f)
+    private val damageClock = frameClockFactory.countDownClockSeconds(2.5f).log("Damage Clock")
+    private val graceClock = frameClockFactory.countDownClockSeconds(3f).log("Grace Clock")
+    private val hitStunClock = frameClockFactory.countDownClockMilliseconds(200).log("HitStun Clock")
+    private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds(200).log("P2 HitStun Clock")
+    private val landedClock = frameClockFactory.countDownClockMilliseconds(200).log("Landed Clock")
+    private val stockTakenClock = frameClockFactory.countDownClockSeconds(6f).log("StockTaken Clock")
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
+    var scoreContributionList = mutableListOf<EvaluationScoreContribution>()
 
     /**
      * The finalized Score
      */
-    override val finishedScore: Float
+    override val score: Float
         get() {
-            val score = if (runningScore < 8) 0f else runningScore.pow(2)
-            val cumulativeDmgRatio = max(runningScore, 1f) / max(cumulativeDamageTaken, 1f)
-            return score * cumulativeDmgRatio
+            return runningScore
         }
 
     override fun isFinished(): Boolean {
@@ -61,13 +60,37 @@ class SimpleEvaluator(
         checkClockEvents(frameNumber, frameData)
         if (player1.tookStock) scoreStockTake(frameNumber, lastPlayer2.percentFrame)
         if (player1.lostStock) {
-            val scorePenalized = if (frameData.isPlayerInAirFromKnockBack(0)) runningScore / 8 else sqrt(runningScore)
+            val scorePenalized = if (frameData.isPlayerInAirFromKnockBack(0)) {
+                val newRunningScore = runningScore / 8
+                scoreContributionList.add(
+                    EvaluationScoreContribution(
+                        "Stock Loss from KnockBack",
+                        newRunningScore,
+                        newRunningScore - runningScore
+                    )
+                )
+                newRunningScore
+            } else {
+                val newRunningScore = sqrt(runningScore)
+                EvaluationScoreContribution(
+                    "Stock Loss SD",
+                    newRunningScore,
+                    newRunningScore - runningScore
+                )
+                newRunningScore
+            }
             runningScore = scorePenalized
         }
         cumulativeDamage += player1.damageDone
-        runningScore += player1.damageDone
+        val newRunningScore = runningScore + player1.damageDone
+        EvaluationScoreContribution(
+            "Damage Dealt (${player1.damageDone})",
+            newRunningScore,
+            newRunningScore - runningScore
+        )
+        runningScore = newRunningScore
         cumulativeDamageTaken += player1.damageTaken
-        if (player1.lostStock)
+        if (player2.lostStock)
             currentStockDamage = 0f
         else currentStockDamage += player1.damageDone
         //Then update to the new frame.
@@ -83,12 +106,27 @@ class SimpleEvaluator(
                 val baseBonus = (100f - deathPercent).div(max(1f, currentStockDamage))
                 val bonusMultiplier = 12
                 val earlyKillBonus = baseBonus * bonusMultiplier
+                scoreContributionList.add(
+                    EvaluationScoreContribution(
+                        "Early Kill Bonus",
+                        earlyKillBonus,
+                        earlyKillBonus - runningScore
+                    )
+                )
                 runningScore += earlyKillBonus
             }
         }
         earlyKillBonus()
         stockTakenClock.start(frameNumber)
-        runningScore *= 2
+        val doubleScore = runningScore * 2
+        scoreContributionList.add(
+            EvaluationScoreContribution(
+                "Stock Take Modifier",
+                doubleScore,
+                doubleScore - runningScore
+            )
+        )
+        runningScore = doubleScore
     }
 
     private fun checkClockEvents(frameNumber: Int, frameData: MeleeFrameData) {
@@ -119,5 +157,28 @@ class SimpleEvaluator(
             graceClock.start(frameNumber)
             firstFrame = false
         }
+    }
+
+    override fun finishEvaluation(): EvaluationScore {
+        val score = if (runningScore < 8) {
+            scoreContributionList.add(EvaluationScoreContribution("Damage Minimum Threshold", 0f, runningScore * -1))
+            0f
+        } else {
+            val pow = runningScore.pow(2)
+            scoreContributionList.add(EvaluationScoreContribution("Finish Bonus (Score^2)", pow, pow - runningScore))
+            pow
+        }
+        val cumulativeDmgRatio = max(runningScore, 1f) / max(cumulativeDamageTaken / 4, 1f)
+        val newScore = score * cumulativeDmgRatio
+        scoreContributionList.add(
+            EvaluationScoreContribution(
+                "Cumulative Ratio Modifier",
+                newScore,
+                newScore - runningScore
+            )
+        )
+        runningScore = newScore
+        val evaluationScore = EvaluationScore(runningScore, scoreContributionList)
+        return evaluationScore
     }
 }

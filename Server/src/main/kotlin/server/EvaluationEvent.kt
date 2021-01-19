@@ -4,19 +4,20 @@ import FrameOutput
 import FrameUpdate
 import PopulationEvolver
 import io.ktor.application.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import mu.*
 import neat.*
 import neat.model.*
-import org.koin.core.scope.*
 import org.koin.ktor.ext.*
 import server.message.endpoints.*
 import java.io.*
 import java.time.*
 import java.time.format.*
 import kotlin.math.*
+
+private val log = KotlinLogging.logger { }
 
 interface EvaluationEvent
 sealed class CoreEvaluationEvent : EvaluationEvent
@@ -103,9 +104,10 @@ private fun writeGenerationToDisk(
 }
 
 interface Evaluator {
-    val finishedScore: Float
+    val score: Float
     fun isFinished(): Boolean
     fun evaluateFrame(frameUpdate: FrameUpdate)
+    fun finishEvaluation() : EvaluationScore
 }
 
 private suspend fun evaluate(
@@ -118,10 +120,13 @@ private suspend fun evaluate(
         network.evaluate(frameUpdate.flatten(), true)
         networkOutputChannel.send(network.output().toFrameOutput())
         evaluator.evaluateFrame(frameUpdate)
-        if (evaluator.isFinished())
-            return evaluator.finishedScore
+        if (evaluator.isFinished()) {
+            evaluator.finishEvaluation()
+            return evaluator.score
+        }
     }
-    return evaluator.finishedScore
+    evaluator.finishEvaluation()
+    return evaluator.score
 }
 typealias PlayerNumber = Int
 
@@ -200,7 +205,7 @@ class FrameClockFactory(val fps: Float = 60f) {
 }
 
 class FrameClock(val frameTime: Float) {
-    private var frame: Int? = null
+    var frame: Int? = null
     fun seconds(simulationFrameData: MeleeFrameData): Int? {
         return frame?.let {
             val frames = simulationFrameData.frame - it
@@ -248,8 +253,35 @@ class CountDownSecondsClock(private val clock: FrameClock, val seconds: Float) :
     override fun toFrameLength(): Int {
         return ceil(((seconds * 1000) / clock.frameTime)).toInt()
     }
+
+    override val startFrame: Int?
+        get() = clock.frame
 }
 
+fun CountDownClock.log(name: String): LogCountDownClock {
+    return LogCountDownClock(name, this)
+}
+
+class LogCountDownClock(
+    private val clockName: String,
+    private val countDownClock: CountDownClock
+) : CountDownClock by countDownClock {
+    override fun start(frameNumber: Int) {
+        log.info { "$clockName is being started on frame $frameNumber for ${countDownClock.toFrameLength()} frames." }
+        countDownClock.start(frameNumber)
+    }
+
+    override fun cancel() {
+        log.info { "$clockName is being canceled on ${toFrameLength() - (startFrame ?: 0)} clock frame of ${countDownClock.toFrameLength()} frames." }
+        countDownClock.cancel()
+    }
+
+    override fun isFinished(simulationFrameData: MeleeFrameData): Boolean {
+        val finished = countDownClock.isFinished(simulationFrameData)
+        log.info { "$clockName finished with a timer frame length of ${toFrameLength()}." }
+        return finished
+    }
+}
 
 fun FrameClockFactory.countDownClockMilliseconds(milliseconds: Long): CountDownClockMilliseconds {
     val clock = createClock()
@@ -262,6 +294,7 @@ interface CountDownClock {
     fun isFinished(simulationFrameData: MeleeFrameData): Boolean
     fun isCanceled(simulationFrameData: MeleeFrameData): Boolean
     fun toFrameLength(): Int
+    val startFrame: Int?
 }
 
 class CountDownClockMilliseconds(private val clock: FrameClock, val milliseconds: Long) : CountDownClock {
@@ -275,4 +308,7 @@ class CountDownClockMilliseconds(private val clock: FrameClock, val milliseconds
     override fun toFrameLength(): Int {
         return ceil((milliseconds / clock.frameTime)).toInt()
     }
+
+    override val startFrame: Int?
+        get() = clock.frame
 }
