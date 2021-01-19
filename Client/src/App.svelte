@@ -133,11 +133,20 @@ $: {
    if (agent !== undefined && agent !== currentAgent)
     currentAgent = agent
  }
+ let numberOfSpecies = 0
+ $: {
+ 
+   numberOfSpecies = countUnique(currentPopulation.agents.map(a => a.species))
+ }
+ function countUnique<T> (iterable : T[]) {
+  return new Set(iterable).size;
+}
 </script>
 
 <div>
   <div>Generations: {currentGeneration}</div>
   <div>Population Size: {populationSize}</div>
+  <div>Species In Population: {numberOfSpecies}</div>
   <div>Current Agent: {currentAgent.id }</div>
   <div>Current Agent Species: {currentAgent.species }</div>
   <div>Current Score: {$newScore?.score }</div>
