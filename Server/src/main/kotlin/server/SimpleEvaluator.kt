@@ -76,7 +76,7 @@ class SimpleEvaluator(
                 newRunningScore
             } else {
                 val newRunningScore = sqrt(runningScore)
-                EvaluationScoreContribution(
+                scoreContributionList += EvaluationScoreContribution(
                     "Stock Loss SD",
                     newRunningScore,
                     newRunningScore - runningScore
@@ -87,7 +87,7 @@ class SimpleEvaluator(
         }
         cumulativeDamage += player1.damageDone
         val newRunningScore = runningScore + player1.damageDone
-        EvaluationScoreContribution(
+        scoreContributionList += EvaluationScoreContribution(
             "Damage Dealt (${player1.damageDone})",
             newRunningScore,
             newRunningScore - runningScore

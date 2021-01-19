@@ -49,7 +49,7 @@ import { message } from './store/WebsocketStore';
   contribution : number
  }
 interface EvaluationScore {
-  contributions : EvaluationScoreContribution[]
+  evaluationScoreContributions : EvaluationScoreContribution[]
   score : number
 }
 
@@ -63,7 +63,7 @@ interface EvaluationClock {
  interface AgentModel {
    id: number,
    species: number,
-   runningScore: EvaluationScore,
+   score: EvaluationScore,
   //  clocks: EvaluationClock[]
  }
  interface Population {
@@ -76,23 +76,39 @@ interface EvaluationClock {
   const newAgent = r.read("simulation.event.agent.new")
   const newPopulation = r.read("simulation.event.population.new")
   const controllerOutput = r.read("simulation.frame.output")
- let currentGeneration = tweened(0)
+ let currentGeneration = 0
  let currentPopulation : Population = {generation: 0, agents: []}
  let currentAgent : AgentModel = {
-   id: 0, species: 0, runningScore : {contributions: [], score: 0}
+   id: 0, species: 0, score : {evaluationScoreContributions: [], score: 0}
  }
  $:{
-   $currentGeneration = $newPopulation?.generation || 0 
+   currentGeneration = $newPopulation?.generation || 0 
+ }
+ $: {
+   const population = $newPopulation
+   if (population && population !== currentPopulation) {
+     currentPopulation = population
+   }
+ }
+
+ $: {
+   const agent = $newAgent
+   if (agent && agent !== currentAgent)
+    currentAgent = $newAgent!!
  }
 </script>
 
 <div>
   <div>Controller: {JSON.stringify($controllerOutput)}</div>
-  <div>Generations: {$currentGeneration}</div>
+  <div>Generations: {currentGeneration}</div>
   <div>Population Size: {currentPopulation.agents.length}</div>
+  <div>Current Agent: {currentAgent.id }</div>
   <div>Current Agent Species: {currentAgent.species }</div>
   <div>Current Score: {$newScore?.score }</div>
-  {#each currentAgent.runningScore.contributions as scoreElement}
-  <div>{scoreElement.name} move score({scoreElement.contribution}) to {scoreElement.score}</div>
+  {#each ($newScore)?.evaluationScoreContributions || [] as contribution}
+    <div>{contribution.name} - score changed ({contribution.contribution}) to {contribution.score}</div>
   {/each}
+  <div>
+    
+  </div>
 </div>
