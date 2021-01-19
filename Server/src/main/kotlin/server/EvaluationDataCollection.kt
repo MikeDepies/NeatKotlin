@@ -1,19 +1,31 @@
 package server
 
+import kotlinx.serialization.Serializable
 import server.message.endpoints.*
 
+@Serializable
 data class AgentEvaluationData(val score: EvaluationScore, val agentId: Int)
+
+@Serializable
 data class PopulationDataCollection(
     var topEvaluation: AgentEvaluationData?,
     val scoreMap: MutableMap<Int, AgentEvaluationData>
 )
 
-data class PopulationModels(val models: Map<Int, AgentModel>)
+@Serializable
+data class PopulationModels(val models: Map<Int, AgentModel>, val generation: Int)
+
+@Serializable
 data class AgentModel(val id: Int, val model: NeatModel)
+
+@Serializable
 data class EvaluationScore(val score: Float, val evaluationScoreContributions: List<EvaluationScoreContribution>)
-data class EvaluationScoreContribution(val name: String, val score: Float, val contribution : Float)
+
+@Serializable
+data class EvaluationScoreContribution(val name: String, val score: Float, val contribution: Float)
+
+@Serializable
 data class EvaluationRecord(
-    val generation: Int,
     val populationModels: PopulationModels,
     val populationDataCollection: PopulationDataCollection
 )

@@ -34,9 +34,9 @@ class ClientWebSocketManager(
             val webSocketServerSession = this
 //            val token = sessionAuthenticator.authenticate(webSocketServerSession)
 //            if (token is TokenValidationResponse.Success) {
-//            val id = incoming.receive().safeCast<Frame.Text>()
-//                ?.let { json.decodeFromString<UserConnectMessage>(it.readText()) } ?: error("Was not a text frame")
-            val user = User("id.clientId")
+            val id = incoming.receive().safeCast<Frame.Text>()
+                ?.let { json.decodeFromString<UserConnectMessage>(it.readText()) } ?: error("Was not a text frame")
+            val user = User(id.clientId)
             val userSession = UserSession(webSocketServerSession, json)
             try {
                 clientRegistry.register(user, userSession)

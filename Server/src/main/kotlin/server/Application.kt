@@ -3,13 +3,13 @@ package server
 import Auth0Config
 import FrameOutput
 import MessageWriter
+import UserRef
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -19,7 +19,6 @@ import neat.ModelScore
 import neat.SpeciationController
 import neat.model.NeatMutator
 import neat.toMap
-import org.koin.core.qualifier.*
 import org.koin.ktor.ext.*
 import org.slf4j.event.Level
 import server.message.*
@@ -90,7 +89,9 @@ fun Application.module(testing: Boolean = false) {
     get<WebSocketManager>().attachWSRoute()
     val (initialPopulation, evaluationArena, populationEvolver, adjustedFitness) = get<Simulation>()
 
-    networkEvaluatorOutputBridgeLoop()
+    val evaluationChannels = get<EvaluationChannels>()
+    val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
+    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor)
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)
@@ -98,21 +99,71 @@ fun Application.module(testing: Boolean = false) {
         evaluationLoop(
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
-            adjustedFitnessCalculation = adjustedFitness
+            adjustedFitnessCalculation = adjustedFitness,
+            evaluationChannels = evaluationChannels
         )
     }
 }
 
-private fun Application.networkEvaluatorOutputBridgeLoop() {
-    launch {
-        val frameOutputChannel = get<Channel<FrameOutput>>(qualifier<FrameOutput>())
-        frameOutputChannel.receive().let { frameOutput ->
-            get<MessageWriter>().sendAllMessage(
+class EvaluationMessageProcessor(val evaluationChannels: EvaluationChannels, val messageWriter: MessageWriter) {
+    suspend fun processOutput() {
+        for (frameOutput in evaluationChannels.frameOutputChannel) {
+            messageWriter.sendAllMessage(
                 BroadcastMessage("simulation.frame.output", frameOutput),
                 FrameOutput.serializer()
             )
         }
     }
+
+    suspend fun processPopulation() {
+        for (frame in evaluationChannels.populationChannel) {
+            messageWriter.sendPlayerMessage(
+                userMessage = TypedUserMessage(
+                    userRef = UserRef("dashboard"),
+                    topic = "simulation.event.population.new",
+                    data = frame
+                ),
+                serializer = PopulationModels.serializer()
+            )
+
+        }
+    }
+
+    suspend fun processAgentModel() {
+        for (frame in evaluationChannels.agentModelChannel) {
+            messageWriter.sendPlayerMessage(
+                userMessage = TypedUserMessage(
+                    userRef = UserRef("dashboard"),
+                    topic = "simulation.event.agent.new",
+                    data = frame
+                ),
+                serializer = AgentModel.serializer()
+            )
+        }
+    }
+
+    suspend fun processScores() {
+        for (frame in evaluationChannels.scoreChannel) {
+            messageWriter.sendPlayerMessage(
+                userMessage = TypedUserMessage(
+                    userRef = UserRef("dashboard"),
+                    topic = "simulation.event.score.new",
+                    data = frame
+                ),
+                serializer = EvaluationScore.serializer()
+            )
+
+        }
+    }
+}
+
+private fun Application.networkEvaluatorOutputBridgeLoop(
+    evaluationMessageProcessor: EvaluationMessageProcessor
+) {
+    launch { evaluationMessageProcessor.processOutput() }
+    launch { evaluationMessageProcessor.processPopulation() }
+    launch { evaluationMessageProcessor.processAgentModel() }
+    launch { evaluationMessageProcessor.processScores() }
 }
 
 private fun sortModelsByAdjustedFitness(

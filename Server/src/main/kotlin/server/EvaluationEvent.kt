@@ -39,9 +39,11 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
 typealias SimulationSnapshot = SimulationState
 
 data class EvaluationChannels(
-    val frameChannel: Channel<FrameUpdate>,
-    val networkOutputChannel: Channel<FrameOutput>,
-    val scoreChannel: Channel<EvaluationScore>
+    val frameUpdateChannel: ReceiveChannel<FrameUpdate>,
+    val frameOutputChannel: Channel<FrameOutput>,
+    val scoreChannel: Channel<EvaluationScore>,
+    val agentModelChannel: Channel<AgentModel>,
+    val populationChannel: Channel<PopulationModels>
 )
 
 interface EvaluationQuery {
@@ -59,14 +61,19 @@ suspend fun Application.evaluationLoop(
 ) {
     //Extract to koin
     //hook up websockets
-    val (frameChannel, networkOutputChannel, scoreChannel) = evaluationChannels
+    val (frameChannel, networkOutputChannel, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
     var currentPopulation = initialPopulation
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
     runFolder.mkdirs()
     while (true) {
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
-        val modelScores = currentPopulation.map { neatMutator ->
+        val populationMap =
+            currentPopulation.mapIndexed { index, neatMutator -> AgentModel(index, neatMutator.toModel()) }
+                .toMap { it.id }
+        populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
+        val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
+            agentModelChannel.send(populationMap.getValue(index))
             val network = neatMutator.toNetwork()
             val evaluator = get<Evaluator>()
             val evaluationScore = evaluate(frameChannel, network, networkOutputChannel, scoreChannel, evaluator)

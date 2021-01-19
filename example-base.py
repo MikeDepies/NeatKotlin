@@ -255,6 +255,9 @@ async def handle_message():
     async with websockets.connect(uri) as websocket:
         Session.ws = websocket
         try:
+            websocket.send(json.dumps({
+                "clientId": "pythonAgent"
+            }))
             while True:
                 got_back = await websocket.recv()
                 if (Session.gamestate is not None and Session.gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]):
