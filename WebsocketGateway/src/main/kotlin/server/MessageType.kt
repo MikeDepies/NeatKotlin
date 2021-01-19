@@ -18,10 +18,10 @@ sealed class MessageType {
 fun JsonObject.messageType(): MessageType {
     val players = get("users")?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }?.map { User(it) }
     val player = get("userRef")?.jsonPrimitive?.content?.let { User(it) }
-    val subject = get("subject")?.jsonPrimitive?.content
+    val topic = get("topic")?.jsonPrimitive?.content
     val data = get("data") ?: get("data")?.jsonArray
     val payload = buildJsonObject {
-        put("subject", subject)
+        put("topic", topic)
         put("data", data!!)
     }
 

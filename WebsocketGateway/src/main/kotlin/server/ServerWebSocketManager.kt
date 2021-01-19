@@ -39,7 +39,7 @@ class ServerWebSocketManager(
                     while (true) {
                         val frame = incoming.receive()
                         when (val messageType = frame.messageType()) {
-                            is MessageType.All -> clientRegistry.sendAll(messageType.payload)
+                            is MessageType.All -> clientRegistry.sendAll(messageType.payload).also { logger.info { "${messageType.payload}" } }
                             is MessageType.UserGroup -> messageType.users.forEach {
                                 clientRegistry[it]?.send(
                                     messageType.payload

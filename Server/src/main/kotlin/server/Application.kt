@@ -30,6 +30,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
 import kotlin.math.sqrt
+import kotlin.random.*
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -91,6 +92,7 @@ fun Application.module(testing: Boolean = false) {
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
+//    generateFakeData(evaluationChannels)
     networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor)
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
@@ -105,9 +107,36 @@ fun Application.module(testing: Boolean = false) {
     }
 }
 
+private fun Application.generateFakeData(evaluationChannels: EvaluationChannels) {
+    launch {
+        while (true) {
+
+            val element = FrameOutput(
+                Random.nextBoolean(),
+                Random.nextBoolean(),
+                Random.nextBoolean(),
+                Random.nextBoolean(),
+                Random.nextFloat(),
+                Random.nextFloat(),
+                Random.nextFloat(),
+                Random.nextFloat(),
+                Random.nextFloat(),
+                Random.nextFloat(),
+            )
+            log.info("$element")
+            evaluationChannels.frameOutputChannel.send(
+                element
+            )
+            evaluationChannels.scoreChannel.send(EvaluationScore(Random.nextFloat() * 1000, listOf()))
+            delay(1000)
+        }
+    }
+}
+
 class EvaluationMessageProcessor(val evaluationChannels: EvaluationChannels, val messageWriter: MessageWriter) {
     suspend fun processOutput() {
         for (frameOutput in evaluationChannels.frameOutputChannel) {
+            log.info { frameOutput }
             messageWriter.sendAllMessage(
                 BroadcastMessage("simulation.frame.output", frameOutput),
                 FrameOutput.serializer()
