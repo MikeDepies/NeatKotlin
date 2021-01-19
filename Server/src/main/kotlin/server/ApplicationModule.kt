@@ -32,6 +32,7 @@ import neat.*
 import neat.model.*
 import neat.mutation.mutateConnectionWeight
 import org.koin.core.qualifier.*
+import org.koin.core.scope.*
 import org.koin.dsl.module
 import org.koin.experimental.builder.*
 import server.message.endpoints.*
@@ -42,6 +43,8 @@ import java.io.File
 import kotlin.random.Random
 
 private val log = KotlinLogging.logger { }
+inline fun <reified T> Scope.getChannel(): Channel<T> =
+    get(qualifier<T>())
 
 val applicationModule = module {
     single<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel() }
@@ -49,7 +52,7 @@ val applicationModule = module {
     single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-    single<EvaluationChannels>()
+    single { EvaluationChannels(getChannel(), getChannel(), getChannel(), getChannel(), getChannel()) }
     single<EvaluationMessageProcessor>()
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }

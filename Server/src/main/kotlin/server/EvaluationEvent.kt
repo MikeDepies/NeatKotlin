@@ -69,7 +69,10 @@ suspend fun Application.evaluationLoop(
     while (true) {
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
         val populationMap =
-            currentPopulation.mapIndexed { index, neatMutator -> AgentModel(index, neatMutator.toModel()) }
+            currentPopulation.mapIndexed { index, neatMutator ->
+                val species = populationEvolver.speciationController.species(neatMutator).id
+                AgentModel(index, species, neatMutator.toModel())
+            }
                 .toMap { it.id }
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
         val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
