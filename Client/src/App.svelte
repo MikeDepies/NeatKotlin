@@ -76,13 +76,13 @@ interface EvaluationClock {
   const newAgent = r.read("simulation.event.agent.new")
   const newPopulation = r.read("simulation.event.population.new")
   const controllerOutput = r.read("simulation.frame.output")
- let currentGeneration = tweened(0)
+ let currentGeneration = 0
  let currentPopulation : Population = {generation: 0, agents: []}
  let currentAgent : AgentModel = {
    id: 0, species: 0, score : {evaluationScoreContributions: [], score: 0}
  }
  $:{
-   $currentGeneration = $newPopulation?.generation || 0 
+   currentGeneration = $newPopulation?.generation || 0 
  }
  $: {
    const population = $newPopulation
@@ -100,7 +100,7 @@ interface EvaluationClock {
 
 <div>
   <div>Controller: {JSON.stringify($controllerOutput)}</div>
-  <div>Generations: {$currentGeneration}</div>
+  <div>Generations: {currentGeneration}</div>
   <div>Population Size: {currentPopulation.agents.length}</div>
   <div>Current Agent: {currentAgent.id }</div>
   <div>Current Agent Species: {currentAgent.species }</div>
