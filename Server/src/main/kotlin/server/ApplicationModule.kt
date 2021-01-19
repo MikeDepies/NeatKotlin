@@ -5,7 +5,6 @@ import AuthServiceAuth0
 import ClientRegistry
 import FrameOutput
 import FrameUpdate
-import server.message.endpoints.EvaluationArena
 import MessageEndpointRegistry
 import MessageEndpointRegistryImpl
 import MessageWriter
@@ -13,8 +12,6 @@ import MessageWriterImpl
 import PopulationEvolver
 import SessionScope
 import SessionScopeImpl
-import server.message.endpoints.Simulation
-import server.message.endpoints.SimulationSessionScope
 import UserTokenResolver
 import UserTokenResolverImpl
 import io.ktor.client.*
@@ -24,21 +21,20 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.features.websocket.*
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
 import neat.mutation.mutateConnectionWeight
-import org.koin.core.qualifier.*
-import org.koin.core.scope.*
+import org.koin.core.qualifier.qualifier
+import org.koin.core.scope.Scope
 import org.koin.dsl.module
-import org.koin.experimental.builder.*
+import org.koin.experimental.builder.single
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
 import server.server.WebSocketManager
-import server.message.endpoints.simulationEndpoints
 import java.io.File
 import kotlin.random.Random
 
@@ -85,15 +81,15 @@ val applicationModule = module {
 
     single { MeleeState(createEmptyFrameData()) }
     single { FrameClockFactory() }
-    factory<Evaluator> { SimpleEvaluator(get(), 8f, get()) }
+    factory<Evaluator> { (agentId: Int) -> SimpleEvaluator(agentId, get(), 8f, get()) }
     single { EvaluationArena() }
     single { simulation(evaluationArena = get()) }
 }
 
-fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 90922, takeSize: Int? = null): Simulation {
+fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 22, takeSize: Int? = null): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
 
-    val sharingFunction = shFunction(5f)
+    val sharingFunction = shFunction(3f)
     val distanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
@@ -119,7 +115,7 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 90922, takeSi
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            200,
+            20,
             input(53, true),
             9,
             Activation.sigmoidal
@@ -156,6 +152,37 @@ fun NeatExperiment.generateInitialPopulationWithOneButton(
             .forEach { connectionGene ->
                 connectionGene.weight = -1f
             }
+//        connectionsFrom.filter { connectionGene ->
+//            analogOutputNodes.none { connectionGene.outNode == it.node }
+//        }.forEach { connectionGene ->
+//            connectionGene.weight = 0f
+//        }
+        clone
+    }
+}
+
+fun NeatExperiment.generateInitialPopulationWithOneButton2(
+    populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene
+): List<NeatMutator> {
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, function)
+    return (0 until populationSize).map {
+        val clone = neatMutator.clone()
+        val randomOutputNode = clone.outputNodes.random(random)
+        val randomOutputNode2 = (clone.outputNodes - randomOutputNode).random(random)
+        val randomOutputNode3 = (clone.outputNodes - randomOutputNode - randomOutputNode2).random(random)
+        val analogOutputNodes = listOf(4, 5, 6, 7).map { clone.outputNodes[it] }
+        val randomOutputs = listOf(randomOutputNode, randomOutputNode2, randomOutputNode3)
+        clone.connections
+            .forEach { connectionGene ->
+                if (randomOutputs.any { connectionGene.outNode == it.node })
+                    mutateConnectionWeight(connectionGene)
+                else connectionGene.enabled = false
+            }
+
+//        clone.outputNodes.forEach {
+//            it.activationFunction = Activation.identity
+//        }
+
 //        connectionsFrom.filter { connectionGene ->
 //            analogOutputNodes.none { connectionGene.outNode == it.node }
 //        }.forEach { connectionGene ->

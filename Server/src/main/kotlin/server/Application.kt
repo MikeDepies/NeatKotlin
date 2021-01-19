@@ -19,9 +19,11 @@ import neat.ModelScore
 import neat.SpeciationController
 import neat.model.NeatMutator
 import neat.toMap
-import org.koin.ktor.ext.*
+import org.koin.ktor.ext.Koin
+import org.koin.ktor.ext.get
 import org.slf4j.event.Level
-import server.message.*
+import server.message.BroadcastMessage
+import server.message.TypedUserMessage
 import server.message.endpoints.*
 import server.server.WebSocketManager
 import java.io.File
@@ -30,7 +32,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
 import kotlin.math.sqrt
-import kotlin.random.*
+import kotlin.random.Random
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -128,7 +130,7 @@ private fun Application.generateFakeData(evaluationChannels: EvaluationChannels)
             evaluationChannels.frameOutputChannel.send(
                 element
             )
-            evaluationChannels.scoreChannel.send(EvaluationScore(Random.nextFloat() * 1000, listOf()))
+            evaluationChannels.scoreChannel.send(EvaluationScore(-1, Random.nextFloat() * 1000, listOf()))
             delay(1000)
         }
     }

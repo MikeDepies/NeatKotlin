@@ -141,9 +141,6 @@ $: {
   <div>Current Agent: {currentAgent.id }</div>
   <div>Current Agent Species: {currentAgent.species }</div>
   <div>Current Score: {$newScore?.score }</div>
-  {#each ($newScore)?.evaluationScoreContributions || [] as contribution}
-    <div>{contribution.name} - score changed ({contribution.contribution}) to {contribution.score}</div>
-  {/each}
   <div>
     <h1>Population Scores</h1>
     <div class="w-full h-96">

@@ -376,7 +376,7 @@ async def console_loop():
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=costume,
-                                                cpu_level=5,
+                                                cpu_level=2,
                                                 autostart=True,
                                                 swag=False)
             # else:

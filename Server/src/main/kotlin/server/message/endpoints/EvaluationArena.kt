@@ -11,7 +11,6 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.math.max
 import kotlin.math.pow
-import kotlin.math.roundToInt
 
 private val log = KotlinLogging.logger { }
 
@@ -22,7 +21,7 @@ fun List<Float>.toFrameOutput(): FrameOutput {
         when {
             it.isNaN() -> false
             it.isInfinite() -> true
-            else -> it.roundToInt() > 0
+            else -> it > .5
         }
     }
     fun clamp(index: Int) = get(index).let {

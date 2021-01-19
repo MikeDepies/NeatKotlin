@@ -2,10 +2,18 @@ package server
 
 import FrameUpdate
 import mu.KotlinLogging
-import server.message.endpoints.*
-import kotlin.math.*
-private val logger = KotlinLogging.logger {  }
+import server.message.endpoints.MeleeFrameData
+import server.message.endpoints.MeleeState
+import server.message.endpoints.PlayerFrameData
+import server.message.endpoints.createSimulationFrame
+import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.sqrt
+
+private val logger = KotlinLogging.logger { }
+
 class SimpleEvaluator(
+    val agentId: Int,
     private val meleeState: MeleeState,
     var runningScore: Float,
     frameClockFactory: FrameClockFactory
@@ -13,11 +21,11 @@ class SimpleEvaluator(
     Evaluator {
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    private val damageClock = frameClockFactory.countDownClockSeconds(3f).log("Damage Clock")
+    private val damageClock = frameClockFactory.countDownClockSeconds(2f).log("Damage Clock")
     private val graceClock = frameClockFactory.countDownClockSeconds(1.5f).log("Grace Clock")
     private val hitStunClock = frameClockFactory.countDownClockMilliseconds(200).log("HitStun Clock")
     private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds(200).log("P2 HitStun Clock")
-    private val landedClock = frameClockFactory.countDownClockMilliseconds(200).log("Landed Clock")
+    private val landedClock = frameClockFactory.countDownClockMilliseconds(100).log("Landed Clock")
     private val stockTakenClock = frameClockFactory.countDownClockSeconds(6f).log("StockTaken Clock")
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
@@ -87,11 +95,14 @@ class SimpleEvaluator(
         }
         cumulativeDamage += player1.damageDone
         val newRunningScore = runningScore + player1.damageDone
-        scoreContributionList += EvaluationScoreContribution(
-            "Damage Dealt (${player1.damageDone})",
-            newRunningScore,
-            newRunningScore - runningScore
-        )
+        if (player1.dealtDamage || player1.damageDone > 0) {
+            logger.info { "DAMAGE DEALT" }
+            scoreContributionList += EvaluationScoreContribution(
+                "Damage Dealt (${player1.damageDone})",
+                newRunningScore,
+                newRunningScore - runningScore
+            )
+        }
         runningScore = newRunningScore
         if (player1.damageTaken > 0 || player1.tookDamage)
             logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
@@ -184,7 +195,7 @@ class SimpleEvaluator(
             )
         )
         runningScore = newScore
-        val evaluationScore = EvaluationScore(runningScore, scoreContributionList)
+        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
         return evaluationScore
     }
 }
