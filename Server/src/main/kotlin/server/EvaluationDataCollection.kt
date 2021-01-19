@@ -19,7 +19,7 @@ data class PopulationModels(val models: Map<Int, AgentModel>, val generation: In
 data class AgentModel(val id: Int, val species: Int, val model: NeatModel)
 
 @Serializable
-data class EvaluationScore(val score: Float, val evaluationScoreContributions: List<EvaluationScoreContribution>)
+data class EvaluationScore(val agentId: Int, val score: Float, val evaluationScoreContributions: List<EvaluationScoreContribution>)
 
 @Serializable
 data class EvaluationScoreContribution(val name: String, val score: Float, val contribution: Float)

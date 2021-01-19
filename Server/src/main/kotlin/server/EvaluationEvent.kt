@@ -79,7 +79,7 @@ suspend fun Application.evaluationLoop(
             agentModelChannel.send(populationMap.getValue(index))
             val network = neatMutator.toNetwork()
             val evaluator = get<Evaluator>()
-            val evaluationScore = evaluate(frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
+            val evaluationScore = evaluate(index, frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
             FitnessModel(
                 model = neatMutator,
                 score = evaluationScore.score
@@ -129,15 +129,16 @@ interface Evaluator {
 }
 
 private suspend fun evaluate(
+    agentId : Int,
     frameChannel: ReceiveChannel<FrameUpdate>,
     network: ActivatableNetwork,
     networkOutputChannel: SendChannel<FrameOutput>,
     scoreChannel: SendChannel<EvaluationScore>,
     evaluator: Evaluator
 ): EvaluationScore {
-    var lastEvaluationScore = EvaluationScore(0f, listOf())
+    var lastEvaluationScore = EvaluationScore(-1, 0f, listOf())
     suspend fun sendEvaluationScoreUpdate() {
-        val evaluationScore = EvaluationScore(evaluator.score, evaluator.scoreContributionList)
+        val evaluationScore = EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
         if (evaluationScore != lastEvaluationScore) {
             scoreChannel.send(evaluationScore)
         }
@@ -151,11 +152,13 @@ private suspend fun evaluate(
         sendEvaluationScoreUpdate()
         if (evaluator.isFinished()) {
             evaluator.finishEvaluation()
-            return EvaluationScore(evaluator.score, evaluator.scoreContributionList)
+            sendEvaluationScoreUpdate()
+            return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
         }
     }
     evaluator.finishEvaluation()
-    return EvaluationScore(evaluator.score, evaluator.scoreContributionList)
+    sendEvaluationScoreUpdate()
+    return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
 }
 typealias PlayerNumber = Int
 
