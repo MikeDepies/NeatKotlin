@@ -2,7 +2,7 @@
   import { tweened } from 'svelte/motion';
 import { reader } from './store/websocket/MessageRouter';
 import { message } from './store/WebsocketStore';
-
+import * as Pancake from '@sveltejs/pancake';
   /*
   Current Generation:
   Population Size:
@@ -63,7 +63,7 @@ interface EvaluationClock {
  interface AgentModel {
    id: number,
    species: number,
-   score: EvaluationScore,
+  //  score: EvaluationScore,
   //  clocks: EvaluationClock[]
  }
  interface Population {
@@ -77,12 +77,22 @@ interface EvaluationClock {
   const newPopulation = r.read("simulation.event.population.new")
   const controllerOutput = r.read("simulation.frame.output")
  let currentGeneration = 0
+ let populationSize = 200
  let currentPopulation : Population = {generation: 0, agents: []}
  let currentAgent : AgentModel = {
-   id: 0, species: 0, score : {evaluationScoreContributions: [], score: 0}
+   id: 0, species: 0
  }
  $:{
-   currentGeneration = $newPopulation?.generation || 0 
+   const population = $newPopulation
+   const newGeneration = population?.generation || 0
+   if (newGeneration != currentGeneration) {
+     populationScoreHistory = []
+     highestPopulationScore = 0
+   }
+   if (population !== undefined) {
+    populationSize = population.agents.length
+   }
+   currentGeneration = newGeneration 
  }
  $: {
    const population = $newPopulation
@@ -90,18 +100,44 @@ interface EvaluationClock {
      currentPopulation = population
    }
  }
-
+ let populationScoreHistory : number[] = []
+ let data : {x : number, y: number }[]= []
+ let highestPopulationScore = 0
+ $: {
+   let i = 0
+   data = populationScoreHistory.map(s => ({x : i++, y: s}))
+  }
+  let agentScoreHistory : number[]= []
+  let agentScoreModel : AgentModel = currentAgent
+  let agentLastScore : number = 0
+$: {
+  const agent = currentAgent
+  console.log(agent);
+  const score=$newScore?.score || 0;
+  if (agent !== agentScoreModel) {
+    populationScoreHistory = [...populationScoreHistory, agentLastScore]
+    if (highestPopulationScore < agentLastScore) {
+      highestPopulationScore = agentLastScore
+    }
+    agentLastScore = 0
+    agentScoreHistory = []
+    agentScoreModel = agent
+  }
+  if (agentLastScore !== score) {
+    agentLastScore = score
+    agentScoreHistory = [...agentScoreHistory, score]
+  }
+}
  $: {
    const agent = $newAgent
-   if (agent && agent !== currentAgent)
-    currentAgent = $newAgent!!
+   if (agent !== undefined && agent !== currentAgent)
+    currentAgent = agent
  }
 </script>
 
 <div>
-  <div>Controller: {JSON.stringify($controllerOutput)}</div>
   <div>Generations: {currentGeneration}</div>
-  <div>Population Size: {currentPopulation.agents.length}</div>
+  <div>Population Size: {populationSize}</div>
   <div>Current Agent: {currentAgent.id }</div>
   <div>Current Agent Species: {currentAgent.species }</div>
   <div>Current Score: {$newScore?.score }</div>
@@ -109,6 +145,69 @@ interface EvaluationClock {
     <div>{contribution.name} - score changed ({contribution.contribution}) to {contribution.score}</div>
   {/each}
   <div>
-    
+    <h1>Population Scores</h1>
+    <div class="w-full h-96">
+      <div class="chart">
+        <Pancake.Chart x1={0} x2={populationSize} y1={0} y2={highestPopulationScore}>
+          <Pancake.Box x2={populationSize} y2={highestPopulationScore}>
+            <div class="axes"></div>
+          </Pancake.Box>
+      
+          <Pancake.Grid vertical count={5} let:value>
+            <span class="x label">{value}</span>
+          </Pancake.Grid>
+      
+          <Pancake.Grid horizontal count={3} let:value>
+            <span class="y label">{value}</span>
+          </Pancake.Grid>
+      
+          <Pancake.Svg>
+            <Pancake.SvgLine data={data} let:d>
+              <path class="data" {d}/>
+            </Pancake.SvgLine>
+          </Pancake.Svg>
+        </Pancake.Chart>
+      </div>
+    </div>
   </div>
 </div>
+
+<style>
+  .chart {
+    height: 100%;
+    padding: 3em 2em 2em 3em;
+    box-sizing: border-box;
+  }
+
+  .axes {
+    width: 100%;
+    height: 100%;
+    border-left: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+
+  .y.label {
+    position: absolute;
+    left: -2.5em;
+    width: 2em;
+    text-align: right;
+    bottom: -0.5em;
+  }
+
+  .x.label {
+    position: absolute;
+    width: 4em;
+    left: -2em;
+    bottom: -22px;
+    font-family: sans-serif;
+    text-align: center;
+  }
+
+  path.data {
+    stroke: red;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-width: 2px;
+    fill: none;
+  }
+</style>
