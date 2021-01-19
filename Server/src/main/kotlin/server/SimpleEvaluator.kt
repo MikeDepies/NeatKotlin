@@ -21,7 +21,7 @@ class SimpleEvaluator(
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
-    var scoreContributionList = mutableListOf<EvaluationScoreContribution>()
+    override val scoreContributionList = mutableListOf<EvaluationScoreContribution>()
 
     /**
      * The finalized Score

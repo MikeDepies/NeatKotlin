@@ -38,6 +38,12 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
  */
 typealias SimulationSnapshot = SimulationState
 
+data class EvaluationChannels(
+    val frameChannel: Channel<FrameUpdate>,
+    val networkOutputChannel: Channel<FrameOutput>,
+    val scoreChannel: Channel<EvaluationScore>
+)
+
 interface EvaluationQuery {
     fun MeleeFrameData.lastPlayersDamageTaken(): List<PlayerNumber>
     fun MeleeFrameData.lastPlayersDamageDealt(): List<PlayerNumber>
@@ -48,12 +54,12 @@ interface EvaluationQuery {
 suspend fun Application.evaluationLoop(
     initialPopulation: List<NeatMutator>,
     populationEvolver: PopulationEvolver,
-    adjustedFitnessCalculation: AdjustedFitnessCalculation
+    adjustedFitnessCalculation: AdjustedFitnessCalculation,
+    evaluationChannels: EvaluationChannels
 ) {
     //Extract to koin
     //hook up websockets
-    val frameChannel = Channel<FrameUpdate>()
-    val networkOutputChannel = Channel<FrameOutput>()
+    val (frameChannel, networkOutputChannel, scoreChannel) = evaluationChannels
     var currentPopulation = initialPopulation
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
@@ -63,9 +69,10 @@ suspend fun Application.evaluationLoop(
         val modelScores = currentPopulation.map { neatMutator ->
             val network = neatMutator.toNetwork()
             val evaluator = get<Evaluator>()
+            val evaluationScore = evaluate(frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
             FitnessModel(
                 model = neatMutator,
-                score = evaluate(frameChannel, network, networkOutputChannel, evaluator)
+                score = evaluationScore.score
             )
         }.toModelScores(adjustedFitnessCalculation)
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
@@ -105,28 +112,40 @@ private fun writeGenerationToDisk(
 
 interface Evaluator {
     val score: Float
+    val scoreContributionList: List<EvaluationScoreContribution>
     fun isFinished(): Boolean
     fun evaluateFrame(frameUpdate: FrameUpdate)
-    fun finishEvaluation() : EvaluationScore
+    fun finishEvaluation(): EvaluationScore
 }
 
 private suspend fun evaluate(
     frameChannel: ReceiveChannel<FrameUpdate>,
     network: ActivatableNetwork,
     networkOutputChannel: SendChannel<FrameOutput>,
+    scoreChannel: SendChannel<EvaluationScore>,
     evaluator: Evaluator
-): Float {
+): EvaluationScore {
+    var lastEvaluationScore = EvaluationScore(0f, listOf())
+    suspend fun sendEvaluationScoreUpdate() {
+        val evaluationScore = EvaluationScore(evaluator.score, evaluator.scoreContributionList)
+        if (evaluationScore != lastEvaluationScore) {
+            scoreChannel.send(evaluationScore)
+        }
+        lastEvaluationScore = evaluationScore
+    }
+
     for (frameUpdate in frameChannel) {
         network.evaluate(frameUpdate.flatten(), true)
         networkOutputChannel.send(network.output().toFrameOutput())
         evaluator.evaluateFrame(frameUpdate)
+        sendEvaluationScoreUpdate()
         if (evaluator.isFinished()) {
             evaluator.finishEvaluation()
-            return evaluator.score
+            return EvaluationScore(evaluator.score, evaluator.scoreContributionList)
         }
     }
     evaluator.finishEvaluation()
-    return evaluator.score
+    return EvaluationScore(evaluator.score, evaluator.scoreContributionList)
 }
 typealias PlayerNumber = Int
 

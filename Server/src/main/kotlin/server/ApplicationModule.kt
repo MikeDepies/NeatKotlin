@@ -45,6 +45,7 @@ private val log = KotlinLogging.logger { }
 val applicationModule = module {
     single<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel()}
     single<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel()}
+    single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel()}
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }
     single { SimulationSessionScope(this, get()) }
