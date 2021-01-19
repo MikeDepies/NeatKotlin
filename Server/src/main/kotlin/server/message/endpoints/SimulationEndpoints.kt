@@ -21,9 +21,10 @@ var receivedAnyMessages = false
 fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *>> {
     registerEndpoint<FrameUpdate, SimulationSessionScope>("simulation.frame.update") {
         val frameUpdateChannel = get<Channel<FrameUpdate>>(qualifier<FrameUpdate>())
+//        log.info { "New frame: ${it.data}" }
+        receivedAnyMessages = true
         frameUpdateChannel.send(it.data)
 
-        receivedAnyMessages = true
     }
 
     registerEndpoint<NoData, SimulationSessionScope>("simulation.reset.game") {

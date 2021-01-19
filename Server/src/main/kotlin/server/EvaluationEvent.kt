@@ -17,7 +17,7 @@ import java.time.*
 import java.time.format.*
 import kotlin.math.*
 
-private val log = KotlinLogging.logger { }
+private val logger = KotlinLogging.logger { }
 
 interface EvaluationEvent
 sealed class CoreEvaluationEvent : EvaluationEvent
@@ -73,12 +73,13 @@ suspend fun Application.evaluationLoop(
                 val species = populationEvolver.speciationController.species(neatMutator).id
                 AgentModel(index, species, neatMutator.toModel())
             }
-                .toMap { it.id }
+        logger.info { "Starting new generation: ${populationEvolver.generation}" }
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
         val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
-            agentModelChannel.send(populationMap.getValue(index))
+            agentModelChannel.send(populationMap[index])
             val network = neatMutator.toNetwork()
             val evaluator = get<Evaluator>()
+            logger.info { "Evaluating Model ${index + 1} / ${currentPopulation.size}" }
             val evaluationScore = evaluate(frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
             FitnessModel(
                 model = neatMutator,
@@ -87,6 +88,7 @@ suspend fun Application.evaluationLoop(
         }.toModelScores(adjustedFitnessCalculation)
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
+        logger.info { "top species: ${modelScores.first().fitness} - ${modelScores.first().adjustedFitness}" }
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
         populationEvolver.speciate(newPopulation)
         while (newPopulation.size < currentPopulation.size) {
@@ -102,7 +104,7 @@ private fun writeGenerationToDisk(
     populationEvolver: PopulationEvolver
 ) {
     val modelPopulationPersist = currentPopulation.toModel()
-    val savePopulationFile = runFolder.resolve("${populationEvolver.generation + 168}.json")
+    val savePopulationFile = runFolder.resolve("${populationEvolver.generation}.json")
     val json = Json { prettyPrint = true }
     val encodedModel = json.encodeToString(modelPopulationPersist)
     savePopulationFile.bufferedWriter().use {
@@ -151,6 +153,9 @@ private suspend fun evaluate(
         sendEvaluationScoreUpdate()
         if (evaluator.isFinished()) {
             evaluator.finishEvaluation()
+            logger.info { """
+                Score: ${evaluator.score}
+            """.trimIndent() }
             return EvaluationScore(evaluator.score, evaluator.scoreContributionList)
         }
     }
@@ -236,16 +241,16 @@ class FrameClockFactory(val fps: Float = 60f) {
 class FrameClock(val frameTime: Float) {
     var frame: Int? = null
     fun seconds(simulationFrameData: MeleeFrameData): Int? {
-        return frame?.let {
-            val frames = simulationFrameData.frame - it
-            (frames * frameTime) / 1000
+        return frames(simulationFrameData)?.let { frames ->
+//            log.info { "($frames * $frameTime) / $1000 == ${(frames * frameTime) / 1000}" }
+            (frames * (frameTime * 1000)) / 1000
         }?.toInt()
     }
 
-    fun miliseconds(simulationFrameData: MeleeFrameData): Long? {
-        return frame?.let {
-            val frames = simulationFrameData.frame - it
-            (frames * frameTime)
+    fun milliseconds(simulationFrameData: MeleeFrameData): Long? {
+        return frames(simulationFrameData)?.let { frames ->
+//            log.info { "($frames * $frameTime) * $1000 == ${(frames * frameTime) * 1000}" }
+            (frames * frameTime * 1000)
         }?.toLong()
     }
 
@@ -253,9 +258,9 @@ class FrameClock(val frameTime: Float) {
         return frame?.let { simulationFrameData.frame - it }
     }
 
-    fun start(simulationFrameData: MeleeFrameData) {
-        frame = simulationFrameData.frame
-    }
+//    fun start(simulationFrameData: MeleeFrameData) {
+//        frame = simulationFrameData.frame
+//    }
 
     fun start(startFrame: Int) {
         frame = startFrame
@@ -275,12 +280,15 @@ class CountDownSecondsClock(private val clock: FrameClock, val seconds: Float) :
     override fun start(frameNumber: Int) = clock.start(frameNumber)
     override fun cancel() = clock.reset()
     override fun isFinished(simulationFrameData: MeleeFrameData) =
-        clock.seconds(simulationFrameData)?.let { clockSecondsElapsed -> clockSecondsElapsed > seconds }
-            ?: false
+        clock.seconds(simulationFrameData)?.let { clockSecondsElapsed ->
+//            log.info { "$clockSecondsElapsed > $seconds" }
+            clockSecondsElapsed >= seconds
+        }
+            ?: true
 
     override fun isCanceled(simulationFrameData: MeleeFrameData) = clock.seconds(simulationFrameData) == null
     override fun toFrameLength(): Int {
-        return ceil(((seconds * 1000) / clock.frameTime)).toInt()
+        return ceil(((seconds * 1000) / (clock.frameTime * 1000))).toInt()
     }
 
     override val startFrame: Int?
@@ -295,19 +303,25 @@ class LogCountDownClock(
     private val clockName: String,
     private val countDownClock: CountDownClock
 ) : CountDownClock by countDownClock {
+    var loggedFinish = true
     override fun start(frameNumber: Int) {
-        log.info { "$clockName is being started on frame $frameNumber for ${countDownClock.toFrameLength()} frames." }
+        logger.info { "$clockName is being started on frame $frameNumber for ${countDownClock.toFrameLength()} frames." }
+        loggedFinish = false
         countDownClock.start(frameNumber)
     }
 
     override fun cancel() {
-        log.info { "$clockName is being canceled on ${toFrameLength() - (startFrame ?: 0)} clock frame of ${countDownClock.toFrameLength()} frames." }
+        logger.info { "$clockName is being canceled on ${toFrameLength() - (startFrame ?: 0)} clock frame of ${countDownClock.toFrameLength()} frames." }
+        loggedFinish = true
         countDownClock.cancel()
     }
 
     override fun isFinished(simulationFrameData: MeleeFrameData): Boolean {
         val finished = countDownClock.isFinished(simulationFrameData)
-        log.info { "$clockName finished with a timer frame length of ${toFrameLength()}." }
+        if (!loggedFinish && finished) {
+            logger.info { "$clockName finished with a timer frame length of ${toFrameLength()}." }
+            loggedFinish = true
+        }
         return finished
     }
 }
@@ -330,12 +344,14 @@ class CountDownClockMilliseconds(private val clock: FrameClock, val milliseconds
     override fun start(frameNumber: Int) = clock.start(frameNumber)
     override fun cancel() = clock.reset()
     override fun isFinished(simulationFrameData: MeleeFrameData) =
-        clock.miliseconds(simulationFrameData)?.let { clockSecondsElapsed -> clockSecondsElapsed > milliseconds }
-            ?: false
+        clock.milliseconds(simulationFrameData)?.let { clockSecondsElapsed ->
+//            log.info { "$clockSecondsElapsed > $milliseconds" }
+            clockSecondsElapsed >= milliseconds }
+            ?: true
 
     override fun isCanceled(simulationFrameData: MeleeFrameData) = clock.seconds(simulationFrameData) == null
     override fun toFrameLength(): Int {
-        return ceil((milliseconds / clock.frameTime)).toInt()
+        return ceil((milliseconds / (clock.frameTime * 1000))).toInt()
     }
 
     override val startFrame: Int?

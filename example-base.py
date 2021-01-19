@@ -253,11 +253,12 @@ def frameData(gameState: GameState):
 async def handle_message():
     uri = "ws://localhost:8090/ws"
     async with websockets.connect(uri) as websocket:
-        Session.ws = websocket
+        
         try:
-            websocket.send(json.dumps({
+            await websocket.send(json.dumps({
                 "clientId": "pythonAgent"
             }))
+            Session.ws = websocket
             while True:
                 got_back = await websocket.recv()
                 if (Session.gamestate is not None and Session.gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]):
@@ -276,7 +277,7 @@ async def handle_message():
 
 def createMessage(topic: str, data):
     return {
-        "subject": topic,
+        "topic": topic,
         "playerRef": "guest",
         "data": data
     }

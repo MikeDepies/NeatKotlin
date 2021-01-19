@@ -13,7 +13,7 @@ data class PopulationDataCollection(
 )
 
 @Serializable
-data class PopulationModels(val models: Map<Int, AgentModel>, val generation: Int)
+data class PopulationModels(val agents: List<AgentModel>, val generation: Int)
 
 @Serializable
 data class AgentModel(val id: Int, val species: Int, val model: NeatModel)

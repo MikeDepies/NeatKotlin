@@ -98,6 +98,7 @@ fun Application.module(testing: Boolean = false) {
         while (!receivedAnyMessages) {
             delay(100)
         }
+        log.info("Start evaluation Loop!")
         evaluationLoop(
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
@@ -136,7 +137,6 @@ private fun Application.generateFakeData(evaluationChannels: EvaluationChannels)
 class EvaluationMessageProcessor(val evaluationChannels: EvaluationChannels, val messageWriter: MessageWriter) {
     suspend fun processOutput() {
         for (frameOutput in evaluationChannels.frameOutputChannel) {
-            log.info { frameOutput }
             messageWriter.sendAllMessage(
                 BroadcastMessage("simulation.frame.output", frameOutput),
                 FrameOutput.serializer()

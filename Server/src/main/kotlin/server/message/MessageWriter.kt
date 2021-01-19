@@ -40,7 +40,7 @@ class MessageWriterImpl(
     ) {
         application.launch {
             clientRegistry.clients.forEach {
-                logger.info { "Sending player message $userMessage" }
+//                logger.info { "Sending player message $userMessage" }
                 it.send(json.encodeToString(TypedUserMessage.serializer(serializer), userMessage))
             }
         }
@@ -64,7 +64,7 @@ class MessageWriterImpl(
     ) {
         application.launch {
             clientRegistry.clients.forEach {
-                logger.info { "Seding group message $message" }
+//                logger.info { "Seding group message $message" }
                 it.send(json.encodeToString(TypedUserGroupMessage.serializer(serializer), message))
             }
         }

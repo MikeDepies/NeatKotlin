@@ -91,7 +91,7 @@ private fun ClientMessage.toServerMessage(user: User): JsonObject = buildJsonObj
 fun clientMessage(jsonObject: JsonObject): ClientMessage {
 //    log.info { "Attempting to receive json message from client $jsonObject" }
     return ClientMessage(
-        jsonObject["subject"]!!.jsonPrimitive.content,
+        jsonObject["topic"]!!.jsonPrimitive.content,
         jsonObject.getOrDefault("data", buildJsonObject {}).jsonObject
     )
 }

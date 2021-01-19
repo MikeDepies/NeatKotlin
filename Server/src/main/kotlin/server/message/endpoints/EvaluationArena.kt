@@ -18,7 +18,13 @@ private val log = KotlinLogging.logger { }
 data class EvaluationData(val simulationFrameData: SimulationFrameData)
 
 fun List<Float>.toFrameOutput(): FrameOutput {
-    fun bool(index: Int) = get(index).roundToInt() > 0
+    fun bool(index: Int) = get(index).let {
+        when {
+            it.isNaN() -> false
+            it.isInfinite() -> true
+            else -> it.roundToInt() > 0
+        }
+    }
     fun clamp(index: Int) = get(index).let {
         when {
             it < 0 -> 0f

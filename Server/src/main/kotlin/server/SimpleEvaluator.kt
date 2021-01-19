@@ -1,9 +1,10 @@
 package server
 
 import FrameUpdate
+import mu.KotlinLogging
 import server.message.endpoints.*
 import kotlin.math.*
-
+private val logger = KotlinLogging.logger {  }
 class SimpleEvaluator(
     private val meleeState: MeleeState,
     var runningScore: Float,
@@ -12,8 +13,8 @@ class SimpleEvaluator(
     Evaluator {
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    private val damageClock = frameClockFactory.countDownClockSeconds(2.5f).log("Damage Clock")
-    private val graceClock = frameClockFactory.countDownClockSeconds(3f).log("Grace Clock")
+    private val damageClock = frameClockFactory.countDownClockSeconds(3f).log("Damage Clock")
+    private val graceClock = frameClockFactory.countDownClockSeconds(1.5f).log("Grace Clock")
     private val hitStunClock = frameClockFactory.countDownClockMilliseconds(200).log("HitStun Clock")
     private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds(200).log("P2 HitStun Clock")
     private val landedClock = frameClockFactory.countDownClockMilliseconds(200).log("Landed Clock")
@@ -37,17 +38,20 @@ class SimpleEvaluator(
         val playerStatusPass = isPlayerStatusReady(meleeFrameData.player1)
         val opponentStatusPass = isPlayerStatusReady(meleeFrameData.player2)
         val playtimeExpired = clocksFinished && playerStatusPass && opponentStatusPass
+//        logger.info { "Clocks Finished: $clocksFinished" }
         return playtimeExpired || meleeFrameData.player1.lostStock
     }
 
     private fun clocksFinished(meleeFrameData: MeleeFrameData) = listOf(
         damageClock,
-        damageClock,
         hitStunClock,
+        graceClock,
         enemyHitStunClock,
         landedClock,
         stockTakenClock
-    ).all { it.isFinished(meleeFrameData) }
+    ).all { val finished = it.isFinished(meleeFrameData)
+        finished
+    }
 
     override fun evaluateFrame(frameUpdate: FrameUpdate) {
         val frameData = meleeState.createSimulationFrame(frameUpdate)
@@ -89,6 +93,8 @@ class SimpleEvaluator(
             newRunningScore - runningScore
         )
         runningScore = newRunningScore
+        if (player1.damageTaken > 0 || player1.tookDamage)
+            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
         cumulativeDamageTaken += player1.damageTaken
         if (player2.lostStock)
             currentStockDamage = 0f
