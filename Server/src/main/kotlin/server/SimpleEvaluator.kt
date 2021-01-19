@@ -94,16 +94,16 @@ class SimpleEvaluator(
             runningScore = scorePenalized
         }
         cumulativeDamage += player1.damageDone
-        val newRunningScore = runningScore + player1.damageDone
-        if (player1.dealtDamage || player1.damageDone > 0) {
+        if (player1.dealtDamage) {
             logger.info { "DAMAGE DEALT" }
+            val newRunningScore = runningScore + player1.damageDone
             scoreContributionList += EvaluationScoreContribution(
                 "Damage Dealt (${player1.damageDone})",
                 newRunningScore,
                 newRunningScore - runningScore
             )
+            runningScore = newRunningScore
         }
-        runningScore = newRunningScore
         if (player1.damageTaken > 0 || player1.tookDamage)
             logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
         cumulativeDamageTaken += player1.damageTaken

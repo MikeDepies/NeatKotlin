@@ -17,10 +17,10 @@ fun MeleeState.createSimulationFrame(lastFrame: FrameUpdate): MeleeFrameData {
     val opponentStockFrame = lastFrame.player2.stock
     val opponentPercentFrame = lastFrame.player2.percent
     val wasGameWon = (opponentStockFrame) == 0 && lastMeleeFrameData.player2.stockCount == 1
-    val damageDoneFrame = (opponentPercentFrame - lastMeleeFrameData.player2.percentFrame).toFloat()
-    val opponentDamageDoneFrame = (percentFrame - lastMeleeFrameData.player1.percentFrame).toFloat()
     val aiTookStock = (lastMeleeFrameData.player2.stockCount - opponentStockFrame) == 1
     val aiLostStock = (lastMeleeFrameData.player1.stockCount - aiStockFrame) == 1
+    val damageDoneFrame = if (!aiTookStock) (opponentPercentFrame - lastMeleeFrameData.player2.percentFrame).toFloat() else 0f
+    val opponentDamageDoneFrame = if (!aiLostStock) (percentFrame - lastMeleeFrameData.player1.percentFrame).toFloat() else 0f
     return MeleeFrameData(
         frame = lastFrame.frame,
         distance = lastFrame.distance,
