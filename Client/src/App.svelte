@@ -157,7 +157,9 @@ $: {
   <div>Current Agent Species: {currentAgent.species }</div>
   <div>Current Score: {$newScore?.score }</div>
   <div>
-    <h1>Population Scores</h1>
+    <h1 class="text-3xl">Population Scores</h1>
+    <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
+    <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
     <div class="w-full h-96">
       <div class="chart">
         <Pancake.Chart x1={0} x2={populationSize} y1={0} y2={highestPopulationScore}>
