@@ -150,15 +150,34 @@ $: {
 </script>
 
 <div>
-  <div>Generations: {currentGeneration}</div>
-  <div>Population Size: {populationSize}</div>
-  <div>Species In Population: {numberOfSpecies}</div>
-  <div>{JSON.stringify(counts)}</div>
-  <div>Current Agent: {currentAgent.id }</div>
-  <div>Current Agent Species: {currentAgent.species }</div>
-  <div>Current Score: {$newScore?.score }</div>
+  <div class="flex flex-wrap justify-start">
+    <div class="items-center justify-items-center justify-center m-4">
+      <div class="text-gray-700 text-xl text-center">Generations</div>
+      <div class="text-gray-400 text-3xl text-center">{currentGeneration}</div>
+    </div>
+    <div class="items-center justify-items-center justify-center m-4">
+      <div class="text-gray-700 text-xl text-center">Population Size</div>
+      <div class="text-gray-400 text-3xl text-center">{populationSize}</div>
+    </div>
+    <div class="items-center justify-items-center justify-center m-4">
+      <div class="text-gray-700 text-xl text-center">Species In Population</div>
+      <div class="text-gray-400 text-3xl text-center">{numberOfSpecies}</div>
+    </div>
+    <div class="items-center justify-items-center justify-center m-4">
+      <div class="text-gray-700 text-xl text-center">Current Agent</div>
+      <div class="text-gray-400 text-3xl text-center">{currentAgent.id}</div>
+    </div>
+    <div class="items-center justify-items-center justify-center m-4">
+      <div class="text-gray-700 text-xl text-center">Species ID</div>
+      <div class="text-gray-400 text-3xl text-center">{currentAgent.species}</div>
+    </div>
+    <div class="items-center justify-items-center justify-center m-4">
+      <div class="text-gray-700 text-xl text-center">Current Score</div>
+      <div class="text-gray-400 text-3xl text-center">{currentAgent.species}</div>
+    </div>
+  </div>
   <div>
-    <h1 class="text-3xl">Population Scores</h1>
+    <h1 class="text-xl">Population Scores</h1>
     <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
     <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
     <div class="w-full h-96">
