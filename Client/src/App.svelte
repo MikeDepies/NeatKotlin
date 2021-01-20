@@ -112,7 +112,7 @@ interface EvaluationClock {
   let agentLastScore : number = 0
 $: {
   const agent = currentAgent
-  console.log(agent);
+  // console.log(agent);
   const score=$newScore?.score || 0;
   if (agent !== agentScoreModel) {
     populationScoreHistory = [...populationScoreHistory, agentLastScore]
@@ -169,6 +169,35 @@ $: {
       
           <Pancake.Svg>
             <Pancake.SvgLine data={data} let:d>
+              <path class="data" {d}/>
+            </Pancake.SvgLine>
+          </Pancake.Svg>
+        </Pancake.Chart>
+      </div>
+    </div>
+    <div class="w-full h-96">
+      <div class="chart">
+        <Pancake.Chart x1={0} x2={populationSize} y1={0} y2={Math.log(highestPopulationScore)}>
+          <Pancake.Box x2={populationSize} y2={Math.log(highestPopulationScore)}>
+            <div class="axes"></div>
+          </Pancake.Box>
+      
+          <Pancake.Grid vertical count={5} let:value>
+            <span class="x label">{value}</span>
+          </Pancake.Grid>
+      
+          <Pancake.Grid horizontal count={3} let:value>
+            <span class="y label">{value}</span>
+          </Pancake.Grid>
+      
+          <Pancake.Svg>
+            <Pancake.SvgLine data={data.map(a => {
+              const y = (a.y <= 0) ? 0 : Math.log(a.y)
+              return {
+              x: a.x,
+              y: y
+            }
+            })} let:d>
               <path class="data" {d}/>
             </Pancake.SvgLine>
           </Pancake.Svg>
