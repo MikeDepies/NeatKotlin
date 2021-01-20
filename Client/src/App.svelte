@@ -172,71 +172,71 @@ $: {
   return new Set(iterable).size;
 }
 </script>
-
-<div>
-  <div class="flex flex-wrap justify-start">
-    <div class="items-center justify-items-center justify-center m-4">
-      <div class="text-gray-700 text-xl text-center">Generations</div>
-      <div class="text-gray-400 text-3xl text-center">{currentGeneration}</div>
-    </div>
-    <div class="items-center justify-items-center justify-center m-4">
-      <div class="text-gray-700 text-xl text-center">Population Size</div>
-      <div class="text-gray-400 text-3xl text-center">{populationSize}</div>
-    </div>
-    <div class="items-center justify-items-center justify-center m-4">
-      <div class="text-gray-700 text-xl text-center">Species In Population</div>
-      <div class="text-gray-400 text-3xl text-center">{numberOfSpecies}</div>
-    </div>
-    <div class="items-center justify-items-center justify-center m-4">
-      <div class="text-gray-700 text-xl text-center">Current Agent</div>
-      {#key currentAgent.id}
-      <div
-       class="text-gray-400 text-3xl text-center">{currentAgent.id}</div>
-      {/key}
-    </div>
-    <div class="items-center justify-items-center justify-center m-4">
-      <div class="text-gray-700 text-xl text-center">Species ID</div>
-      <div class="text-gray-400 text-3xl text-center">{currentAgent.species}</div>
-    </div>
-    <div class="items-center justify-items-center justify-center m-4">
-      <div class="text-gray-700 text-xl text-center">Current Score</div>
-      <div class="text-gray-400 text-3xl text-center">{$newScore?.score || 0}</div>
-    </div>
-  </div>
-  <div class="flex">
-    <div class="flex flex-col">
-      {#each currentPopulation.agents as agent}
-        {#if agent.id === currentAgent.id}
-        <div class="flex-grow p-2 border my-2 border-red-500" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
-        {:else}
-        <div class="flex-grow p-2 " style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
-        {/if}
-      {/each}
-    </div>
-    <div>
-      <h1 class="text-xl">Population Scores</h1>
-      <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
-      <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
-      <ScoreChart {populationSize} {highestPopulationScore} {data} />
-      <ScoreChart {populationSize} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(a => {
-        const y = (a.y <= 0) ? 0 : Math.log(a.y)
-        return {
-        x: a.x,
-        y: y
-      }
-      })} />
-      
-    </div>
-  </div>
-  <div class="flex h-24 mt-2">
-    {#each historyOfPopulations as population}
-      <div class="flex flex-col w-full">
-        {#each population.agents as agent}
-          <div class="flex-grow" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
-        {/each}
-      </div>
+<div class="flex">
+  <div class="flex flex-col w-4">
+    {#each currentPopulation.agents as agent}
+      {#if agent.id === currentAgent.id}
+      <div class="flex-grow border my-2 border-red-500" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
+      {:else}
+      <div class="flex-grow" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
+      {/if}
     {/each}
   </div>
+  <div>
+    <div class="flex flex-wrap justify-start">
+      <div class="items-center justify-items-center justify-center m-4">
+        <div class="text-gray-700 text-xl text-center">Generations</div>
+        <div class="text-gray-400 text-3xl text-center">{currentGeneration}</div>
+      </div>
+      <div class="items-center justify-items-center justify-center m-4">
+        <div class="text-gray-700 text-xl text-center">Population Size</div>
+        <div class="text-gray-400 text-3xl text-center">{populationSize}</div>
+      </div>
+      <div class="items-center justify-items-center justify-center m-4">
+        <div class="text-gray-700 text-xl text-center">Species In Population</div>
+        <div class="text-gray-400 text-3xl text-center">{numberOfSpecies}</div>
+      </div>
+      <div class="items-center justify-items-center justify-center m-4">
+        <div class="text-gray-700 text-xl text-center">Current Agent</div>
+        {#key currentAgent.id}
+        <div
+         class="text-gray-400 text-3xl text-center">{currentAgent.id}</div>
+        {/key}
+      </div>
+      <div class="items-center justify-items-center justify-center m-4">
+        <div class="text-gray-700 text-xl text-center">Species ID</div>
+        <div class="text-gray-400 text-3xl text-center">{currentAgent.species}</div>
+      </div>
+      <div class="items-center justify-items-center justify-center m-4">
+        <div class="text-gray-700 text-xl text-center">Current Score</div>
+        <div class="text-gray-400 text-3xl text-center">{$newScore?.score || 0}</div>
+      </div>
+    </div>
+    <div class="flex">
+      <div>
+        <h1 class="text-xl">Population Scores</h1>
+        <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
+        <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
+        <ScoreChart {populationSize} {highestPopulationScore} {data} />
+        <ScoreChart {populationSize} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(a => {
+          const y = (a.y <= 0) ? 0 : Math.log(a.y)
+          return {
+          x: a.x,
+          y: y
+        }
+        })} />
+        
+      </div>
+    </div>
+  </div>
 </div>
-
+<div class="flex h-24 mt-2">
+  {#each historyOfPopulations as population}
+    <div class="flex flex-col w-full">
+      {#each population.agents as agent}
+        <div class="flex-grow" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
+      {/each}
+    </div>
+  {/each}
+</div>
 <svelte:window on:keydown="{resetColors}"/>
