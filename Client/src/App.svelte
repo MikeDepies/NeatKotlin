@@ -138,6 +138,7 @@ $: {
    [K in number] : number
  } = {};
  $: {
+   counts = {}
   for (var i = 0; i < currentPopulation.agents.length; i++) {
     counts[currentPopulation.agents[i].species] = 1 + (counts[currentPopulation.agents[i].species] || 0);
 }
