@@ -72,15 +72,21 @@ interface EvaluationClock {
    generation : number,
    agents : AgentModel[]
  }
- let colorMap : {
+ type ColorMap = {
    [K in number] : [number, number, number]
- }= {}
- function getColor(speciesId : number) {
+ }
+ let colorMap : ColorMap= {}
+ function getColor(speciesId : number, colorMap : ColorMap) {
    if (colorMap[speciesId]) {
      return colorMap[speciesId]
    } else {
      colorMap[speciesId] = [Math.floor(Math.random() * 256),Math.floor(Math.random() * 256),Math.floor(Math.random() * 256)]
      return colorMap[speciesId]
+   }
+ }
+ function resetColors(event : KeyboardEvent) {
+   if (event.key === 'r') {
+     colorMap = {}
    }
  }
  const r = reader<SimulationEndpoints>(message)
@@ -201,9 +207,9 @@ $: {
     <div class="flex flex-col">
       {#each currentPopulation.agents as agent}
         {#if agent.id === currentAgent.id}
-        <div class="flex-grow p-2 border my-2 border-red-500" style="background-color: rgb({getColor(agent.species).join(",")})"></div>
+        <div class="flex-grow p-2 border my-2 border-red-500" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
         {:else}
-        <div class="flex-grow p-2 " style="background-color: rgb({getColor(agent.species).join(",")})"></div>
+        <div class="flex-grow p-2 " style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
         {/if}
       {/each}
     </div>
@@ -222,13 +228,15 @@ $: {
       
     </div>
   </div>
-  <div class="flex h-24">
+  <div class="flex h-24 mt-2">
     {#each historyOfPopulations as population}
       <div class="flex flex-col w-full">
         {#each population.agents as agent}
-          <div class="flex-grow" style="background-color: rgb({getColor(agent.species).join(",")})"></div>
+          <div class="flex-grow" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
         {/each}
       </div>
     {/each}
   </div>
 </div>
+
+<svelte:window on:keydown="{resetColors}"/>
