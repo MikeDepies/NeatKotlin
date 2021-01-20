@@ -188,7 +188,7 @@ $: {
     </div>
     <div class="items-center justify-items-center justify-center m-4">
       <div class="text-gray-700 text-xl text-center">Current Score</div>
-      <div class="text-gray-400 text-3xl text-center">{currentAgent.species}</div>
+      <div class="text-gray-400 text-3xl text-center">{$newScore?.score || 0}</div>
     </div>
   </div>
   <div class="flex">
