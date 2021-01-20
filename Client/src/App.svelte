@@ -3,6 +3,8 @@
 import { reader } from './store/websocket/MessageRouter';
 import { message } from './store/WebsocketStore';
 import * as Pancake from '@sveltejs/pancake';
+import { fly, crossfade } from 'svelte/transition';
+import ScoreChart from './ScoreChart.svelte';
   /*
   Current Generation:
   Population Size:
@@ -70,7 +72,17 @@ interface EvaluationClock {
    generation : number,
    agents : AgentModel[]
  }
-
+ let colorMap : {
+   [K in number] : [number, number, number]
+ }= {}
+ function getColor(speciesId : number) {
+   if (colorMap[speciesId]) {
+     return colorMap[speciesId]
+   } else {
+     colorMap[speciesId] = [Math.floor(Math.random() * 256),Math.floor(Math.random() * 256),Math.floor(Math.random() * 256)]
+     return colorMap[speciesId]
+   }
+ }
  const r = reader<SimulationEndpoints>(message)
   const newScore = r.read("simulation.event.score.new")
   const newAgent = r.read("simulation.event.agent.new")
@@ -165,7 +177,10 @@ $: {
     </div>
     <div class="items-center justify-items-center justify-center m-4">
       <div class="text-gray-700 text-xl text-center">Current Agent</div>
-      <div class="text-gray-400 text-3xl text-center">{currentAgent.id}</div>
+      {#key currentAgent.id}
+      <div
+       class="text-gray-400 text-3xl text-center">{currentAgent.id}</div>
+      {/key}
     </div>
     <div class="items-center justify-items-center justify-center m-4">
       <div class="text-gray-700 text-xl text-center">Species ID</div>
@@ -176,101 +191,29 @@ $: {
       <div class="text-gray-400 text-3xl text-center">{currentAgent.species}</div>
     </div>
   </div>
-  <div>
-    <h1 class="text-xl">Population Scores</h1>
-    <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
-    <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
-    <div class="w-full h-96">
-      <div class="chart">
-        <Pancake.Chart x1={0} x2={populationSize} y1={0} y2={highestPopulationScore}>
-          <Pancake.Box x2={populationSize} y2={highestPopulationScore}>
-            <div class="axes"></div>
-          </Pancake.Box>
-      
-          <Pancake.Grid vertical count={5} let:value>
-            <span class="x label">{value}</span>
-          </Pancake.Grid>
-      
-          <Pancake.Grid horizontal count={3} let:value>
-            <span class="y label">{value}</span>
-          </Pancake.Grid>
-      
-          <Pancake.Svg>
-            <Pancake.SvgLine data={data} let:d>
-              <path class="data" {d}/>
-            </Pancake.SvgLine>
-          </Pancake.Svg>
-        </Pancake.Chart>
-      </div>
+  <div class="flex">
+    <div class="flex flex-col">
+      {#each currentPopulation.agents as agent}
+        {#if agent.id === currentAgent.id}
+        <div class="flex-grow p-2 border my-2 border-red-500" style="background-color: rgb({getColor(agent.species).join(",")})"></div>
+        {:else}
+        <div class="flex-grow p-2 " style="background-color: rgb({getColor(agent.species).join(",")})"></div>
+        {/if}
+      {/each}
     </div>
-    <div class="w-full h-96">
-      <div class="chart">
-        <Pancake.Chart x1={0} x2={populationSize} y1={0} y2={Math.log(highestPopulationScore)}>
-          <Pancake.Box x2={populationSize} y2={Math.log(highestPopulationScore)}>
-            <div class="axes"></div>
-          </Pancake.Box>
+    <div>
+      <h1 class="text-xl">Population Scores</h1>
+      <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
+      <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
+      <ScoreChart {populationSize} {highestPopulationScore} {data} />
+      <ScoreChart {populationSize} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(a => {
+        const y = (a.y <= 0) ? 0 : Math.log(a.y)
+        return {
+        x: a.x,
+        y: y
+      }
+      })} />
       
-          <Pancake.Grid vertical count={5} let:value>
-            <span class="x label">{value}</span>
-          </Pancake.Grid>
-      
-          <Pancake.Grid horizontal count={3} let:value>
-            <span class="y label">{value}</span>
-          </Pancake.Grid>
-      
-          <Pancake.Svg>
-            <Pancake.SvgLine data={data.map(a => {
-              const y = (a.y <= 0) ? 0 : Math.log(a.y)
-              return {
-              x: a.x,
-              y: y
-            }
-            })} let:d>
-              <path class="data" {d}/>
-            </Pancake.SvgLine>
-          </Pancake.Svg>
-        </Pancake.Chart>
-      </div>
     </div>
   </div>
 </div>
-
-<style>
-  .chart {
-    height: 100%;
-    padding: 3em 2em 2em 3em;
-    box-sizing: border-box;
-  }
-
-  .axes {
-    width: 100%;
-    height: 100%;
-    border-left: 1px solid black;
-    border-bottom: 1px solid black;
-  }
-
-  .y.label {
-    position: absolute;
-    left: -2.5em;
-    width: 2em;
-    text-align: right;
-    bottom: -0.5em;
-  }
-
-  .x.label {
-    position: absolute;
-    width: 4em;
-    left: -2em;
-    bottom: -22px;
-    font-family: sans-serif;
-    text-align: center;
-  }
-
-  path.data {
-    stroke: red;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-    stroke-width: 2px;
-    fill: none;
-  }
-</style>
