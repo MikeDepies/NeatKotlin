@@ -134,8 +134,13 @@ $: {
     currentAgent = agent
  }
  let numberOfSpecies = 0
+ var counts : {
+   [K in number] : number
+ } = {};
  $: {
- 
+  for (var i = 0; i < currentPopulation.agents.length; i++) {
+    counts[currentPopulation.agents[i].species] = 1 + (counts[currentPopulation.agents[i].species] || 0);
+}
    numberOfSpecies = countUnique(currentPopulation.agents.map(a => a.species))
  }
  function countUnique<T> (iterable : T[]) {
@@ -147,6 +152,7 @@ $: {
   <div>Generations: {currentGeneration}</div>
   <div>Population Size: {populationSize}</div>
   <div>Species In Population: {numberOfSpecies}</div>
+  <div>{JSON.stringify(counts)}</div>
   <div>Current Agent: {currentAgent.id }</div>
   <div>Current Agent Species: {currentAgent.species }</div>
   <div>Current Score: {$newScore?.score }</div>
