@@ -109,6 +109,7 @@ interface EvaluationClock {
  $: {
    const population = $newPopulation
    if (population && population !== currentPopulation) {
+    historyOfPopulations = [...historyOfPopulations, population]
      currentPopulation = population
    }
  }
@@ -146,12 +147,17 @@ $: {
     currentAgent = agent
  }
  let numberOfSpecies = 0
- var counts : {
+ let historyOfPopulations : Population[] = []
+ let historyOfCounts : {
+   [K in number] : number
+ }[] = []
+ let counts : {
    [K in number] : number
  } = {};
  $: {
+   historyOfCounts = [...historyOfCounts, counts]
    counts = {}
-  for (var i = 0; i < currentPopulation.agents.length; i++) {
+  for (let i = 0; i < currentPopulation.agents.length; i++) {
     counts[currentPopulation.agents[i].species] = 1 + (counts[currentPopulation.agents[i].species] || 0);
 }
    numberOfSpecies = countUnique(currentPopulation.agents.map(a => a.species))
@@ -215,5 +221,14 @@ $: {
       })} />
       
     </div>
+  </div>
+  <div class="flex h-24">
+    {#each historyOfPopulations as population}
+      <div class="flex flex-col w-full">
+        {#each population.agents as agent}
+          <div class="flex-grow" style="background-color: rgb({getColor(agent.species).join(",")})"></div>
+        {/each}
+      </div>
+    {/each}
   </div>
 </div>
