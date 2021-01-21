@@ -5,6 +5,7 @@ import { message } from './store/WebsocketStore';
 import * as Pancake from '@sveltejs/pancake';
 import { fly, crossfade } from 'svelte/transition';
 import ScoreChart from './ScoreChart.svelte';
+import Stat from './Stat.svelte';
   /*
   Current Generation:
   Population Size:
@@ -183,34 +184,13 @@ $: {
     {/each}
   </div>
   <div>
-    <div class="flex flex-wrap justify-start">
-      <div class="items-center justify-items-center justify-center m-4">
-        <div class="text-gray-700 text-xl text-center">Generations</div>
-        <div class="text-gray-400 text-3xl text-center">{currentGeneration}</div>
-      </div>
-      <div class="items-center justify-items-center justify-center m-4">
-        <div class="text-gray-700 text-xl text-center">Population Size</div>
-        <div class="text-gray-400 text-3xl text-center">{populationSize}</div>
-      </div>
-      <div class="items-center justify-items-center justify-center m-4">
-        <div class="text-gray-700 text-xl text-center">Species In Population</div>
-        <div class="text-gray-400 text-3xl text-center">{numberOfSpecies}</div>
-      </div>
-      <div class="items-center justify-items-center justify-center m-4">
-        <div class="text-gray-700 text-xl text-center">Current Agent</div>
-        {#key currentAgent.id}
-        <div
-         class="text-gray-400 text-3xl text-center">{currentAgent.id}</div>
-        {/key}
-      </div>
-      <div class="items-center justify-items-center justify-center m-4">
-        <div class="text-gray-700 text-xl text-center">Species ID</div>
-        <div class="text-gray-400 text-3xl text-center">{currentAgent.species}</div>
-      </div>
-      <div class="items-center justify-items-center justify-center m-4">
-        <div class="text-gray-700 text-xl text-center">Current Score</div>
-        <div class="text-gray-400 text-3xl text-center">{$newScore?.score || 0}</div>
-      </div>
+    <div class="flex flex-wrap">
+      <Stat title="Generations" value={currentGeneration} />
+      <Stat title="Population Size" value={populationSize} />
+      <Stat title="Sepecies In Population" value={numberOfSpecies} />
+      <Stat title="Current Agent" value={currentAgent.id} />
+      <Stat title="Species ID" value={currentAgent.species} />
+      <Stat title="Current Score" value={$newScore?.score || 0} />
     </div>
     <div class="flex">
       <div>
