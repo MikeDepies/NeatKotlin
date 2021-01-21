@@ -211,10 +211,13 @@ $: {
       <!-- scores: {populationScoreHistory} -->
     </div>
     <div class="flex">
-      <div>
-        <h1 class="text-xl">Population Scores</h1>
-        <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
-        <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
+      <div class=" w-full">
+        <div class="ml-4">
+
+          <h1 class="text-xl">Population Scores</h1>
+          <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
+          <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
+        </div>
         {#if currentAgent.id > 0 && data.length > 1}
         <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={highestPopulationScore} {data} />
         <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
