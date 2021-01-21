@@ -24,13 +24,13 @@ class SimpleEvaluator(
     Evaluator {
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    private val damageClock = frameClockFactory.countDownClockSeconds("Damage Clock", 2f)
-    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 1.5f)
+    private val damageClock = frameClockFactory.countDownClockSeconds("Damage Clock", 3f)
+    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 7.5f)
     private val hitStunClock = frameClockFactory.countDownClockMilliseconds("HitStun Clock", 200)
     private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds("P2 HitStun Clock", 200)
     private val landedClock = frameClockFactory.countDownClockMilliseconds("Landed Clock", 100)
     private val stockTakenClock = frameClockFactory.countDownClockSeconds("StockTaken Clock", 6f)
-    val stockTakeBonus = 50
+    val stockTakeBonus = 100
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
@@ -92,7 +92,7 @@ class SimpleEvaluator(
                 )
                 newRunningScore
             } else {
-                val newRunningScore = sqrt(runningScore)
+                val newRunningScore = 0f
                 scoreContributionList += EvaluationScoreContribution(
                     "Stock Loss SD",
                     newRunningScore,
@@ -104,7 +104,6 @@ class SimpleEvaluator(
         }
         cumulativeDamage += player1.damageDone
         if (player1.dealtDamage) {
-
 //            logger.info { "DAMAGE DEALT" }
             val comboMultiplier = comboSequence.next()
             val newRunningScore = runningScore + (player1.damageDone * comboMultiplier)
@@ -121,6 +120,10 @@ class SimpleEvaluator(
         if (player2.lostStock)
             currentStockDamage = 0f
         else currentStockDamage += player1.damageDone
+        if (frameData.playerLanded(1) && cumulativeDamage > 0) {
+            logger.info { "reset combo sequence" }
+            comboSequence = comboSequence().iterator()
+        }
         if (player1.winGame) {
             clockList.forEach { it.cancel() }
         }
@@ -190,7 +193,7 @@ class SimpleEvaluator(
     }
 
     override fun finishEvaluation(): EvaluationScore {
-        val score = if (runningScore < 8) {
+        val score = runningScore/*if (runningScore < 8) {
             scoreContributionList.add(EvaluationScoreContribution("Damage Minimum Threshold", 0f, runningScore * -1))
             0f
         } else {
@@ -198,8 +201,8 @@ class SimpleEvaluator(
 //            scoreContributionList.add(EvaluationScoreContribution("Finish Bonus (Score^2)", pow, pow - runningScore))
 //            pow
             runningScore
-        }
-        val cumulativeDmgRatio = max(cumulativeDamage, 1f) / max(cumulativeDamageTaken / 2, 1f)
+        }*/
+        val cumulativeDmgRatio = max(cumulativeDamage, 1f) / max(cumulativeDamageTaken, 1f)
         val newScore = score * cumulativeDmgRatio
         scoreContributionList.add(
             EvaluationScoreContribution(
