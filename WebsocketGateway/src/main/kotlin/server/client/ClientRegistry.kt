@@ -8,7 +8,7 @@ import server.UserSession
 private val log = KotlinLogging.logger {  }
 class ClientRegistry(private val clientMap: MutableMap<User, UserManager>) {
     operator fun get(player: User): UserManager? {
-        log.info { "Getting playerManager for $player [${player in clientMap}]" }
+//        log.info { "Getting playerManager for $player [${player in clientMap}]" }
         return clientMap[player]
     }
     suspend fun sendAll(payload: JsonObject) {
