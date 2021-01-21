@@ -216,8 +216,8 @@ $: {
         <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
         <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
         {#if currentAgent.id > 0 && data.length > 1}
-        <ScoreChart populationSize={data.length} highestPopulationScore={highestPopulationScore} {data} />
-        <ScoreChart populationSize={data.length} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
+        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={highestPopulationScore} {data} />
+        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
           const y = (score.y <= 0) ? 0 : Math.log(score.y)
           return {
           x: score.x,

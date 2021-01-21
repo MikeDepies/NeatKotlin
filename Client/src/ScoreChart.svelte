@@ -1,9 +1,9 @@
 <script>
     import * as Pancake from '@sveltejs/pancake';
-
     export let populationSize : number
     export let highestPopulationScore : number
     export let data : {x :number, y:number}[]
+    export let index : number
 </script>
 <div class="w-full h-96">
     <div class="chart">
@@ -21,8 +21,11 @@
         </Pancake.Grid>
     
         <Pancake.Svg>
-          <Pancake.SvgLine data={data} let:d>
+          <Pancake.SvgLine data={data.slice(0, index +1)} let:d>
             <path class="data" {d}/>
+          </Pancake.SvgLine>
+          <Pancake.SvgLine data={data.slice(index)} let:d>
+            <path class="data2" {d}/>
           </Pancake.SvgLine>
         </Pancake.Svg>
       </Pancake.Chart>
@@ -66,6 +69,13 @@
       stroke-linejoin: round;
       stroke-linecap: round;
       stroke-width: 2px;
+      fill: none;
+    }
+    path.data2 {
+      stroke: blue;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      stroke-width: 1px;
       fill: none;
     }
   </style>
