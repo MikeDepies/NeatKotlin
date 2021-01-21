@@ -21,11 +21,11 @@
         </Pancake.Grid>
     
         <Pancake.Svg>
-          <Pancake.SvgLine data={data.slice(0, index +1)} let:d>
-            <path class="data" {d}/>
-          </Pancake.SvgLine>
           <Pancake.SvgLine data={data.slice(index)} let:d>
             <path class="data2" {d}/>
+          </Pancake.SvgLine>
+          <Pancake.SvgLine data={data.slice(0, index +1)} let:d>
+            <path class="data" {d}/>
           </Pancake.SvgLine>
         </Pancake.Svg>
       </Pancake.Chart>
