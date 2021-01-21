@@ -21,7 +21,7 @@ import Stat from './Stat.svelte';
     Score Breakdown
     Total Score
   */
- type ControllerDigitalButton = "a" | "b" |"y" | "z"
+ type ControllerDigitalButton = "score" | "b" |"y" | "z"
  type ControllerAnalogButton = "cStickX" | "cStickY" |"mainStickX" | "mainStickY"
  type ControllerButton = ControllerDigitalButton | ControllerAnalogButton
  interface SimulationEndpoints {
@@ -52,6 +52,7 @@ import Stat from './Stat.svelte';
   contribution : number
  }
 interface EvaluationScore {
+  agentId : number,
   evaluationScoreContributions : EvaluationScoreContribution[]
   score : number
 }
@@ -95,8 +96,8 @@ interface EvaluationClock {
   const newAgent = r.read("simulation.event.agent.new")
   const newPopulation = r.read("simulation.event.population.new")
   const controllerOutput = r.read("simulation.frame.output")
- let currentGeneration = 0
- let populationSize = 200
+ let currentGeneration = -1
+ let populationSize = 0
  let currentPopulation : Population = {generation: 0, agents: []}
  let currentAgent : AgentModel = {
    id: 0, species: 0
@@ -104,12 +105,13 @@ interface EvaluationClock {
  $:{
    const population = $newPopulation
    const newGeneration = population?.generation || 0
-   if (newGeneration != currentGeneration) {
-     populationScoreHistory = []
-     highestPopulationScore = 0
-   }
+   
    if (population !== undefined) {
     populationSize = population.agents.length
+   }
+   if (newGeneration != currentGeneration) {
+     populationScoreHistory = new Array<number>(populationSize).fill(0)
+     highestPopulationScore = 0
    }
    currentGeneration = newGeneration 
  }
@@ -124,35 +126,50 @@ interface EvaluationClock {
  let data : {x : number, y: number }[]= []
  let highestPopulationScore = 0
  $: {
+   if (populationScoreHistory) {
    let i = 0
-   data = populationScoreHistory.map(s => ({x : i++, y: s}))
+   data = populationScoreHistory.slice(0, populationSize).map(s => ({x : i++, y: s || 0}))
+  //  console.log(data);
+   for(let score of data) {
+     if (highestPopulationScore < score.y) {
+      highestPopulationScore = score.y
+     }
+
+   }
+  }
   }
   let agentScoreHistory : number[]= []
   let agentScoreModel : AgentModel = currentAgent
-  let agentLastScore : number = 0
+  // let agentLastScore : number = 0
 $: {
   const agent = currentAgent
   // console.log(agent);
   const score=$newScore?.score || 0;
   if (agent !== agentScoreModel) {
-    populationScoreHistory = [...populationScoreHistory, agentLastScore]
-    if (highestPopulationScore < agentLastScore) {
-      highestPopulationScore = agentLastScore
-    }
-    agentLastScore = 0
+    // populationScoreHistory = [...populationScoreHistory, agentLastScore]
+    // if (highestPopulationScore < agentLastScore) {
+    //   highestPopulationScore = agentLastScore
+    // }
+    // agentLastScore = 0
     agentScoreHistory = []
     agentScoreModel = agent
   }
-  if (agentLastScore !== score) {
-    agentLastScore = score
-    agentScoreHistory = [...agentScoreHistory, score]
-  }
+  // if (agentLastScore !== score) {
+  //   agentLastScore = score
+  //   agentScoreHistory = [...agentScoreHistory, score]
+  // }
 }
  $: {
    const agent = $newAgent
    if (agent !== undefined && agent !== currentAgent)
     currentAgent = agent
  }
+ $: {
+    const score = $newScore
+    if (score !== undefined && populationScoreHistory.length > score.agentId) {
+      populationScoreHistory[score.agentId] = score.score
+    }
+  }
  let numberOfSpecies = 0
  let historyOfPopulations : Population[] = []
  let historyOfCounts : {
@@ -167,7 +184,7 @@ $: {
   for (let i = 0; i < currentPopulation.agents.length; i++) {
     counts[currentPopulation.agents[i].species] = 1 + (counts[currentPopulation.agents[i].species] || 0);
 }
-   numberOfSpecies = countUnique(currentPopulation.agents.map(a => a.species))
+   numberOfSpecies = countUnique(currentPopulation.agents.map(score => score.species))
  }
  function countUnique<T> (iterable : T[]) {
   return new Set(iterable).size;
@@ -191,20 +208,23 @@ $: {
       <Stat title="Current Agent" value={currentAgent.id} />
       <Stat title="Species ID" value={currentAgent.species} />
       <Stat title="Current Score" value={$newScore?.score || 0} />
+      <!-- scores: {populationScoreHistory} -->
     </div>
     <div class="flex">
       <div>
         <h1 class="text-xl">Population Scores</h1>
         <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
         <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
-        <ScoreChart {populationSize} {highestPopulationScore} {data} />
-        <ScoreChart {populationSize} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(a => {
-          const y = (a.y <= 0) ? 0 : Math.log(a.y)
+        {#if currentAgent.id > 0 && data.length > 1}
+        <ScoreChart populationSize={data.length} highestPopulationScore={highestPopulationScore} {data} />
+        <ScoreChart populationSize={data.length} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
+          const y = (score.y <= 0) ? 0 : Math.log(score.y)
           return {
-          x: a.x,
+          x: score.x,
           y: y
         }
         })} />
+        {/if}
         
       </div>
     </div>
