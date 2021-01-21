@@ -234,7 +234,8 @@ def playerData(gameState: GameState, port: int):
         "facingRight": bool(player.facing),
         "ecb": environmentalCollisionBox(player),
         "onGround": bool(player.on_ground),
-        "hitStun": bool(player.hitlag)
+        "hitStun": bool(player.hitlag),
+        "invulnerable": bool(player.invulnerable)
         
     }
 
