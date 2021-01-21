@@ -177,7 +177,7 @@ $: {
   <div class="flex flex-col w-4">
     {#each currentPopulation.agents as agent}
       {#if agent.id === currentAgent.id}
-      <div class="flex-grow border my-2 border-red-500" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
+      <div class="flex-grow border my-1 border-red-500 transform translate-x-2 scale-150" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
       {:else}
       <div class="flex-grow" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
       {/if}
