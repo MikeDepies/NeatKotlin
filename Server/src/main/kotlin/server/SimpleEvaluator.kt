@@ -1,12 +1,15 @@
 package server
 
 import FrameUpdate
+import kotlinx.coroutines.channels.*
+import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import server.message.endpoints.MeleeFrameData
 import server.message.endpoints.MeleeState
 import server.message.endpoints.PlayerFrameData
 import server.message.endpoints.createSimulationFrame
 import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 private val logger = KotlinLogging.logger { }
@@ -15,23 +18,32 @@ class SimpleEvaluator(
     val agentId: Int,
     private val meleeState: MeleeState,
     var runningScore: Float,
-    frameClockFactory: FrameClockFactory
+    frameClockFactory: FrameClockFactory,
+    private val clockChannel: SendChannel<EvaluationClocksUpdate>
 ) :
     Evaluator {
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    private val damageClock = frameClockFactory.countDownClockSeconds(3f)//.log("Damage Clock")
-    private val graceClock = frameClockFactory.countDownClockSeconds(6.5f)//.log("Grace Clock")
-    private val hitStunClock = frameClockFactory.countDownClockMilliseconds(200)//.log("HitStun Clock")
-    private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds(200)//.log("P2 HitStun Clock")
-    private val landedClock = frameClockFactory.countDownClockMilliseconds(100)//.log("Landed Clock")
-    private val stockTakenClock = frameClockFactory.countDownClockSeconds(6f)//.log("StockTaken Clock")
+    private val damageClock = frameClockFactory.countDownClockSeconds("Damage Clock", 2f)
+    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 1.5f)
+    private val hitStunClock = frameClockFactory.countDownClockMilliseconds("HitStun Clock", 200)
+    private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds("P2 HitStun Clock", 200)
+    private val landedClock = frameClockFactory.countDownClockMilliseconds("Landed Clock", 100)
+    private val stockTakenClock = frameClockFactory.countDownClockSeconds("StockTaken Clock", 6f)
     val stockTakeBonus = 50
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
     var comboSequence = comboSequence().iterator()
     override val scoreContributionList = mutableListOf<EvaluationScoreContribution>()
+    val clockList = listOf(
+        damageClock,
+        hitStunClock,
+        graceClock,
+        enemyHitStunClock,
+        landedClock,
+        stockTakenClock
+    )
 
     /**
      * The finalized Score
@@ -51,18 +63,14 @@ class SimpleEvaluator(
         return playtimeExpired || meleeFrameData.player1.lostStock
     }
 
-    private fun clocksFinished(meleeFrameData: MeleeFrameData) = listOf(
-        damageClock,
-        hitStunClock,
-        graceClock,
-        enemyHitStunClock,
-        landedClock,
-        stockTakenClock
-    ).all { val finished = it.isFinished(meleeFrameData)
-        finished
+    private fun clocksFinished(meleeFrameData: MeleeFrameData): Boolean {
+        return clockList.all {
+            val finished = it.isFinished(meleeFrameData)
+            finished
+        }
     }
 
-    override fun evaluateFrame(frameUpdate: FrameUpdate) {
+    override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
         val frameData = meleeState.createSimulationFrame(frameUpdate)
         val frameNumber = frameData.frame
         val player1 = frameData.player1
@@ -113,8 +121,25 @@ class SimpleEvaluator(
         if (player2.lostStock)
             currentStockDamage = 0f
         else currentStockDamage += player1.damageDone
+        if (player1.winGame) {
+            clockList.forEach { it.cancel() }
+        }
         //Then update to the new frame.
         meleeState.lastMeleeFrameData = frameData
+        sendClockUpdates(frameNumber)
+    }
+
+    private suspend fun sendClockUpdates(frameNumber: Int) {
+        val clockUpdateList = clockList.map { countDownClock ->
+            EvaluationClockUpdate(
+                clock = countDownClock.clockId,
+                framesLeft = countDownClock.startFrame?.let { it - frameNumber } ?: 0,
+                frameStart = countDownClock.startFrame ?: -1,
+                frameLength = countDownClock.toFrameLength()
+            )
+        }
+        clockChannel.send(EvaluationClocksUpdate(clockUpdateList, frameNumber))
+
     }
 
     private fun scoreStockTake(
@@ -188,3 +213,7 @@ class SimpleEvaluator(
         return evaluationScore
     }
 }
+@Serializable
+data class EvaluationClocksUpdate(val clocks : List<EvaluationClockUpdate>, val frame : Int)
+@Serializable
+data class EvaluationClockUpdate(val clock: String, val framesLeft: Int, val frameStart: Int, val frameLength: Int)

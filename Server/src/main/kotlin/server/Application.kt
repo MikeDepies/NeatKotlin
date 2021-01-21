@@ -146,6 +146,19 @@ class EvaluationMessageProcessor(val evaluationChannels: EvaluationChannels, val
         }
     }
 
+    suspend fun processEvaluationClocks() {
+        for (frame in evaluationChannels.clockChannel) {
+            messageWriter.sendPlayerMessage(
+                userMessage = TypedUserMessage(
+                    userRef = UserRef("dashboard"),
+                    topic = "simulation.event.clock.update",
+                    data = frame
+                ),
+                serializer = EvaluationClocksUpdate.serializer()
+            )
+        }
+    }
+
     suspend fun processPopulation() {
         for (frame in evaluationChannels.populationChannel) {
             messageWriter.sendPlayerMessage(
@@ -192,6 +205,7 @@ private fun Application.networkEvaluatorOutputBridgeLoop(
     evaluationMessageProcessor: EvaluationMessageProcessor
 ) {
     launch { evaluationMessageProcessor.processOutput() }
+    launch { evaluationMessageProcessor.processEvaluationClocks() }
     launch { evaluationMessageProcessor.processPopulation() }
     launch { evaluationMessageProcessor.processAgentModel() }
     launch { evaluationMessageProcessor.processScores() }

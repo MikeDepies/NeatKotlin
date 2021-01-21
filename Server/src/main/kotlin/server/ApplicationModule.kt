@@ -47,8 +47,9 @@ val applicationModule = module {
     single<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
     single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
+    single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-    single { EvaluationChannels(getChannel(), getChannel(), getChannel(), getChannel(), getChannel()) }
+    single { EvaluationChannels(getChannel(), getChannel(), getChannel(), getChannel(), getChannel(), getChannel()) }
     single<EvaluationMessageProcessor>()
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }
@@ -81,7 +82,7 @@ val applicationModule = module {
 
     single { MeleeState(createEmptyFrameData()) }
     single { FrameClockFactory() }
-    factory<Evaluator> { (agentId: Int) -> SimpleEvaluator(agentId, get(), 8f, get()) }
+    factory<Evaluator> { (agentId: Int) -> SimpleEvaluator(agentId, get(), 8f, get(), getChannel()) }
     single { EvaluationArena() }
     single { simulation(evaluationArena = get(), takeSize = 50) }
 }

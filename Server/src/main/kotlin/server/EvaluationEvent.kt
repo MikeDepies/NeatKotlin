@@ -48,7 +48,8 @@ data class EvaluationChannels(
     val frameOutputChannel: Channel<FrameOutput>,
     val scoreChannel: Channel<EvaluationScore>,
     val agentModelChannel: Channel<AgentModel>,
-    val populationChannel: Channel<PopulationModels>
+    val populationChannel: Channel<PopulationModels>,
+    val clockChannel: Channel<EvaluationClocksUpdate>,
 )
 
 interface EvaluationQuery {
@@ -132,7 +133,7 @@ interface Evaluator {
     val score: Float
     val scoreContributionList: List<EvaluationScoreContribution>
     fun isFinished(): Boolean
-    fun evaluateFrame(frameUpdate: FrameUpdate)
+    suspend fun evaluateFrame(frameUpdate: FrameUpdate)
     fun finishEvaluation(): EvaluationScore
 }
 
@@ -283,12 +284,12 @@ class FrameClock(val frameTime: Float) {
     }
 }
 
-fun FrameClockFactory.countDownClockSeconds(seconds: Float): CountDownSecondsClock {
+fun FrameClockFactory.countDownClockSeconds(clockId : String, seconds: Float): CountDownSecondsClock {
     val clock = createClock()
-    return CountDownSecondsClock(clock, seconds)
+    return CountDownSecondsClock(clock, seconds, clockId)
 }
 
-class CountDownSecondsClock(private val clock: FrameClock, val seconds: Float) : CountDownClock {
+class CountDownSecondsClock(private val clock: FrameClock, val seconds: Float, override val clockId: String) : CountDownClock {
     override fun start(frameNumber: Int) = clock.start(frameNumber)
     override fun cancel() = clock.reset()
     override fun isFinished(simulationFrameData: MeleeFrameData) =
@@ -335,12 +336,13 @@ class LogCountDownClock(
     }
 }
 
-fun FrameClockFactory.countDownClockMilliseconds(milliseconds: Long): CountDownClockMilliseconds {
+fun FrameClockFactory.countDownClockMilliseconds(clockId : String, milliseconds: Long): CountDownClockMilliseconds {
     val clock = createClock()
-    return CountDownClockMilliseconds(clock, milliseconds)
+    return CountDownClockMilliseconds(clock, milliseconds, clockId)
 }
 
 interface CountDownClock {
+    val clockId: String
     fun start(frameNumber: Int): Unit
     fun cancel(): Unit
     fun isFinished(simulationFrameData: MeleeFrameData): Boolean
@@ -349,7 +351,7 @@ interface CountDownClock {
     val startFrame: Int?
 }
 
-class CountDownClockMilliseconds(private val clock: FrameClock, val milliseconds: Long) : CountDownClock {
+class CountDownClockMilliseconds(private val clock: FrameClock, val milliseconds: Long, override val clockId: String) : CountDownClock {
     override fun start(frameNumber: Int) = clock.start(frameNumber)
     override fun cancel() = clock.reset()
     override fun isFinished(simulationFrameData: MeleeFrameData) =
