@@ -19,15 +19,6 @@ import server.message.endpoints.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.collections.List
-import kotlin.collections.MutableList
-import kotlin.collections.first
-import kotlin.collections.getValue
-import kotlin.collections.listOf
-import kotlin.collections.mapIndexed
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.plus
 import kotlin.collections.set
 import kotlin.math.ceil
 
@@ -157,22 +148,28 @@ private suspend fun evaluate(
     suspend fun sendEvaluationScoreUpdate() {
         val evaluationScore = EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
         if (evaluationScore != lastEvaluationScore) {
-            logger.info { "sending evalScore: ${evaluationScore}" }
+//            logger.info { "sending evalScore: ${evaluationScore}" }
             scoreChannel.send(evaluationScore)
             lastEvaluationScore = evaluationScore
         }
     }
-
-    for (frameUpdate in frameChannel) {
-        network.evaluate(frameUpdate.flatten(), true)
-        networkOutputChannel.send(network.output().toFrameOutput())
-        evaluator.evaluateFrame(frameUpdate)
-        sendEvaluationScoreUpdate()
-        if (evaluator.isFinished()) {
-            scoreChannel.send(evaluator.finishEvaluation())
-            delay(200)
-            return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+    try {
+        for (frameUpdate in frameChannel) {
+            network.evaluate(frameUpdate.flatten(), true)
+            networkOutputChannel.send(network.output().toFrameOutput())
+            evaluator.evaluateFrame(frameUpdate)
+            sendEvaluationScoreUpdate()
+            if (evaluator.isFinished()) {
+                scoreChannel.send(evaluator.finishEvaluation())
+                delay(200)
+                return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+            }
         }
+    } catch (e: Exception) {
+        logger.error { "failed to build unwrap network properly - killing it" }
+        val evaluationScore = EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+        scoreChannel.send(evaluationScore)
+        return evaluationScore
     }
     scoreChannel.send(evaluator.finishEvaluation())
     return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)

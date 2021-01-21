@@ -83,14 +83,24 @@ val applicationModule = module {
     single { FrameClockFactory() }
     factory<Evaluator> { (agentId: Int) -> SimpleEvaluator(agentId, get(), 8f, get()) }
     single { EvaluationArena() }
-    single { simulation(evaluationArena = get()) }
+    single { simulation(evaluationArena = get(), takeSize = 50) }
 }
 
-fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 22, takeSize: Int? = null): Simulation {
+fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 44, takeSize: Int? = null): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
-
-    val sharingFunction = shFunction(3f)
-    val distanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
+    var largestCompatDistance = 0f
+    val sharingFunction: (Float) -> Int = {
+//        if (it > largestCompatDistance) {
+////            log.info { "CompatDistance: $it" }
+//            largestCompatDistance = it
+//            if (it > 3f) {
+//                largestCompatDistance = 0f
+//            }
+//        }
+        shFunction(2f)(it)
+    }
+    val distanceFunction: (NeatMutator, NeatMutator) -> Float =
+        { a, b -> compatibilityDistanceFunction(20f, 20f, 15f)(a, b) }
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
     val adjustedFitnessCalculation = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction)

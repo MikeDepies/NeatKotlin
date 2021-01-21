@@ -16,6 +16,7 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
     fun compatibleSpecies(neatMutator: NeatMutator, compatible: CompatibilityTest): Species? {
         return map.keys.firstOrNull {
             val avatarForSpecies = map[it]?.mascot
+
             avatarForSpecies != null && compatible(neatMutator, avatarForSpecies)
         }
     }
