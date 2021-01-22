@@ -204,6 +204,7 @@ class SimpleEvaluator(
         }*/
         val cumulativeDmgRatio = max(cumulativeDamage, 1f) / max(cumulativeDamageTaken, 1f)
         val newScore = score * cumulativeDmgRatio
+        logger.info { "score Before: $runningScore : (${max(cumulativeDamage, 1f) / max(cumulativeDamageTaken, 1f)} <- max($cumulativeDamage, 1f) / max($cumulativeDamageTaken, 1f)" }
         scoreContributionList.add(
             EvaluationScoreContribution(
                 "Cumulative Ratio Modifier",
