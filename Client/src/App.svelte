@@ -108,12 +108,18 @@ interface EvaluationClock {
    }
  }
  let populationScoreHistory : number[] = []
- let data : {x : number, y: number }[]= []
+ let data : {x : number, y: number, color: string }[]= []
  let highestPopulationScore = 0
  $: {
    if (populationScoreHistory) {
    let i = 0
-   data = populationScoreHistory.slice(0, populationSize).map(s => ({x : i++, y: s || 0}))
+   data = populationScoreHistory.slice(0, populationSize).map(s => {
+    let index =i++
+    let species = currentPopulation.agents[index].species
+    let color=`rgb(${getColor(species, $colorMap).join(",")})`
+    // console.log(color)
+     return {x : index, y: s || 0, color: color}
+   })
   //  console.log(data);
    for(let score of data) {
      if (highestPopulationScore < score.y) {
@@ -175,6 +181,7 @@ $: {
   return new Set(iterable).size;
 }
 </script>
+
 <div class="flex">
   <div class="flex flex-col w-4">
     {#each currentPopulation.agents as agent}
@@ -204,12 +211,13 @@ $: {
           <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
         </div>
         {#if currentAgent.id > 0 && data.length > 1}
-        <ScoreChart color="rgb({getColor(currentAgent.species, $colorMap).join(",")})" populationSize={data.length} index={currentAgent.id} highestPopulationScore={highestPopulationScore} {data} />
-        <ScoreChart color="rgb({getColor(currentAgent.species, $colorMap).join(",")})" populationSize={data.length} index={currentAgent.id} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
+        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={highestPopulationScore} {data} />
+        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
           const y = (score.y <= 0) ? 0 : Math.log(score.y)
           return {
           x: score.x,
-          y: y
+          y: y,
+          color: score.color
         }
         })} />
         {/if}

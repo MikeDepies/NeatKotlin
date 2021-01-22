@@ -3,9 +3,8 @@
     import {colorMap, resetColors, getColor} from "./store/ColorMapStore"
     export let populationSize : number
     export let highestPopulationScore : number
-    export let data : {x :number, y:number}[]
+    export let data : {x :number, y:number, color: string}[]
     export let index : number
-    export let color : string
     let min = 0
     $: {
         min = 0
@@ -15,6 +14,7 @@
     }
 </script>
 <div class="w-full h-96">
+    <!-- {data.map(a => a.color)} -->
     <div class="chart">
       <Pancake.Chart x1={0} x2={populationSize} y1={min} y2={highestPopulationScore}>
         <Pancake.Box x2={populationSize} y1={min} y2={highestPopulationScore}>
@@ -30,12 +30,12 @@
         </Pancake.Grid>
     
         <Pancake.Svg>
-          <Pancake.SvgLine data={data.slice(index)} let:d>
-            <path class="data2"  style="stroke: {color}" {d}/>
+          {#each data as ele, i}
+          <Pancake.SvgLine data={data.slice((i -1) < 0 ? 0 : i -1, (i + 1 < data.length) ? i +1 : i)} let:d>
+            <path class="data" style="stroke: {ele.color};" d={d}/>
           </Pancake.SvgLine>
-          <Pancake.SvgLine data={data.slice(0, index +1)} let:d>
-            <path class="data" {d}/>
-          </Pancake.SvgLine>
+          
+          {/each}
         </Pancake.Svg>
       </Pancake.Chart>
     </div>
@@ -74,7 +74,7 @@
     }
   
     path.data {
-      stroke: red;
+      /* stroke: red; */
       stroke-linejoin: round;
       stroke-linecap: round;
       stroke-width: 2px;
@@ -83,7 +83,7 @@
     path.data2 {
       stroke-linejoin: round;
       stroke-linecap: round;
-      stroke-width: 4px;
+      stroke-width: 2px;
       fill: none;
     }
   </style>
