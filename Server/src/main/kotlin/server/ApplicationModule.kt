@@ -127,7 +127,7 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 44, takeSize:
 
         simpleNeatExperiment.generateInitialPopulation(
             20,
-            input(61, true),
+            input(59, true),
             9,
             Activation.sigmoidal
         )
