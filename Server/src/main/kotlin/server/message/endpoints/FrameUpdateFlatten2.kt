@@ -6,7 +6,7 @@ import FrameUpdate
 import PlayerDataUpdate
 import Position
 
-private fun Boolean.facingDirectionToFloat() = if (this) -1f else 1f
+private fun Boolean.facingDirectionToFloat() = if (this) 1f else -1f
 private fun Boolean.toFloat() = if (this) 1f else 0f
 suspend fun FrameUpdate.flatten2() = sequence<Float> {
     yieldPlayerData(player1)
@@ -35,6 +35,8 @@ private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: Playe
         yield(y)
         yield(onGround.toFloat())
         yield(hitStun.toFloat())
+        yield(invulnerable.toFloat())
+        yield(offStage.toFloat())
         yield(speedAirX)
         yield(speedGroundX)
         yield(speedXAttack)

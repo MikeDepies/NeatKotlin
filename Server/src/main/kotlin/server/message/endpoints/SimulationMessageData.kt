@@ -14,7 +14,9 @@ data class PlayerDataUpdate(
     val facingRight: Boolean,//10
     val ecb: EnvironmentalCollisionBox, //<-8
     val onGround: Boolean,
-    val hitStun: Boolean//20
+    val hitStun: Boolean,//20
+    val invulnerable: Boolean,
+    val offStage: Boolean
 )
 
 @Serializable
@@ -27,7 +29,8 @@ data class EnvironmentalCollisionBox(val left: Position, val top: Position, val 
 data class BlastZone(val left: Float, val top: Float, val right: Float, val bottom: Float)
 
 @Serializable
-data class ActionData(//8
+data class ActionData(
+//8
     val action: Int,
     val isAttack: Boolean,
     val isGrab: Boolean,

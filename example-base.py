@@ -235,8 +235,8 @@ def playerData(gameState: GameState, port: int):
         "ecb": environmentalCollisionBox(player),
         "onGround": bool(player.on_ground),
         "hitStun": bool(player.hitlag),
-        "invulnerable": bool(player.invulnerable)
-        
+        "invulnerable": bool(player.invulnerable),
+        "offStage": bool(player.off_stage)
     }
 
 
@@ -285,12 +285,8 @@ def createMessage(topic: str, data):
 
 
 async def console_loop():
-    mh = melee.MenuHelper()
     # Main loop
     costume = 0
-    counter = 0
-    newGame = True
-    resetCounter = 0
     while True:
         await asyncio.sleep(.001)
         # "step" to the next frame
