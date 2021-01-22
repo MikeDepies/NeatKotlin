@@ -156,7 +156,7 @@ private suspend fun evaluate(
     }
     try {
         for (frameUpdate in frameChannel) {
-            network.evaluate(frameUpdate.flatten(), true)
+            network.evaluate(frameUpdate.flatten2(), true)
             networkOutputChannel.send(network.output().toFrameOutput())
             evaluator.evaluateFrame(frameUpdate)
             sendEvaluationScoreUpdate()
