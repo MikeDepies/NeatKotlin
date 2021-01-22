@@ -4,11 +4,19 @@
     export let highestPopulationScore : number
     export let data : {x :number, y:number}[]
     export let index : number
+
+    let min = 0
+    $: {
+        min = 0
+        for (let d of data) {
+            if (d.y < min) min = d.y
+        }
+    }
 </script>
 <div class="w-full h-96">
     <div class="chart">
-      <Pancake.Chart x1={0} x2={populationSize} y1={0} y2={highestPopulationScore}>
-        <Pancake.Box x2={populationSize} y2={highestPopulationScore}>
+      <Pancake.Chart x1={0} x2={populationSize} y1={min} y2={highestPopulationScore}>
+        <Pancake.Box x2={populationSize} y1={min} y2={highestPopulationScore}>
           <div class="axes"></div>
         </Pancake.Box>
     
