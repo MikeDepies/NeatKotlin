@@ -6,6 +6,7 @@ import * as Pancake from '@sveltejs/pancake';
 import { fly, crossfade } from 'svelte/transition';
 import ScoreChart from './ScoreChart.svelte';
 import Stat from './Stat.svelte';
+import {colorMap, resetColors, getColor} from "./store/ColorMapStore"
   /*
   Current Generation:
   Population Size:
@@ -74,23 +75,7 @@ interface EvaluationClock {
    generation : number,
    agents : AgentModel[]
  }
- type ColorMap = {
-   [K in number] : [number, number, number]
- }
- let colorMap : ColorMap= {}
- function getColor(speciesId : number, colorMap : ColorMap) {
-   if (colorMap[speciesId]) {
-     return colorMap[speciesId]
-   } else {
-     colorMap[speciesId] = [Math.floor(Math.random() * 256),Math.floor(Math.random() * 256),Math.floor(Math.random() * 256)]
-     return colorMap[speciesId]
-   }
- }
- function resetColors(event : KeyboardEvent) {
-   if (event.key === 'r') {
-     colorMap = {}
-   }
- }
+ 
  const r = reader<SimulationEndpoints>(message)
   const newScore = r.read("simulation.event.score.new")
   const newAgent = r.read("simulation.event.agent.new")
@@ -194,9 +179,9 @@ $: {
   <div class="flex flex-col w-4">
     {#each currentPopulation.agents as agent}
       {#if agent.id === currentAgent.id}
-      <div class="flex-grow border my-1 border-red-500 transform translate-x-2 scale-150" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
+      <div class="flex-grow border my-1 border-red-500 transform translate-x-2 scale-150" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
       {:else}
-      <div class="flex-grow" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
+      <div class="flex-grow" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
       {/if}
     {/each}
   </div>
@@ -219,8 +204,8 @@ $: {
           <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
         </div>
         {#if currentAgent.id > 0 && data.length > 1}
-        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={highestPopulationScore} {data} />
-        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
+        <ScoreChart color="rgb({getColor(currentAgent.species, $colorMap).join(",")})" populationSize={data.length} index={currentAgent.id} highestPopulationScore={highestPopulationScore} {data} />
+        <ScoreChart color="rgb({getColor(currentAgent.species, $colorMap).join(",")})" populationSize={data.length} index={currentAgent.id} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
           const y = (score.y <= 0) ? 0 : Math.log(score.y)
           return {
           x: score.x,
@@ -237,7 +222,7 @@ $: {
   {#each historyOfPopulations as population}
     <div class="flex flex-col w-full">
       {#each population.agents as agent}
-        <div class="flex-grow" style="background-color: rgb({getColor(agent.species, colorMap).join(",")})"></div>
+        <div class="flex-grow" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
       {/each}
     </div>
   {/each}

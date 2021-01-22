@@ -1,10 +1,11 @@
 <script>
     import * as Pancake from '@sveltejs/pancake';
+    import {colorMap, resetColors, getColor} from "./store/ColorMapStore"
     export let populationSize : number
     export let highestPopulationScore : number
     export let data : {x :number, y:number}[]
     export let index : number
-
+    export let color : string
     let min = 0
     $: {
         min = 0
@@ -30,7 +31,7 @@
     
         <Pancake.Svg>
           <Pancake.SvgLine data={data.slice(index)} let:d>
-            <path class="data2" {d}/>
+            <path class="data2"  style="stroke: {color}" {d}/>
           </Pancake.SvgLine>
           <Pancake.SvgLine data={data.slice(0, index +1)} let:d>
             <path class="data" {d}/>
@@ -80,10 +81,9 @@
       fill: none;
     }
     path.data2 {
-      stroke: blue;
       stroke-linejoin: round;
       stroke-linecap: round;
-      stroke-width: 1px;
+      stroke-width: 4px;
       fill: none;
     }
   </style>
