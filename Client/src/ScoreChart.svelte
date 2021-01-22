@@ -31,7 +31,7 @@
     
         <Pancake.Svg>
           {#each [...data, {x: data.length, y: data[data.length -1].y, color: ""}] as ele, i}
-          <Pancake.SvgLine data={data.slice((i -1) < 0 ? 0 : i -1, (i + 1 < data.length) ? i +1 : i)} let:d>
+          <Pancake.SvgLine data={data.slice((i -1) < 0 ? 0 : i -1, (i < data.length) ? i +1 : i)} let:d>
             <path class="data" style="stroke: {ele.color};" d={d}/>
           </Pancake.SvgLine>
           
