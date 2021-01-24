@@ -88,7 +88,7 @@ val applicationModule = module {
             agentId,
             generation,
             get(),
-            8f,
+            4f,
             get(),
             getChannel()
         )
@@ -97,7 +97,7 @@ val applicationModule = module {
     single { simulation(evaluationArena = get(), takeSize = 50) }
 }
 
-fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 44, takeSize: Int? = null): Simulation {
+fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 513, takeSize: Int? = null): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -108,7 +108,7 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 44, takeSize:
 //                largestCompatDistance = 0f
 //            }
 //        }
-        shFunction(2f)(it)
+        shFunction(4f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
         { a, b -> compatibilityDistanceFunction(20f, 20f, 15f)(a, b) }

@@ -1,16 +1,13 @@
 package server
 
 import FrameUpdate
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import server.message.endpoints.MeleeFrameData
 import server.message.endpoints.MeleeState
 import server.message.endpoints.PlayerFrameData
 import server.message.endpoints.createSimulationFrame
-import kotlin.math.max
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 private val logger = KotlinLogging.logger { }
 
@@ -26,16 +23,18 @@ class SimpleEvaluator(
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
     private val damageClock = frameClockFactory.countDownClockSeconds("Damage Clock", 3f)
-    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 7.5f)
+    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 5f)
     private val hitStunClock = frameClockFactory.countDownClockMilliseconds("HitStun Clock", 200)
     private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds("P2 HitStun Clock", 200)
     private val landedClock = frameClockFactory.countDownClockMilliseconds("Landed Clock", 100)
     private val stockTakenClock = frameClockFactory.countDownClockSeconds("StockTaken Clock", 6f)
-    val stockTakeBonus = 100
+    val stockTakeBonus = 300
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
+    var comboActive = false
     var comboSequence = comboSequence().iterator()
+    var bankedScore = 0f
     override val scoreContributionList = mutableListOf<EvaluationScoreContribution>()
     val clockList = listOf(
         damageClock,
@@ -51,7 +50,7 @@ class SimpleEvaluator(
      */
     override val score: Float
         get() {
-            return runningScore
+            return runningScore + bankedScore
         }
 
     override fun isFinished(): Boolean {
@@ -80,34 +79,35 @@ class SimpleEvaluator(
         val lastPlayer2 = meleeState.lastMeleeFrameData.player2
         //Perform evaluations
         checkClockEvents(frameNumber, frameData)
-        if (player1.tookStock) scoreStockTake(frameNumber, lastPlayer2.percentFrame)
+        if (player1.tookStock && cumulativeDamage > 0) scoreStockTake(frameNumber, lastPlayer2.percentFrame)
         if (player1.lostStock) {
-            val scorePenalized = if (frameData.isPlayerInAirFromKnockBack(0)) {
-                val newRunningScore = runningScore / 8
-                scoreContributionList.add(
-                    EvaluationScoreContribution(
-                        "Stock Loss from KnockBack",
-                        newRunningScore,
-                        newRunningScore - runningScore
-                    )
-                )
-                newRunningScore
-            } else {
-                val newRunningScore = 0f
-                scoreContributionList += EvaluationScoreContribution(
-                    "Stock Loss SD",
-                    newRunningScore,
-                    newRunningScore - runningScore
-                )
-                newRunningScore
-            }
-            runningScore = scorePenalized
+//            val scorePenalized = if (frameData.isPlayerInAirFromKnockBack(0)) {
+//                val newRunningScore = runningScore / 8
+//                scoreContributionList.add(
+//                    EvaluationScoreContribution(
+//                        "Stock Loss from KnockBack",
+//                        newRunningScore,
+//                        newRunningScore - runningScore
+//                    )
+//                )
+//                newRunningScore
+//            } else {
+//                val newRunningScore = 0f
+//                scoreContributionList += EvaluationScoreContribution(
+//                    "Stock Loss SD",
+//                    newRunningScore,
+//                    newRunningScore - runningScore
+//                )
+//                newRunningScore
+//            }
+            runningScore = 0f
         }
         if (player1.damageDone > 0)
             cumulativeDamage += player1.damageDone
         if (player1.dealtDamage) {
 //            logger.info { "DAMAGE DEALT" }
             val comboMultiplier = comboSequence.next()
+            comboActive = true
             val newRunningScore = runningScore + (player1.damageDone * comboMultiplier)
             scoreContributionList += EvaluationScoreContribution(
                 "Damage Dealt (${player1.damageDone} * $comboMultiplier)",
@@ -123,16 +123,19 @@ class SimpleEvaluator(
         if (player2.lostStock)
             currentStockDamage = 0f
         else currentStockDamage += player1.damageDone
-        if (frameData.playerLanded(1) && cumulativeDamage > 0) {
+        if (player1.tookDamage && comboActive) {
             logger.info { "reset combo sequence" }
             comboSequence = comboSequence().iterator()
+            comboActive = false
         }
         if (player1.winGame) {
             clockList.forEach { it.cancel() }
+            firstFrame = true
         }
         //Then update to the new frame.
         meleeState.lastMeleeFrameData = frameData
-        sendClockUpdates(frameNumber)
+        if (frameNumber % 4 == 0)
+            sendClockUpdates(frameNumber)
     }
 
     private suspend fun sendClockUpdates(frameNumber: Int) {
@@ -162,7 +165,8 @@ class SimpleEvaluator(
                 stockTakeScore - runningScore
             )
         )
-        runningScore = stockTakeScore
+        bankedScore += stockTakeScore
+        runningScore = 0f
     }
 
     private fun checkClockEvents(frameNumber: Int, frameData: MeleeFrameData) {
@@ -196,7 +200,7 @@ class SimpleEvaluator(
     }
 
     override fun finishEvaluation(): EvaluationScore {
-        val score = runningScore/*if (runningScore < 8) {
+        /*if (runningScore < 8) {
             scoreContributionList.add(EvaluationScoreContribution("Damage Minimum Threshold", 0f, runningScore * -1))
             0f
         } else {
@@ -205,19 +209,19 @@ class SimpleEvaluator(
 //            pow
             runningScore
         }*/
-        val cumulativeDmgRatio = max(cumulativeDamage, 1f) / max(cumulativeDamageTaken, 1f)
-        val newScore = score * cumulativeDmgRatio
-        logger.info { "score Before: $runningScore : (${max(cumulativeDamage, 1f) / max(cumulativeDamageTaken, 1f)} <- max($cumulativeDamage, 1f) / max($cumulativeDamageTaken, 1f)" }
-        scoreContributionList.add(
-            EvaluationScoreContribution(
-                "Cumulative Ratio Modifier",
-                newScore,
-                newScore - runningScore
-            )
-        )
-        runningScore = newScore
-        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
-        return evaluationScore
+//        val cumulativeDmgRatio = max(cumulativeDamage, 1f) / max(cumulativeDamageTaken / 4, 1f)
+//        val newScore = score * cumulativeDmgRatio
+//        logger.info { "score Before: $runningScore : (${max(cumulativeDamage, 1f) / max(cumulativeDamageTaken, 1f)} <- max($cumulativeDamage, 1f) / max($cumulativeDamageTaken, 1f)" }
+//        scoreContributionList.add(
+//            EvaluationScoreContribution(
+//                "Cumulative Ratio Modifier",
+//                newScore,
+//                newScore - runningScore
+//            )
+//        )
+//        runningScore = newScore
+//        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
+        return EvaluationScore(agentId, score, scoreContributionList)
     }
 }
 @Serializable

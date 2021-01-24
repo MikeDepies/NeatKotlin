@@ -360,7 +360,7 @@ async def console_loop():
             # if gamestate.menu_selection in [melee.Menu.STAGE_SELECT]:
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller,
-                                                melee.Character.LUIGI,
+                                                melee.Character.PIKACHU,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=costume,

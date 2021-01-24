@@ -237,6 +237,7 @@ fun comboSequence() = sequence {
     var i = 1
     while (true) {
         repeat(i) {
+            logger.info { "combo multiplier: $i" }
             yield(i)
         }
         i++
