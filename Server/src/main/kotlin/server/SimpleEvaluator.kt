@@ -16,6 +16,7 @@ private val logger = KotlinLogging.logger { }
 
 class SimpleEvaluator(
     val agentId: Int,
+    val generation: Int,
     private val meleeState: MeleeState,
     var runningScore: Float,
     frameClockFactory: FrameClockFactory,
@@ -102,7 +103,8 @@ class SimpleEvaluator(
             }
             runningScore = scorePenalized
         }
-        cumulativeDamage += player1.damageDone
+        if (player1.damageDone > 0)
+            cumulativeDamage += player1.damageDone
         if (player1.dealtDamage) {
 //            logger.info { "DAMAGE DEALT" }
             val comboMultiplier = comboSequence.next()
@@ -116,7 +118,8 @@ class SimpleEvaluator(
         }
 //        if (player1.damageTaken > 0 || player1.tookDamage)
 //            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
-        cumulativeDamageTaken += player1.damageTaken
+        if (player1.damageTaken > 0)
+            cumulativeDamageTaken += player1.damageTaken
         if (player2.lostStock)
             currentStockDamage = 0f
         else currentStockDamage += player1.damageDone
@@ -141,7 +144,7 @@ class SimpleEvaluator(
                 frameLength = countDownClock.toFrameLength()
             )
         }
-        clockChannel.send(EvaluationClocksUpdate(clockUpdateList, frameNumber))
+        clockChannel.send(EvaluationClocksUpdate(clockUpdateList, frameNumber,agentId, generation))
 
     }
 
@@ -218,6 +221,6 @@ class SimpleEvaluator(
     }
 }
 @Serializable
-data class EvaluationClocksUpdate(val clocks : List<EvaluationClockUpdate>, val frame : Int)
+data class EvaluationClocksUpdate(val clocks : List<EvaluationClockUpdate>, val frame : Int, val agentId: Int, val generation : Int)
 @Serializable
 data class EvaluationClockUpdate(val clock: String, val framesLeft: Int, val frameStart: Int, val frameLength: Int)

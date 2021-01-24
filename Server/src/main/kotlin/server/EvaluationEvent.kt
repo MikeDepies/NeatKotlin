@@ -44,7 +44,7 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
 typealias SimulationSnapshot = SimulationState
 
 data class EvaluationChannels(
-    val frameUpdateChannel: ReceiveChannel<FrameUpdate>,
+    val frameUpdateChannel: Channel<FrameUpdate>,
     val frameOutputChannel: Channel<FrameOutput>,
     val scoreChannel: Channel<EvaluationScore>,
     val agentModelChannel: Channel<AgentModel>,
@@ -85,7 +85,7 @@ suspend fun Application.evaluationLoop(
             logger.info { "New Agent (${index + 1} / ${currentPopulation.size})" }
             agentModelChannel.send(populationMap[index])
             val network = neatMutator.toNetwork()
-            val evaluator = get<Evaluator>(parameters = { DefinitionParameters(listOf(index)) })
+            val evaluator = get<Evaluator>(parameters = { DefinitionParameters(listOf(index, populationEvolver.generation)) })
             val evaluationScore = evaluate(index, frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
             logger.info { "Score: ${evaluationScore.score}" }
             FitnessModel(

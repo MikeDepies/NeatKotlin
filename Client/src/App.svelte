@@ -6,7 +6,11 @@ import * as Pancake from '@sveltejs/pancake';
 import { fly, crossfade } from 'svelte/transition';
 import ScoreChart from './ScoreChart.svelte';
 import Stat from './Stat.svelte';
-import {colorMap, resetColors, getColor} from "./store/ColorMapStore"
+import {getColorMap, getColor, rgbColorString} from "./store/ColorMapStore"
+import type { AgentModel, EvaluationClocksUpdate, Population, SimulationEndpoints } from './api/types/Evaluation';
+import type { Series } from './api/types/Series';
+import MultiSeries from './MultiSeries.svelte';
+import { prevent_default } from 'svelte/internal';
   /*
   Current Generation:
   Population Size:
@@ -22,70 +26,53 @@ import {colorMap, resetColors, getColor} from "./store/ColorMapStore"
     Score Breakdown
     Total Score
   */
- type ControllerDigitalButton = "score" | "b" |"y" | "z"
- type ControllerAnalogButton = "cStickX" | "cStickY" |"mainStickX" | "mainStickY"
- type ControllerButton = ControllerDigitalButton | ControllerAnalogButton
- interface SimulationEndpoints {
-  "simulation.frame.output" : {
-    [K in ControllerButton] : K extends ControllerDigitalButton ? boolean : number
-  }
-  "simulation.event.population.new": Population
-  "simulation.event.agent.new" : AgentModel
-  "simulation.event.score.new" : EvaluationScore
- }
- interface PlayerDataFramePart {}
- interface ActionDataFramePart {}
- interface GameFrame {
-  frame : number,
-  distance : number,
-  player1 : PlayerDataFramePart,
-  player2 : PlayerDataFramePart,
-  action1 : ActionDataFramePart,
-  action2 : ActionDataFramePart,
- }
- interface AgentEvaluationFrame {
-
- }
-
- interface EvaluationScoreContribution {
-  name : string,
-  score : number,
-  contribution : number
- }
-interface EvaluationScore {
-  agentId : number,
-  evaluationScoreContributions : EvaluationScoreContribution[]
-  score : number
-}
-
-interface EvaluationClock {
-  name: string,
-  frameLength: number,
-  startFrame: number,
-  framesRemaining: number,
-  expired: boolean
-}
- interface AgentModel {
-   id: number,
-   species: number,
-  //  score: EvaluationScore,
-  //  clocks: EvaluationClock[]
- }
- interface Population {
-   generation : number,
-   agents : AgentModel[]
- }
  
  const r = reader<SimulationEndpoints>(message)
   const newScore = r.read("simulation.event.score.new")
   const newAgent = r.read("simulation.event.agent.new")
   const newPopulation = r.read("simulation.event.population.new")
   const controllerOutput = r.read("simulation.frame.output")
+  const clockUpdate = r.read("simulation.event.boundary.clocks.new")
  let currentGeneration = -1
  let populationSize = 0
  let currentPopulation : Population = {generation: 0, agents: []}
+ const colorMap = getColorMap("species")
+ const clockColorMap = getColorMap("clocks")
  let currentAgent : AgentModel = {
    id: 0, species: 0
+ }
+ let clockHistory : EvaluationClocksUpdate[] = []
+ let longestClockTimeSeen = 0
+ $: {
+   const cu = $clockUpdate
+   if (cu) {
+   if (currentGeneration != cu.generation) {
+     clockHistory = []
+     longestClockTimeSeen = 0
+   }
+   const updateMax = cu.clocks.reduce((previous, current) => Math.max(previous, current.framesRemaining), 0)
+   if (updateMax > longestClockTimeSeen)
+    longestClockTimeSeen = updateMax
+   clockHistory = [...clockHistory, cu]
+  }
+ }
+ let clockHistorySeriesMap : Series
+ $: {
+   clockHistorySeriesMap = {}
+   clockHistory.forEach(update => {
+     update.clocks.forEach(clock => {
+       if (clockHistorySeriesMap[clock.name] === undefined) {
+        const color = $clockColorMap[clock.name] 
+        clockHistorySeriesMap[clock.name] = {
+           color: (color) ? rgbColorString(color) : "",
+           name: clock.name,
+           series: []
+         }
+       }
+       const clockSeries = clockHistorySeriesMap[clock.name].series
+       clockHistorySeriesMap[clock.name].series = [...clockSeries, {x: update.frame, y: clock.framesRemaining}]
+     })
+   }) 
  }
  $:{
    const population = $newPopulation
@@ -211,8 +198,8 @@ $: {
           <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
         </div>
         {#if data.length > 1}
-        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={highestPopulationScore} {data} />
-        <ScoreChart populationSize={data.length} index={currentAgent.id} highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
+        <ScoreChart populationSize={data.length}  highestPopulationScore={highestPopulationScore} {data} />
+        <ScoreChart populationSize={data.length}  highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
           const y = (score.y <= 0) ? 0 : Math.log(score.y)
           return {
           x: score.x,
@@ -221,6 +208,7 @@ $: {
         }
         })} />
         {/if}
+        <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/>
         
       </div>
     </div>
@@ -235,4 +223,4 @@ $: {
     </div>
   {/each}
 </div>
-<svelte:window on:keydown="{resetColors}"/>
+<svelte:window on:keydown="{colorMap.resetColors}"/>

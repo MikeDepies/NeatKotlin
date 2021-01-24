@@ -2,6 +2,7 @@ package server
 
 import Auth0Config
 import FrameOutput
+import FrameUpdate
 import MessageWriter
 import UserRef
 import io.ktor.application.*
@@ -10,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -136,7 +138,11 @@ private fun Application.generateFakeData(evaluationChannels: EvaluationChannels)
     }
 }
 
-class EvaluationMessageProcessor(val evaluationChannels: EvaluationChannels, val messageWriter: MessageWriter) {
+class EvaluationMessageProcessor(
+    val evaluationChannels: EvaluationChannels,
+    val inputChannel: ReceiveChannel<FrameUpdate>,
+    val messageWriter: MessageWriter
+) {
     suspend fun processOutput() {
         for (frameOutput in evaluationChannels.frameOutputChannel) {
             messageWriter.sendAllMessage(
@@ -196,6 +202,21 @@ class EvaluationMessageProcessor(val evaluationChannels: EvaluationChannels, val
                 ),
                 serializer = EvaluationScore.serializer()
             )
+        }
+    }
+
+    suspend fun processFrameData() {
+        for (frame in inputChannel) {
+            //forward to evaluation and broadcast data to dashboard
+            evaluationChannels.frameUpdateChannel.send(frame)
+            messageWriter.sendPlayerMessage(
+                userMessage = TypedUserMessage(
+                    userRef = UserRef("dashboard"),
+                    topic = "simulation.event.score.new",
+                    data = frame
+                ),
+                serializer = FrameUpdate.serializer()
+            )
 
         }
     }
@@ -205,6 +226,7 @@ private fun Application.networkEvaluatorOutputBridgeLoop(
     evaluationMessageProcessor: EvaluationMessageProcessor
 ) {
     launch { evaluationMessageProcessor.processOutput() }
+    launch { evaluationMessageProcessor.processFrameData() }
     launch { evaluationMessageProcessor.processEvaluationClocks() }
     launch { evaluationMessageProcessor.processPopulation() }
     launch { evaluationMessageProcessor.processAgentModel() }

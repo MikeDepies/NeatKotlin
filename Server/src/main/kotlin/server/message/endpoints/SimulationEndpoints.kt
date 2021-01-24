@@ -20,7 +20,7 @@ private val log = KotlinLogging.logger { }
 var receivedAnyMessages = false
 fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *>> {
     registerEndpoint<FrameUpdate, SimulationSessionScope>("simulation.frame.update") {
-        val frameUpdateChannel = get<Channel<FrameUpdate>>(qualifier<FrameUpdate>())
+        val frameUpdateChannel = get<Channel<FrameUpdate>>(qualifier("input"))
 //        log.info { "New frame: ${it.data}" }
         receivedAnyMessages = true
         frameUpdateChannel.send(it.data)

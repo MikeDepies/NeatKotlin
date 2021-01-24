@@ -1,21 +1,25 @@
 <script>
     import * as Pancake from '@sveltejs/pancake';
-    export let populationSize : number
-    export let highestPopulationScore : number
-    export let data : {x :number, y:number, color: string}[]
+import type { EvaluationClocksUpdate } from './api/types/Evaluation';
+import type { Series } from './api/types/Series';
+
+    export let data : Series
+    export let frameNumber : number
+    export let longestClockTimeSeen : number
+    let seriesNames : string[] = []
     let min = 0
-    $: {
-        min = 0
-        for (let d of data) {
-            if (d.y < min) min = d.y
-        }
+    $: seriesNames = Object.keys(data)
+    
+    function preparedData(seriesName : string) {
+      const series=data[seriesName].series;
+      return [...(series), {x: series.length, y: series[series.length -1].y, color: series[series.length -1].color}]
     }
 </script>
 <div class="w-full h-96">
     <!-- {data.map(a => a.color)} -->
     <div class="chart">
-      <Pancake.Chart x1={0} x2={populationSize} y1={min} y2={highestPopulationScore}>
-        <Pancake.Box x2={populationSize} y1={min} y2={highestPopulationScore}>
+      <Pancake.Chart x1={0} x2={frameNumber} y1={min} y2={longestClockTimeSeen}>
+        <Pancake.Box x2={frameNumber} y1={min} y2={longestClockTimeSeen}>
           <div class="axes"></div>
         </Pancake.Box>
     
@@ -27,14 +31,16 @@
           <span class="y label">{value}</span>
         </Pancake.Grid>
     
+        {#each seriesNames as seriesName}
         <Pancake.Svg>
-          {#each [...data, {x: data.length, y: data[data.length -1].y, color: ""}] as ele, i}
-          <Pancake.SvgLine data={data.slice((i -1) < 0 ? 0 : i -1, (i < data.length) ? i +1 : i)} let:d>
-            <path class="data" style="stroke: {ele.color};" d={d}/>
+          {#each preparedData(seriesName) as ele, i}
+          <Pancake.SvgLine data={data[seriesName].series.slice((i -1) < 0 ? 0 : i -1, (i < data[seriesName].series.length) ? i +1 : i)} let:d>
+            <path class="data" style="stroke: {ele?.color || data[seriesName].color};" d={d}/>
           </Pancake.SvgLine>
           
           {/each}
         </Pancake.Svg>
+        {/each}
       </Pancake.Chart>
     </div>
   </div>
@@ -78,10 +84,5 @@
       stroke-width: 2px;
       fill: none;
     }
-    path.data2 {
-      stroke-linejoin: round;
-      stroke-linecap: round;
-      stroke-width: 2px;
-      fill: none;
-    }
+    
   </style>

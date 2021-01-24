@@ -43,6 +43,7 @@ inline fun <reified T> Scope.getChannel(): Channel<T> =
     get(qualifier<T>())
 
 val applicationModule = module {
+    single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
     single<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel() }
     single<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
     single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
@@ -50,7 +51,7 @@ val applicationModule = module {
     single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
     single { EvaluationChannels(getChannel(), getChannel(), getChannel(), getChannel(), getChannel(), getChannel()) }
-    single<EvaluationMessageProcessor>()
+    single { EvaluationMessageProcessor(get(), get(qualifier("input")), get()) }
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }
     single { SimulationSessionScope(this, get()) }
@@ -82,7 +83,16 @@ val applicationModule = module {
 
     single { MeleeState(createEmptyFrameData()) }
     single { FrameClockFactory() }
-    factory<Evaluator> { (agentId: Int) -> SimpleEvaluator(agentId, get(), 8f, get(), getChannel()) }
+    factory<Evaluator> { (agentId: Int, generation: Int) ->
+        SimpleEvaluator(
+            agentId,
+            generation,
+            get(),
+            8f,
+            get(),
+            getChannel()
+        )
+    }
     single { EvaluationArena() }
     single { simulation(evaluationArena = get(), takeSize = 50) }
 }
