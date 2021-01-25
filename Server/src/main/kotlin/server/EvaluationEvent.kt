@@ -85,6 +85,7 @@ suspend fun Application.evaluationLoop(
     var currentPopulation = initialPopulation
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
+    var meleeState : MeleeState? = MeleeState(null)
     runFolder.mkdirs()
     while (true) {
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
@@ -100,7 +101,13 @@ suspend fun Application.evaluationLoop(
             agentModelChannel.send(populationMap[index])
             val network = neatMutator.toNetwork()
             val evaluator =
-                get<Evaluator>(parameters = { DefinitionParameters(listOf(index, populationEvolver.generation)) })
+                get<ResourceEvaluator>(parameters = { DefinitionParameters(listOf(
+                    index,
+                    populationEvolver.generation,
+                    0,
+                    meleeState,
+                    network
+                )) })
             val evaluationScore = evaluate(
                 index,
                 player1,
