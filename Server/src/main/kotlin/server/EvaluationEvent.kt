@@ -4,10 +4,8 @@ import FrameOutput
 import FrameUpdate
 import PopulationEvolver
 import io.ktor.application.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -19,7 +17,6 @@ import server.message.endpoints.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.collections.set
 import kotlin.math.ceil
 
 private val logger = KotlinLogging.logger { }
@@ -42,11 +39,22 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
  The action includes: ScoreModification (variables ing general?), Clock Controls, EndAgentTurn
  */
 typealias SimulationSnapshot = SimulationState
-class Controller
+
+data class IOController(val controllerId : Int, val frameUpdateChannel: Channel<FrameUpdate>,
+                   val frameOutputChannel: Channel<FrameOutput>,)
 object OneController
 object TwoController
-class Evaluation(val evaluationId : Int, val controllers : List<Controller>)
+class Evaluation(val evaluationId: Int, val controllers: List<IOController>)
 data class EvaluationChannels(
+    val player1 : IOController,
+    val player2 : IOController,
+    val scoreChannel: Channel<EvaluationScore>,
+    val agentModelChannel: Channel<AgentModel>,
+    val populationChannel: Channel<PopulationModels>,
+    val clockChannel: Channel<EvaluationClocksUpdate>,
+)
+
+data class EvaluationChannelsMultipleControllers(
     val frameUpdateChannel: Channel<FrameUpdate>,
     val frameOutputChannel: Channel<FrameOutput>,
     val scoreChannel: Channel<EvaluationScore>,
@@ -70,7 +78,7 @@ suspend fun Application.evaluationLoop(
 ) {
     //Extract to koin
     //hook up websockets
-    val (frameChannel, networkOutputChannel, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
+    val (player1, player2, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
     var currentPopulation = initialPopulation
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
@@ -88,8 +96,15 @@ suspend fun Application.evaluationLoop(
             logger.info { "New Agent (${index + 1} / ${currentPopulation.size})" }
             agentModelChannel.send(populationMap[index])
             val network = neatMutator.toNetwork()
-            val evaluator = get<Evaluator>(parameters = { DefinitionParameters(listOf(index, populationEvolver.generation)) })
-            val evaluationScore = evaluate(index, frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
+            val evaluator =
+                get<Evaluator>(parameters = { DefinitionParameters(listOf(index, populationEvolver.generation)) })
+            val evaluationScore = evaluate(
+                index,
+                player1,
+                network,
+                scoreChannel,
+                evaluator
+            ) { frameUpdate -> frameUpdate.flatten2() }
             logger.info { "Score: ${evaluationScore.score}" }
             FitnessModel(
                 model = neatMutator,
@@ -117,12 +132,49 @@ suspend fun Application.evaluationLoop2Agents(
 ) {
     //Extract to koin
     //hook up websockets
-    val (frameChannel, networkOutputChannel, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
+    val (player1, player2, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
     var currentPopulation = initialPopulation
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
     runFolder.mkdirs()
     val agentChannel = Channel<Pair<Int, NeatMutator>>()
+    suspend fun controllerEvaluator(
+        agentChannel: Channel<Pair<Int, NeatMutator>>,
+        populationMap: List<AgentModel>,
+        playerController : IOController,
+        agentResultChannel: Channel<FitnessModel<NeatMutator>>,
+        inputTransformer: suspend (FrameUpdate) -> List<Float>
+    ) {
+        for ((index, neatMutator) in agentChannel) {
+            logger.info { "New Agent (${index + 1} / ${currentPopulation.size})" }
+            agentModelChannel.send(populationMap[index])
+            val network = neatMutator.toNetwork()
+            val evaluator = get<Evaluator>(parameters = {
+                DefinitionParameters(
+                    listOf(
+                        index,
+                        populationEvolver.generation
+                    )
+                )
+            })
+            val evaluationScore =
+                evaluate(
+                    index,
+                    playerController,
+                    network,
+                    scoreChannel,
+                    evaluator, inputTransformer
+                )
+            logger.info { "Score: ${evaluationScore.score}" }
+            agentResultChannel.send(
+                FitnessModel(
+                    model = neatMutator,
+                    score = evaluationScore.score
+                )
+            )
+        }
+    }
+
     while (true) {
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
         val populationMap =
@@ -132,18 +184,26 @@ suspend fun Application.evaluationLoop2Agents(
             }
 
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
-        val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
-            logger.info { "New Agent (${index + 1} / ${currentPopulation.size})" }
-            agentModelChannel.send(populationMap[index])
-            val network = neatMutator.toNetwork()
-            val evaluator = get<Evaluator>(parameters = { DefinitionParameters(listOf(index, populationEvolver.generation)) })
-            val evaluationScore = evaluate(index, frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
-            logger.info { "Score: ${evaluationScore.score}" }
-            FitnessModel(
-                model = neatMutator,
-                score = evaluationScore.score
-            )
-        }.toModelScores(adjustedFitnessCalculation)
+        val agentResultChannel = Channel<FitnessModel<NeatMutator>>()
+        coroutineScope {
+            launch {
+                controllerEvaluator(agentChannel, populationMap, player1, agentResultChannel) { frameUpdate ->
+                    frameUpdate.flatten2()
+                }
+            }
+            launch {
+                controllerEvaluator(agentChannel, populationMap, player2, agentResultChannel) { frameUpdate ->
+                    frameUpdate.flatten2Player2()
+                }
+            }
+            currentPopulation.forEachIndexed { index, neatMutator ->
+                agentChannel.send(index to neatMutator)
+            }
+            agentChannel.close()
+        }
+
+        val modelScores = agentResultChannel.toList().toModelScores(adjustedFitnessCalculation)
+
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
@@ -190,11 +250,11 @@ interface Evaluator {
 
 private suspend fun evaluate(
     agentId: Int,
-    frameChannel: ReceiveChannel<FrameUpdate>,
+    ioController: IOController,
     network: ActivatableNetwork,
-    networkOutputChannel: SendChannel<FrameOutput>,
     scoreChannel: SendChannel<EvaluationScore>,
-    evaluator: Evaluator
+    evaluator: Evaluator,
+    transformToInput: suspend (FrameUpdate) -> List<Float>
 ): EvaluationScore {
     var lastEvaluationScore = EvaluationScore(-1, 0f, listOf())
     suspend fun sendEvaluationScoreUpdate() {
@@ -206,9 +266,9 @@ private suspend fun evaluate(
         }
     }
     try {
-        for (frameUpdate in frameChannel) {
-            network.evaluate(frameUpdate.flatten2(), true)
-            networkOutputChannel.send(network.output().toFrameOutput())
+        for (frameUpdate in ioController.frameUpdateChannel) {
+            network.evaluate(transformToInput(frameUpdate), true)
+            ioController.frameOutputChannel.send(network.output().toFrameOutput(ioController.controllerId))
             evaluator.evaluateFrame(frameUpdate)
             sendEvaluationScoreUpdate()
             if (evaluator.isFinished()) {
@@ -336,12 +396,13 @@ class FrameClock(val frameTime: Float) {
     }
 }
 
-fun FrameClockFactory.countDownClockSeconds(clockId : String, seconds: Float): CountDownSecondsClock {
+fun FrameClockFactory.countDownClockSeconds(clockId: String, seconds: Float): CountDownSecondsClock {
     val clock = createClock()
     return CountDownSecondsClock(clock, seconds, clockId)
 }
 
-class CountDownSecondsClock(private val clock: FrameClock, val seconds: Float, override val clockId: String) : CountDownClock {
+class CountDownSecondsClock(private val clock: FrameClock, val seconds: Float, override val clockId: String) :
+    CountDownClock {
     override fun start(frameNumber: Int) = clock.start(frameNumber)
     override fun cancel() = clock.reset()
     override fun isFinished(simulationFrameData: MeleeFrameData) =
@@ -388,7 +449,7 @@ class LogCountDownClock(
     }
 }
 
-fun FrameClockFactory.countDownClockMilliseconds(clockId : String, milliseconds: Long): CountDownClockMilliseconds {
+fun FrameClockFactory.countDownClockMilliseconds(clockId: String, milliseconds: Long): CountDownClockMilliseconds {
     val clock = createClock()
     return CountDownClockMilliseconds(clock, milliseconds, clockId)
 }
@@ -403,7 +464,8 @@ interface CountDownClock {
     val startFrame: Int?
 }
 
-class CountDownClockMilliseconds(private val clock: FrameClock, val milliseconds: Long, override val clockId: String) : CountDownClock {
+class CountDownClockMilliseconds(private val clock: FrameClock, val milliseconds: Long, override val clockId: String) :
+    CountDownClock {
     override fun start(frameNumber: Int) = clock.start(frameNumber)
     override fun cancel() = clock.reset()
     override fun isFinished(simulationFrameData: MeleeFrameData) =

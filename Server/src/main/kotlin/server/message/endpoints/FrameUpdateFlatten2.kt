@@ -16,6 +16,14 @@ suspend fun FrameUpdate.flatten2() = sequence<Float> {
     yield(distance)
 }.toList()
 
+suspend fun FrameUpdate.flatten2Player2() = sequence<Float> {
+    yieldPlayerData(player2)
+    yieldPlayerData(player1)
+    yieldActionData(action2)
+    yieldActionData(action1)
+    yield(distance)
+}.toList()
+
 private suspend fun SequenceScope<Float>.yieldActionData(actionData: ActionData) {
     with(actionData) {
         yield(action.toFloat())

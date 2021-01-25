@@ -32,7 +32,7 @@ import { prevent_default } from 'svelte/internal';
   const newAgent = r.read("simulation.event.agent.new")
   const newPopulation = r.read("simulation.event.population.new")
   const controllerOutput = r.read("simulation.frame.output")
-  const clockUpdate = r.read("simulation.event.boundary.clocks.new")
+  const clockUpdate = r.read("simulation.event.clock.update")
  let currentGeneration = -1
  let populationSize = 0
  let currentPopulation : Population = {generation: 0, agents: []}
@@ -46,7 +46,8 @@ import { prevent_default } from 'svelte/internal';
  $: {
    const cu = $clockUpdate
    if (cu) {
-   if (currentGeneration != cu.generation) {
+   if (currentAgent.id != cu.agentId) {
+     console.log(currentAgent.id + " !== " + cu.agentId);
      clockHistory = []
      longestClockTimeSeen = 0
    }
@@ -58,19 +59,21 @@ import { prevent_default } from 'svelte/internal';
  }
  let clockHistorySeriesMap : Series
  $: {
+  // console.log(clockHistorySeriesMap);
    clockHistorySeriesMap = {}
    clockHistory.forEach(update => {
      update.clocks.forEach(clock => {
-       if (clockHistorySeriesMap[clock.name] === undefined) {
-        const color = $clockColorMap[clock.name] 
-        clockHistorySeriesMap[clock.name] = {
+       if (clockHistorySeriesMap[clock.clock] === undefined) {
+        const color = $clockColorMap[clock.clock] 
+        clockHistorySeriesMap[clock.clock] = {
            color: (color) ? rgbColorString(color) : "",
-           name: clock.name,
+           name: clock.clock,
            series: []
          }
        }
-       const clockSeries = clockHistorySeriesMap[clock.name].series
-       clockHistorySeriesMap[clock.name].series = [...clockSeries, {x: update.frame, y: clock.framesRemaining}]
+       const clockSeries = clockHistorySeriesMap[clock.clock].series
+       clockHistorySeriesMap[clock.clock].series = [...clockSeries, {x: update.frame, y: clock.framesRemaining}]
+       console.log(clockSeries);
      })
    }) 
  }
@@ -209,7 +212,6 @@ $: {
         })} />
         {/if}
         <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/>
-        
       </div>
     </div>
   </div>

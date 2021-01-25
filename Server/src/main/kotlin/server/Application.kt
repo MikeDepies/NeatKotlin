@@ -103,7 +103,7 @@ fun Application.module(testing: Boolean = false) {
             delay(100)
         }
         log.info("Start evaluation Loop!")
-        evaluationLoop(
+        evaluationLoop2Agents(
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
             adjustedFitnessCalculation = adjustedFitness,
@@ -117,6 +117,7 @@ private fun Application.generateFakeData(evaluationChannels: EvaluationChannels)
         while (true) {
 
             val element = FrameOutput(
+                0,
                 Random.nextBoolean(),
                 Random.nextBoolean(),
                 Random.nextBoolean(),
@@ -129,10 +130,10 @@ private fun Application.generateFakeData(evaluationChannels: EvaluationChannels)
                 Random.nextFloat(),
             )
             log.info("$element")
-            evaluationChannels.frameOutputChannel.send(
-                element
-            )
-            evaluationChannels.scoreChannel.send(EvaluationScore(-1, Random.nextFloat() * 1000, listOf()))
+//            evaluationChannels.frameOutputChannel.send(
+//                element
+//            )
+//            evaluationChannels.scoreChannel.send(EvaluationScore(-1, Random.nextFloat() * 1000, listOf()))
             delay(1000)
         }
     }
@@ -143,8 +144,8 @@ class EvaluationMessageProcessor(
     val inputChannel: ReceiveChannel<FrameUpdate>,
     val messageWriter: MessageWriter
 ) {
-    suspend fun processOutput() {
-        for (frameOutput in evaluationChannels.frameOutputChannel) {
+    suspend fun processOutput(controller : IOController) {
+        for (frameOutput in controller.frameOutputChannel) {
             messageWriter.sendAllMessage(
                 BroadcastMessage("simulation.frame.output", frameOutput),
                 FrameOutput.serializer()
@@ -208,7 +209,8 @@ class EvaluationMessageProcessor(
     suspend fun processFrameData() {
         for (frame in inputChannel) {
             //forward to evaluation and broadcast data to dashboard
-            evaluationChannels.frameUpdateChannel.send(frame)
+            evaluationChannels.player1.frameUpdateChannel.send(frame)
+            evaluationChannels.player2.frameUpdateChannel.send(frame)
             messageWriter.sendPlayerMessage(
                 userMessage = TypedUserMessage(
                     userRef = UserRef("dashboard"),
@@ -225,7 +227,8 @@ class EvaluationMessageProcessor(
 private fun Application.networkEvaluatorOutputBridgeLoop(
     evaluationMessageProcessor: EvaluationMessageProcessor
 ) {
-    launch { evaluationMessageProcessor.processOutput() }
+    launch { evaluationMessageProcessor.processOutput(evaluationMessageProcessor.evaluationChannels.player2) }
+    launch { evaluationMessageProcessor.processOutput(evaluationMessageProcessor.evaluationChannels.player1) }
     launch { evaluationMessageProcessor.processFrameData() }
     launch { evaluationMessageProcessor.processEvaluationClocks() }
     launch { evaluationMessageProcessor.processPopulation() }

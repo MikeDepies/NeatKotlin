@@ -31,7 +31,7 @@ import type { Series } from './api/types/Series';
           <span class="y label">{value}</span>
         </Pancake.Grid>
     
-        {#each seriesNames as seriesName}
+        {#each seriesNames.filter(s => data[s].series.length > 0) as seriesName}
         <Pancake.Svg>
           {#each preparedData(seriesName) as ele, i}
           <Pancake.SvgLine data={data[seriesName].series.slice((i -1) < 0 ? 0 : i -1, (i < data[seriesName].series.length) ? i +1 : i)} let:d>

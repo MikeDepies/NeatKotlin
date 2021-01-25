@@ -16,7 +16,7 @@ private val log = KotlinLogging.logger { }
 
 data class EvaluationData(val simulationFrameData: SimulationFrameData)
 
-fun List<Float>.toFrameOutput(): FrameOutput {
+fun List<Float>.toFrameOutput(controllerId : Int): FrameOutput {
     fun bool(index: Int) = get(index).let {
         when {
             it.isNaN() -> false
@@ -35,6 +35,7 @@ fun List<Float>.toFrameOutput(): FrameOutput {
     }
     val leftShoulderActivation = clamp(8)
     return FrameOutput(
+        controllerId = controllerId,
         a = bool(0),
         b = bool(1),
         y = bool(2),
@@ -50,121 +51,4 @@ fun List<Float>.toFrameOutput(): FrameOutput {
         },
         rightShoulder = 0f//clamp(9)
     )
-}
-
-class EvaluationArena() {
-    var activeModel: NeatMutator? = null
-    var activeAgent: ActivatableNetwork? = null
-
-    //    var evaluationController: EvaluationController? = null
-    var lastFrame: FrameUpdate? = null
-    var lastAgent: ActivatableNetwork? = null
-    var pauseSimulation = false
-    var resetSimulationForAgent = false
-    var brokenNetwork = false
-    suspend fun evaluatePopulation(
-        population: List<NeatMutator>,
-        block: suspend SimulationState.(SimulationFrameData) -> Unit
-    ): List<FitnessModel<NeatMutator>> {
-        val size = population.size
-        log.info { "Starting to evaluate population($size)" }
-        return population.mapIndexed { index, neatMutator ->
-            log.info { "${index + 1} / $size" }
-            activeAgent = neatMutator.toNetwork()
-            evaluateModel(neatMutator, block)
-        }
-    }
-
-    suspend fun evaluateModel(
-        model: NeatMutator,
-        block: suspend SimulationState.(SimulationFrameData) -> Unit
-    ): FitnessModel<NeatMutator> {
-        log.info { "Evaluation for new model has begun" }
-        val simulationState = SimulationState(
-            lastFrame?.player1?.stock ?: 4,
-            lastFrame?.player2?.stock ?: 4,
-            lastFrame?.player1?.percent ?: 0,
-            lastFrame?.player2?.percent ?: 0,
-            3f,
-            .5f,
-            .5f,
-            3f,
-            agentStart = Instant.now(),
-            baseCumulativeDamageDealt = 12f
-        )
-        while (true) {
-            if (resetSimulationForAgent) {
-                resetSimulationForAgent = false
-                simulationState.reset(lastFrame)
-            }
-
-            val simulationFrame = simulationState.createSimulationFrame(lastFrame)
-
-            with(simulationState) {
-                block(simulationFrame)
-                update(simulationFrame)
-                if ((finished(simulationFrame) || brokenNetwork) && !pauseSimulation) {
-                    if (brokenNetwork) {
-                        brokenNetwork = false
-                        log.info { "Killing broken network" }
-                        return FitnessModel(model, -1f)
-                    } else {
-                        val score = if (cumulativeDamageDealt < 8) 0f else cumulativeDamageDealt.pow(2)
-                        val cumulativeDmgRatio = max(cumulativeDamageDealt, 1f) / max(cumulativeDamageTaken, 1f)
-                        val scoreWithPercentRatioModifier = score * cumulativeDmgRatio
-                        log.info {
-                            """
-                    timeGain: $distanceTimeGain
-                    timeElapsed: ${Duration.between(agentStart, simulationFrame.now).seconds}
-                    damageTaken: $cumulativeDamageTaken ($cumulativeDmgRatio)
-                    damageDone: $cumulativeDamageDealt (${simulationFrame.aiDealDamage})
-                    earlyKill: $earlyKillBonusApplied
-                    graceHit: $bonusGraceDamageApplied
-                    stockLost: ${simulationFrame.aiLostStock}
-                    score: $score
-                    percentModifierScore: $scoreWithPercentRatioModifier
-                """.trimIndent()
-                        }
-                        return FitnessModel(model, scoreWithPercentRatioModifier)
-                    }
-                }
-            }
-        }
-    }
-
-
-    suspend fun processFrame(frameUpdate: FrameUpdate): FrameOutput? {
-        val agent = activeAgent
-        if (lastAgent != agent) {
-            lastAgent = agent
-        }
-        this.lastFrame = frameUpdate
-        if (agent != null && !pauseSimulation) {
-            try {
-                agent.evaluate(frameUpdate.flatten(), true)
-                return agent.output().toFrameOutput()
-            } catch (e: Exception) {
-                brokenNetwork = true
-                log.error(e) { "failed to evaluate agent" }
-            }
-        }
-        return null
-    }
-
-    fun resetEvaluation() {
-        lastFrame?.let {
-            log.info { "Reset eval controller - new match" }
-            resetSimulationForAgent = true
-        }
-    }
-
-    fun pause() {
-        pauseSimulation = true
-    }
-
-    fun resume() {
-        pauseSimulation = false
-    }
-//    val eventMap = mutableMapOf<EvaluationEvent, >()
-
 }

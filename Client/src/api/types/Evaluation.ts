@@ -9,7 +9,7 @@
   "simulation.event.population.new": Population
   "simulation.event.agent.new" : AgentModel
   "simulation.event.score.new" : EvaluationScore
-  "simulation.event.boundary.clocks.new" : EvaluationClocksUpdate
+  "simulation.event.clock.update" : EvaluationClocksUpdate
  }
  export interface PlayerDataFramePart {}
  export interface ActionDataFramePart {}
@@ -37,7 +37,7 @@ export interface EvaluationScore {
 }
 
 export interface EvaluationClock {
-  name: string,
+  clock: string,
   frameLength: number,
   startFrame: number,
   framesRemaining: number,
@@ -46,6 +46,7 @@ export interface EvaluationClocksUpdate {
   clocks : EvaluationClock[]
   frame : number
   generation : number
+  agentId : number
 }
  export interface AgentModel {
    id: number,

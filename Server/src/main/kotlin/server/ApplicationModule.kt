@@ -40,19 +40,30 @@ import kotlin.random.Random
 private val log = KotlinLogging.logger { }
 inline fun <reified T> Scope.getChannel(): Channel<T> =
     get(qualifier<T>())
+
 private var evaluationId = 0
 val applicationModule = module {
     single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
-    single<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel() }
-    single<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
+    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel() }
+    factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
     single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
     single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-    single { EvaluationChannels(getChannel(), getChannel(), getChannel(), getChannel(), getChannel(), getChannel()) }
+    single {
+        EvaluationChannels(
+            IOController(0, getChannel(), getChannel()),
+            IOController(1, getChannel(), getChannel()),
+            getChannel(),
+            getChannel(),
+            getChannel(),
+            getChannel()
+        )
+    }
     single {
         val inputChannel = get<Channel<FrameUpdate>>(qualifier("input"))
-        EvaluationMessageProcessor(get(), inputChannel, get()) }
+        EvaluationMessageProcessor(get(), inputChannel, get())
+    }
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }
     single { SimulationSessionScope(this, get()) }

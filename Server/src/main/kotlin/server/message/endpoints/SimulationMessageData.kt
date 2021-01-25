@@ -67,6 +67,7 @@ data class StagePlatformUpdateData(
 
 @Serializable
 data class FrameOutput(
+    val controllerId : Int,
     val a: Boolean,
     val b: Boolean,
     val y: Boolean,
