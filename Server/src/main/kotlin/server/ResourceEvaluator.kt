@@ -64,10 +64,10 @@ class ResourceEvaluator(
                 if (a) resource -= frameCost
                 if (b) resource -= frameCost
                 if (y) resource -= frameCost
-                if (z) resource -= frameCost
+                if (z) resource -= frameCost * 2
                 if ((cStickX - .5f).absoluteValue > .2) resource -= frameCost
                 if ((cStickY - .5f).absoluteValue > .2) resource -= frameCost
-                if ((leftShoulder > 0)) resource -= frameCost
+                if ((leftShoulder > 0)) resource -= frameCost * 2
             }
             val frameNumber = frameData.frame
             val player1 = frameData.player1
