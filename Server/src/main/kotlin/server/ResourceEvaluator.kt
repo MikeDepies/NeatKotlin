@@ -88,7 +88,7 @@ class ResourceEvaluator(
                     newRunningScore - runningScore
                 )
                 runningScore = newRunningScore
-                resource += player1.damageDone
+                resource += player1.damageDone * comboMultiplier
             }
 //        if (player1.damageTaken > 0 || player1.tookDamage)
 //            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
