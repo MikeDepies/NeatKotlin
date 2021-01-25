@@ -15,7 +15,7 @@ fun piecewiseLinearFunction(xMin: Float, xMax: Float): (Float) -> Float = {
         else -> 0f
     }
 }
-fun lnSafe(x : Float) = if (x == 0f) ln(x + .0000000001f) else ln(x)
+fun lnSafe(x : Float) = if (x <= 0f) ln(.0000000001f) else ln(x)
 fun bipolarSigmoid(x: Float): Float = (1 - exp(x)) / (1 + exp(x))
 fun leCunTanh(x: Float) = (1.7159f) * tanh((2f / 3f) * x)
 fun hardTanh(x: Float) = max(-1f, min(1f, x))
@@ -24,7 +24,7 @@ fun complementaryLogLog(x: Float) = if (x != 0f) 1 - lnSafe(-1 * lnSafe(x)) else
 fun reluCos(x: Float) = max(0f, x) + cos(x)
 fun reluSin(x: Float) = max(0f, x) + sin(x)
 fun smoothRectifier(x: Float): Float = lnSafe(1 + exp(x))
-fun logit(x: Float): Float = lnSafe(x / (1 - x))
+fun logit(x: Float): Float = lnSafe(x / ((1 - x).takeIf { it != 0f } ?: .0001f))
 val Identity: ActivationFunction = { it }
 val SigmoidalTransferFunction: ActivationFunction = ::sigmoidalTransferFunction
 val StepFunction: ActivationFunction = ::stepFunction
@@ -79,4 +79,10 @@ object Activation {
     val smoothRectifier = ActivationGene("smoothRectifier", SmoothRectifierFunction)
     val logit = ActivationGene("logit", LogitFunction)
     val activationMap = baseActivationFunctions().toMap { it.name }
+}
+
+fun main() {
+    baseActivationFunctions().forEach {
+        println("${it.name}: ${it.activationFunction(-1f)}")
+    }
 }
