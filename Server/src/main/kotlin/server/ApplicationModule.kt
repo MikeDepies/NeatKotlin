@@ -108,6 +108,18 @@ val applicationModule = module {
             getChannel()
         )
     }
+    factory<ResourceEvaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState : MeleeState, network : ActivatableNetwork) ->
+        println("New Evaluator?")
+        ResourceEvaluator(
+            network,
+            agentId,
+            generation,
+            controllerId,
+            meleeState,
+            4f,
+            get()
+        )
+    }
     single { simulation() }
 }
 

@@ -153,13 +153,14 @@ suspend fun Application.evaluationLoop2Agents(
             logger.info { "New Agent (${index} / ${currentPopulation.size}) - PlayerController: ${playerController.controllerId}" }
             agentModelChannel.send(populationMap[index])
             val network = neatMutator.toNetwork()
-            val evaluator = get<Evaluator>(parameters = {
+            val evaluator = get<ResourceEvaluator>(parameters = {
                 DefinitionParameters(
                     listOf(
                         index,
                         populationEvolver.generation,
                         playerController.controllerId,
-                        if (playerController.controllerId == 0)  meleeState else meleeState2
+                        if (playerController.controllerId == 0)  meleeState else meleeState2,
+                        network
                     )
                 )
             })
