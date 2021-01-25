@@ -15,6 +15,7 @@ data class PlayerFrameData(
     val hitStun: Boolean,
     val lostStock: Boolean,
     val tookStock: Boolean,
+    val offStage: Boolean
 )
 
 data class MeleeFrameData(

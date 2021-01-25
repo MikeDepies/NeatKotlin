@@ -6,21 +6,19 @@ import java.time.*
 
 private val log = KotlinLogging.logger {}
 
-fun MeleeState.update(simulationFrameData: MeleeFrameData) {
-    lastMeleeFrameData = simulationFrameData
-}
 
 fun MeleeState.createSimulationFrame(lastFrame: FrameUpdate): MeleeFrameData {
     val aiStockFrame = lastFrame.player1.stock
     val percentFrame = lastFrame.player1.percent
-    val wasGameLost = (aiStockFrame) == 0 && lastMeleeFrameData.player1.stockCount == 1
+    val lastMeleeFrameData1 = lastMeleeFrameData
+    val wasGameLost = lastMeleeFrameData1 !== null && (aiStockFrame) == 0 && lastMeleeFrameData1.player1.stockCount == 1
     val opponentStockFrame = lastFrame.player2.stock
     val opponentPercentFrame = lastFrame.player2.percent
-    val wasGameWon = (opponentStockFrame) == 0 && lastMeleeFrameData.player2.stockCount == 1
-    val aiTookStock = (lastMeleeFrameData.player2.stockCount - opponentStockFrame) == 1
-    val aiLostStock = (lastMeleeFrameData.player1.stockCount - aiStockFrame) == 1
-    val damageDoneFrame = if (!aiTookStock) (opponentPercentFrame - lastMeleeFrameData.player2.percentFrame).toFloat() else 0f
-    val opponentDamageDoneFrame = if (!aiLostStock) (percentFrame - lastMeleeFrameData.player1.percentFrame).toFloat() else 0f
+    val wasGameWon = lastMeleeFrameData1 !== null && (opponentStockFrame) == 0 && lastMeleeFrameData1.player2.stockCount == 1
+    val aiTookStock = lastMeleeFrameData1 !== null && (lastMeleeFrameData1.player2.stockCount - opponentStockFrame) == 1
+    val aiLostStock = lastMeleeFrameData1 !== null && (lastMeleeFrameData1.player1.stockCount - aiStockFrame) == 1
+    val damageDoneFrame = if (lastMeleeFrameData1 !== null && !aiTookStock) (opponentPercentFrame - lastMeleeFrameData1.player2.percentFrame).toFloat() else 0f
+    val opponentDamageDoneFrame = if (lastMeleeFrameData1 !== null && !aiLostStock) (percentFrame - lastMeleeFrameData1.player1.percentFrame).toFloat() else 0f
     return MeleeFrameData(
         frame = lastFrame.frame,
         distance = lastFrame.distance,
@@ -36,7 +34,8 @@ fun MeleeState.createSimulationFrame(lastFrame: FrameUpdate): MeleeFrameData {
             onGround = lastFrame.player1.onGround,
             hitStun = lastFrame.player1.hitStun,
             lostStock = aiLostStock,
-            tookStock = aiTookStock
+            tookStock = aiTookStock,
+            offStage = lastFrame.player1.offStage
         ),
         player2 = PlayerFrameData(
             damageDone = opponentDamageDoneFrame,
@@ -50,14 +49,15 @@ fun MeleeState.createSimulationFrame(lastFrame: FrameUpdate): MeleeFrameData {
             onGround = lastFrame.player2.onGround,
             hitStun = lastFrame.player2.hitStun,
             lostStock = aiTookStock,
-            tookStock = aiLostStock
+            tookStock = aiLostStock,
+            offStage = lastFrame.player2.offStage
         ),
     )
 
 }
 
 data class MeleeState(
-    var lastMeleeFrameData: MeleeFrameData,
+    var lastMeleeFrameData: MeleeFrameData?,
 //    var agentStart: Instant
 )
 
@@ -74,7 +74,7 @@ fun createEmptyFrameData(): MeleeFrameData {
 private fun emptyPlayerFrameData() = PlayerFrameData(
     damageDone = 0f,
     damageTaken = 0f,
-    stockCount = 4,
+    stockCount = -10,
     percentFrame = 0,
     dealtDamage = false,
     tookDamage = false,
@@ -84,4 +84,5 @@ private fun emptyPlayerFrameData() = PlayerFrameData(
     hitStun = false,
     lostStock = false,
     tookStock = false,
+    offStage = false
 )

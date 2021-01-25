@@ -55,7 +55,7 @@ dependencies {
     implementation("org.optaplanner:optaplanner-core:8.0.0.Final")
 }
 tasks.withType<KotlinCompile>() {
-    kotlinOptions.jvmTarget = "1.8"
+
 }
 application {
     mainClassName = "ServerKt"

@@ -40,14 +40,17 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
  */
 typealias SimulationSnapshot = SimulationState
 
-data class IOController(val controllerId : Int, val frameUpdateChannel: Channel<FrameUpdate>,
-                   val frameOutputChannel: Channel<FrameOutput>,)
+data class IOController(
+    val controllerId: Int, val frameUpdateChannel: Channel<FrameUpdate>,
+    val frameOutputChannel: Channel<FrameOutput>,
+)
+
 object OneController
 object TwoController
 class Evaluation(val evaluationId: Int, val controllers: List<IOController>)
 data class EvaluationChannels(
-    val player1 : IOController,
-    val player2 : IOController,
+    val player1: IOController,
+    val player2: IOController,
     val scoreChannel: Channel<EvaluationScore>,
     val agentModelChannel: Channel<AgentModel>,
     val populationChannel: Channel<PopulationModels>,
@@ -137,26 +140,30 @@ suspend fun Application.evaluationLoop2Agents(
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
     runFolder.mkdirs()
-    val agentChannel = Channel<Pair<Int, NeatMutator>>()
+    var meleeState : MeleeState? = MeleeState(null)
+    var meleeState2 : MeleeState?  = MeleeState(null)
     suspend fun controllerEvaluator(
         agentChannel: Channel<Pair<Int, NeatMutator>>,
         populationMap: List<AgentModel>,
-        playerController : IOController,
+        playerController: IOController,
         agentResultChannel: Channel<FitnessModel<NeatMutator>>,
         inputTransformer: suspend (FrameUpdate) -> List<Float>
     ) {
         for ((index, neatMutator) in agentChannel) {
-            logger.info { "New Agent (${index + 1} / ${currentPopulation.size})" }
+            logger.info { "New Agent (${index} / ${currentPopulation.size}) - PlayerController: ${playerController.controllerId}" }
             agentModelChannel.send(populationMap[index])
             val network = neatMutator.toNetwork()
             val evaluator = get<Evaluator>(parameters = {
                 DefinitionParameters(
                     listOf(
                         index,
-                        populationEvolver.generation
+                        populationEvolver.generation,
+                        playerController.controllerId,
+                        if (playerController.controllerId == 0)  meleeState else meleeState2
                     )
                 )
             })
+
             val evaluationScore =
                 evaluate(
                     index,
@@ -173,9 +180,11 @@ suspend fun Application.evaluationLoop2Agents(
                 )
             )
         }
+        log.info("End of ControllerEvaluator ${playerController.controllerId}")
     }
 
     while (true) {
+        val agentChannel = Channel<Pair<Int, NeatMutator>>()
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
         val populationMap =
             currentPopulation.mapIndexed { index, neatMutator ->
@@ -184,22 +193,27 @@ suspend fun Application.evaluationLoop2Agents(
             }
 
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
-        val agentResultChannel = Channel<FitnessModel<NeatMutator>>()
+        val agentResultChannel = Channel<FitnessModel<NeatMutator>>(Channel.UNLIMITED)
         coroutineScope {
-            launch {
+            val player1Job = launch {
                 controllerEvaluator(agentChannel, populationMap, player1, agentResultChannel) { frameUpdate ->
                     frameUpdate.flatten2()
                 }
             }
-            launch {
+            val player2Job = launch {
                 controllerEvaluator(agentChannel, populationMap, player2, agentResultChannel) { frameUpdate ->
-                    frameUpdate.flatten2Player2()
+                    frameUpdate.flatten2()
                 }
             }
             currentPopulation.forEachIndexed { index, neatMutator ->
+                log.info("sending $index")
                 agentChannel.send(index to neatMutator)
             }
+            log.info("closing agent Channel")
             agentChannel.close()
+            joinAll(player1Job, player2Job)
+            log.info("closing Result Channel")
+            agentResultChannel.close()
         }
 
         val modelScores = agentResultChannel.toList().toModelScores(adjustedFitnessCalculation)
@@ -247,7 +261,7 @@ interface Evaluator {
     suspend fun evaluateFrame(frameUpdate: FrameUpdate)
     fun finishEvaluation(): EvaluationScore
 }
-
+//var lastFrame
 private suspend fun evaluate(
     agentId: Int,
     ioController: IOController,
@@ -267,11 +281,15 @@ private suspend fun evaluate(
     }
     try {
         for (frameUpdate in ioController.frameUpdateChannel) {
+            val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
             network.evaluate(transformToInput(frameUpdate), true)
             ioController.frameOutputChannel.send(network.output().toFrameOutput(ioController.controllerId))
-            evaluator.evaluateFrame(frameUpdate)
+//            logger.info { "${ioController.controllerId} - $frameUpdate" }
+
+            evaluator.evaluateFrame(frameAdjustedForController)
             sendEvaluationScoreUpdate()
             if (evaluator.isFinished()) {
+                logger.info { "${ioController.controllerId} - finished evaluating agent #$agentId" }
                 scoreChannel.send(evaluator.finishEvaluation())
                 delay(200)
                 return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
@@ -286,6 +304,22 @@ private suspend fun evaluate(
     scoreChannel.send(evaluator.finishEvaluation())
     return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
 }
+
+private fun controllerFrameUpdate(ioController: IOController, frameUpdate: FrameUpdate) =
+    when (ioController.controllerId) {
+        1 -> {
+            frameUpdate.copy(
+                player1 = frameUpdate.player2,
+                player2 = frameUpdate.player1,
+                action1 = frameUpdate.action2,
+                action2 = frameUpdate.action1
+            )
+
+        }
+        else -> {
+            frameUpdate
+        }
+    }
 typealias PlayerNumber = Int
 //
 //class BaseEvaluationQuery(val simulationState: SimulationSnapshot) : EvaluationQuery {
@@ -369,14 +403,14 @@ class FrameClock(val frameTime: Float) {
         return frame?.let {
             val frames = simulationFrameData.frame - it
             (frames * frameTime * 1000) / 1000
-        }?.toInt()
+        }?.toInt()?.takeIf { it >= 0 }
     }
 
     fun miliseconds(simulationFrameData: MeleeFrameData): Long? {
         return frame?.let {
             val frames = simulationFrameData.frame - it
             (frames * frameTime * 1000)
-        }?.toLong()
+        }?.toLong()?.takeIf { it >= 0 }
     }
 
     fun frames(simulationFrameData: MeleeFrameData): Int? {

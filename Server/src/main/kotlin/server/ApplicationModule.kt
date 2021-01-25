@@ -44,7 +44,7 @@ inline fun <reified T> Scope.getChannel(): Channel<T> =
 private var evaluationId = 0
 val applicationModule = module {
     single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
-    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel() }
+    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel(Channel.CONFLATED) }
     factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
     single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
@@ -94,22 +94,24 @@ val applicationModule = module {
         }
     }
 
-    single { MeleeState(createEmptyFrameData()) }
+    factory { MeleeState(null) }
     single { FrameClockFactory() }
-    factory<Evaluator> { (agentId: Int, generation: Int) ->
+    factory<Evaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState : MeleeState) ->
+        println("New Evaluator?")
         SimpleEvaluator(
             agentId,
             generation,
-            get(),
+            controllerId,
+            meleeState,
             4f,
             get(),
             getChannel()
         )
     }
-    single { simulation(takeSize = 50) }
+    single { simulation() }
 }
 
-fun simulation(randomSeed: Int = 513, takeSize: Int? = null): Simulation {
+fun simulation(randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -147,7 +149,7 @@ fun simulation(randomSeed: Int = 513, takeSize: Int? = null): Simulation {
         populationModel.map { it.toNeatMutator() }
     } else {
 
-        simpleNeatExperiment.generateInitialPopulation(
+        simpleNeatExperiment.generateInitialPopulationWithOneButton(
             20,
             input(59, true),
             9,

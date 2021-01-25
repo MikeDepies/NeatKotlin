@@ -142,7 +142,7 @@ $: {
 }
  $: {
    const agent = $newAgent
-   if (agent !== undefined && agent !== currentAgent)
+   if (agent !== undefined && (agent.id > currentAgent.id || agent.id === 0))
     currentAgent = agent
  }
  $: {
@@ -211,7 +211,7 @@ $: {
         }
         })} />
         {/if}
-        <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/>
+        <!-- <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/> -->
       </div>
     </div>
   </div>

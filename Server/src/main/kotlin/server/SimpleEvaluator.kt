@@ -14,21 +14,24 @@ private val logger = KotlinLogging.logger { }
 class SimpleEvaluator(
     val agentId: Int,
     val generation: Int,
+    val controllerId: Int,
     private val meleeState: MeleeState,
-    var runningScore: Float,
+    val baseScore: Float,
     frameClockFactory: FrameClockFactory,
     private val clockChannel: SendChannel<EvaluationClocksUpdate>
 ) :
     Evaluator {
+    var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
     private val damageClock = frameClockFactory.countDownClockSeconds("Damage Clock", 3f)
-    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 5f)
+    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 3f)
     private val hitStunClock = frameClockFactory.countDownClockMilliseconds("HitStun Clock", 200)
     private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds("P2 HitStun Clock", 200)
-    private val landedClock = frameClockFactory.countDownClockMilliseconds("Landed Clock", 100)
+    private val landedClock = frameClockFactory.countDownClockMilliseconds("Landed Clock", 0)
     private val stockTakenClock = frameClockFactory.countDownClockSeconds("StockTaken Clock", 6f)
-    val stockTakeBonus = 300
+    private val idleGameClock = frameClockFactory.countDownClockSeconds("No Damage Clock", 8f)
+    val stockTakeBonus = 30
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
@@ -55,12 +58,19 @@ class SimpleEvaluator(
 
     override fun isFinished(): Boolean {
         val meleeFrameData = meleeState.lastMeleeFrameData
-        val clocksFinished = clocksFinished(meleeFrameData)
-        val playerStatusPass = isPlayerStatusReady(meleeFrameData.player1)
-        val opponentStatusPass = isPlayerStatusReady(meleeFrameData.player2)
+        val clocksFinished = meleeFrameData !== null && clocksFinished(meleeFrameData)
+        val playerStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player1)
+        val opponentStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player2)
         val playtimeExpired = clocksFinished && playerStatusPass && opponentStatusPass
-//        logger.info { "Clocks Finished: $clocksFinished" }
-        return playtimeExpired || meleeFrameData.player1.lostStock
+        if (!clocksFinished)
+            idleGameClock.start(meleeFrameData?.frame ?: -200)
+        if (meleeFrameData?.player1?.lostStock == true || meleeFrameData?.player2?.lostStock == true || clocksFinished) {
+            logger.trace { "$controllerId - Clocks Finished: $clocksFinished" }
+            logger.trace { "$controllerId - Status Check: $playerStatusPass - $opponentStatusPass" }
+            logger.trace { "$controllerId - playerLostStock: ${meleeFrameData?.player1?.lostStock} - ${meleeFrameData?.player2?.lostStock}" }
+        }
+
+        return playtimeExpired || (meleeFrameData !== null && meleeFrameData.player1.lostStock) || (meleeFrameData !== null && idleGameClock.isFinished(meleeFrameData))
     }
 
     private fun clocksFinished(meleeFrameData: MeleeFrameData): Boolean {
@@ -72,15 +82,16 @@ class SimpleEvaluator(
 
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
         val frameData = meleeState.createSimulationFrame(frameUpdate)
-        val frameNumber = frameData.frame
-        val player1 = frameData.player1
-        val player2 = frameData.player2
-        val lastPlayer1 = meleeState.lastMeleeFrameData.player1
-        val lastPlayer2 = meleeState.lastMeleeFrameData.player2
-        //Perform evaluations
-        checkClockEvents(frameNumber, frameData)
-        if (player1.tookStock && cumulativeDamage > 0) scoreStockTake(frameNumber, lastPlayer2.percentFrame)
-        if (player1.lostStock) {
+        if (lastMeleeFrameData != null) {
+            val frameNumber = frameData.frame
+            val player1 = frameData.player1
+            val player2 = frameData.player2
+            val lastPlayer1 = meleeState.lastMeleeFrameData?.player1
+            val lastPlayer2 = meleeState.lastMeleeFrameData?.player2
+            //Perform evaluations
+            checkClockEvents(frameNumber, frameData)
+            if (player1.tookStock && cumulativeDamage > 0) scoreStockTake(frameNumber)
+            if (player1.lostStock) {
 //            val scorePenalized = if (frameData.isPlayerInAirFromKnockBack(0)) {
 //                val newRunningScore = runningScore / 8
 //                scoreContributionList.add(
@@ -100,42 +111,45 @@ class SimpleEvaluator(
 //                )
 //                newRunningScore
 //            }
-            runningScore = 0f
-        }
-        if (player1.damageDone > 0)
-            cumulativeDamage += player1.damageDone
-        if (player1.dealtDamage) {
+//                runningScore -= baseScore
+            }
+            if (player1.damageDone > 1)
+                cumulativeDamage += player1.damageDone
+            if (player1.dealtDamage && player1.damageDone > 1) {
 //            logger.info { "DAMAGE DEALT" }
-            val comboMultiplier = comboSequence.next()
-            comboActive = true
-            val newRunningScore = runningScore + (player1.damageDone * comboMultiplier)
-            scoreContributionList += EvaluationScoreContribution(
-                "Damage Dealt (${player1.damageDone} * $comboMultiplier)",
-                newRunningScore,
-                newRunningScore - runningScore
-            )
-            runningScore = newRunningScore
-        }
+                val comboMultiplier = comboSequence.next()
+                comboActive = true
+                val newRunningScore = runningScore + (player1.damageDone * comboMultiplier)
+                scoreContributionList += EvaluationScoreContribution(
+                    "Damage Dealt (${player1.damageDone} * $comboMultiplier)",
+                    newRunningScore,
+                    newRunningScore - runningScore
+                )
+                runningScore = newRunningScore
+            }
 //        if (player1.damageTaken > 0 || player1.tookDamage)
 //            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
-        if (player1.damageTaken > 0)
-            cumulativeDamageTaken += player1.damageTaken
-        if (player2.lostStock)
-            currentStockDamage = 0f
-        else currentStockDamage += player1.damageDone
-        if (player1.tookDamage && comboActive) {
-            logger.info { "reset combo sequence" }
-            comboSequence = comboSequence().iterator()
-            comboActive = false
-        }
-        if (player1.winGame) {
-            clockList.forEach { it.cancel() }
-            firstFrame = true
+            if (player1.damageTaken > 0)
+                cumulativeDamageTaken += player1.damageTaken
+            if (player2.lostStock)
+                currentStockDamage = 0f
+            else currentStockDamage += player1.damageDone
+            if (player1.tookDamage && comboActive) {
+                logger.info { "reset combo sequence" }
+                comboSequence = comboSequence().iterator()
+                comboActive = false
+            }
+            if (player1.winGame) {
+                clockList.forEach { it.cancel() }
+                firstFrame = true
+            }
+        } else {
+            idleGameClock.start(frameData.frame)
         }
         //Then update to the new frame.
         meleeState.lastMeleeFrameData = frameData
-        if (frameNumber % 4 == 0)
-            sendClockUpdates(frameNumber)
+//        if (frameNumber % 4 == 0)
+//            sendClockUpdates(frameNumber)
     }
 
     private suspend fun sendClockUpdates(frameNumber: Int) {
@@ -147,13 +161,12 @@ class SimpleEvaluator(
                 frameLength = countDownClock.toFrameLength()
             )
         }
-        clockChannel.send(EvaluationClocksUpdate(clockUpdateList, frameNumber,agentId, generation))
+        clockChannel.send(EvaluationClocksUpdate(clockUpdateList, frameNumber, agentId, generation))
 
     }
 
     private fun scoreStockTake(
-        frameNumber: Int,
-        deathPercent: Int
+        frameNumber: Int
     ) {
         stockTakenClock.start(frameNumber)
 
@@ -181,21 +194,23 @@ class SimpleEvaluator(
     }
 
     private fun MeleeFrameData.playerExitingHitStun(playerNumber: Int) =
-        !this[playerNumber].hitStun && lastMeleeFrameData[playerNumber].hitStun
+        !this[playerNumber].hitStun && lastMeleeFrameData?.let { it[playerNumber].hitStun } ?: false
 
     private fun MeleeFrameData.playerLanded(playerNumber: Int) =
-        this[playerNumber].onGround && !lastMeleeFrameData[playerNumber].onGround
+        this[playerNumber].onGround && lastMeleeFrameData?.let { !it[playerNumber].onGround } ?: false
 
     private fun isPlayerStatusReady(playerFrameData: PlayerFrameData) =
         !playerFrameData.hitStun && playerFrameData.onGround
 
     private fun MeleeFrameData.isPlayerInAirFromKnockBack(playerNumber: Int) =
-        !this[playerNumber].onGround && lastMeleeFrameData[playerNumber].tookDamage
+        !this[playerNumber].onGround && lastMeleeFrameData?.let { it[playerNumber].tookDamage } ?: false
 
     private fun startGraceClockOnFirstFrame(frameNumber: Int) {
-        if (firstFrame && meleeState.lastMeleeFrameData.player1.onGround) {
+        if (firstFrame && meleeState.lastMeleeFrameData?.player1?.onGround == true) {
             graceClock.start(frameNumber)
             firstFrame = false
+        } else if (firstFrame) {
+            idleGameClock.start(frameNumber                 )
         }
     }
 
@@ -224,7 +239,14 @@ class SimpleEvaluator(
         return EvaluationScore(agentId, score, scoreContributionList)
     }
 }
+
 @Serializable
-data class EvaluationClocksUpdate(val clocks : List<EvaluationClockUpdate>, val frame : Int, val agentId: Int, val generation : Int)
+data class EvaluationClocksUpdate(
+    val clocks: List<EvaluationClockUpdate>,
+    val frame: Int,
+    val agentId: Int,
+    val generation: Int
+)
+
 @Serializable
 data class EvaluationClockUpdate(val clock: String, val framesLeft: Int, val frameStart: Int, val frameLength: Int)

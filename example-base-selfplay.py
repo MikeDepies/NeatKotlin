@@ -264,9 +264,9 @@ async def handle_message():
                 got_back = await websocket.recv()
                 if (Session.gamestate is not None and Session.gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]):
                     msg: Dict = json.loads(got_back)
-                    if (msg["controllerId"] == 0):
+                    if (msg["data"]["controllerId"] == 0):
                         processMessage(msg["data"], controller)
-                    elif (msg["controllerId"] == 1):
+                    elif (msg["data"]["controllerId"] == 1):
                         processMessage(msg["data"], controller_opponent)
                 else:
                     controller.release_all()
