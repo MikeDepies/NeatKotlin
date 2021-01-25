@@ -31,7 +31,6 @@ import neat.mutation.mutateConnectionWeight
 import org.koin.core.qualifier.qualifier
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
-import org.koin.experimental.builder.single
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
 import server.server.WebSocketManager
@@ -41,7 +40,7 @@ import kotlin.random.Random
 private val log = KotlinLogging.logger { }
 inline fun <reified T> Scope.getChannel(): Channel<T> =
     get(qualifier<T>())
-
+private var evaluationId = 0
 val applicationModule = module {
     single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
     single<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel() }
@@ -51,7 +50,9 @@ val applicationModule = module {
     single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
     single { EvaluationChannels(getChannel(), getChannel(), getChannel(), getChannel(), getChannel(), getChannel()) }
-    single { EvaluationMessageProcessor(get(), get(qualifier("input")), get()) }
+    single {
+        val inputChannel = get<Channel<FrameUpdate>>(qualifier("input"))
+        EvaluationMessageProcessor(get(), inputChannel, get()) }
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }
     single { SimulationSessionScope(this, get()) }
@@ -62,6 +63,7 @@ val applicationModule = module {
         }.toList()
         MessageEndpointRegistryImpl(endpoints, get())
     }
+
     single { EndpointProvider(get(), get(), this) }
     single<UserTokenResolver> { UserTokenResolverImpl(get()) }
     single<AuthService> { AuthServiceAuth0(get(), get()) }
@@ -93,11 +95,10 @@ val applicationModule = module {
             getChannel()
         )
     }
-    single { EvaluationArena() }
-    single { simulation(evaluationArena = get(), takeSize = 50) }
+    single { simulation(takeSize = 50) }
 }
 
-fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 513, takeSize: Int? = null): Simulation {
+fun simulation(randomSeed: Int = 513, takeSize: Int? = null): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -145,7 +146,7 @@ fun simulation(evaluationArena: EvaluationArena, randomSeed: Int = 513, takeSize
 
     val speciate = speciationController.speciate(population, speciesLineage, 0)
     val populationEvolver = PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment)
-    return Simulation(population, evaluationArena, populationEvolver, adjustedFitnessCalculation)
+    return Simulation(population, populationEvolver, adjustedFitnessCalculation)
 }
 
 fun NeatExperiment.generateInitialPopulationWithOneButton(

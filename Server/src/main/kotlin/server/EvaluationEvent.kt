@@ -42,7 +42,10 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
  The action includes: ScoreModification (variables ing general?), Clock Controls, EndAgentTurn
  */
 typealias SimulationSnapshot = SimulationState
-
+class Controller
+object OneController
+object TwoController
+class Evaluation(val evaluationId : Int, val controllers : List<Controller>)
 data class EvaluationChannels(
     val frameUpdateChannel: Channel<FrameUpdate>,
     val frameOutputChannel: Channel<FrameOutput>,

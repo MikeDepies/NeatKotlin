@@ -142,7 +142,7 @@ class SimpleEvaluator(
         val clockUpdateList = clockList.map { countDownClock ->
             EvaluationClockUpdate(
                 clock = countDownClock.clockId,
-                framesLeft = countDownClock.startFrame?.let { it - frameNumber } ?: 0,
+                framesLeft = countDownClock.startFrame?.let { frameNumber - it } ?: 0,
                 frameStart = countDownClock.startFrame ?: -1,
                 frameLength = countDownClock.toFrameLength()
             )

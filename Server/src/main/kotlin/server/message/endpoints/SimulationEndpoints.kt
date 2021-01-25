@@ -51,7 +51,6 @@ class SimulationSessionScope(override val scope: Scope, override val messageWrit
 
 data class Simulation(
     val initialPopulation: List<NeatMutator>,
-    val evaluationArena: EvaluationArena,
     val populationEvolver: PopulationEvolver,
     val adjustedFitnessCalculation: AdjustedFitnessCalculation
 )

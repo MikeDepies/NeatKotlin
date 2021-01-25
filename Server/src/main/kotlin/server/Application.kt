@@ -92,7 +92,7 @@ fun Application.module(testing: Boolean = false) {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
-    val (initialPopulation, evaluationArena, populationEvolver, adjustedFitness) = get<Simulation>()
+    val (initialPopulation, populationEvolver, adjustedFitness) = get<Simulation>()
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
@@ -212,7 +212,7 @@ class EvaluationMessageProcessor(
             messageWriter.sendPlayerMessage(
                 userMessage = TypedUserMessage(
                     userRef = UserRef("dashboard"),
-                    topic = "simulation.event.score.new",
+                    topic = "simulation.event.frame.update",
                     data = frame
                 ),
                 serializer = FrameUpdate.serializer()
