@@ -54,13 +54,13 @@ data class EvaluationChannels(
     val populationChannel: Channel<PopulationModels>,
     val clockChannel: Channel<EvaluationClocksUpdate>,
 )
-
-interface EvaluationQuery {
-    fun MeleeFrameData.lastPlayersDamageTaken(): List<PlayerNumber>
-    fun MeleeFrameData.lastPlayersDamageDealt(): List<PlayerNumber>
-    fun MeleeFrameData.lastPlayersStockLost(): List<PlayerNumber>
-    fun MeleeFrameData.lastPlayersStockTaken(): List<PlayerNumber>
-}
+//
+//interface EvaluationQuery {
+//    fun MeleeFrameData.lastPlayersDamageTaken(): List<PlayerNumber>
+//    fun MeleeFrameData.lastPlayersDamageDealt(): List<PlayerNumber>
+//    fun MeleeFrameData.lastPlayersStockLost(): List<PlayerNumber>
+//    fun MeleeFrameData.lastPlayersStockTaken(): List<PlayerNumber>
+//}
 
 suspend fun Application.evaluationLoop(
     initialPopulation: List<NeatMutator>,
@@ -75,6 +75,54 @@ suspend fun Application.evaluationLoop(
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
     runFolder.mkdirs()
+    while (true) {
+        writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
+        val populationMap =
+            currentPopulation.mapIndexed { index, neatMutator ->
+                val species = populationEvolver.speciationController.species(neatMutator).id
+                AgentModel(index, species, neatMutator.toModel())
+            }
+
+        populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
+        val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
+            logger.info { "New Agent (${index + 1} / ${currentPopulation.size})" }
+            agentModelChannel.send(populationMap[index])
+            val network = neatMutator.toNetwork()
+            val evaluator = get<Evaluator>(parameters = { DefinitionParameters(listOf(index, populationEvolver.generation)) })
+            val evaluationScore = evaluate(index, frameChannel, network, networkOutputChannel, scoreChannel, evaluator)
+            logger.info { "Score: ${evaluationScore.score}" }
+            FitnessModel(
+                model = neatMutator,
+                score = evaluationScore.score
+            )
+        }.toModelScores(adjustedFitnessCalculation)
+        populationEvolver.sortPopulationByAdjustedScore(modelScores)
+        populationEvolver.updateScores(modelScores)
+        var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
+        populationEvolver.speciate(newPopulation)
+        logger.info { "Species Count: ${populationEvolver.speciesLineage.species.size}" }
+        while (newPopulation.size < currentPopulation.size) {
+            newPopulation = newPopulation + newPopulation.first().clone()
+        }
+        currentPopulation = newPopulation
+    }
+}
+
+
+suspend fun Application.evaluationLoop2Agents(
+    initialPopulation: List<NeatMutator>,
+    populationEvolver: PopulationEvolver,
+    adjustedFitnessCalculation: AdjustedFitnessCalculation,
+    evaluationChannels: EvaluationChannels
+) {
+    //Extract to koin
+    //hook up websockets
+    val (frameChannel, networkOutputChannel, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
+    var currentPopulation = initialPopulation
+    val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
+    val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
+    runFolder.mkdirs()
+    val agentChannel = Channel<Pair<Int, NeatMutator>>()
     while (true) {
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
         val populationMap =
@@ -171,7 +219,7 @@ private suspend fun evaluate(
         }
     } catch (e: Exception) {
         logger.error { "failed to build unwrap network properly - killing it" }
-        val evaluationScore = EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+        val evaluationScore = EvaluationScore(agentId, -10f, evaluator.scoreContributionList)
         scoreChannel.send(evaluationScore)
         return evaluationScore
     }
@@ -179,62 +227,62 @@ private suspend fun evaluate(
     return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
 }
 typealias PlayerNumber = Int
-
-class BaseEvaluationQuery(val simulationState: SimulationSnapshot) : EvaluationQuery {
-    override fun MeleeFrameData.lastPlayersDamageTaken(): List<PlayerNumber> = with(simulationState) {
-        val players = mutableListOf<Int>()
-        if (lastPercent < player1.percentFrame) players.add(0)
-        if (lastOpponentPercent < player2.percentFrame) players.add(1)
-        return players
-    }
-
-    override fun MeleeFrameData.lastPlayersDamageDealt(): List<PlayerNumber> = with(simulationState) {
-        val players = mutableListOf<Int>()
-        if (lastPercent < player1.percentFrame) players.add(1)
-        if (lastOpponentPercent < player2.percentFrame) players.add(0)
-        return players
-    }
-
-    override fun MeleeFrameData.lastPlayersStockLost(): List<PlayerNumber> = with(simulationState) {
-        val players = mutableListOf<Int>()
-        if (lastAiStock > player1.stockCount) players.add(0)
-        if (lastOpponentStock > player2.stockCount) players.add(1)
-        return players
-    }
-
-    override fun MeleeFrameData.lastPlayersStockTaken(): List<PlayerNumber> = with(simulationState) {
-        val players = mutableListOf<Int>()
-        if (lastAiStock > player1.stockCount) players.add(1)
-        if (lastOpponentStock > player2.stockCount) players.add(0)
-        return players
-    }
-}
-
-typealias EvaluationEventHandler = EvaluationQuery.(MeleeFrameData) -> Unit
+//
+//class BaseEvaluationQuery(val simulationState: SimulationSnapshot) : EvaluationQuery {
+//    override fun MeleeFrameData.lastPlayersDamageTaken(): List<PlayerNumber> = with(simulationState) {
+//        val players = mutableListOf<Int>()
+//        if (lastPercent < player1.percentFrame) players.add(0)
+//        if (lastOpponentPercent < player2.percentFrame) players.add(1)
+//        return players
+//    }
+//
+//    override fun MeleeFrameData.lastPlayersDamageDealt(): List<PlayerNumber> = with(simulationState) {
+//        val players = mutableListOf<Int>()
+//        if (lastPercent < player1.percentFrame) players.add(1)
+//        if (lastOpponentPercent < player2.percentFrame) players.add(0)
+//        return players
+//    }
+//
+//    override fun MeleeFrameData.lastPlayersStockLost(): List<PlayerNumber> = with(simulationState) {
+//        val players = mutableListOf<Int>()
+//        if (lastAiStock > player1.stockCount) players.add(0)
+//        if (lastOpponentStock > player2.stockCount) players.add(1)
+//        return players
+//    }
+//
+//    override fun MeleeFrameData.lastPlayersStockTaken(): List<PlayerNumber> = with(simulationState) {
+//        val players = mutableListOf<Int>()
+//        if (lastAiStock > player1.stockCount) players.add(1)
+//        if (lastOpponentStock > player2.stockCount) players.add(0)
+//        return players
+//    }
+//}
+//
+//typealias EvaluationEventHandler = EvaluationQuery.(MeleeFrameData) -> Unit
 
 enum class EvaluationPhase {
     PreFrame, PostFrame
 }
-
-class EvaluationDirector(clockFactory: FrameClockFactory, evaluationTerminationPredicate: () -> Boolean) {
-    val eventMap = mutableMapOf<EvaluationEvent, MutableList<EvaluationEventHandler>>()
-    val phaseMap = mutableMapOf<EvaluationPhase, MutableList<EvaluationEventHandler>>()
-    fun onEvent(evaluationEvent: EvaluationEvent, eventHandler: EvaluationEventHandler) {
-        if (!eventMap.containsKey(evaluationEvent))
-            eventMap[evaluationEvent] = mutableListOf(eventHandler)
-        else eventMap.getValue(evaluationEvent).add(eventHandler)
-    }
-}
-
-fun createEvaluationDirector(frameClockFactory: FrameClockFactory) {
-    var cumulativeDamageScore = 16f
-    val evaluationDirector = EvaluationDirector(frameClockFactory) { false }
-    evaluationDirector.onEvent(DamageDealt) {
-        //need to add damage done calculation...
-        cumulativeDamageScore += it.player1.damageDone
-    }
-
-}
+//
+//class EvaluationDirector(clockFactory: FrameClockFactory, evaluationTerminationPredicate: () -> Boolean) {
+//    val eventMap = mutableMapOf<EvaluationEvent, MutableList<EvaluationEventHandler>>()
+//    val phaseMap = mutableMapOf<EvaluationPhase, MutableList<EvaluationEventHandler>>()
+//    fun onEvent(evaluationEvent: EvaluationEvent, eventHandler: EvaluationEventHandler) {
+//        if (!eventMap.containsKey(evaluationEvent))
+//            eventMap[evaluationEvent] = mutableListOf(eventHandler)
+//        else eventMap.getValue(evaluationEvent).add(eventHandler)
+//    }
+//}
+//
+//fun createEvaluationDirector(frameClockFactory: FrameClockFactory) {
+//    var cumulativeDamageScore = 16f
+//    val evaluationDirector = EvaluationDirector(frameClockFactory) { false }
+//    evaluationDirector.onEvent(DamageDealt) {
+//        //need to add damage done calculation...
+//        cumulativeDamageScore += it.player1.damageDone
+//    }
+//
+//}
 
 fun comboSequence() = sequence {
     var i = 1
