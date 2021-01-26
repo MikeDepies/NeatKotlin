@@ -24,8 +24,8 @@ class SimpleEvaluator(
     var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    private val damageClock = frameClockFactory.countDownClockSeconds("Damage Clock", 3f)
-    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 3f)
+    private val damageClock = frameClockFactory.countDownClockSeconds("Damage Clock", 6f)
+    private val graceClock = frameClockFactory.countDownClockSeconds("Grace Clock", 6f)
     private val hitStunClock = frameClockFactory.countDownClockMilliseconds("HitStun Clock", 200)
     private val enemyHitStunClock = frameClockFactory.countDownClockMilliseconds("P2 HitStun Clock", 200)
     private val landedClock = frameClockFactory.countDownClockMilliseconds("Landed Clock", 0)

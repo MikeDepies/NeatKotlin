@@ -35,7 +35,7 @@ class PopulationEvolver(
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
             mateChance = .6f,
-            survivalThreshold = .4f
+            survivalThreshold = .2f
         )
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation)
     }

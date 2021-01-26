@@ -123,7 +123,7 @@ val applicationModule = module {
     single { simulation() }
 }
 
-fun simulation(randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
+fun simulation(randomSeed: Int = 0, takeSize: Int? = 50): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -161,7 +161,7 @@ fun simulation(randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
         populationModel.map { it.toNeatMutator() }
     } else {
 
-        simpleNeatExperiment.generateInitialPopulationWithOneButton(
+        simpleNeatExperiment.generateInitialPopulation(
             20,
             input(59, true),
             9,

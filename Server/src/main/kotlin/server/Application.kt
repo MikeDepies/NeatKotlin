@@ -11,7 +11,7 @@ import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -145,11 +145,15 @@ class EvaluationMessageProcessor(
     val messageWriter: MessageWriter
 ) {
     suspend fun processOutput(controller : IOController) {
-        for (frameOutput in controller.frameOutputChannel) {
-            messageWriter.sendAllMessage(
-                BroadcastMessage("simulation.frame.output", frameOutput),
-                FrameOutput.serializer()
-            )
+        try {
+            for (frameOutput in controller.frameOutputChannel) {
+                messageWriter.sendAllMessage(
+                    BroadcastMessage("simulation.frame.output", frameOutput),
+                    FrameOutput.serializer()
+                )
+            }
+        } catch (e: Exception) {
+            log.error(e) { "broke..." }
         }
     }
 
@@ -194,15 +198,19 @@ class EvaluationMessageProcessor(
     }
 
     suspend fun processScores() {
-        for (frame in evaluationChannels.scoreChannel) {
-            messageWriter.sendPlayerMessage(
-                userMessage = TypedUserMessage(
-                    userRef = UserRef("dashboard"),
-                    topic = "simulation.event.score.new",
-                    data = frame
-                ),
-                serializer = EvaluationScore.serializer()
-            )
+        try {
+            for (frame in evaluationChannels.scoreChannel) {
+                messageWriter.sendPlayerMessage(
+                    userMessage = TypedUserMessage(
+                        userRef = UserRef("dashboard"),
+                        topic = "simulation.event.score.new",
+                        data = frame
+                    ),
+                    serializer = EvaluationScore.serializer()
+                )
+            }
+        } catch (e: Exception) {
+            log.error(e) { "Score processor crashed..." }
         }
     }
 

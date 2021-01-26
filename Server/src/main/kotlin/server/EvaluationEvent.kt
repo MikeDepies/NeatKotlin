@@ -4,8 +4,13 @@ import FrameOutput
 import FrameUpdate
 import PopulationEvolver
 import io.ktor.application.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.toList
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -92,7 +97,7 @@ suspend fun Application.evaluationLoop(
         val populationMap =
             currentPopulation.mapIndexed { index, neatMutator ->
                 val species = populationEvolver.speciationController.species(neatMutator).id
-                AgentModel(index, species, neatMutator.toModel())
+                AgentModel(index, species/*, neatMutator.toModel()*/)
             }
 
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
@@ -180,7 +185,7 @@ suspend fun Application.evaluationLoop2Agents(
                     scoreChannel,
                     evaluator, inputTransformer
                 )
-            logger.info { "Score: ${evaluationScore.score}" }
+            logger.info { "PlayerController: ${playerController.controllerId} Score: ${evaluationScore.score}" }
             agentResultChannel.send(
                 FitnessModel(
                     model = neatMutator,
@@ -193,11 +198,12 @@ suspend fun Application.evaluationLoop2Agents(
 
     while (true) {
         val agentChannel = Channel<Pair<Int, NeatMutator>>()
+        currentPopulation = currentPopulation.shuffled()
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
         val populationMap =
             currentPopulation.mapIndexed { index, neatMutator ->
                 val species = populationEvolver.speciationController.species(neatMutator).id
-                AgentModel(index, species, neatMutator.toModel())
+                AgentModel(index, species/*, neatMutator.toModel()*/)
             }
 
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
@@ -221,9 +227,9 @@ suspend fun Application.evaluationLoop2Agents(
             agentChannel.close()
             joinAll(player1Job, player2Job)
             log.info("closing Result Channel")
-            agentResultChannel.close()
-        }
 
+        }
+        agentResultChannel.close()
         val modelScores = agentResultChannel.toList().toModelScores(adjustedFitnessCalculation)
 
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
@@ -282,12 +288,13 @@ private suspend fun evaluate(
     suspend fun sendEvaluationScoreUpdate() {
         val evaluationScore = EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
         if (evaluationScore != lastEvaluationScore) {
-//            logger.info { "sending evalScore: ${evaluationScore}" }
+
             scoreChannel.send(evaluationScore)
             lastEvaluationScore = evaluationScore
         }
     }
     try {
+
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
             network.evaluate(transformToInput(frameUpdate), true)
@@ -309,8 +316,9 @@ private suspend fun evaluate(
         scoreChannel.send(evaluationScore)
         return evaluationScore
     }
-    scoreChannel.send(evaluator.finishEvaluation())
-    return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+    error("This is wrong...")
+    scoreChannel.send(lastEvaluationScore)
+    return lastEvaluationScore
 }
 
 private fun controllerFrameUpdate(ioController: IOController, frameUpdate: FrameUpdate) =

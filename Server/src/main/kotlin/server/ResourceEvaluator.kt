@@ -2,9 +2,9 @@ package server
 
 import FrameUpdate
 import mu.KotlinLogging
-import neat.*
+import neat.ActivatableNetwork
 import server.message.endpoints.*
-import kotlin.math.*
+import kotlin.math.absoluteValue
 
 private val logger = KotlinLogging.logger { }
 
@@ -14,9 +14,9 @@ class ResourceEvaluator(
     val generation: Int,
     val controllerId: Int,
     private val meleeState: MeleeState,
-    baseScore: Float,
+    val baseScore: Float,
     frameClockFactory: FrameClockFactory,
-    var resource: Float = 100f
+    var resource: Float = 150f
 ) :
     Evaluator {
     var runningScore: Float = baseScore
@@ -29,14 +29,18 @@ class ResourceEvaluator(
     var comboActive = false
     var comboSequence = comboSequence().iterator()
     var bankedScore = 0f
+    val xSpeedData = mutableListOf<Float>()
     override val scoreContributionList = mutableListOf<EvaluationScoreContribution>()
+    private val idleGameClock = frameClockFactory.countDownClockSeconds("No Damage Clock", 8f)
+    var prevX = 0f
+    var prevShieldButton = false
 
     /**
      * The finalized Score
      */
     override val score: Float
         get() {
-            return runningScore + bankedScore
+            return runningScore + bankedScore + (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f)
         }
 
     override fun isFinished(): Boolean {
@@ -51,31 +55,44 @@ class ResourceEvaluator(
             logger.trace { "$controllerId - Status Check: $playerStatusPass - $opponentStatusPass" }
             logger.trace { "$controllerId - playerLostStock: ${meleeFrameData?.player1?.lostStock} - ${meleeFrameData?.player2?.lostStock}" }
         }
+        if (!clocksFinished)
+            idleGameClock.start(meleeFrameData?.frame ?: -200)
 
-        return playtimeExpired || (meleeFrameData !== null && meleeFrameData.player1.lostStock)
+        return playtimeExpired || (meleeFrameData !== null && meleeFrameData.player1.lostStock) || (meleeFrameData !== null && idleGameClock.isFinished(
+            meleeFrameData
+        ))
     }
 
     private val frameCost = 10 * frameClockFactory.frameTime
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
+//        if (controllerId == 1) logger.info { "getting data?" }
         val frameData = meleeState.createSimulationFrame(frameUpdate)
         if (lastMeleeFrameData != null) {
             resource -= frameCost
-            network.output().toFrameOutput(controllerId).run {
+
+            val output = network.output().toFrameOutput(controllerId)
+            output.run {
                 if (a) resource -= frameCost
                 if (b) resource -= frameCost
                 if (y) resource -= frameCost
-                if (z) resource -= frameCost * 2
+                if (z) resource -= frameCost * 4
                 if ((cStickX - .5f).absoluteValue > .2) resource -= frameCost
                 if ((cStickY - .5f).absoluteValue > .2) resource -= frameCost
-                if ((leftShoulder > 0)) resource -= frameCost * 2
+                if ((leftShoulder > 0)) resource -= frameCost * 4
             }
+            val shieldUsed = output.z || output.leftShoulder > 0
             val frameNumber = frameData.frame
             val player1 = frameData.player1
             val player2 = frameData.player2
             val lastPlayer1 = meleeState.lastMeleeFrameData?.player1
             val lastPlayer2 = meleeState.lastMeleeFrameData?.player2
             //Perform evaluations
-            if (player1.tookStock && currentStockDamage > 0) scoreStockTake(frameNumber)
+
+            if ((prevX - frameUpdate.player1.x).absoluteValue > 1 && !shieldUsed && !prevShieldButton) {
+                xSpeedData += frameUpdate.player1.speedGroundX.absoluteValue
+                prevX = frameUpdate.player1.x
+            } else xSpeedData += 0f
+            if (player1.tookStock && currentStockDamage > 1) scoreStockTake(frameNumber)
             if (player1.dealtDamage && player1.damageDone > 1) {
                 cumulativeDamage += player1.damageDone
 //            logger.info { "DAMAGE DEALT" }
@@ -88,17 +105,23 @@ class ResourceEvaluator(
                     newRunningScore - runningScore
                 )
                 runningScore = newRunningScore
-                resource += player1.damageDone * comboMultiplier
+                resource += (player1.damageDone * comboMultiplier) * 4f
             }
 //        if (player1.damageTaken > 0 || player1.tookDamage)
 //            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
-            if (player1.damageTaken > 0) {
+            if (player1.damageTaken > 1) {
                 cumulativeDamageTaken += player1.damageTaken
                 resource -= player1.damageTaken / 4f
+                if (player1.damageTaken >= 4)
+                    runningScore += player1.damageTaken / 4f
+            }
+            if (player1.lostStock) {
+                if (runningScore >= baseScore)
+                    runningScore -= baseScore
             }
             if (player2.lostStock)
                 currentStockDamage = 0f
-            else currentStockDamage += player1.damageDone
+            else if (player1.damageDone > 1) currentStockDamage += player1.damageDone //Hack for damage tick offcamera
             if (player1.tookDamage && comboActive) {
                 logger.info { "reset combo sequence" }
                 comboSequence = comboSequence().iterator()
@@ -107,9 +130,11 @@ class ResourceEvaluator(
             if (player1.winGame) {
                 firstFrame = true
             }
+            prevShieldButton = shieldUsed
         }
         //Then update to the new frame.
         meleeState.lastMeleeFrameData = frameData
+
         if (resource < 0) resource = 0f
 //        if (frameNumber % 4 == 0)
 //            sendClockUpdates(frameNumber)
@@ -128,7 +153,7 @@ class ResourceEvaluator(
         )
         bankedScore += stockTakeScore
         runningScore = 0f
-        resource += 100
+        resource += 250
     }
 
     private fun MeleeFrameData.playerExitingHitStun(playerNumber: Int) =

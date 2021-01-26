@@ -60,7 +60,7 @@ class ServerWebSocketManager(
                     gameServer = null
                     logger.info { "Server will attempt to reconnect" }
                     delay(10_000)
-                    start()
+                    this@ServerWebSocketManager.start()
                 }
             }
         } catch (e: Exception) {
