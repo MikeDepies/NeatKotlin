@@ -369,11 +369,11 @@ async def console_loop():
                                                 cpu_level=0)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller_opponent,
-                                                melee.Character.FOX,
+                                                melee.Character.PIKACHU,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=costume,
-                                                cpu_level=4,
+                                                cpu_level=6,
                                                 autostart=True,
                                                 swag=False)
             # else:

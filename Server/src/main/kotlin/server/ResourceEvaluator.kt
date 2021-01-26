@@ -5,6 +5,7 @@ import mu.KotlinLogging
 import neat.ActivatableNetwork
 import server.message.endpoints.*
 import kotlin.math.absoluteValue
+import kotlin.math.max
 
 private val logger = KotlinLogging.logger { }
 
@@ -40,7 +41,7 @@ class ResourceEvaluator(
      */
     override val score: Float
         get() {
-            return runningScore + bankedScore + (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f)
+            return runningScore + bankedScore + (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f) * 5f
         }
 
     override fun isFinished(): Boolean {
@@ -116,8 +117,9 @@ class ResourceEvaluator(
                     runningScore += player1.damageTaken / 4f
             }
             if (player1.lostStock) {
+                val deathPenalty = max(baseScore, runningScore * .2f)
                 if (runningScore >= baseScore)
-                    runningScore -= baseScore
+                    runningScore -= deathPenalty
             }
             if (player2.lostStock)
                 currentStockDamage = 0f
