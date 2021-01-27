@@ -103,7 +103,7 @@ fun Application.module(testing: Boolean = false) {
             delay(100)
         }
         log.info("Start evaluation Loop!")
-        evaluationLoop(
+        evaluationLoop2Agents(
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
             adjustedFitnessCalculation = adjustedFitness,

@@ -23,7 +23,7 @@ class ResourceEvaluator(
     var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    val stockTakeBonus = 30
+    val stockTakeBonus = 30f
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
@@ -41,7 +41,7 @@ class ResourceEvaluator(
      */
     override val score: Float
         get() {
-            return runningScore + bankedScore + (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f) * 5f
+            return runningScore + bankedScore + (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f) * 20f
         }
 
     override fun isFinished(): Boolean {
@@ -50,7 +50,8 @@ class ResourceEvaluator(
         val playerStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player1)
         val opponentStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player2)
         val playtimeExpired = clocksFinished && playerStatusPass && opponentStatusPass
-
+        if (meleeFrameData != null && meleeFrameData.player1.lostStock)
+            xSpeedData.clear()
         if (meleeFrameData?.player1?.lostStock == true || meleeFrameData?.player2?.lostStock == true || clocksFinished) {
             logger.trace { "$controllerId - Clocks Finished: $clocksFinished" }
             logger.trace { "$controllerId - Status Check: $playerStatusPass - $opponentStatusPass" }
@@ -153,8 +154,8 @@ class ResourceEvaluator(
                 stockTakeScore - runningScore
             )
         )
-        bankedScore += stockTakeScore
-        runningScore = 0f
+        bankedScore += runningScore
+        runningScore = stockTakeBonus
         resource += 250
     }
 
