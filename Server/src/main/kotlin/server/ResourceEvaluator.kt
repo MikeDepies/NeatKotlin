@@ -17,13 +17,13 @@ class ResourceEvaluator(
     private val meleeState: MeleeState,
     val baseScore: Float,
     frameClockFactory: FrameClockFactory,
-    var resource: Float = 150f
+    var resource: Float = 500f
 ) :
     Evaluator {
     var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    val stockTakeBonus = 30f
+    val stockTakeBonus = 450f
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
@@ -32,7 +32,7 @@ class ResourceEvaluator(
     var bankedScore = 0f
     val xSpeedData = mutableListOf<Float>()
     override val scoreContributionList = mutableListOf<EvaluationScoreContribution>()
-    private val idleGameClock = frameClockFactory.countDownClockSeconds("No Damage Clock", 8f)
+    private val idleGameClock = frameClockFactory.countDownClockSeconds("No Damage Clock", 14f)
     var prevX = 0f
     var prevShieldButton = false
 
@@ -41,7 +41,9 @@ class ResourceEvaluator(
      */
     override val score: Float
         get() {
-            return runningScore + bankedScore + (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f) * 20f
+            val moveBonus = (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f) * stockTakeBonus
+//            logger.info { "$runningScore + $bankedScore + ${max(-10f, moveBonus)}" }
+            return runningScore + bankedScore + max(-10f, moveBonus)
         }
 
     override fun isFinished(): Boolean {
@@ -51,7 +53,7 @@ class ResourceEvaluator(
         val opponentStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player2)
         val playtimeExpired = clocksFinished && playerStatusPass && opponentStatusPass
         if (meleeFrameData != null && meleeFrameData.player1.lostStock)
-            xSpeedData.clear()
+            xSpeedData.add(-max(50f, xSpeedData.size.toFloat() / 10f))
         if (meleeFrameData?.player1?.lostStock == true || meleeFrameData?.player2?.lostStock == true || clocksFinished) {
             logger.trace { "$controllerId - Clocks Finished: $clocksFinished" }
             logger.trace { "$controllerId - Status Check: $playerStatusPass - $opponentStatusPass" }
@@ -82,49 +84,57 @@ class ResourceEvaluator(
                 if ((cStickY - .5f).absoluteValue > .2) resource -= frameCost
                 if ((leftShoulder > 0)) resource -= frameCost * 4
             }
-            val shieldUsed = output.z || output.leftShoulder > 0
+            val shieldButton = output.z || output.leftShoulder > 0
+            val shieldUsed = shieldButton || prevShieldButton
             val frameNumber = frameData.frame
             val player1 = frameData.player1
             val player2 = frameData.player2
             val lastPlayer1 = meleeState.lastMeleeFrameData?.player1
             val lastPlayer2 = meleeState.lastMeleeFrameData?.player2
             //Perform evaluations
-
-            if ((prevX - frameUpdate.player1.x).absoluteValue > 1 && !shieldUsed && !prevShieldButton) {
+            if (player1.winGame)
+                xSpeedData.clear()
+            if ((prevX - frameUpdate.player1.x).absoluteValue > 1 && !shieldUsed) {
                 xSpeedData += frameUpdate.player1.speedGroundX.absoluteValue
                 prevX = frameUpdate.player1.x
-            } else xSpeedData += 0f
+            } else {
+                xSpeedData += 0f
+                resource -= frameCost * 8
+                if (runningScore > 0) {
+                    runningScore -= baseScore * if (shieldUsed) .008f else .002f
+                }
+            }
             if (player1.tookStock && currentStockDamage > 1) scoreStockTake(frameNumber)
             if (player1.dealtDamage && player1.damageDone > 1) {
                 cumulativeDamage += player1.damageDone
 //            logger.info { "DAMAGE DEALT" }
                 val comboMultiplier = comboSequence.next()
                 comboActive = true
-                val newRunningScore = runningScore + (player1.damageDone * comboMultiplier)
+                val newRunningScore = runningScore + (player1.damageDone * comboMultiplier * 20f)
                 scoreContributionList += EvaluationScoreContribution(
                     "Damage Dealt (${player1.damageDone} * $comboMultiplier)",
                     newRunningScore,
                     newRunningScore - runningScore
                 )
                 runningScore = newRunningScore
-                resource += (player1.damageDone * comboMultiplier) * 4f
+                resource += (player1.damageDone * comboMultiplier) * 10f
             }
 //        if (player1.damageTaken > 0 || player1.tookDamage)
 //            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
             if (player1.damageTaken > 1) {
                 cumulativeDamageTaken += player1.damageTaken
-                resource -= player1.damageTaken / 4f
-                if (player1.damageTaken >= 4)
-                    runningScore += player1.damageTaken / 4f
+                resource -= player1.damageTaken * 4f
+                runningScore += player1.damageTaken * 10f
             }
             if (player1.lostStock) {
-                val deathPenalty = max(baseScore, runningScore * .2f)
-                if (runningScore >= baseScore)
-                    runningScore -= deathPenalty
+                val deathPenalty = max(baseScore, runningScore * .4f)
+//                if (runningScore >= baseScore)
+                runningScore = 0f
             }
             if (player2.lostStock)
-                currentStockDamage = 0f
-            else if (player1.damageDone > 1) currentStockDamage += player1.damageDone //Hack for damage tick offcamera
+                if (player2.lostStock)
+                    currentStockDamage = 0f
+                else if (player1.damageDone > 1) currentStockDamage += player1.damageDone //Hack for damage tick offcamera
             if (player1.tookDamage && comboActive) {
                 logger.info { "reset combo sequence" }
                 comboSequence = comboSequence().iterator()
@@ -133,12 +143,13 @@ class ResourceEvaluator(
             if (player1.winGame) {
                 firstFrame = true
             }
-            prevShieldButton = shieldUsed
+            prevShieldButton = shieldButton
         }
         //Then update to the new frame.
         meleeState.lastMeleeFrameData = frameData
 
         if (resource < 0) resource = 0f
+        if (runningScore < 0) runningScore = 0f
 //        if (frameNumber % 4 == 0)
 //            sendClockUpdates(frameNumber)
     }
@@ -156,7 +167,7 @@ class ResourceEvaluator(
         )
         bankedScore += runningScore
         runningScore = stockTakeBonus
-        resource += 250
+        resource += 650
     }
 
     private fun MeleeFrameData.playerExitingHitStun(playerNumber: Int) =
@@ -195,4 +206,13 @@ class ResourceEvaluator(
 //        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
         return EvaluationScore(agentId, score, scoreContributionList)
     }
+}
+
+fun main() {
+    var r = 70f
+    repeat(6 * 60) {
+        r -= 30 * .0025f
+    }
+    println(r)
+    println(70f - r)
 }

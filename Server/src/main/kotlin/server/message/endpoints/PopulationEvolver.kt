@@ -24,14 +24,25 @@ class PopulationEvolver(
     ): List<ModelScore> {
         val adjustedPopulationScore = modelScoreList.toMap { modelScore -> modelScore.neatMutator }
         val fitnessForModel: (NeatMutator) -> Float = { neatMutator ->
-            adjustedPopulationScore.getValue(neatMutator).adjustedFitness
+            try {
+                adjustedPopulationScore.getValue(neatMutator).adjustedFitness
+            } catch (e: Exception) {
+                logger.warn { "Issue with adjusted fitness" }
+                0f
+            }
         }
         speciationController.sortSpeciesByFitness(fitnessForModel)
         return modelScoreList
     }
 
     fun evolveNewPopulation(scoredPopulation: List<ModelScore>): List<NeatMutator> {
-        val mutationEntries = mutationDictionary()
+        val mutationEntries = uniformMutationRate(
+            .7f, listOf(
+                mutateConnections, mutateAddNode, mutateAddConnection, mutatePerturbBiasConnections(),
+                mutateToggleConnection,
+                mutateNodeActivationFunction(),
+            )
+        )
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
             mateChance = .6f,
@@ -42,13 +53,17 @@ class PopulationEvolver(
 
     fun mutationDictionary(): List<MutationEntry> {
         return listOf(
-            .3f chanceToMutate mutateConnections,
+            .6f chanceToMutate mutateConnections,
             .3f chanceToMutate mutateAddNode,
             .2f chanceToMutate mutateAddConnection,
-            .2f chanceToMutate mutatePerturbBiasConnections(),
-            .21f chanceToMutate mutateToggleConnection,
-            .1f chanceToMutate mutateNodeActivationFunction(),
+            .05f chanceToMutate mutatePerturbBiasConnections(),
+            .11f chanceToMutate mutateToggleConnection,
+            .05f chanceToMutate mutateNodeActivationFunction(),
         )
+    }
+
+    fun uniformMutationRate(mutationRate: Float, mutations: List<Mutation>): List<MutationEntry> {
+        return mutations.map { mutationRate / mutations.size chanceToMutate it }
     }
 
 

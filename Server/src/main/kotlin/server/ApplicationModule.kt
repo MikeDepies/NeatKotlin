@@ -103,7 +103,7 @@ val applicationModule = module {
             generation,
             controllerId,
             meleeState,
-            4f,
+            30f,
             get(),
             getChannel()
         )
@@ -116,14 +116,14 @@ val applicationModule = module {
             generation,
             controllerId,
             meleeState,
-            4f,
+            50f,
             get()
         )
     }
     single { simulation() }
 }
 
-fun simulation(randomSeed: Int = 0, takeSize: Int? = 50): Simulation {
+fun simulation(randomSeed: Int = 137731, takeSize: Int? = null): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -134,7 +134,7 @@ fun simulation(randomSeed: Int = 0, takeSize: Int? = 50): Simulation {
 //                largestCompatDistance = 0f
 //            }
 //        }
-        shFunction(4f)(it)
+        shFunction(2f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
         { a, b -> compatibilityDistanceFunction(20f, 20f, 15f)(a, b) }
@@ -162,7 +162,7 @@ fun simulation(randomSeed: Int = 0, takeSize: Int? = 50): Simulation {
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            20,
+            500,
             input(59, true),
             9,
             Activation.sigmoidal
