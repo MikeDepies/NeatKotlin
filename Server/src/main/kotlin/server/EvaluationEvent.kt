@@ -84,11 +84,13 @@ suspend fun Application.evaluationLoop(
     val (scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
 
     var currentPopulation = initialPopulation
+    val populationSize = initialPopulation.size
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
     var meleeState: MeleeState? = MeleeState(null)
     runFolder.mkdirs()
     while (true) {
+        currentPopulation = currentPopulation.shuffled()
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
         val populationMap =
             currentPopulation.mapIndexed { index, neatMutator ->
@@ -133,12 +135,31 @@ suspend fun Application.evaluationLoop(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
+<<<<<<< HEAD
         populationEvolver.speciate(newPopulation)
         logger.info { "[eval: $evaluationId}] Species Count: ${populationEvolver.speciesLineage.species.size}" }
         while (newPopulation.size < currentPopulation.size) {
+=======
+        logger.info { "Species Count: ${populationEvolver.speciesLineage.species.size}" }
+        while (newPopulation.size < populationSize) {
+>>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
             newPopulation = newPopulation + newPopulation.first().clone()
         }
-        currentPopulation = newPopulation
+        populationEvolver.speciate(newPopulation)
+        if (newPopulation.size > populationSize) {
+            val dropList = newPopulation.drop(populationSize)
+            val speciationController = populationEvolver.speciationController
+            speciationController.speciesSet.forEach { species ->
+                val speciesPopulation = speciationController.getSpeciesPopulation(species)
+                speciesPopulation.filter { it in dropList }.forEach { neatMutator ->
+                    logger.info { "Removing $neatMutator from $species since it has been dropped." }
+                    speciesPopulation.remove(neatMutator)
+                }
+
+
+            }
+        }
+        currentPopulation = newPopulation.take(populationSize)
     }
 }
 
@@ -156,6 +177,7 @@ suspend fun Application.evaluationLoop2Agents(
     //hook up websockets
     val (scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
     var currentPopulation = initialPopulation
+    val populationSize = initialPopulation.size
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
     runFolder.mkdirs()
@@ -196,7 +218,12 @@ suspend fun Application.evaluationLoop2Agents(
                     scoreChannel,
                     evaluator, inputTransformer
                 )
+<<<<<<< HEAD
             logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
+=======
+            logger.info { "PlayerController: ${playerController.controllerId} Score: ${evaluationScore.score}" }
+            playerController.frameOutputChannel.send(flushControllerOutput(playerController))
+>>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
             agentResultChannel.send(
                 FitnessModel(
                     model = neatMutator,
@@ -220,6 +247,7 @@ suspend fun Application.evaluationLoop2Agents(
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation, evaluationId))
         val agentResultChannel = Channel<FitnessModel<NeatMutator>>(Channel.UNLIMITED)
         coroutineScope {
+
             val player1Job = launch {
                 controllerEvaluator(agentChannel, populationMap, player1, agentResultChannel) { frameUpdate ->
                     frameUpdate.flatten2()
@@ -246,14 +274,39 @@ suspend fun Application.evaluationLoop2Agents(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
+<<<<<<< HEAD
         populationEvolver.speciate(newPopulation)
         logger.info { "[eval: $evaluationId}] Species Count: ${populationEvolver.speciesLineage.species.size}" }
         while (newPopulation.size < currentPopulation.size) {
+=======
+
+        logger.info { "Species Count: ${populationEvolver.speciesLineage.species.size}" }
+        while (newPopulation.size < populationSize) {
+>>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
             newPopulation = newPopulation + newPopulation.first().clone()
         }
-        currentPopulation = newPopulation
+        populationEvolver.speciate(newPopulation)
+        var purgeSpecies = false
+        if (newPopulation.size > populationSize) {
+            val dropList = newPopulation.drop(populationSize)
+            val speciationController = populationEvolver.speciationController
+            speciationController.speciesSet.forEach { species ->
+                val speciesPopulation = speciationController.getSpeciesPopulation(species)
+                speciesPopulation.filter { it in dropList }.forEach { neatMutator ->
+                    logger.info { "Removing $neatMutator from $species since it has been dropped." }
+                    speciesPopulation.remove(neatMutator)
+                }
+
+
+            }
+        }
+        currentPopulation = newPopulation.take(populationSize)
+
     }
 }
+
+private fun flushControllerOutput(playerController: IOController) =
+    FrameOutput(playerController.controllerId, false, false, false, false, .5f, .5f, .5f, .5f, 0f, 0f)
 
 private fun writeGenerationToDisk(
     currentPopulation: List<NeatMutator>,
@@ -288,6 +341,7 @@ interface Evaluator {
 }
 
 //var lastFrame
+
 private suspend fun evaluate(
     evaluationId: Int,
     agentId: Int,
@@ -307,6 +361,10 @@ private suspend fun evaluate(
         }
     }
     try {
+<<<<<<< HEAD
+=======
+        var i = 0
+>>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
             network.evaluate(transformToInput(frameUpdate), true)
@@ -314,10 +372,11 @@ private suspend fun evaluate(
 //            logger.info { "${ioController.controllerId} - $frameUpdate" }
 
             evaluator.evaluateFrame(frameAdjustedForController)
-            sendEvaluationScoreUpdate()
+            if (i++ % (8) == 0) sendEvaluationScoreUpdate()
             if (evaluator.isFinished()) {
                 logger.info { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
                 scoreChannel.send(evaluator.finishEvaluation())
+<<<<<<< HEAD
                 delay(200)
                 return EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
             }
@@ -325,6 +384,14 @@ private suspend fun evaluate(
     } catch (e: Exception) {
         logger.error { "[eval: $evaluationId}] failed to build unwrap network properly - killing it" }
         val evaluationScore = EvaluationScore(evaluationId, agentId, -10f, evaluator.scoreContributionList)
+=======
+                return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+            }
+        }
+    } catch (e: Exception) {
+        logger.error { "failed to build unwrap network properly - killing it" }
+        val evaluationScore = EvaluationScore(agentId, -10000f, evaluator.scoreContributionList)
+>>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
         scoreChannel.send(evaluationScore)
         return evaluationScore
     }

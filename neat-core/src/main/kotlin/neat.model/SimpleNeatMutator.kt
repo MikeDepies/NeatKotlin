@@ -138,6 +138,14 @@ data class SimpleNeatMutator2(
         )
     }
 
+    override fun equals(other: Any?): Boolean {
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
     override fun node(node: Int): NodeGene {
         return nodeMap.getValue(node)
     }

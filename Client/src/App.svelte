@@ -123,7 +123,7 @@ $: {
   </div>
   <div>
     <div class="flex flex-wrap">
-      <Stat title="Generations" value={currentGeneration} />
+      <Stat title="Generations" value={currentGeneration +179} />
       <Stat title="Population Size" value={populationSize} />
       <Stat title="Sepecies In Population" value={numberOfSpecies} />
       <Stat title="Current Agent" value={currentAgent.id} />

@@ -269,7 +269,7 @@ async def handle_message():
                     elif (msg["data"]["controllerId"] == 1):
                         processMessage(msg["data"], controller_opponent)
                 else:
-                    controller.release_all()
+                    controller.release_all()    
                     controller.flush()
         except websockets.exceptions.ConnectionClosedError as cce:
             print('Connection closed!')
@@ -366,7 +366,7 @@ async def console_loop():
                                                 melee.Character.PIKACHU,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
-                                                costume=costume,
+                                                costume=2,
                                                 autostart=False,
                                                 swag=False,
                                                 cpu_level=0)
@@ -375,7 +375,7 @@ async def console_loop():
                                                 melee.Character.PIKACHU,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
-                                                costume=costume,
+                                                costume=1,
                                                 cpu_level=0,
                                                 autostart=True,
                                                 swag=False)

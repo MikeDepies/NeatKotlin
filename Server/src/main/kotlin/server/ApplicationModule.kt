@@ -101,7 +101,7 @@ val applicationModule = module {
             generation,
             controllerId,
             meleeState,
-            4f,
+            30f,
             get(),
             getChannel()
         )
@@ -117,16 +117,20 @@ val applicationModule = module {
             generation,
             controllerId,
             meleeState,
-            4f,
+            50f,
             get()
         )
     }
     factory { (evaluationId: Int) -> simulation(evaluationId) }
 }
 
+<<<<<<< HEAD
 data class EvaluatorIdSet(val agentId : Int, val evaluationId: Int, val generation : Int, val controllerId : Int)
 
 fun simulation(evaluationId : Int, randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
+=======
+fun simulation(randomSeed: Int = 137731, takeSize: Int? = null): Simulation {
+>>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -137,7 +141,7 @@ fun simulation(evaluationId : Int, randomSeed: Int = 922, takeSize: Int? = 50): 
 //                largestCompatDistance = 0f
 //            }
 //        }
-        shFunction(4f)(it)
+        shFunction(2f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
         { a, b -> compatibilityDistanceFunction(20f, 20f, 15f)(a, b) }
@@ -165,7 +169,7 @@ fun simulation(evaluationId : Int, randomSeed: Int = 922, takeSize: Int? = 50): 
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            20,
+            500,
             input(59, true),
             9,
             Activation.sigmoidal
