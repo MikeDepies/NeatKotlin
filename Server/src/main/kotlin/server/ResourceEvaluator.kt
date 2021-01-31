@@ -2,16 +2,16 @@ package server
 
 import FrameUpdate
 import mu.KotlinLogging
-import neat.ActivatableNetwork
+import neat.*
 import server.message.endpoints.*
-import kotlin.math.absoluteValue
-import kotlin.math.max
+import kotlin.math.*
 
 private val logger = KotlinLogging.logger { }
 
 class ResourceEvaluator(
     val network: ActivatableNetwork,
     val agentId: Int,
+    val evaluationId: Int,
     val generation: Int,
     val controllerId: Int,
     private val meleeState: MeleeState,
@@ -193,6 +193,15 @@ class ResourceEvaluator(
 //        )
 //        runningScore = newScore
 //        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
-        return EvaluationScore(agentId, score, scoreContributionList)
+        return EvaluationScore(evaluationId, agentId, score, scoreContributionList)
+    }
+}
+
+fun main() {
+    var score = 4f
+    println(score)
+    repeat(16*10) {
+       score -= score * .005f
+        println(score)
     }
 }

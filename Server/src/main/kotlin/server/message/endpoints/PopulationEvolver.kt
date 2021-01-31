@@ -50,6 +50,8 @@ class PopulationEvolver(
             .1f chanceToMutate mutateNodeActivationFunction(),
         )
     }
-
+    fun uniformMutationRateDictionary(mutationRate : Float, mutations : List<Mutation>): List<MutationEntry> {
+        return mutations.map { (mutationRate / mutations.size) chanceToMutate  it }
+    }
 
 }

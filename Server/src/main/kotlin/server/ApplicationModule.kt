@@ -50,10 +50,8 @@ val applicationModule = module {
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
     single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-    single {
+    factory {
         EvaluationChannels(
-            IOController(0, getChannel(), getChannel()),
-            IOController(1, getChannel(), getChannel()),
             getChannel(),
             getChannel(),
             getChannel(),
@@ -108,11 +106,14 @@ val applicationModule = module {
             getChannel()
         )
     }
-    factory<ResourceEvaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState : MeleeState, network : ActivatableNetwork) ->
+    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel()) }
+    factory<ResourceEvaluator> { (evaluationIdSet : EvaluatorIdSet, meleeState : MeleeState, network : ActivatableNetwork) ->
         println("New Evaluator?")
+        val (evaluationId : Int, agentId: Int, generation: Int, controllerId: Int) = evaluationIdSet
         ResourceEvaluator(
             network,
             agentId,
+            evaluationId,
             generation,
             controllerId,
             meleeState,
@@ -120,10 +121,12 @@ val applicationModule = module {
             get()
         )
     }
-    single { simulation() }
+    factory { (evaluationId: Int) -> simulation(evaluationId) }
 }
 
-fun simulation(randomSeed: Int = 0, takeSize: Int? = 50): Simulation {
+data class EvaluatorIdSet(val agentId : Int, val evaluationId: Int, val generation : Int, val controllerId : Int)
+
+fun simulation(evaluationId : Int, randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -144,7 +147,7 @@ fun simulation(randomSeed: Int = 0, takeSize: Int? = 50): Simulation {
     fun input(inputSize: Int, useBoolean: Boolean) = inputSize + if (useBoolean) 1 else 0
     val speciesLineage = SpeciesLineage()
     val scoreKeeper = SpeciesScoreKeeper()
-    val file = File("population.json")
+    val file = File("population$evaluationId.json")
     val random = Random(randomSeed)
     var simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions)
     val population = if (file.exists()) {
@@ -171,7 +174,7 @@ fun simulation(randomSeed: Int = 0, takeSize: Int? = 50): Simulation {
 
     val speciate = speciationController.speciate(population, speciesLineage, 0)
     val populationEvolver = PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment)
-    return Simulation(population, populationEvolver, adjustedFitnessCalculation)
+    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
 }
 
 fun NeatExperiment.generateInitialPopulationWithOneButton(

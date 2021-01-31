@@ -4,13 +4,8 @@ import FrameOutput
 import FrameUpdate
 import PopulationEvolver
 import io.ktor.application.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.toList
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -54,8 +49,6 @@ object OneController
 object TwoController
 class Evaluation(val evaluationId: Int, val controllers: List<IOController>)
 data class EvaluationChannels(
-    val player1: IOController,
-    val player2: IOController,
     val scoreChannel: Channel<EvaluationScore>,
     val agentModelChannel: Channel<AgentModel>,
     val populationChannel: Channel<PopulationModels>,
@@ -79,48 +72,59 @@ data class EvaluationChannelsMultipleControllers(
 //}
 
 suspend fun Application.evaluationLoop(
+    evaluationId: Int,
     initialPopulation: List<NeatMutator>,
     populationEvolver: PopulationEvolver,
     adjustedFitnessCalculation: AdjustedFitnessCalculation,
-    evaluationChannels: EvaluationChannels
+    evaluationChannels: EvaluationChannels,
+    player: IOController
 ) {
     //Extract to koin
     //hook up websockets
-    val (player1, player2, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
+    val (scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
+
     var currentPopulation = initialPopulation
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
-    var meleeState : MeleeState? = MeleeState(null)
+    var meleeState: MeleeState? = MeleeState(null)
     runFolder.mkdirs()
     while (true) {
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver)
         val populationMap =
             currentPopulation.mapIndexed { index, neatMutator ->
                 val species = populationEvolver.speciationController.species(neatMutator).id
-                AgentModel(index, species/*, neatMutator.toModel()*/)
+                AgentModel(index, species, neatMutator.toModel(), evaluationId, player.controllerId)
             }
 
-        populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
+        populationChannel.send(PopulationModels(populationMap, populationEvolver.generation, evaluationId))
         val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
-            logger.info { "New Agent (${index + 1} / ${currentPopulation.size})" }
+            logger.info { "[eval: $evaluationId}] New Agent (${index + 1} / ${currentPopulation.size})" }
             agentModelChannel.send(populationMap[index])
             val network = neatMutator.toNetwork()
             val evaluator =
-                get<ResourceEvaluator>(parameters = { DefinitionParameters(listOf(
-                    index,
-                    populationEvolver.generation,
-                    0,
-                    meleeState,
-                    network
-                )) })
+                get<ResourceEvaluator>(parameters = {
+                    DefinitionParameters(
+                        listOf(
+                            EvaluatorIdSet(
+                                evaluationId,
+                                index,
+                                populationEvolver.generation,
+                                player.controllerId
+                            ),
+                            meleeState,
+                            network
+                        )
+                    )
+                })
             val evaluationScore = evaluate(
+                evaluationId,
                 index,
-                player1,
+                player,
                 network,
                 scoreChannel,
                 evaluator
             ) { frameUpdate -> frameUpdate.flatten2() }
-            logger.info { "Score: ${evaluationScore.score}" }
+            logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
             FitnessModel(
                 model = neatMutator,
                 score = evaluationScore.score
@@ -130,7 +134,7 @@ suspend fun Application.evaluationLoop(
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
         populationEvolver.speciate(newPopulation)
-        logger.info { "Species Count: ${populationEvolver.speciesLineage.species.size}" }
+        logger.info { "[eval: $evaluationId}] Species Count: ${populationEvolver.speciesLineage.species.size}" }
         while (newPopulation.size < currentPopulation.size) {
             newPopulation = newPopulation + newPopulation.first().clone()
         }
@@ -140,20 +144,23 @@ suspend fun Application.evaluationLoop(
 
 
 suspend fun Application.evaluationLoop2Agents(
+    evaluationId: Int,
     initialPopulation: List<NeatMutator>,
     populationEvolver: PopulationEvolver,
     adjustedFitnessCalculation: AdjustedFitnessCalculation,
-    evaluationChannels: EvaluationChannels
+    evaluationChannels: EvaluationChannels,
+    player1: IOController,
+    player2: IOController
 ) {
     //Extract to koin
     //hook up websockets
-    val (player1, player2, scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
+    val (scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
     var currentPopulation = initialPopulation
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
     runFolder.mkdirs()
-    var meleeState : MeleeState? = MeleeState(null)
-    var meleeState2 : MeleeState?  = MeleeState(null)
+    var meleeState: MeleeState? = MeleeState(null)
+    var meleeState2: MeleeState? = MeleeState(null)
     suspend fun controllerEvaluator(
         agentChannel: Channel<Pair<Int, NeatMutator>>,
         populationMap: List<AgentModel>,
@@ -162,16 +169,19 @@ suspend fun Application.evaluationLoop2Agents(
         inputTransformer: suspend (FrameUpdate) -> List<Float>
     ) {
         for ((index, neatMutator) in agentChannel) {
-            logger.info { "New Agent (${index} / ${currentPopulation.size}) - PlayerController: ${playerController.controllerId}" }
-            agentModelChannel.send(populationMap[index])
+            logger.info { "[eval: $evaluationId}] New Agent (${index} / ${currentPopulation.size}) - PlayerController: ${playerController.controllerId}" }
+            agentModelChannel.send(populationMap[index].copy(controllerId = playerController.controllerId))
             val network = neatMutator.toNetwork()
             val evaluator = get<ResourceEvaluator>(parameters = {
                 DefinitionParameters(
                     listOf(
-                        index,
-                        populationEvolver.generation,
-                        playerController.controllerId,
-                        if (playerController.controllerId == 0)  meleeState else meleeState2,
+                        EvaluatorIdSet(
+                            evaluationId,
+                            index,
+                            populationEvolver.generation,
+                            playerController.controllerId
+                        ),
+                        if (playerController.controllerId == 0) meleeState else meleeState2,
                         network
                     )
                 )
@@ -179,13 +189,14 @@ suspend fun Application.evaluationLoop2Agents(
 
             val evaluationScore =
                 evaluate(
+                    evaluationId,
                     index,
                     playerController,
                     network,
                     scoreChannel,
                     evaluator, inputTransformer
                 )
-            logger.info { "PlayerController: ${playerController.controllerId} Score: ${evaluationScore.score}" }
+            logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
             agentResultChannel.send(
                 FitnessModel(
                     model = neatMutator,
@@ -193,7 +204,7 @@ suspend fun Application.evaluationLoop2Agents(
                 )
             )
         }
-        log.info("End of ControllerEvaluator ${playerController.controllerId}")
+        log.info("[eval: $evaluationId}] End of ControllerEvaluator ${playerController.controllerId}")
     }
 
     while (true) {
@@ -203,10 +214,10 @@ suspend fun Application.evaluationLoop2Agents(
         val populationMap =
             currentPopulation.mapIndexed { index, neatMutator ->
                 val species = populationEvolver.speciationController.species(neatMutator).id
-                AgentModel(index, species/*, neatMutator.toModel()*/)
+                AgentModel(index, species, neatMutator.toModel(), evaluationId, null)
             }
 
-        populationChannel.send(PopulationModels(populationMap, populationEvolver.generation))
+        populationChannel.send(PopulationModels(populationMap, populationEvolver.generation, evaluationId))
         val agentResultChannel = Channel<FitnessModel<NeatMutator>>(Channel.UNLIMITED)
         coroutineScope {
             val player1Job = launch {
@@ -220,23 +231,23 @@ suspend fun Application.evaluationLoop2Agents(
                 }
             }
             currentPopulation.forEachIndexed { index, neatMutator ->
-                log.info("sending $index")
+                log.info("[eval: $evaluationId}] sending $index")
                 agentChannel.send(index to neatMutator)
             }
-            log.info("closing agent Channel")
+            log.info("[eval: $evaluationId}] closing agent Channel")
             agentChannel.close()
             joinAll(player1Job, player2Job)
-            log.info("closing Result Channel")
-
+            log.info("[eval: $evaluationId}] closing Result Channel")
+            agentResultChannel.close()
         }
-        agentResultChannel.close()
+
         val modelScores = agentResultChannel.toList().toModelScores(adjustedFitnessCalculation)
 
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
         populationEvolver.speciate(newPopulation)
-        logger.info { "Species Count: ${populationEvolver.speciesLineage.species.size}" }
+        logger.info { "[eval: $evaluationId}] Species Count: ${populationEvolver.speciesLineage.species.size}" }
         while (newPopulation.size < currentPopulation.size) {
             newPopulation = newPopulation + newPopulation.first().clone()
         }
@@ -275,8 +286,10 @@ interface Evaluator {
     suspend fun evaluateFrame(frameUpdate: FrameUpdate)
     fun finishEvaluation(): EvaluationScore
 }
+
 //var lastFrame
 private suspend fun evaluate(
+    evaluationId: Int,
     agentId: Int,
     ioController: IOController,
     network: ActivatableNetwork,
@@ -284,17 +297,16 @@ private suspend fun evaluate(
     evaluator: Evaluator,
     transformToInput: suspend (FrameUpdate) -> List<Float>
 ): EvaluationScore {
-    var lastEvaluationScore = EvaluationScore(-1, 0f, listOf())
+    var lastEvaluationScore = EvaluationScore(evaluationId, -1, 0f, listOf())
     suspend fun sendEvaluationScoreUpdate() {
-        val evaluationScore = EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+        val evaluationScore = EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
         if (evaluationScore != lastEvaluationScore) {
-
+//            logger.info { "sending evalScore: ${evaluationScore}" }
             scoreChannel.send(evaluationScore)
             lastEvaluationScore = evaluationScore
         }
     }
     try {
-
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
             network.evaluate(transformToInput(frameUpdate), true)
@@ -304,15 +316,15 @@ private suspend fun evaluate(
             evaluator.evaluateFrame(frameAdjustedForController)
             sendEvaluationScoreUpdate()
             if (evaluator.isFinished()) {
-                logger.info { "${ioController.controllerId} - finished evaluating agent #$agentId" }
+                logger.info { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
                 scoreChannel.send(evaluator.finishEvaluation())
                 delay(200)
-                return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
+                return EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
             }
         }
     } catch (e: Exception) {
-        logger.error { "failed to build unwrap network properly - killing it" }
-        val evaluationScore = EvaluationScore(agentId, -10f, evaluator.scoreContributionList)
+        logger.error { "[eval: $evaluationId}] failed to build unwrap network properly - killing it" }
+        val evaluationScore = EvaluationScore(evaluationId, agentId, -10f, evaluator.scoreContributionList)
         scoreChannel.send(evaluationScore)
         return evaluationScore
     }

@@ -37,7 +37,8 @@ export function nestedReadable2<V, K extends Extract<keyof V, string>>(_store: W
   })
 }
 
-export function lift<V extends MixedWritableContainer, K extends Extract<keyof V, string>>(_store: Readable<V | undefined>,
+export function lift<V extends MixedWritableContainer, K extends Extract<keyof V, string>>(
+  _store: Readable<V | undefined>,
   key: K,
 ): V[K] {
   let store: undefined | MixedWritableContainer = undefined

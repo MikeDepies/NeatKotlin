@@ -68,15 +68,14 @@ fun SpeciationController.calculateSpeciesReport(
 
     val speciesOffspringMap = mutableMapOf<Species, Int>()
     val expectedOffspringMap =
-        modelScoreList.map { it.neatMutator to it.adjustedFitness / (overallAverageFitness.toFloat()) }.toMap()
+        modelScoreList.map { it.neatMutator to (it.adjustedFitness / (overallAverageFitness.toFloat())) }.toMap()
     var skim = 0.0
     var totalOffspring = 0
     for (species in speciesSet) {
 
         val speciesPopulation = getSpeciesPopulation(species)
         val map = speciesPopulation.map { expectedOffspringMap.getValue(it) }
-        val countOffspring =
-            map.countOffspring(skim)
+        val countOffspring = map.countOffspring(skim)
         skim = countOffspring.skim
         totalOffspring += countOffspring.offspring
         speciesOffspringMap[species] = countOffspring.offspring
@@ -86,6 +85,8 @@ fun SpeciationController.calculateSpeciesReport(
         val species = speciesSet.random()
         speciesOffspringMap[species] = speciesOffspringMap.getValue(species) + 1
     }
+
+
 
     return SpeciesReport(
         speciesOffspringMap.toMap(),

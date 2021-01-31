@@ -11,6 +11,7 @@ import type { AgentModel, EvaluationClocksUpdate, Population, SimulationEndpoint
 import type { Series } from './api/types/Series';
 import MultiSeries from './MultiSeries.svelte';
 import { prevent_default } from 'svelte/internal';
+import { countUnique, createClockHistorySeriesMap } from './api/Evaluation';
   /*
   Current Generation:
   Population Size:
@@ -31,52 +32,17 @@ import { prevent_default } from 'svelte/internal';
   const newScore = r.read("simulation.event.score.new")
   const newAgent = r.read("simulation.event.agent.new")
   const newPopulation = r.read("simulation.event.population.new")
-  // const controllerOutput = r.read("simulation.frame.output")
-  // const clockUpdate = r.read("simulation.event.clock.update")
+  let populationScoreHistory : number[] = []
+  let historyOfPopulations : Population[] = []
+ let data : {x : number, y: number, color: string }[]= []
+ let highestPopulationScore = 0
  let currentGeneration = -1
  let populationSize = 0
- let currentPopulation : Population = {generation: 0, agents: []}
+ let currentPopulation : Population = {generation: 0, agents: [], evaluationId: -1}
  const colorMap = getColorMap("species")
-//  const clockColorMap = getColorMap("clocks")
  let currentAgent : AgentModel = {
-   id: 0, species: 0
+   id: 0, species: 0, evaluationId: -1
  }
-//  let clockHistory : EvaluationClocksUpdate[] = []
-//  let longestClockTimeSeen = 0
-//  $: {
-//    const cu = $clockUpdate
-//    if (cu) {
-//    if (currentAgent.id != cu.agentId) {
-//      console.log(currentAgent.id + " !== " + cu.agentId);
-//      clockHistory = []
-//      longestClockTimeSeen = 0
-//    }
-//    const updateMax = cu.clocks.reduce((previous, current) => Math.max(previous, current.framesRemaining), 0)
-//    if (updateMax > longestClockTimeSeen)
-//     longestClockTimeSeen = updateMax
-//    clockHistory = [...clockHistory, cu]
-//   }
-//  }
-//  let clockHistorySeriesMap : Series
-//  $: {
-//   // console.log(clockHistorySeriesMap);
-//    clockHistorySeriesMap = {}
-//    clockHistory.forEach(update => {
-//      update.clocks.forEach(clock => {
-//        if (clockHistorySeriesMap[clock.clock] === undefined) {
-//         const color = $clockColorMap[clock.clock] 
-//         clockHistorySeriesMap[clock.clock] = {
-//            color: (color) ? rgbColorString(color) : "",
-//            name: clock.clock,
-//            series: []
-//          }
-//        }
-//        const clockSeries = clockHistorySeriesMap[clock.clock].series
-//        clockHistorySeriesMap[clock.clock].series = [...clockSeries, {x: update.frame, y: clock.framesRemaining}]
-//        console.log(clockSeries);
-//      })
-//    }) 
-//  }
  $:{
    const population = $newPopulation
    const newGeneration = population?.generation || 0
@@ -97,9 +63,7 @@ import { prevent_default } from 'svelte/internal';
      currentPopulation = population
    }
  }
- let populationScoreHistory : number[] = []
- let data : {x : number, y: number, color: string }[]= []
- let highestPopulationScore = 0
+ 
  $: {
    if (populationScoreHistory) {
    let i = 0
@@ -107,10 +71,8 @@ import { prevent_default } from 'svelte/internal';
     let index =i++
     let species = currentPopulation.agents[index].species
     let color=`rgb(${getColor(species, $colorMap).join(",")})`
-    // console.log(color)
      return {x : index, y: s || 0, color: color}
    })
-  //  console.log(data);
    for(let score of data) {
      if (highestPopulationScore < score.y) {
       highestPopulationScore = score.y
@@ -121,24 +83,14 @@ import { prevent_default } from 'svelte/internal';
   }
   let agentScoreHistory : number[]= []
   let agentScoreModel : AgentModel = currentAgent
-  // let agentLastScore : number = 0
 $: {
   const agent = currentAgent
   // console.log(agent);
   const score=$newScore?.score || 0;
   if (agent !== agentScoreModel) {
-    // populationScoreHistory = [...populationScoreHistory, agentLastScore]
-    // if (highestPopulationScore < agentLastScore) {
-    //   highestPopulationScore = agentLastScore
-    // }
-    // agentLastScore = 0
     agentScoreHistory = []
     agentScoreModel = agent
   }
-  // if (agentLastScore !== score) {
-  //   agentLastScore = score
-  //   agentScoreHistory = [...agentScoreHistory, score]
-  // }
 }
  $: {
    const agent = $newAgent
@@ -151,25 +103,12 @@ $: {
       populationScoreHistory[score.agentId] = score.score
     }
   }
+
  let numberOfSpecies = 0
- let historyOfPopulations : Population[] = []
- let historyOfCounts : {
-   [K in number] : number
- }[] = []
- let counts : {
-   [K in number] : number
- } = {};
  $: {
-   historyOfCounts = [...historyOfCounts, counts]
-   counts = {}
-  for (let i = 0; i < currentPopulation.agents.length; i++) {
-    counts[currentPopulation.agents[i].species] = 1 + (counts[currentPopulation.agents[i].species] || 0);
-}
    numberOfSpecies = countUnique(currentPopulation.agents.map(score => score.species))
  }
- function countUnique<T> (iterable : T[]) {
-  return new Set(iterable).size;
-}
+
 </script>
 
 <div class="flex">

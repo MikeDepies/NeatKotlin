@@ -1,6 +1,5 @@
 package server.message.endpoints
 
-import FrameOutput
 import FrameUpdate
 import MessageWriter
 import PopulationEvolver
@@ -14,7 +13,6 @@ import neat.*
 import neat.model.*
 import org.koin.core.qualifier.*
 import org.koin.core.scope.*
-import server.message.*
 
 private val log = KotlinLogging.logger { }
 var receivedAnyMessages = false
@@ -52,6 +50,7 @@ class SimulationSessionScope(override val scope: Scope, override val messageWrit
 data class Simulation(
     val initialPopulation: List<NeatMutator>,
     val populationEvolver: PopulationEvolver,
-    val adjustedFitnessCalculation: AdjustedFitnessCalculation
+    val adjustedFitnessCalculation: AdjustedFitnessCalculation,
+    val evaluationId: Int
 )
 
