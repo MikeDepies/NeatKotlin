@@ -16,7 +16,8 @@ data class PlayerDataUpdate(
     val onGround: Boolean,
     val hitStun: Boolean,//20
     val invulnerable: Boolean,
-    val offStage: Boolean
+    val offStage: Boolean,
+    val character: Int
 )
 
 @Serializable
@@ -29,6 +30,9 @@ data class EnvironmentalCollisionBox(val left: Position, val top: Position, val 
 data class BlastZone(val left: Float, val top: Float, val right: Float, val bottom: Float)
 
 @Serializable
+data class Platform(val left: Float, val height: Float, val right: Float)
+
+@Serializable
 data class ActionData(
 //8
     val action: Int,
@@ -39,35 +43,37 @@ data class ActionData(
     val rangeBackward: Float,
     val rangeForward: Float,
     val hitBoxCount: Int,
+    val attackState: Int,
+    val actionFrame: Int,
 )
-
-@Serializable
-data class PlatformPosition(val height: Float, val leftEdge: Float, val rightEdge: Float)//3
 
 @Serializable
 data class FrameUpdate(
     val player1: PlayerDataUpdate, //18
     val player2: PlayerDataUpdate, //18
-    val action1: ActionData, //8
-    val action2: ActionData, //8
+    val action1: ActionData, //10
+    val action2: ActionData, //10
+    val stage: StageData, //19
     val distance: Float, //1
     val frame: Int
 )
 
 @Serializable
-data class StageData(val stageId: Int, val blastZone: BlastZone, val edgePosition: Float)
-
-@Serializable
-data class StagePlatformUpdateData(
-    val leftPlatform: PlatformPosition?,
-    val rightPlatform: PlatformPosition?,
-    val topPlatform: PlatformPosition?,
-    val randallPlatform: PlatformPosition?
+data class StageData(
+    val stage: Int,
+    val blastzone: BlastZone, //5
+    val leftEdge: Float,
+    val rightEdge: Float,//7
+    val randall: Platform, //10
+    val platformLeft: Platform, //13
+    val platformRight: Platform,//16
+    val platformTop: Platform//19
 )
+
 
 @Serializable
 data class FrameOutput(
-    val controllerId : Int,
+    val controllerId: Int,
     val a: Boolean,
     val b: Boolean,
     val y: Boolean,

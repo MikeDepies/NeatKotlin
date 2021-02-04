@@ -135,14 +135,10 @@ suspend fun Application.evaluationLoop(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-<<<<<<< HEAD
-        populationEvolver.speciate(newPopulation)
-        logger.info { "[eval: $evaluationId}] Species Count: ${populationEvolver.speciesLineage.species.size}" }
-        while (newPopulation.size < currentPopulation.size) {
-=======
+
         logger.info { "Species Count: ${populationEvolver.speciesLineage.species.size}" }
         while (newPopulation.size < populationSize) {
->>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
+
             newPopulation = newPopulation + newPopulation.first().clone()
         }
         populationEvolver.speciate(newPopulation)
@@ -218,12 +214,9 @@ suspend fun Application.evaluationLoop2Agents(
                     scoreChannel,
                     evaluator, inputTransformer
                 )
-<<<<<<< HEAD
-            logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
-=======
+
             logger.info { "PlayerController: ${playerController.controllerId} Score: ${evaluationScore.score}" }
             playerController.frameOutputChannel.send(flushControllerOutput(playerController))
->>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
             agentResultChannel.send(
                 FitnessModel(
                     model = neatMutator,
@@ -274,15 +267,9 @@ suspend fun Application.evaluationLoop2Agents(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-<<<<<<< HEAD
-        populationEvolver.speciate(newPopulation)
-        logger.info { "[eval: $evaluationId}] Species Count: ${populationEvolver.speciesLineage.species.size}" }
-        while (newPopulation.size < currentPopulation.size) {
-=======
 
         logger.info { "Species Count: ${populationEvolver.speciesLineage.species.size}" }
         while (newPopulation.size < populationSize) {
->>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
             newPopulation = newPopulation + newPopulation.first().clone()
         }
         populationEvolver.speciate(newPopulation)
@@ -339,7 +326,6 @@ interface Evaluator {
     suspend fun evaluateFrame(frameUpdate: FrameUpdate)
     fun finishEvaluation(): EvaluationScore
 }
-
 //var lastFrame
 
 private suspend fun evaluate(
@@ -351,6 +337,8 @@ private suspend fun evaluate(
     evaluator: Evaluator,
     transformToInput: suspend (FrameUpdate) -> List<Float>
 ): EvaluationScore {
+    var lastOutput = (0..9).map { 0f }
+//    var lastEvaluationScore = EvaluationScore(-1, 0f, listOf())
     var lastEvaluationScore = EvaluationScore(evaluationId, -1, 0f, listOf())
     suspend fun sendEvaluationScoreUpdate() {
         val evaluationScore = EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
@@ -361,14 +349,13 @@ private suspend fun evaluate(
         }
     }
     try {
-<<<<<<< HEAD
-=======
         var i = 0
->>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
-            network.evaluate(transformToInput(frameUpdate), true)
-            ioController.frameOutputChannel.send(network.output().toFrameOutput(ioController.controllerId))
+            network.evaluate(transformToInput(frameUpdate) + lastOutput, true)
+            val output = network.output()
+            lastOutput = output
+            ioController.frameOutputChannel.send(output.toFrameOutput(ioController.controllerId))
 //            logger.info { "${ioController.controllerId} - $frameUpdate" }
 
             evaluator.evaluateFrame(frameAdjustedForController)
@@ -376,22 +363,12 @@ private suspend fun evaluate(
             if (evaluator.isFinished()) {
                 logger.info { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
                 scoreChannel.send(evaluator.finishEvaluation())
-<<<<<<< HEAD
-                delay(200)
                 return EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
             }
         }
     } catch (e: Exception) {
-        logger.error { "[eval: $evaluationId}] failed to build unwrap network properly - killing it" }
-        val evaluationScore = EvaluationScore(evaluationId, agentId, -10f, evaluator.scoreContributionList)
-=======
-                return EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
-            }
-        }
-    } catch (e: Exception) {
-        logger.error { "failed to build unwrap network properly - killing it" }
-        val evaluationScore = EvaluationScore(agentId, -10000f, evaluator.scoreContributionList)
->>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
+        logger.error(e) { "failed to build unwrap network properly - killing it" }
+        val evaluationScore = EvaluationScore(evaluationId, agentId, -10000f, evaluator.scoreContributionList)
         scoreChannel.send(evaluationScore)
         return evaluationScore
     }

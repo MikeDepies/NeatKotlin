@@ -169,9 +169,9 @@ fun simulation(randomSeed: Int = 137731, takeSize: Int? = null): Simulation {
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            500,
-            input(59, true),
-            9,
+            1_000,
+            input(92, true),
+            8,
             Activation.sigmoidal
         )
     }

@@ -59,13 +59,15 @@ import { countUnique, createClockHistorySeriesMap } from './api/Evaluation';
  $: {
    const population = $newPopulation
    if (population && population !== currentPopulation) {
-    historyOfPopulations = [...historyOfPopulations, population]
+    currentPopulation.agents.sort((a,b) => a.species - b.species)
+    historyOfPopulations = [...historyOfPopulations, currentPopulation]
      currentPopulation = population
    }
  }
  
  $: {
    if (populationScoreHistory) {
+    highestPopulationScore=0
    let i = 0
    data = populationScoreHistory.slice(0, populationSize).map(s => {
     let index =i++
@@ -123,7 +125,7 @@ $: {
   </div>
   <div>
     <div class="flex flex-wrap">
-      <Stat title="Generations" value={currentGeneration +179} />
+      <Stat title="Generations" value={currentGeneration +78} />
       <Stat title="Population Size" value={populationSize} />
       <Stat title="Sepecies In Population" value={numberOfSpecies} />
       <Stat title="Current Agent" value={currentAgent.id} />
