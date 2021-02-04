@@ -1,10 +1,13 @@
 package server.message.endpoints
 
 import ActionData
+import BlastZone
 import EnvironmentalCollisionBox
 import FrameUpdate
+import Platform
 import PlayerDataUpdate
 import Position
+import StageData
 
 private fun Boolean.facingDirectionToFloat() = if (this) 1f else -1f
 private fun Boolean.toFloat() = if (this) 1f else 0f
@@ -13,16 +16,34 @@ suspend fun FrameUpdate.flatten2() = sequence<Float> {
     yieldPlayerData(player2)
     yieldActionData(action1)
     yieldActionData(action2)
+    yieldStageData(stage)
     yield(distance)
 }.toList()
 
-suspend fun FrameUpdate.flatten2Player2() = sequence<Float> {
-    yieldPlayerData(player2)
-    yieldPlayerData(player1)
-    yieldActionData(action2)
-    yieldActionData(action1)
-    yield(distance)
-}.toList()
+
+private suspend fun SequenceScope<Float>.yieldStageData(stageData: StageData) = with(stageData){
+    yield(stage.toFloat())
+    yield(leftEdge)
+    yield(rightEdge)
+    yieldBlastzones(blastzone)
+    yieldPlatform(platformLeft ?: Platform(0f, 0f, 0f))
+    yieldPlatform(platformTop ?: Platform(0f, 0f, 0f))
+    yieldPlatform(platformRight ?: Platform(0f, 0f, 0f))
+}
+
+private suspend fun SequenceScope<Float>.yieldBlastzones(blastzone: BlastZone) = with(blastzone){
+    yield(left)
+    yield(top)
+    yield(right)
+    yield(left)
+}
+private suspend fun SequenceScope<Float>.yieldPlatform(platform: Platform) = with(platform){
+    yield(left)
+    yield(height)
+    yield(right)
+}
+
+
 
 private suspend fun SequenceScope<Float>.yieldActionData(actionData: ActionData) {
     with(actionData) {
@@ -34,11 +55,17 @@ private suspend fun SequenceScope<Float>.yieldActionData(actionData: ActionData)
         yield(rangeForward)
         yield(rangeBackward)
         yield(hitBoxCount.toFloat())
+        yield(attackState.toFloat())
+        yield(actionFrame.toFloat())
+//        yield(actionState)
+//        yield(actionFrame)
+
     }
 }
 
 private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: PlayerDataUpdate) {
     with(playerDataUpdate) {
+        yield(character.toFloat())
         yield(x)
         yield(y)
         yield(onGround.toFloat())

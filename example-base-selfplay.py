@@ -2,6 +2,7 @@
 
 import argparse
 from asyncio.tasks import sleep
+from asyncio.windows_events import NULL
 import json
 import signal
 import sys
@@ -11,6 +12,7 @@ import random
 from melee import gamestate
 from melee.enums import Button
 from melee.gamestate import GameState, PlayerState
+from melee.stages import randall_position
 import numpy as np
 import websockets
 import asyncio
@@ -137,16 +139,16 @@ class Session:
     ws: WebSocketClientProtocol or None = None
     simulationRunning = False
     menuLoadFirstFrame = True
-    gamestate : GameState or None = None
+    gamestate: GameState or None = None
     lastStockAi = 4
     lastStockOpponent = 4
-    lastGamestate : GameState or None = None
-    cpu_level : 5
-    cpu_character : melee.Character.FOX
-    ai_character : melee.Character.PIKACHU
+    lastGamestate: GameState or None = None
+    cpu_level: 5
+    cpu_character: melee.Character.FOX
+    ai_character: melee.Character.PIKACHU
 
 
-def processMessage(message: Dict, controller : melee.Controller):
+def processMessage(message: Dict, controller: melee.Controller):
     if (message["a"] == True):
         controller.press_button(Button.BUTTON_A)
     else:
@@ -185,7 +187,9 @@ def actionData(gameState: GameState, port: int):
         "isShield": bool(fd.is_shield(player.action)),
         "rangeBackward": fd.range_backward(player.character, player.action, player.action_frame),
         "rangeForward": fd.range_forward(player.character, player.action, player.action_frame),
-        "hitBoxCount": fd.hitbox_count(player.character, player.action)
+        "hitBoxCount": fd.hitbox_count(player.character, player.action),
+        "attackState": fd.attack_state(player.character, player.action, player.action_frame).value,
+        "actionFrame": player.action_frame
     }
 
 
@@ -214,7 +218,7 @@ def playerData(gameState: GameState, port: int):
     player: PlayerState = gameState.players[port]
     x = 0
     y = 0
-    
+
     if gameState.menu_state in [melee.Menu.CHARACTER_SELECT]:
         x = player.cursor.x
         y = player.cursor.y
@@ -222,6 +226,7 @@ def playerData(gameState: GameState, port: int):
         x = player.position.x
         y = player.position.y
     return {
+        "character": player.character.value,
         "stock": player.stock,
         "x": x,
         "y": y,
@@ -240,12 +245,81 @@ def playerData(gameState: GameState, port: int):
     }
 
 
+def stageData(gameState: GameState):
+    blastzones: tuple[float, float, float,
+                      float] = melee.stages.BLASTZONES[gameState.stage]
+    leftPlatform: tuple[float, float,
+                        float] = melee.stages.left_platform_position(gameState)
+    # print(leftPlatform)
+    rightPlatform: tuple[float, float,
+                         float] = melee.stages.right_platform_position(gameState)
+    topPlatform: tuple[float, float,
+                       float] = melee.stages.top_platform_position(gameState)
+    randall = randall_position(gameState.frame)
+    edge = melee.stages.EDGE_GROUND_POSITION[gameState.stage]
+    # print(edge)
+    data = {
+        "stage": gameState.stage.value,
+        "leftEdge": edge * -1,
+        "rightEdge": edge,
+        "randall": {
+            "height": randall[0],
+            "left": randall[1],
+            "right": randall[2],
+        },
+        "blastzone": {
+            "left": blastzones[0],
+            "right": blastzones[1],
+            "top": blastzones[2],
+            "bottom": blastzones[3],
+        },
+    }
+    if (leftPlatform is not None):
+        data["platformLeft"] = {
+            "height": leftPlatform[0],
+            "left": leftPlatform[1],
+            "right": leftPlatform[2]
+        }
+    else:
+        data["platformLeft"] = {
+            "height": 0,
+            "left": 0,
+            "right": 0
+        }
+    if (topPlatform is not None):
+        data["platformTop"] = {
+            "height": topPlatform[0],
+            "left": topPlatform[1],
+            "right": topPlatform[2]
+        }
+    else:
+        data["platformTop"] =  {
+            "height": 0,
+            "left": 0,
+            "right": 0
+        }
+    if (rightPlatform is not None):
+        data["platformRight"] = {
+            "height": rightPlatform[0],
+            "left": rightPlatform[1],
+            "right": rightPlatform[2]
+        }
+    else:
+        data["platformRight"] =  {
+            "height": 0,
+            "left": 0,
+            "right": 0
+        }
+    return data
+
+
 def frameData(gameState: GameState):
     return {
         "player1": playerData(gameState, args.port),
         "player2": playerData(gameState, args.opponent),
         "action1": actionData(gameState, args.port),
         "action2": actionData(gameState, args.opponent),
+        "stage": stageData(gameState),
         "distance": gameState.distance,
         "frame": gameState.frame
     }
@@ -254,7 +328,7 @@ def frameData(gameState: GameState):
 async def handle_message():
     uri = "ws://localhost:8090/ws"
     async with websockets.connect(uri) as websocket:
-        
+
         try:
             await websocket.send(json.dumps({
                 "clientId": "pythonAgent"
@@ -269,7 +343,7 @@ async def handle_message():
                     elif (msg["data"]["controllerId"] == 1):
                         processMessage(msg["data"], controller_opponent)
                 else:
-                    controller.release_all()    
+                    controller.release_all()
                     controller.flush()
         except websockets.exceptions.ConnectionClosedError as cce:
             print('Connection closed!')
@@ -297,7 +371,7 @@ async def console_loop():
         Session.gamestate = gamestate
         if gamestate is None:
             continue
-        
+
         # The console object keeps track of how long your bot is taking to process frames
         #   And can warn you if it's taking too long
         if console.processingtime * 1000 > 12:
@@ -321,10 +395,10 @@ async def console_loop():
                 print("new game!")
                 await Session.ws.send(json.dumps(createMessage("simulation.reset.game", {})))
                 newGame = False
-            
+
             if Session.ws is not None and Session.simulationRunning:
                 # if (counter % 10 == 0):
-                    # print("sending data")
+                # print("sending data")
                 messageString = json.dumps(createMessage(
                     "simulation.frame.update", frameData(gamestate)), cls=NumpyEncoder)
                 # print(messageString)
@@ -341,7 +415,8 @@ async def console_loop():
                     #     "simulation.frame.update", frameData(gamestate)), cls=NumpyEncoder)
                     # await Session.ws.send(messageString)
                     print("stocks left: " + str(Session.lastStockAi))
-                    print("enemy stocks left: " + str(Session.lastStockOpponent))
+                    print("enemy stocks left: " +
+                          str(Session.lastStockOpponent))
                 # NOTE: This is where your AI does all of its stuff!
                 # This line will get hit once per frame, so here is where you read
                 #   in the gamestate and decide what buttons to push on the controller
@@ -350,21 +425,21 @@ async def console_loop():
             else:
                 # If the discovered port was unsure, reroll our costume for next time
                 costume = random.randint(0, 4)
-            
+
         else:
-            
+
             if not Session.menuLoadFirstFrame and Session.ws is not None:
                 print("tried to flush controller")
                 controller.release_all()
                 controller.flush()
                 Session.menuLoadFirstFrame = True
-            
+
             # if (gamestate.menu_state not in [melee.Menu.CHARACTER_SELECT]):
             # if gamestate.menu_selection in [melee.Menu.STAGE_SELECT]:
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller,
                                                 melee.Character.PIKACHU,
-                                                melee.Stage.FINAL_DESTINATION,
+                                                melee.Stage.RANDOM_STAGE,
                                                 args.connect_code,
                                                 costume=2,
                                                 autostart=False,
@@ -373,7 +448,7 @@ async def console_loop():
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller_opponent,
                                                 melee.Character.PIKACHU,
-                                                melee.Stage.FINAL_DESTINATION,
+                                                melee.Stage.RANDOM_STAGE,
                                                 args.connect_code,
                                                 costume=1,
                                                 cpu_level=0,
@@ -388,6 +463,7 @@ async def console_loop():
         #     log.writeframe()
 
 loop = asyncio.get_event_loop()
+
 
 def restartGame():
     if not Session.simulationRunning and gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
@@ -412,6 +488,7 @@ def restartGame():
             resetCounter = 4
         controller.flush()
     # continue
+
 
 async def test1(value: str):
     while True:

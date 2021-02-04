@@ -322,6 +322,7 @@ private suspend fun evaluate(
     evaluator: Evaluator,
     transformToInput: suspend (FrameUpdate) -> List<Float>
 ): EvaluationScore {
+    var lastOutput = (0..9).map { 0f }
     var lastEvaluationScore = EvaluationScore(-1, 0f, listOf())
     suspend fun sendEvaluationScoreUpdate() {
         val evaluationScore = EvaluationScore(agentId, evaluator.score, evaluator.scoreContributionList)
@@ -335,8 +336,10 @@ private suspend fun evaluate(
         var i = 0
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
-            network.evaluate(transformToInput(frameUpdate), true)
-            ioController.frameOutputChannel.send(network.output().toFrameOutput(ioController.controllerId))
+            network.evaluate(transformToInput(frameUpdate) + lastOutput, true)
+            val output = network.output()
+            lastOutput = output
+            ioController.frameOutputChannel.send(output.toFrameOutput(ioController.controllerId))
 //            logger.info { "${ioController.controllerId} - $frameUpdate" }
 
             evaluator.evaluateFrame(frameAdjustedForController)
@@ -348,7 +351,7 @@ private suspend fun evaluate(
             }
         }
     } catch (e: Exception) {
-        logger.error { "failed to build unwrap network properly - killing it" }
+        logger.error(e) { "failed to build unwrap network properly - killing it" }
         val evaluationScore = EvaluationScore(agentId, -10000f, evaluator.scoreContributionList)
         scoreChannel.send(evaluationScore)
         return evaluationScore

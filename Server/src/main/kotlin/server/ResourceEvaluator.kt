@@ -17,13 +17,13 @@ class ResourceEvaluator(
     private val meleeState: MeleeState,
     val baseScore: Float,
     frameClockFactory: FrameClockFactory,
-    var resource: Float = 500f
+    var resource: Float = 1250f
 ) :
     Evaluator {
-    var runningScore: Float = baseScore
+    private var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    val stockTakeBonus = 450f
+    val stockTakeBonus = 5050f
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
@@ -49,11 +49,11 @@ class ResourceEvaluator(
     override fun isFinished(): Boolean {
         val meleeFrameData = meleeState.lastMeleeFrameData
         val clocksFinished = resource <= 0
-        val playerStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player1)
-        val opponentStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player2)
+        val playerStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player1) || lastFrameUpdate?.action1?.action == edgeHangAction
+        val opponentStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player2) || lastFrameUpdate?.action2?.action == edgeHangAction
         val playtimeExpired = clocksFinished && playerStatusPass && opponentStatusPass
         if (meleeFrameData != null && meleeFrameData.player1.lostStock)
-            xSpeedData.add(-max(50f, xSpeedData.size.toFloat() / 10f))
+            xSpeedData.add(-max(50f, xSpeedData.size.toFloat()))
         if (meleeFrameData?.player1?.lostStock == true || meleeFrameData?.player2?.lostStock == true || clocksFinished) {
             logger.trace { "$controllerId - Clocks Finished: $clocksFinished" }
             logger.trace { "$controllerId - Status Check: $playerStatusPass - $opponentStatusPass" }
@@ -66,9 +66,11 @@ class ResourceEvaluator(
             meleeFrameData
         ))
     }
-
+    val edgeHangAction = 253
+    var lastFrameUpdate : FrameUpdate? = null
     private val frameCost = 10 * frameClockFactory.frameTime
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
+
 //        if (controllerId == 1) logger.info { "getting data?" }
         val frameData = meleeState.createSimulationFrame(frameUpdate)
         if (lastMeleeFrameData != null) {
@@ -92,18 +94,27 @@ class ResourceEvaluator(
             val lastPlayer1 = meleeState.lastMeleeFrameData?.player1
             val lastPlayer2 = meleeState.lastMeleeFrameData?.player2
             //Perform evaluations
+            val platformDropAction = 244
+            if (frameUpdate.action1.action == platformDropAction) {
+                runningScore += 50
+            }
+
+            val rollShieldSpotDodgeActions = listOf(188, 189, 190, 196, 197, 198, 233, 234, 179, 235)
+            val isShield = frameUpdate.action1.action in rollShieldSpotDodgeActions
             if (player1.winGame)
                 xSpeedData.clear()
-            if ((prevX - frameUpdate.player1.x).absoluteValue > 1 && !shieldUsed) {
+            if ((prevX - frameUpdate.player1.x).absoluteValue > 1 && !isShield) {
+//                logger.info { "Not Shielding or moving? $controllerId - ${frameUpdate.action1.action} - $isShield" }
                 xSpeedData += frameUpdate.player1.speedGroundX.absoluteValue
-                prevX = frameUpdate.player1.x
             } else {
+//                logger.info { "Shielding or not moving? $controllerId - ${frameUpdate.action1.action} - $isShield" }
                 xSpeedData += 0f
                 resource -= frameCost * 8
                 if (runningScore > 0) {
                     runningScore -= baseScore * if (shieldUsed) .008f else .002f
                 }
             }
+            prevX = frameUpdate.player1.x
             if (player1.tookStock && currentStockDamage > 1) scoreStockTake(frameNumber)
             if (player1.dealtDamage && player1.damageDone > 1) {
                 cumulativeDamage += player1.damageDone
@@ -117,7 +128,7 @@ class ResourceEvaluator(
                     newRunningScore - runningScore
                 )
                 runningScore = newRunningScore
-                resource += (player1.damageDone * comboMultiplier) * 10f
+                resource += (player1.damageDone * comboMultiplier) * 20f
             }
 //        if (player1.damageTaken > 0 || player1.tookDamage)
 //            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
@@ -132,9 +143,8 @@ class ResourceEvaluator(
                 runningScore = 0f
             }
             if (player2.lostStock)
-                if (player2.lostStock)
-                    currentStockDamage = 0f
-                else if (player1.damageDone > 1) currentStockDamage += player1.damageDone //Hack for damage tick offcamera
+                currentStockDamage = 0f
+            else if (player1.damageDone > 1) currentStockDamage += player1.damageDone //Hack for damage tick offcamera
             if (player1.tookDamage && comboActive) {
                 logger.info { "reset combo sequence" }
                 comboSequence = comboSequence().iterator()
@@ -147,7 +157,7 @@ class ResourceEvaluator(
         }
         //Then update to the new frame.
         meleeState.lastMeleeFrameData = frameData
-
+        lastFrameUpdate = frameUpdate
         if (resource < 0) resource = 0f
         if (runningScore < 0) runningScore = 0f
 //        if (frameNumber % 4 == 0)
@@ -166,6 +176,7 @@ class ResourceEvaluator(
             )
         )
         bankedScore += runningScore
+        logger.info { "Stock taken $bankedScore" }
         runningScore = stockTakeBonus
         resource += 650
     }
@@ -177,7 +188,7 @@ class ResourceEvaluator(
         this[playerNumber].onGround && lastMeleeFrameData?.let { !it[playerNumber].onGround } ?: false
 
     private fun isPlayerStatusReady(playerFrameData: PlayerFrameData) =
-        !playerFrameData.hitStun && playerFrameData.onGround
+        (!playerFrameData.hitStun && playerFrameData.onGround)
 
     private fun MeleeFrameData.isPlayerInAirFromKnockBack(playerNumber: Int) =
         !this[playerNumber].onGround && lastMeleeFrameData?.let { it[playerNumber].tookDamage } ?: false
@@ -204,6 +215,9 @@ class ResourceEvaluator(
 //        )
 //        runningScore = newScore
 //        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
+        logger.info { "Banked $bankedScore" }
+        logger.info { "Running Score $runningScore" }
+        logger.info { "final $score" }
         return EvaluationScore(agentId, score, scoreContributionList)
     }
 }

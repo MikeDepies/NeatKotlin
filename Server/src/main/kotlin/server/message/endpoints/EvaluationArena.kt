@@ -33,17 +33,17 @@ fun List<Float>.toFrameOutput(controllerId : Int): FrameOutput {
             else -> it
         }
     }
-    val leftShoulderActivation = clamp(8)
+    val leftShoulderActivation = clamp(7)
     return FrameOutput(
         controllerId = controllerId,
         a = bool(0),
         b = bool(1),
         y = bool(2),
-        z = bool(3),
-        cStickX = clamp(4),
-        cStickY = clamp(5),
-        mainStickX = clamp(6),
-        mainStickY = clamp(7),
+        z = false/*bool(3)*/,
+        cStickX = clamp(3),
+        cStickY = clamp(4),
+        mainStickX = clamp(5),
+        mainStickY = clamp(6),
         leftShoulder = when {
             leftShoulderActivation > .8f -> 1f
             leftShoulderActivation < .2f -> 0f
