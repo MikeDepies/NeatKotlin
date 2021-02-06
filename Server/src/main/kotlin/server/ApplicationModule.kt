@@ -117,9 +117,9 @@ val applicationModule = module {
             generation,
             controllerId,
             meleeState,
-            50f,
+            0f,
             get(),
-            1250f
+            800f
         )
     }
     factory { (evaluationId: Int) -> simulation(evaluationId) }
@@ -140,10 +140,10 @@ fun simulation(evaluationId: Int, randomSeed: Int = 922, takeSize: Int? = 50): S
 //                largestCompatDistance = 0f
 //            }
 //        }
-        shFunction(2f)(it)
+        shFunction(5f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
-        { a, b -> compatibilityDistanceFunction(20f, 20f, 15f)(a, b) }
+        { a, b -> compatibilityDistanceFunction(10f, 10f, 20f)(a, b) }
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
     val adjustedFitnessCalculation = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction)
@@ -168,7 +168,7 @@ fun simulation(evaluationId: Int, randomSeed: Int = 922, takeSize: Int? = 50): S
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            1_000,
+            50,
             input(92, true),
             8,
             Activation.sigmoidal

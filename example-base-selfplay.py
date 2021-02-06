@@ -17,7 +17,7 @@ import numpy as np
 import websockets
 import asyncio
 import threading
-
+import math
 from websockets.client import WebSocketClientProtocol
 # This example program demonstrates how to use the Melee API to run a console,
 #   setup controllers, and send button presses over to a console
@@ -28,9 +28,14 @@ class NumpyEncoder(json.JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, np.integer):
-            return int(obj)
+            value = int(obj)
+            return 0 if math.isnan(value) else value
         elif isinstance(obj, np.floating):
-            return float(obj)
+            value = float(obj)
+            if math.isnan(value):
+                return 0
+            else:
+                return value
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
@@ -178,15 +183,21 @@ def processMessage(message: Dict, controller: melee.Controller):
 
 def actionData(gameState: GameState, port: int):
     player: PlayerState = gameState.players[port]
-
+    rangeForward = fd.range_forward(player.character, player.action, player.action_frame)
+    rangeBackward = fd.range_backward(player.character, player.action, player.action_frame)
+    if (math.isnan(rangeBackward)):
+        rangeBackward = 0
+    if (math.isnan(rangeForward)):
+        rangeForward = 0
+    
     return {
         "action": player.action.value,
         "isAttack": bool(fd.is_attack(character=player.character, action=player.action)),
         "isGrab": bool(fd.is_grab(player.character, player.action)),
         "isBMove": bool(fd.is_bmove(player.character, player.action)),
         "isShield": bool(fd.is_shield(player.action)),
-        "rangeBackward": fd.range_backward(player.character, player.action, player.action_frame),
-        "rangeForward": fd.range_forward(player.character, player.action, player.action_frame),
+        "rangeBackward": rangeBackward,
+        "rangeForward": rangeForward,
         "hitBoxCount": fd.hitbox_count(player.character, player.action),
         "attackState": fd.attack_state(player.character, player.action, player.action_frame).value,
         "actionFrame": player.action_frame
@@ -450,7 +461,7 @@ async def console_loop():
                                                 melee.Character.PIKACHU,
                                                 melee.Stage.RANDOM_STAGE,
                                                 args.connect_code,
-                                                costume=1,
+                                                costume=3,
                                                 cpu_level=0,
                                                 autostart=True,
                                                 swag=False)
