@@ -45,6 +45,16 @@ data class IOController(
     val frameOutputChannel: Channel<FrameOutput>,
 )
 
+suspend fun IOController.quitMatch() {
+    pressStart()
+    delay(250)
+    frameOutputChannel.send(FrameOutput(controllerId, true, false, false, false, .5f, .5f, .5f,.5f, 1f, 1f, true))
+}
+
+private suspend fun IOController.pressStart() {
+    frameOutputChannel.send(FrameOutput(controllerId, false, false, false, false, .5f, .5f, .5f, .5f, 0f, 0f, true))
+}
+
 object OneController
 object TwoController
 class Evaluation(val evaluationId: Int, val controllers: List<IOController>)
@@ -55,21 +65,6 @@ data class EvaluationChannels(
     val clockChannel: Channel<EvaluationClocksUpdate>,
 )
 
-data class EvaluationChannelsMultipleControllers(
-    val frameUpdateChannel: Channel<FrameUpdate>,
-    val frameOutputChannel: Channel<FrameOutput>,
-    val scoreChannel: Channel<EvaluationScore>,
-    val agentModelChannel: Channel<AgentModel>,
-    val populationChannel: Channel<PopulationModels>,
-    val clockChannel: Channel<EvaluationClocksUpdate>,
-)
-//
-//interface EvaluationQuery {
-//    fun MeleeFrameData.lastPlayersDamageTaken(): List<PlayerNumber>
-//    fun MeleeFrameData.lastPlayersDamageDealt(): List<PlayerNumber>
-//    fun MeleeFrameData.lastPlayersStockLost(): List<PlayerNumber>
-//    fun MeleeFrameData.lastPlayersStockTaken(): List<PlayerNumber>
-//}
 
 suspend fun Application.evaluationLoop(
     evaluationId: Int,
@@ -215,8 +210,10 @@ suspend fun Application.evaluationLoop2Agents(
                     evaluator, inputTransformer
                 )
 
+            logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
             logger.info { "PlayerController: ${playerController.controllerId} Score: ${evaluationScore.score}" }
             playerController.frameOutputChannel.send(flushControllerOutput(playerController))
+
             agentResultChannel.send(
                 FitnessModel(
                     model = neatMutator,
@@ -363,6 +360,7 @@ private suspend fun evaluate(
             if (evaluator.isFinished()) {
                 logger.info { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
                 scoreChannel.send(evaluator.finishEvaluation())
+
                 return EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
             }
         }

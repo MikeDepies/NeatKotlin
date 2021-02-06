@@ -6,6 +6,17 @@ export function arrayWritable<T>(initalValue: T[])  : WritableArray<T>{
   const w = writable<T[]>(initalValue)
   return {
     ...w,
+    length: () => {
+      let data: T[] = []
+      w.subscribe(v => data = v)()
+      return data.length
+    },
+    setElement(index : number, element: T) {
+      let data: T[] = []
+      w.subscribe(v => data = v)()
+      data[index] = element
+      w.set([...data])
+    },
     push(element: T) {
       let data: T[] = []
       w.subscribe(v => data = v)()

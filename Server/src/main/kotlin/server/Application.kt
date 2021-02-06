@@ -9,11 +9,12 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.ktor.serialization.*
 import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -21,10 +22,13 @@ import neat.ModelScore
 import neat.SpeciationController
 import neat.model.NeatMutator
 import neat.toMap
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.experimental.*
 import org.koin.core.parameter.*
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import org.slf4j.event.Level
+import server.database.*
 import server.message.BroadcastMessage
 import server.message.TypedUserMessage
 import server.message.endpoints.*
@@ -87,6 +91,18 @@ fun Application.module(testing: Boolean = false) {
             }
         })
     }
+    install(ContentNegotiation) {
+        json(get())
+    }
+
+    launch {
+        newSuspendedTransaction {
+            SchemaUtils.createMissingTablesAndColumns(
+                *DATABASE_TABLES.toTypedArray()
+            )
+        }
+    }
+
 //    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
 //    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
@@ -97,7 +113,8 @@ fun Application.module(testing: Boolean = false) {
     val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(1)) })
     fun IOController.simulationForController() = get<Simulation>(parameters = {
         DefinitionParameters(
-            listOf(controllerId))
+            listOf(controllerId)
+        )
     })
     val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController()
     val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController()
@@ -137,8 +154,21 @@ fun Application.module(testing: Boolean = false) {
             controller2
         )
     }
+    val json = get<Json>()
+    routing {
+        get("evaluation") {
+            call.respond(evaluationContext(listOf(controller1, controller2), 0))
+        }
+    }
 }
 
+private fun evaluationContext(
+    controllers: List<IOController>,
+    evaluationId: Int
+) = EvaluationContext(evaluationId, controllers.map { it.controllerId })
+
+@Serializable
+data class EvaluationContext(val evaluationId: Int, val controllers: List<Int>)
 data class Controllers(val controllerList: List<IOController>)
 
 private fun Application.generateFakeData(evaluationChannels: EvaluationChannels) {
@@ -267,22 +297,10 @@ private fun Application.networkEvaluatorOutputBridgeLoop(
         launch { evaluationMessageProcessor.processOutput(it) }
     }
     launch { evaluationMessageProcessor.processFrameData(controllers) }
-    launch { evaluationMessageProcessor.processEvaluationClocks() }
+//    launch { evaluationMessageProcessor.processEvaluationClocks() }
     launch { evaluationMessageProcessor.processPopulation() }
     launch { evaluationMessageProcessor.processAgentModel() }
     launch { evaluationMessageProcessor.processScores() }
-}
-
-private fun sortModelsByAdjustedFitness(
-    speciationController: SpeciationController,
-    modelScoreList: List<ModelScore>
-): List<ModelScore> {
-    val adjustedPopulationScore = modelScoreList.toMap { modelScore -> modelScore.neatMutator }
-    val fitnessForModel: (NeatMutator) -> Float = { neatMutator ->
-        adjustedPopulationScore.getValue(neatMutator).adjustedFitness
-    }
-    speciationController.sortSpeciesByFitness(fitnessForModel)
-    return modelScoreList
 }
 
 fun previewMessage(frame: Frame.Text): String {

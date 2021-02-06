@@ -36,7 +36,7 @@ class PopulationEvolver(
     }
 
     fun evolveNewPopulation(scoredPopulation: List<ModelScore>): List<NeatMutator> {
-        val mutationEntries = uniformMutationRate(
+        val mutationEntries = uniformMutationRateDictionary(
             .7f, listOf(
                 mutateConnections, mutateAddNode, mutateAddConnection, mutatePerturbBiasConnections(),
                 mutateToggleConnection,
@@ -61,16 +61,9 @@ class PopulationEvolver(
             .05f chanceToMutate mutateNodeActivationFunction(),
         )
     }
-<<<<<<< HEAD
+
     fun uniformMutationRateDictionary(mutationRate : Float, mutations : List<Mutation>): List<MutationEntry> {
         return mutations.map { (mutationRate / mutations.size) chanceToMutate  it }
     }
-=======
-
-    fun uniformMutationRate(mutationRate: Float, mutations: List<Mutation>): List<MutationEntry> {
-        return mutations.map { mutationRate / mutations.size chanceToMutate it }
-    }
-
->>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
 
 }

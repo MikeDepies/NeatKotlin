@@ -17,7 +17,7 @@ class ResourceEvaluator(
     private val meleeState: MeleeState,
     val baseScore: Float,
     frameClockFactory: FrameClockFactory,
-    var resource: Float = 1250f
+    var resource: Float
 ) :
     Evaluator {
     private var runningScore: Float = baseScore
@@ -97,7 +97,7 @@ class ResourceEvaluator(
             if (frameUpdate.action1.action == platformDropAction) {
                 runningScore += 50
             }
-
+//            frameUpdate.player1.speedXAttack
             val rollShieldSpotDodgeActions = listOf(188, 189, 190, 196, 197, 198, 233, 234, 179, 235)
             val isShield = frameUpdate.action1.action in rollShieldSpotDodgeActions
             if (player1.winGame)
@@ -219,6 +219,15 @@ class ResourceEvaluator(
         return EvaluationScore(evaluationId, agentId, score, scoreContributionList)
     }
 }
+
+//fun main() {
+//    var score = 4f
+//    println(score)
+//    repeat(16*10) {
+//       score -= score * .005f
+//        println(score)
+//    }
+//}
 
 fun main() {
     var r = 70f

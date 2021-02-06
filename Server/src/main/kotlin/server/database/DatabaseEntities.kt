@@ -1,179 +1,179 @@
 package server.database
 
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
+import org.jetbrains.exposed.dao.*
 import org.jetbrains.exposed.dao.id.EntityID
-import server.Sex
+import java.time.*
 
-//enum class StudentSex {
-//    Male, Female;
-//
-//    companion object {
-//
-//    }
-//}
 
-private fun Sex.toVarchar() = when (this) {
-    Sex.Male -> "male"
-    Sex.Female -> "female"
+class SimulationEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<SimulationEntity>(SimulationTable)
+    var startDate by SimulationTable.startDate.transform({ it.toEpochMilli() }, { Instant.ofEpochMilli(it) })
+    val evaluations by EvaluationEntity referrersOn EvaluationTable.simulation
+}
+class EvaluationEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationEntity>(EvaluationTable)
+    var simulation by SimulationEntity referencedOn EvaluationTable.simulation
+    val populations by EvaluationPopulationEntity referrersOn EvaluationPopulationTable.evaluation
 }
 
-private fun Sex.Companion.fromVarchar(string: String) = when (string) {
-    "male" -> Sex.Male
-    "female" -> Sex.Female
-    else -> throw Exception()
+class EvaluationPopulationEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationPopulationEntity>(EvaluationPopulationTable)
+
+    var evaluation by EvaluationEntity referencedOn EvaluationPopulationTable.evaluation
+    var generation by EvaluationPopulationTable.generation
+    val species by EvaluationSpeciesEntity referrersOn EvaluationSpeciesTable.evaluation
+    val agents by AgentEntity referrersOn AgentTable.population
 }
 
-class StudentEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<StudentEntity>(SpedStudents)
+class EvaluationSpeciesEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationSpeciesEntity>(EvaluationSpeciesTable)
 
-    var firstName by SpedStudents.firstName
-    var lastName by SpedStudents.lastName
-    var sex by (SexEntity referencedOn SpedStudents.sex)
-    var esl by SpedStudents.esl
-    var spedID by SpedStudents.spedID
-    var grade by SpedStudents.grade
-//    var meta by (StudentMetaEntity referencedOn )
-//    val meta get() = StudentMetaEntity.find { StudentMeta.student eq SpedStudents.id }.first()
+    var evaluation by EvaluationSpeciesEntity referencedOn EvaluationSpeciesTable.evaluation
+    var speciesId by EvaluationSpeciesTable.speciesId
+    var generationBorn by EvaluationSpeciesTable.generationBorn
+    var mascot by AgentEntity referencedOn EvaluationSpeciesTable.mascot
 }
 
-class StudentMetaEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<StudentMetaEntity>(StudentMeta)
-    var homeroomLetter by StudentMeta.homeroomLetter
-    var student by (StudentEntity referencedOn StudentMeta.student)
-    var classBlock by (ClassBlockEntity referencedOn StudentMeta.classBlock)
-    var homeroom by (ClassRoomEntity referencedOn StudentMeta.homeroom)
+class EvaluationSpeciesScoreEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationSpeciesScoreEntity>(EvaluationSpeciesScoreTable)
+
+    var species by EvaluationSpeciesEntity referencedOn EvaluationSpeciesScoreTable.species
+    var score by EvaluationSpeciesScoreTable.score
+    var agent by AgentEntity referencedOn EvaluationSpeciesScoreTable.agent
 }
 
-data class BiDirectionalMapper<T, V>(val to: (T) -> V, val from: (V) -> T)
+class MeleeStageEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<MeleeStageEntity>(MeleeStageTable)
 
-fun <A, B> Pair<A, B>.flip() = second to first
-fun <T : Enum<T>, V> twoWayMapper(vararg pair: Pair<T, V>): BiDirectionalMapper<T, V> {
-    val map = mapOf(*pair)
-    val mapReverse = mapOf(*pair.map { it.flip() }.toTypedArray())
-    val to = { it: T -> map.getValue(it) }
-    val from = { it: V -> mapReverse.getValue(it) }
-    return BiDirectionalMapper(
-        to,
-        from
+    var name by MeleeStageTable.name
+    var stageId by MeleeStageTable.stageId
+}
+
+class MeleeCharacterEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<MeleeCharacterEntity>(MeleeCharacterTable)
+
+    var name by MeleeCharacterTable.name
+    var characterId by MeleeCharacterTable.characterId
+}
+
+class EvaluationConfigurationEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationConfigurationEntity>(EvaluationConfigurationTable)
+
+    var evaluation by EvaluationEntity referencedOn EvaluationConfigurationTable.evaluation
+    val parameters by EvaluationConfigurationParameterEntity referencedOn EvaluationConfigurationParameterTable.evaluationConfig
+    val activationFunction by EvaluationConfigurationActivationFunctionEntity referrersOn EvaluationConfigurationActivationFunctionTable.evaluationConfig
+    val mutationDictionary by EvaluationConfigurationMutationDictionaryEntryEntity referencedOn EvaluationConfigurationMutationDictionaryEntryTable.evaluationConfig
+    val stages by EvaluationConfigurationStagesEntity referrersOn EvaluationConfigurationStagesTable.configuration
+    val controllers by EvaluationConfigurationControllerEntity referrersOn EvaluationConfigurationControllerTable.configuration
+}
+
+class EvaluationConfigurationParameterEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationConfigurationParameterEntity>(EvaluationConfigurationParameterTable)
+
+    var evaluationConfiguration by EvaluationConfigurationEntity referencedOn EvaluationConfigurationParameterTable.evaluationConfig
+    var seed by EvaluationConfigurationParameterTable.seed
+    var speciesDistance by EvaluationConfigurationParameterTable.speciesDistance
+    var speciationExcess by EvaluationConfigurationParameterTable.speciationExcess
+    var speciationDisjoin by EvaluationConfigurationParameterTable.speciationDisjoint
+    var speciationAvgConnectionWeight by EvaluationConfigurationParameterTable.speciationAvgConnectionWeight
+    var survivalThreshold by EvaluationConfigurationParameterTable.survivalThreshold
+    var mateChance by EvaluationConfigurationParameterTable.mateChance
+    var size by EvaluationConfigurationParameterTable.size
+}
+
+class EvaluationConfigurationActivationFunctionEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object :
+        IntEntityClass<EvaluationConfigurationActivationFunctionEntity>(EvaluationConfigurationActivationFunctionTable)
+
+    var evaluationConfig by EvaluationConfigurationEntity referencedOn EvaluationConfigurationActivationFunctionTable.evaluationConfig
+    var activationFunction by ActivationFunctionEntity referencedOn EvaluationConfigurationActivationFunctionTable.activationFunction
+}
+
+class EvaluationConfigurationMutationDictionaryEntryEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationConfigurationMutationDictionaryEntryEntity>(
+        EvaluationConfigurationMutationDictionaryEntryTable
     )
+
+    var evaluationConfig by EvaluationConfigurationEntity referencedOn EvaluationConfigurationMutationDictionaryEntryTable.evaluationConfig
+    var chanceToMutate by EvaluationConfigurationMutationDictionaryEntryTable.chanceToMutate
+    var mutation by EvaluationConfigurationMutationDictionaryEntryTable.mutation
 }
 
-class SexEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<SexEntity>(MasterSex)
+class EvaluationConfigurationStagesEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationConfigurationStagesEntity>(EvaluationConfigurationStagesTable)
 
-    var value by MasterSex.value.transform({ it.toVarchar() }, { Sex.fromVarchar(it) })
+    var evaluationConfig by EvaluationConfigurationEntity referencedOn EvaluationConfigurationStagesTable.configuration
+    var stage by (MeleeStageEntity referencedOn EvaluationConfigurationStagesTable.stage)
 }
 
-class ClassTrackEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ClassTrackEntity>(ClassTracks)
+class EvaluationConfigurationControllerEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EvaluationConfigurationControllerEntity>(EvaluationConfigurationControllerTable)
 
-    var type by ClassTracks.type
-    var classType by ClassTracks.classType
-    var school by ClassTracks.school
-    val classBlocks by ClassBlockEntity referrersOn ClassBlocks.classTrack
+    var evaluationConfig by EvaluationConfigurationEntity referencedOn EvaluationConfigurationControllerTable.configuration
+    var controllerId by EvaluationConfigurationControllerTable.controllerId
+    var character by MeleeCharacterEntity referencedOn EvaluationConfigurationControllerTable.character
 }
 
-class ClassBlockMetaEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ClassBlockMetaEntity>(ClassBlocksMeta)
-    var classBlock by ClassBlockEntity referencedOn ClassBlocksMeta.classBlock
-    var groupRoom by ClassBlocksMeta.groupRoom
-    var block by ClassBlocksMeta.block
-    var group by ClassBlocksMeta.group
-    var homeroom by ClassRoomEntity referencedOn ClassBlocksMeta.homeroom
-}
+class AgentEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<AgentEntity>(AgentTable)
 
-class ClassBlockEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ClassBlockEntity>(ClassBlocks)
-
-    var classTrack by ClassTrackEntity referencedOn ClassBlocks.classTrack
-    var classRoom by ClassRoomEntity referencedOn ClassBlocks.classroom
-    var subject by SubjectEntity referencedOn ClassBlocks.subject
-    var teacher by ClassTeacherEntity.referencedOn(ClassBlocks.teacher)
-    var grade by ClassBlocks.grade
-    val meta by ClassBlockMetaEntity referrersOn ClassBlocksMeta.classBlock
-    val classSegments by ClassSegmentEntity referrersOn ClassSegments.classBlock
-}
-
-class ClassRoomEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ClassRoomEntity>(Classrooms)
-
-    var name by Classrooms.name
-}
-
-class ClassSegmentEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ClassSegmentEntity>(ClassSegments)
-
-    var classBlock by ClassBlockEntity referencedOn ClassSegments.classBlock
-    var startTime by ClassSegments.startTime
-    var endTime by ClassSegments.endTime
-}
-
-class ClassTeacherEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ClassTeacherEntity>(ClassTeachers)
-
-    var bilingual by ClassTeachers.bilingual
-    var name by ClassTeachers.name
+    var population by EvaluationPopulationEntity referencedOn AgentTable.population
+    var species by AgentTable.species
+    val nodes by AgentNodeEntity referrersOn AgentNodeTable.agent
+    val connections by AgentConnectionEntity referrersOn AgentConnectionTable.agent
 }
 
 
-class SubjectEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<SubjectEntity>(Subjects)
+class AgentNodeEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<AgentNodeEntity>(AgentNodeTable)
 
-    var name by Subjects.name
+    var agent by AgentEntity referencedOn AgentNodeTable.agent
+    var nodeId by AgentNodeTable.nodeId
+    var type by NodeTypeEntity referencedOn AgentNodeTable.nodeType
+    var activationFunction by ActivationFunctionEntity referencedOn AgentNodeTable.activationFunction
 }
 
-class SupportMethodEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<SupportMethodEntity>(SupportMethods)
+class AgentConnectionEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<AgentConnectionEntity>(AgentConnectionTable)
 
-    var name by SupportMethods.name
+    var agent by AgentEntity referencedOn AgentConnectionTable.agent
+    var inNode by AgentConnectionTable.inNode
+    var outNode by AgentConnectionTable.outNode
+    var weight by AgentConnectionTable.weight
+    var enabled by AgentConnectionTable.enabled
+    var innovation by AgentConnectionTable.innovation
+
 }
 
-class MasterDisabilityEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<MasterDisabilityEntity>(MasterDisabilities)
+class NodeTypeEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<NodeTypeEntity>(NodeTypeTable)
 
-    var name by MasterDisabilities.name
-    var description by MasterDisabilities.description
+    var name by NodeTypeTable.name
 }
 
-class ServiceTypeEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<ServiceTypeEntity>(ServiceTypes)
+class ActivationFunctionEntity(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<ActivationFunctionEntity>(ActivationFunctionTable)
 
-    var name by ServiceTypes.name
-    var subject by SubjectEntity referencedOn ServiceTypes.subject
+    var name by ActivationFunctionTable.name
 }
 
-class StudentRxEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<StudentRxEntity>(StudentRxs)
 
-    var student by StudentEntity referencedOn StudentRxs.student
-    var serviceType by ServiceTypeEntity referencedOn StudentRxs.serviceType
-    var supportMethod by SupportMethodEntity referencedOn StudentRxs.supportMethod
-    var minutes by StudentRxs.minutes
-}
-
-class StudentScheduleTrackEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<StudentScheduleTrackEntity>(StudentScheduleTracks)
-
-    var student by StudentEntity referencedOn StudentScheduleTracks.student
-    var classTrack by ClassTrackEntity referencedOn StudentScheduleTracks.classTrack
-    var grade by StudentScheduleTracks.grade
-}
-
-class SpedTeacherEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<SpedTeacherEntity>(SpedTeachers)
-
-    var firstName by SpedTeachers.firstName
-    var lastName by SpedTeachers.lastName
-    var sex by SexEntity referencedOn SpedTeachers.sex
-    var speaksSpanish by SpedTeachers.spanish
-}
-
-class SpedTeacherAvailabilityEntryEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<SpedTeacherAvailabilityEntryEntity>(SpedTeacherAvailability)
-
-    var teacher by SpedTeacherEntity referencedOn SpedTeacherAvailability.teacher
-    var startTime by SpedTeacherAvailability.startTime
-    var endTime by SpedTeacherAvailability.endTime
-    var available by SpedTeacherAvailability.available
-}
+val DATABASE_TABLES = listOf(
+    EvaluationPopulationTable,
+    EvaluationSpeciesTable,
+    EvaluationSpeciesScoreTable,
+    MeleeStageTable,
+    MeleeCharacterTable,
+    EvaluationConfigurationTable,
+    EvaluationConfigurationParameterTable,
+    EvaluationConfigurationActivationFunctionTable,
+    EvaluationConfigurationMutationDictionaryEntryTable,
+    EvaluationConfigurationStagesTable,
+    EvaluationConfigurationControllerTable,
+    AgentTable,
+    AgentNodeTable,
+    AgentConnectionTable,
+    NodeTypeTable,
+    ActivationFunctionTable,
+    EvaluationTable
+)

@@ -83,6 +83,7 @@ data class FrameOutput(
     val mainStickX: Float,
     val mainStickY: Float,
     val leftShoulder: Float,
-    val rightShoulder: Float
+    val rightShoulder: Float,
+    val start: Boolean = false
 )
 

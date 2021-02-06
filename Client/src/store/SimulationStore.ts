@@ -16,7 +16,8 @@ type AgentController = {
 const r = reader<SimulationEndpoints>(message)
 const populationStore = r.read("simulation.event.population.new")
 const newAgentStore = r.read("simulation.event.agent.new")
-function evaluationPopulation(evaluationId: number, controllerIds: number[]) {
+const newScoreStore = r.read("simulation.event.score.new")
+export function evaluationPopulation(evaluationId: number, controllerIds: number[]) {
     const pop = population(evaluationId)
     const generation = derived(pop, ($pop: Population | undefined, set: (v: number) => void) => {
         set($pop?.generation || 0)
@@ -24,11 +25,16 @@ function evaluationPopulation(evaluationId: number, controllerIds: number[]) {
     const size = derived(pop, ($pop: Population | undefined, set: (v: number) => void) => {
         set($pop?.agents.length || 0)
     })
-
+    const popHistory = populationHistory(pop)
+    const controllerMap = controllerAgents(evaluationId)
+    const scores = populationScores(evaluationId)
     return {
         pop,
-        generation
-
+        generation,
+        size,
+        popHistory,
+        controllerMap,
+        scores
     }
 }
 
@@ -41,19 +47,37 @@ function population(evaluationId: number) {
     return evaluationPopulation
 }
 
-function populationHistory(population: Readable<Population>) {
+function populationHistory(population: Readable<Population | undefined>) {
     const populationHistory = arrayWritable<Population>([])
     population.subscribe($population => {
-        populationHistory.push($population)
+        if ($population) populationHistory.push($population)
     })
     return populationHistory
 }
 
 function populationScores(evaluationId: number) {
-    r.read("simulation.event.score.new")
+    const newScore = filterForEvaluation(evaluationId, newScoreStore)
+    const agentScoreArray = arrayWritable<number>([])
+    return {
+        subscribe : (set : Subcriber<number[]>) => {
+            const unsubscribeNewScore = newScore.subscribe(r => {
+                if (r) {
+                    while (agentScoreArray.length() <= r.agentId) {
+                        agentScoreArray.push(0)
+                    }
+                    agentScoreArray.setElement(r.agentId, r.score)
+                }
+            })
+            const unsubScoreArray = agentScoreArray.subscribe(set)
+            return () => {
+                unsubScoreArray()
+                unsubscribeNewScore()
+            }
+        }
+    }
 }
-function filterForEvaluation<T extends {evaluationId : number} | undefined>(evaluationId: number, store: Readable<T>) {
-    return derived(store, (value : T, set : (v : T) => void) => {
+function filterForEvaluation<T extends { evaluationId: number } | undefined>(evaluationId: number, store: Readable<T>) {
+    return derived(store, (value: T, set: (v: T) => void) => {
         if (value && value.evaluationId === evaluationId) {
             set(value)
         }
@@ -62,8 +86,8 @@ function filterForEvaluation<T extends {evaluationId : number} | undefined>(eval
 
 const evaluationNewAgentMap = new Map<number, Readable<AgentModel | undefined>>()
 
-function controllerAgents(evaluationId: number, controllerIds: number[]) {
-    let newAgent : Readable<AgentModel | undefined>
+function controllerAgents(evaluationId: number) {
+    let newAgent: Readable<AgentModel | undefined>
     if (evaluationNewAgentMap.has(evaluationId)) {
         newAgent = evaluationNewAgentMap.get(evaluationId)!!
     } else {
@@ -72,7 +96,7 @@ function controllerAgents(evaluationId: number, controllerIds: number[]) {
     }
     const controllerAgentMap = mapWritable<number, AgentController>(new Map())
     return {
-        subscribe: (value : Map<number, AgentController>) => {
+        subscribe: (set: Subcriber<Map<number, AgentController>>) => {
             const unsubscribeNewAgent = newAgent.subscribe($newAgent => {
                 if ($newAgent != undefined) {
                     controllerAgentMap.put($newAgent.controllerId, {
@@ -81,7 +105,13 @@ function controllerAgents(evaluationId: number, controllerIds: number[]) {
                     })
                 }
             })
-            return () => unsubscribeNewAgent()
+            const unsubscribeControllerMap = controllerAgentMap.subscribe(set)
+            return () => {
+                unsubscribeControllerMap
+                unsubscribeNewAgent()
+            }
         }
     }
 }
+type Subcriber<T> = (value: T) => void | Unsubscriber
+type Unsubscriber = () => void

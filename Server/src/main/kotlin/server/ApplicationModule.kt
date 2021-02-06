@@ -94,7 +94,7 @@ val applicationModule = module {
 
     factory { MeleeState(null) }
     single { FrameClockFactory() }
-    factory<Evaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState : MeleeState) ->
+    factory<Evaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState: MeleeState) ->
         println("New Evaluator?")
         SimpleEvaluator(
             agentId,
@@ -107,9 +107,9 @@ val applicationModule = module {
         )
     }
     factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel()) }
-    factory<ResourceEvaluator> { (evaluationIdSet : EvaluatorIdSet, meleeState : MeleeState, network : ActivatableNetwork) ->
+    factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
         println("New Evaluator?")
-        val (evaluationId : Int, agentId: Int, generation: Int, controllerId: Int) = evaluationIdSet
+        val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
         ResourceEvaluator(
             network,
             agentId,
@@ -118,19 +118,18 @@ val applicationModule = module {
             controllerId,
             meleeState,
             50f,
-            get()
+            get(),
+            1250f
         )
     }
     factory { (evaluationId: Int) -> simulation(evaluationId) }
 }
 
-<<<<<<< HEAD
-data class EvaluatorIdSet(val agentId : Int, val evaluationId: Int, val generation : Int, val controllerId : Int)
 
-fun simulation(evaluationId : Int, randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
-=======
-fun simulation(randomSeed: Int = 137731, takeSize: Int? = null): Simulation {
->>>>>>> 5e8eda3163e79ce9e8fac0d3b7ebbb762bf93a62
+data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generation: Int, val controllerId: Int)
+
+fun simulation(evaluationId: Int, randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
+
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
