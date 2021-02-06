@@ -4,6 +4,7 @@ import FrameUpdate
 import mu.KotlinLogging
 import neat.ActivatableNetwork
 import server.message.endpoints.*
+import java.lang.Float.min
 import kotlin.math.absoluteValue
 import kotlin.math.max
 
@@ -23,7 +24,7 @@ class ResourceEvaluator(
     private var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
-    val stockTakeBonus = 5050f
+    val stockTakeBonus = 600f
     var cumulativeDamage = 0f
     var cumulativeDamageTaken = 0f
     var currentStockDamage = 0f
@@ -35,22 +36,25 @@ class ResourceEvaluator(
     private val idleGameClock = frameClockFactory.countDownClockSeconds("No Damage Clock", 14f)
     var prevX = 0f
     var prevShieldButton = false
-
+    var prevWasAttack = false
     /**
      * The finalized Score
      */
     override val score: Float
         get() {
-            val moveBonus = (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f) * stockTakeBonus
+//            val moveBonus = (xSpeedData.average().toFloat().takeIf { !it.isNaN() } ?: 0f) * 700
 //            logger.info { "$runningScore + $bankedScore + ${max(-10f, moveBonus)}" }
-            return runningScore + bankedScore + max(-10f, moveBonus)
+            val distanceScore = 100 - min(100f, lastMeleeFrameData?.distance ?: 100f)
+            return runningScore + bankedScore + distanceScore// + max(-10f, moveBonus / 2f)
         }
 
     override fun isFinished(): Boolean {
         val meleeFrameData = meleeState.lastMeleeFrameData
         val clocksFinished = resource <= 0
-        val playerStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player1) || lastFrameUpdate?.action1?.action == edgeHangAction
-        val opponentStatusPass = meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player2) || lastFrameUpdate?.action2?.action == edgeHangAction
+        val playerStatusPass =
+            meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player1) || lastFrameUpdate?.action1?.action == edgeHangAction
+        val opponentStatusPass =
+            meleeFrameData !== null && isPlayerStatusReady(meleeFrameData.player2) || lastFrameUpdate?.action2?.action == edgeHangAction
         val playtimeExpired = clocksFinished && playerStatusPass && opponentStatusPass
         if (meleeFrameData != null && meleeFrameData.player1.lostStock)
             xSpeedData.add(-max(50f, xSpeedData.size.toFloat()))
@@ -66,8 +70,9 @@ class ResourceEvaluator(
             meleeFrameData
         ))
     }
+
     val edgeHangAction = 253
-    var lastFrameUpdate : FrameUpdate? = null
+    var lastFrameUpdate: FrameUpdate? = null
     private val frameCost = 10 * frameClockFactory.frameTime
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
 
@@ -96,16 +101,32 @@ class ResourceEvaluator(
             //Perform evaluations
             val platformDropAction = 244
             if (frameUpdate.action1.action == platformDropAction) {
-                runningScore += 50
+//                runningScore += 500
             }
 
+            val isAttack = frameUpdate.action1.isAttack
+            if (isAttack && !prevWasAttack) {
+                runningScore -= 50
+            }
             val rollShieldSpotDodgeActions = listOf(188, 189, 190, 196, 197, 198, 233, 234, 179, 235)
             val isShield = frameUpdate.action1.action in rollShieldSpotDodgeActions
             if (player1.winGame)
                 xSpeedData.clear()
-            if ((prevX - frameUpdate.player1.x).absoluteValue > 1 && !isShield) {
+            if (!isShield) {
 //                logger.info { "Not Shielding or moving? $controllerId - ${frameUpdate.action1.action} - $isShield" }
-                xSpeedData += frameUpdate.player1.speedGroundX.absoluteValue
+
+                val currentXSpeedAbs =
+                    frameUpdate.player1.speedGroundX.absoluteValue + min(1f, frameUpdate.player1.speedAirX.absoluteValue)
+                if (currentXSpeedAbs > 0 || frameNumber % 16 == 0) {
+                    if (currentXSpeedAbs == 0f) {
+                        val fastForwardSteps = 15
+                        resource -= frameCost * 8 * fastForwardSteps
+                        repeat(fastForwardSteps) {
+                            xSpeedData += currentXSpeedAbs
+                        }
+                    }
+                    xSpeedData += currentXSpeedAbs
+                }
             } else {
 //                logger.info { "Shielding or not moving? $controllerId - ${frameUpdate.action1.action} - $isShield" }
                 xSpeedData += 0f
@@ -121,24 +142,25 @@ class ResourceEvaluator(
 //            logger.info { "DAMAGE DEALT" }
                 val comboMultiplier = comboSequence.next()
                 comboActive = true
-                val newRunningScore = runningScore + (player1.damageDone * comboMultiplier * 20f)
+                val newRunningScore = runningScore + (player1.damageDone * comboMultiplier * 25f) + 50f
                 scoreContributionList += EvaluationScoreContribution(
                     "Damage Dealt (${player1.damageDone} * $comboMultiplier)",
                     newRunningScore,
                     newRunningScore - runningScore
                 )
                 runningScore = newRunningScore
-                resource += (player1.damageDone * comboMultiplier) * 20f
+                if (frameData.distance < 20)
+                    resource += 200f
             }
 //        if (player1.damageTaken > 0 || player1.tookDamage)
 //            logger.info { "DAMAGE TAKEN ${player1.tookDamage}" }
             if (player1.damageTaken > 1) {
                 cumulativeDamageTaken += player1.damageTaken
-                resource -= player1.damageTaken * 4f
-                runningScore += player1.damageTaken * 10f
+                resource -= player1.damageTaken * 12f
+                runningScore += player1.damageTaken * 100f
             }
             if (player1.lostStock) {
-                val deathPenalty = max(baseScore, runningScore * .4f)
+//                val deathPenalty = max(baseScore, runningScore * .4f)
 //                if (runningScore >= baseScore)
                 runningScore = 0f
             }
@@ -154,6 +176,7 @@ class ResourceEvaluator(
                 firstFrame = true
             }
             prevShieldButton = shieldButton
+            prevWasAttack = isAttack
         }
         //Then update to the new frame.
         meleeState.lastMeleeFrameData = frameData
@@ -175,9 +198,9 @@ class ResourceEvaluator(
                 stockTakeScore - runningScore
             )
         )
-        bankedScore += runningScore
+        bankedScore += runningScore + stockTakeBonus/2
         logger.info { "Stock taken $bankedScore" }
-        runningScore = stockTakeBonus
+        runningScore = stockTakeBonus/2
         resource += 650
     }
 

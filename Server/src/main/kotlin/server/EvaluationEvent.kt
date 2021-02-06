@@ -266,7 +266,7 @@ suspend fun Application.evaluationLoop2Agents(
             speciationController.speciesSet.forEach { species ->
                 val speciesPopulation = speciationController.getSpeciesPopulation(species)
                 speciesPopulation.filter { it in dropList }.forEach { neatMutator ->
-                    logger.info { "Removing $neatMutator from $species since it has been dropped." }
+//                    logger.info { "Removing $neatMutator from $species since it has been dropped." }
                     speciesPopulation.remove(neatMutator)
                 }
 

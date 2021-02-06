@@ -116,14 +116,15 @@ val applicationModule = module {
             generation,
             controllerId,
             meleeState,
-            50f,
-            get()
+            0f,
+            get(),
+            800f
         )
     }
     single { simulation() }
 }
 
-fun simulation(randomSeed: Int = 137731, takeSize: Int? = null): Simulation {
+fun simulation(randomSeed: Int = 22, takeSize: Int? = null): Simulation {
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
@@ -134,10 +135,10 @@ fun simulation(randomSeed: Int = 137731, takeSize: Int? = null): Simulation {
 //                largestCompatDistance = 0f
 //            }
 //        }
-        shFunction(2f)(it)
+        shFunction(5f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
-        { a, b -> compatibilityDistanceFunction(20f, 20f, 15f)(a, b) }
+        { a, b -> compatibilityDistanceFunction(10f, 10f, 20f)(a, b) }
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
     val adjustedFitnessCalculation = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction)
@@ -162,7 +163,7 @@ fun simulation(randomSeed: Int = 137731, takeSize: Int? = null): Simulation {
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            1_000,
+            50,
             input(92, true),
             8,
             Activation.sigmoidal
