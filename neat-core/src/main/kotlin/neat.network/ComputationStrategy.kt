@@ -5,7 +5,12 @@ import neat.model.NodeGene
 
 typealias ComputationStrategy = () -> Unit
 
-fun Set<NodeGene>.activate(map: Map<NodeGene, NetworkNode>) = forEach { map.getValue(it).activate() }
+fun Set<NodeGene>.activate(map: Map<NodeGene, NetworkNode>) = forEach {
+    val value = map.getValue(it)
+    value.value=+ it.bias
+    value.activate()
+}
+
 fun NeatMutator.getComputationStrategy(
     networkNodeMap: Map<NodeGene, NetworkNode>,
     idNodeMap: Map<Int, NodeGene>

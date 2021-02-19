@@ -72,7 +72,6 @@ fun SpeciationController.calculateSpeciesReport(
     var skim = 0.0
     var totalOffspring = 0
     for (species in speciesSet) {
-
         val speciesPopulation = getSpeciesPopulation(species)
         val map = speciesPopulation.map { expectedOffspringMap.getValue(it) }
         val countOffspring = map.countOffspring(skim)

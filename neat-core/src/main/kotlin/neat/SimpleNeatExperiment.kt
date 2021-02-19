@@ -96,7 +96,7 @@ class SimpleNeatExperiment(
         }
 
         val randomConnection = getRandomConnectionGeneWithValidNodes()
-        val node = NodeGene(nextNode(), NodeType.Hidden, activationFunctions.random(random))
+        val node = NodeGene(nextNode(), randomWeight(random), NodeType.Hidden, activationFunctions.random(random))
         val copiedConnection = randomConnection.copy(innovation = nextInnovation(), inNode = node.node)
         val newEmptyConnection = ConnectionGene(randomConnection.inNode, node.node, 1f, true, nextInnovation())
 //        println("\tMUTATE ADD NODE")
@@ -156,7 +156,7 @@ class SimpleNeatExperiment(
 }
 
 fun NeatExperiment.newNode(activationFunction: ActivationGene): NodeGene {
-    return NodeGene(nextNode(), NodeType.Hidden, activationFunction)
+    return NodeGene(nextNode(), randomWeight(random), NodeType.Hidden, activationFunction)
 }
 
 fun List<ConnectionGene>.condensedString(): String {

@@ -23,13 +23,17 @@ fun mutateNodeActivationFunctionWithConnectionInnovations(): Mutation = { neatMu
     nodeGene.activationFunction = (activationFunctions - nodeGene.activationFunction).random(random)
 }
 
-fun mutatePerturbBiasConnections(biasNode: Int = 0, range: Float = standardWeightPerturbationRange): Mutation =
+fun mutatePerturbBiasConnections(range: Float = standardWeightPerturbationRange): Mutation =
     { neatMutator ->
-        val node = neatMutator.inputNodes[biasNode]
+        (neatMutator.hiddenNodes + neatMutator.outputNodes).forEach {
+            val weightPerturbation = weightPerturbation(range)
+            it.bias += weightPerturbation
+        }
+        /*val node = neatMutator.inputNodes[biasNode]
         neatMutator.connectionsFrom(node).forEach { connectionGene ->
             val weightPerturbation = weightPerturbation(range)
             connectionGene.weight += weightPerturbation
-        }
+        }*/
     }
 
 
