@@ -78,11 +78,17 @@ object Activation {
     val cosine = ActivationGene("cosine", CosineFunction)
     val smoothRectifier = ActivationGene("smoothRectifier", SmoothRectifierFunction)
     val logit = ActivationGene("logit", LogitFunction)
+    val gaussian = ActivationGene("gaussian") { exp(-1 * (it * it)) }
+    val ramp = ActivationGene("ramp") { 1f - (2f * (it - floor(it))) }
     val activationMap = baseActivationFunctions().toMap { it.name }
 }
 
 fun main() {
-    baseActivationFunctions().forEach {
-        println("${it.name}: ${it.activationFunction(-1f)}")
+    (0 until 820).forEach { x->
+        (0 until 360).forEach { y ->
+            val xVal = Activation.bipolarSigmoid.activationFunction(x.toFloat())
+            val yVal = Activation.bipolarSigmoid.activationFunction(y.toFloat())
+            println("$xVal, $yVal")
+        }
     }
 }

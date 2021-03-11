@@ -7,7 +7,7 @@ typealias ComputationStrategy = () -> Unit
 
 fun Set<NodeGene>.activate(map: Map<NodeGene, NetworkNode>) = forEach {
     val value = map.getValue(it)
-    value.value=+ it.bias
+    value.value += it.bias
     value.activate()
 }
 
@@ -15,7 +15,7 @@ fun NeatMutator.getComputationStrategy(
     networkNodeMap: Map<NodeGene, NetworkNode>,
     idNodeMap: Map<Int, NodeGene>
 ): ComputationStrategy {
-    val computationSequence = computationSequence(networkNodeMap, idNodeMap)
+    val computationSequence = computationSequence(networkNodeMap, idNodeMap).toList()
     val outputNodeSet = outputNodes.map { networkNodeMap.getValue(it) }
     return {
         computationSequence.forEach { it() }
@@ -57,7 +57,6 @@ fun NeatMutator.computationSequence(
                     val outputNode = networkNodeMap.getValue(outValue)
                     outputNode.value += inputNode.activatedValue * connection.weight
                 }
-
             }
             activeSet.forEach { activationSet += it }
             activeSet = nextNodeMap.keys.filter { it !in activationSet }.toSet()

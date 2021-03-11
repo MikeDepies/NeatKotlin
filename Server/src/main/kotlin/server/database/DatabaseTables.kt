@@ -30,6 +30,7 @@ object EvaluationSpeciesScoreTable : IntIdTable() {
     val species = reference("species", EvaluationSpeciesTable)
     val score = float("score")
     val agent = reference("agent", AgentTable)
+    val generation = integer("generation")
 }
 
 object MeleeStageTable : IntIdTable() {
@@ -62,16 +63,17 @@ object EvaluationConfigurationActivationFunctionTable : IntIdTable() {
     val evaluationConfig = reference("evaluationConfig", EvaluationConfigurationTable)
     val activationFunction = reference("activationFunction", ActivationFunctionTable)
 }
+
 object EvaluationConfigurationMutationDictionaryEntryTable : IntIdTable() {
     val evaluationConfig = reference("evaluationConfig", EvaluationConfigurationTable)
     val chanceToMutate = float("chanceToMutate")
     val mutation = varchar("mutation", 30)
 }
-
-object EvaluationConfigurationStagesTable : IntIdTable() {
-    val configuration = reference("configuration", EvaluationConfigurationTable)
-    val stage = reference("stage", MeleeStageTable)
-}
+//
+//object EvaluationConfigurationStagesTable : IntIdTable() {
+//    val configuration = reference("configuration", EvaluationConfigurationTable)
+//    val stage = reference("stage", MeleeStageTable)
+//}
 
 object EvaluationConfigurationControllerTable : IntIdTable() {
     val configuration = reference("configuration", EvaluationConfigurationTable)
@@ -117,6 +119,7 @@ object EvaluationTable : IntIdTable() {
 
 object SimulationTable : IntIdTable() {
     val startDate = long("startDate")
+    val stage = reference("stage", MeleeStageTable)
 }
 
 fun DbConfig.toHikariConfig(): HikariConfig {

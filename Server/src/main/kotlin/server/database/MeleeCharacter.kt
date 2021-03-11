@@ -3,7 +3,13 @@ package server.database
 enum class MeleeCharacter {
     BOWSER, CPTFALCON, DK, DOC, FALCO, FOX, GAMEANDWATCH, GANONDORF, GIGA_BOWSER, JIGGLYPUFF, KIRBY, LINK, LUIGI, MARIO,
     MARTH, MEWTWO, NANA, NESS, PEACH, PICHU, PIKACHU, POPO, ROY, SAMUS, SANDBAG, SHEIK, UNKNOWN_CHARACTER,
-    WIREFRAME_FEMALE, WIREFRAME_MALE, YLINK, YOSHI, ZELDA
+    WIREFRAME_FEMALE, WIREFRAME_MALE, YLINK, YOSHI, ZELDA;
+    companion object {
+        val map = MeleeStage.values().map { it.id to it }.toMap()
+        fun forId(stageId : Int): MeleeCharacter {
+            return map[stageId] ?: error("No melee stage for id $stageId")
+        }
+    }
 }
 
 val MeleeCharacter.id get() = when(this) {

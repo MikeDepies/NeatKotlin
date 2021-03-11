@@ -12,7 +12,7 @@ class SpeciationTest {
         val mutationEntries = mutationDictionary()
         val df: DistanceFunction = { a, b -> compatibilityDistance(a, b, 1f, 1f, .4f) }
         val sharingFunction = shFunction(3f)
-        val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, activationFunctions)
+        val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, activationFunctions, 0)
         val population = simpleNeatExperiment.generateInitialPopulation(6, 3, 1, Activation.sigmoidal)
 
         val speciationController = SpeciationController(0, standardCompatibilityTest(sharingFunction, df))

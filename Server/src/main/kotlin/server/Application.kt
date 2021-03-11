@@ -156,13 +156,11 @@ fun Application.module(testing: Boolean = false) {
     }
     val json = get<Json>()
     routing {
-        get("evaluation") {
-            call.respond(evaluationContext(listOf(controller1, controller2), 0))
-        }
+
     }
 }
 
-private fun evaluationContext(
+fun evaluationContext(
     controllers: List<IOController>,
     evaluationId: Int
 ) = EvaluationContext(evaluationId, controllers.map { it.controllerId })
@@ -174,7 +172,6 @@ data class Controllers(val controllerList: List<IOController>)
 private fun Application.generateFakeData(evaluationChannels: EvaluationChannels) {
     launch {
         while (true) {
-
             val element = FrameOutput(
                 0,
                 Random.nextBoolean(),

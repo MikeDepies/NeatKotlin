@@ -1,7 +1,13 @@
 package server.database
 
 enum class MeleeStage {
-    BATTLEFIELD, DREAMLAND, FINAL_DESTINATION, FOUNTAIN_OF_DREAMS, NO_STAGE, POKEMON_STADIUM, RANDOM_STAGE, YOSHIS_STORY
+    BATTLEFIELD, DREAMLAND, FINAL_DESTINATION, FOUNTAIN_OF_DREAMS, NO_STAGE, POKEMON_STADIUM, RANDOM_STAGE, YOSHIS_STORY;
+    companion object {
+        val map = values().map { it.id to it }.toMap()
+        fun forId(stageId : Int): MeleeStage {
+            return map[stageId] ?: error("No melee stage for id $stageId")
+        }
+    }
 }
 
 val MeleeStage.id get() = when(this) {

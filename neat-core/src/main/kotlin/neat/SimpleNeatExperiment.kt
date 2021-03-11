@@ -8,9 +8,10 @@ fun simpleNeatExperiment(
     random: Random,
     innovation: Int,
     nodeInnovation: Int,
-    activationFunctions: List<ActivationGene>
+    activationFunctions: List<ActivationGene>,
+    addConnectionAttempts: Int
 ): NeatExperiment {
-    return SimpleNeatExperiment(innovation, nodeInnovation, activationFunctions, random)
+    return SimpleNeatExperiment(innovation, nodeInnovation, activationFunctions, random, addConnectionAttempts)
 }
 
 fun matchingGenes(
@@ -28,6 +29,7 @@ class SimpleNeatExperiment(
     private var nodeInnovation: Int,
     override val activationFunctions: List<ActivationGene>,
     override val random: Random,
+    val addConnectionAttempts: Int,
 ) : NeatExperiment {
 
 //    private var innovation = innovation
@@ -62,10 +64,13 @@ class SimpleNeatExperiment(
         val targetList = nodeMap[NodeType.Hidden] ?: setOf<NodeGene>() + nodeMap.getValue(NodeType.Output)
 
 
-        var attempts = 0
+        var attempts = addConnectionAttempts
         while (attempts++ < 1) {
             val sourceNodeGene = sourceList.random(random)
-            val targetPool = targetList - sourceNodeGene
+            val alreadyConnected = neatMutator.run {
+                connectionsFrom(sourceNodeGene).map { node(it.outNode) }
+            }
+            val targetPool = (targetList - sourceNodeGene) - alreadyConnected
             if (targetPool.isNotEmpty()) {
                 val targetNodeGene = targetPool.random(random)
                 val sourceNode = sourceNodeGene.node
@@ -89,7 +94,7 @@ class SimpleNeatExperiment(
     override fun mutateAddNode(neatMutator: NeatMutator) {
         fun getRandomConnectionGeneWithValidNodes(): ConnectionGene {
             var rConnection = neatMutator.connections.random(random)
-            while(!neatMutator.hasNode(rConnection.inNode) || !neatMutator.hasNode(rConnection.outNode)) {
+            while (!neatMutator.hasNode(rConnection.inNode) || !neatMutator.hasNode(rConnection.outNode)) {
                 rConnection = neatMutator.connections.random(random)
             }
             return rConnection
@@ -170,4 +175,21 @@ fun List<ConnectionGene>.condensedString(): String {
 @JvmName("condensedNodeGeneString")
 fun List<NodeGene>.condensedString(): String {
     return "[${joinToString(", ") { "${it.node}" }}]"
+}
+
+fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>, random: Random): NeatMutator {
+    val (disjoint1, disjoint2) = disjoint(parent1.model, parent2.model)
+    val excess = excess(parent1.model, parent2.model)
+    val matchingGenes = matchingGenes(parent1.model, parent2.model)
+    val selectedRandomGenes = matchingGenes.map { it.random(random) }
+    val offSpringConnections = when {
+        parent1.isLessFitThan(parent2) -> {
+            (selectedRandomGenes + disjoint2 + excess.excess2).sortedBy { it.innovation }
+        }
+        else -> {
+            (selectedRandomGenes + disjoint1 + excess.excess1).sortedBy { it.innovation }
+        }
+    }.map { it.copy() }
+    val nodes = (if (parent1.isLessFitThan(parent2)) parent2.model.nodes else parent1.model.nodes).map { it.copy() }
+    return simpleNeatMutator(nodes, offSpringConnections)
 }

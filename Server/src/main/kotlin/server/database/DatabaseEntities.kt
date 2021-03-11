@@ -7,13 +7,19 @@ import java.time.*
 
 class SimulationEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<SimulationEntity>(SimulationTable)
+
+    val stage by MeleeStageEntity referencedOn SimulationTable.stage
     var startDate by SimulationTable.startDate.transform({ it.toEpochMilli() }, { Instant.ofEpochMilli(it) })
     val evaluations by EvaluationEntity referrersOn EvaluationTable.simulation
 }
+
 class EvaluationEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<EvaluationEntity>(EvaluationTable)
+
     var simulation by SimulationEntity referencedOn EvaluationTable.simulation
     val populations by EvaluationPopulationEntity referrersOn EvaluationPopulationTable.evaluation
+    val species by EvaluationSpeciesEntity referrersOn EvaluationSpeciesTable.evaluation
+    val configurations by EvaluationConfigurationEntity referrersOn EvaluationConfigurationTable.evaluation
 }
 
 class EvaluationPopulationEntity(id: EntityID<Int>) : IntEntity(id) {
@@ -32,6 +38,7 @@ class EvaluationSpeciesEntity(id: EntityID<Int>) : IntEntity(id) {
     var speciesId by EvaluationSpeciesTable.speciesId
     var generationBorn by EvaluationSpeciesTable.generationBorn
     var mascot by AgentEntity referencedOn EvaluationSpeciesTable.mascot
+    val scoreHistory by EvaluationSpeciesScoreEntity referrersOn EvaluationSpeciesScoreTable.species
 }
 
 class EvaluationSpeciesScoreEntity(id: EntityID<Int>) : IntEntity(id) {
@@ -40,6 +47,7 @@ class EvaluationSpeciesScoreEntity(id: EntityID<Int>) : IntEntity(id) {
     var species by EvaluationSpeciesEntity referencedOn EvaluationSpeciesScoreTable.species
     var score by EvaluationSpeciesScoreTable.score
     var agent by AgentEntity referencedOn EvaluationSpeciesScoreTable.agent
+    var generation by EvaluationSpeciesScoreTable.generation
 }
 
 class MeleeStageEntity(id: EntityID<Int>) : IntEntity(id) {
@@ -62,8 +70,7 @@ class EvaluationConfigurationEntity(id: EntityID<Int>) : IntEntity(id) {
     var evaluation by EvaluationEntity referencedOn EvaluationConfigurationTable.evaluation
     val parameters by EvaluationConfigurationParameterEntity referencedOn EvaluationConfigurationParameterTable.evaluationConfig
     val activationFunction by EvaluationConfigurationActivationFunctionEntity referrersOn EvaluationConfigurationActivationFunctionTable.evaluationConfig
-    val mutationDictionary by EvaluationConfigurationMutationDictionaryEntryEntity referencedOn EvaluationConfigurationMutationDictionaryEntryTable.evaluationConfig
-    val stages by EvaluationConfigurationStagesEntity referrersOn EvaluationConfigurationStagesTable.configuration
+    val mutationDictionary by EvaluationConfigurationMutationDictionaryEntryEntity referrersOn EvaluationConfigurationMutationDictionaryEntryTable.evaluationConfig
     val controllers by EvaluationConfigurationControllerEntity referrersOn EvaluationConfigurationControllerTable.configuration
 }
 
@@ -74,7 +81,7 @@ class EvaluationConfigurationParameterEntity(id: EntityID<Int>) : IntEntity(id) 
     var seed by EvaluationConfigurationParameterTable.seed
     var speciesDistance by EvaluationConfigurationParameterTable.speciesDistance
     var speciationExcess by EvaluationConfigurationParameterTable.speciationExcess
-    var speciationDisjoin by EvaluationConfigurationParameterTable.speciationDisjoint
+    var speciationDisjoint by EvaluationConfigurationParameterTable.speciationDisjoint
     var speciationAvgConnectionWeight by EvaluationConfigurationParameterTable.speciationAvgConnectionWeight
     var survivalThreshold by EvaluationConfigurationParameterTable.survivalThreshold
     var mateChance by EvaluationConfigurationParameterTable.mateChance
@@ -99,12 +106,12 @@ class EvaluationConfigurationMutationDictionaryEntryEntity(id: EntityID<Int>) : 
     var mutation by EvaluationConfigurationMutationDictionaryEntryTable.mutation
 }
 
-class EvaluationConfigurationStagesEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<EvaluationConfigurationStagesEntity>(EvaluationConfigurationStagesTable)
-
-    var evaluationConfig by EvaluationConfigurationEntity referencedOn EvaluationConfigurationStagesTable.configuration
-    var stage by (MeleeStageEntity referencedOn EvaluationConfigurationStagesTable.stage)
-}
+//class EvaluationConfigurationStagesEntity(id: EntityID<Int>) : IntEntity(id) {
+//    companion object : IntEntityClass<EvaluationConfigurationStagesEntity>(EvaluationConfigurationStagesTable)
+//
+//    var evaluationConfig by EvaluationConfigurationEntity referencedOn EvaluationConfigurationStagesTable.configuration
+//    var stage by (MeleeStageEntity referencedOn EvaluationConfigurationStagesTable.stage)
+//}
 
 class EvaluationConfigurationControllerEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<EvaluationConfigurationControllerEntity>(EvaluationConfigurationControllerTable)
@@ -168,7 +175,6 @@ val DATABASE_TABLES = listOf(
     EvaluationConfigurationParameterTable,
     EvaluationConfigurationActivationFunctionTable,
     EvaluationConfigurationMutationDictionaryEntryTable,
-    EvaluationConfigurationStagesTable,
     EvaluationConfigurationControllerTable,
     AgentTable,
     AgentNodeTable,

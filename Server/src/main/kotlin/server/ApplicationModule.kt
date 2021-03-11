@@ -133,13 +133,6 @@ fun simulation(evaluationId: Int, randomSeed: Int = 922, takeSize: Int? = 50): S
     val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
-//        if (it > largestCompatDistance) {
-////            log.info { "CompatDistance: $it" }
-//            largestCompatDistance = it
-//            if (it > 3f) {
-//                largestCompatDistance = 0f
-//            }
-//        }
         shFunction(5f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
@@ -168,10 +161,10 @@ fun simulation(evaluationId: Int, randomSeed: Int = 922, takeSize: Int? = 50): S
     } else {
 
         simpleNeatExperiment.generateInitialPopulation(
-            50,
-            input(92, true),
-            8,
-            Activation.sigmoidal
+            populationSize = 50,
+            numberOfInputNodes = input(92, true),
+            numberOfOutputNodes = 8,
+            function = Activation.sigmoidal
         )
     }
 
@@ -256,7 +249,7 @@ fun ConnectionGeneModel.connectionGene(): ConnectionGene {
 }
 
 fun NodeGeneModel.nodeGene(): NodeGene {
-    return NodeGene(node, nodeType.nodeType(), Activation.activationMap.getValue(activationFunction))
+    return NodeGene(node, bias, nodeType.nodeType(), Activation.activationMap.getValue(activationFunction))
 }
 
 fun NodeTypeModel.nodeType(): NodeType = when (this) {
