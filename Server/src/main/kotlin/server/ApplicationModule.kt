@@ -27,7 +27,8 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
-import neat.mutation.mutateConnectionWeight
+import neat.mutation.assignConnectionRandomWeight
+import neat.mutation.getMutateConnectionWeight
 import org.koin.core.qualifier.qualifier
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
@@ -96,7 +97,7 @@ val applicationModule = module {
 
     factory { MeleeState(null) }
     single { FrameClockFactory() }
-    factory<Evaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState : MeleeState) ->
+    factory<Evaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState: MeleeState) ->
         println("New Evaluator?")
         SimpleEvaluator(
             agentId,
@@ -108,7 +109,7 @@ val applicationModule = module {
             getChannel()
         )
     }
-    factory<ResourceEvaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState : MeleeState, network : ActivatableNetwork) ->
+    factory<ResourceEvaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState: MeleeState, network: ActivatableNetwork) ->
         println("New Evaluator?")
         ResourceEvaluator(
             network,
@@ -118,14 +119,24 @@ val applicationModule = module {
             meleeState,
             0f,
             get(),
-            800f
+            18000f *4
         )
     }
     single { simulation() }
 }
 
-fun simulation(randomSeed: Int = 22, takeSize: Int? = null): Simulation {
-    val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
+fun simulation(randomSeed: Int = 250, takeSize: Int? = null): Simulation {
+    val activationFunctions = listOf(Activation.sigmoidal) /*baseActivationFunctions()listOf(
+        Activation.identity,
+        Activation.sigmoidal,
+        Activation.cosine,
+        Activation.bipolarSigmoid,
+        Activation.tanh,
+        Activation.tanhLeCun,
+        Activation.step,
+        Activation.logit,
+        Activation.complementaryLogLog
+    )*/
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
 //        if (it > largestCompatDistance) {
@@ -135,10 +146,10 @@ fun simulation(randomSeed: Int = 22, takeSize: Int? = null): Simulation {
 //                largestCompatDistance = 0f
 //            }
 //        }
-        shFunction(5f)(it)
+        shFunction(3.8f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
-        { a, b -> compatibilityDistanceFunction(10f, 10f, 20f)(a, b) }
+        { a, b -> compatibilityDistanceFunction(3f, 3f, 6f)(a, b) }
     val speciationController =
         SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
     val adjustedFitnessCalculation = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction)
@@ -147,7 +158,8 @@ fun simulation(randomSeed: Int = 22, takeSize: Int? = null): Simulation {
     val scoreKeeper = SpeciesScoreKeeper()
     val file = File("population.json")
     val random = Random(randomSeed)
-    var simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions)
+    val addConnectionAttempts = 5
+    var simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
     val population = if (file.exists()) {
         val string = file.bufferedReader().lineSequence().joinToString("\n")
         log.info { "Loading population from file" }
@@ -158,13 +170,14 @@ fun simulation(randomSeed: Int = 22, takeSize: Int? = null): Simulation {
         log.info { "population loaded with size of: ${populationModel.size}" }
         val maxNodeInnovation = populationModel.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
         val maxInnovation = populationModel.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
-        simpleNeatExperiment = simpleNeatExperiment(random, maxInnovation, maxNodeInnovation, activationFunctions)
+        simpleNeatExperiment = simpleNeatExperiment(random, maxInnovation, maxNodeInnovation, activationFunctions,
+            addConnectionAttempts
+        )
         populationModel.map { it.toNeatMutator() }
     } else {
-
         simpleNeatExperiment.generateInitialPopulation(
-            50,
-            input(92, true),
+            200,
+            input(48 + 8, true),
             8,
             Activation.sigmoidal
         )
@@ -175,6 +188,21 @@ fun simulation(randomSeed: Int = 22, takeSize: Int? = null): Simulation {
     return Simulation(population, populationEvolver, adjustedFitnessCalculation)
 }
 
+
+fun NeatExperiment.generateInitialPopulation(
+    populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene
+): List<NeatMutator> {
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, function)
+    val assignConnectionRandomWeight = assignConnectionRandomWeight()
+    return (0 until populationSize).map {
+        val clone = neatMutator.clone()
+        clone.connections.forEach { connectionGene ->
+            assignConnectionRandomWeight(connectionGene)
+        }
+        clone
+    }
+}
+
 fun NeatExperiment.generateInitialPopulationWithOneButton(
     populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene
 ): List<NeatMutator> {
@@ -183,11 +211,12 @@ fun NeatExperiment.generateInitialPopulationWithOneButton(
         val clone = neatMutator.clone()
         val randomOutputNode = clone.outputNodes.random(random)
         val analogOutputNodes = listOf(4, 5, 6, 7).map { clone.outputNodes[it] }
+        val mutateConnectionWeight = getMutateConnectionWeight(1f)
         clone.connections
             .forEach { connectionGene ->
-                if (randomOutputNode.node == connectionGene.outNode)
+                if (randomOutputNode.node == connectionGene.outNode) {
                     mutateConnectionWeight(connectionGene)
-                else connectionGene.weight = 0f
+                } else connectionGene.weight = 0f
             }
 
 //        clone.outputNodes.forEach {
@@ -220,6 +249,7 @@ fun NeatExperiment.generateInitialPopulationWithOneButton2(
         val randomOutputNode3 = (clone.outputNodes - randomOutputNode - randomOutputNode2).random(random)
         val analogOutputNodes = listOf(4, 5, 6, 7).map { clone.outputNodes[it] }
         val randomOutputs = listOf(randomOutputNode, randomOutputNode2, randomOutputNode3)
+        val mutateConnectionWeight = getMutateConnectionWeight(1f)
         clone.connections
             .forEach { connectionGene ->
                 if (randomOutputs.any { connectionGene.outNode == it.node })

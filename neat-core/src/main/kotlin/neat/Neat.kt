@@ -36,8 +36,8 @@ class Neat(
                 populationEvaluator(currentPopulation).toModelScores(adjustedFitness)
             sortModelsByAdjustedFitness(speciationController, modelScoreList)
             modelScoresHandlers.forEach { it(modelScoreList, generation) }
-            speciesScoreKeeper.updateScores(modelScoreList.map { speciationController.species(it.neatMutator) to it })
-            val newPopulation = reproductionStrategy(simpleNeatExperiment, speciationController, modelScoreList)
+            speciesScoreKeeper.updateScores(modelScoreList.map { speciationController.species(it.neatMutator) to it }, generation)
+            val newPopulation = reproductionStrategy(simpleNeatExperiment, speciationController, modelScoreList, generation)
             val speciesMap = speciationController.speciate(newPopulation, speciesLineage, generation)
             println("speciesMapSize: ${speciesMap.values.flatten().size} newPopulationSize: ${newPopulation.size} controllerSize: ${speciationController.population().size}")
             generationFinishedHandlers.forEach { it(speciesMap, generation) }

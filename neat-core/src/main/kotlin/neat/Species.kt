@@ -8,6 +8,7 @@ data class Species(val id: Int)
 
 data class Offspring(val offspring: Int, val skim: Double)
 class SpeciesReport(
+    val championMap: MutableMap<Species, NeatMutator>,
     val speciesOffspringMap: Map<Species, Int>,
     val overallAverageFitness: Double,
     val speciesMap: SpeciesScoredMap
@@ -62,32 +63,54 @@ fun speciesTopFitness(speciesScoredMap: SpeciesScoredMap): SpeciesFitnessFunctio
 typealias OffspringReportFunction = SpeciationController.(List<ModelScore>) -> SpeciesReport
 
 fun SpeciationController.calculateSpeciesReport(
+    generation: Int,
+    speciesScoreKeeper: SpeciesScoreKeeper,
     modelScoreList: List<ModelScore>,
-    overallAverageFitness: Double
+    overallAverageFitness: Double,
+    stagnation: Int
 ): SpeciesReport {
 
     val speciesOffspringMap = mutableMapOf<Species, Int>()
+    val championMap = mutableMapOf<Species, NeatMutator>()
     val expectedOffspringMap =
         modelScoreList.map { it.neatMutator to it.adjustedFitness / (overallAverageFitness.toFloat()) }.toMap()
+    val scoreMap =
+        modelScoreList.map { it.neatMutator to it.fitness }.toMap()
     var skim = 0.0
     var totalOffspring = 0
+    var deadSpeciesOffspring = 0
     for (species in speciesSet) {
 
         val speciesPopulation = getSpeciesPopulation(species)
+        val champion = speciesPopulation.maxByOrNull { scoreMap.getValue(it) }
         val map = speciesPopulation.map { expectedOffspringMap.getValue(it) }
         val countOffspring =
             map.countOffspring(skim)
         skim = countOffspring.skim
         totalOffspring += countOffspring.offspring
-        speciesOffspringMap[species] = countOffspring.offspring
+        val isSpeciesStagnated = (generation - (speciesScoreKeeper.getModelScore(species)?.generationLastImproved ?: 0)) > stagnation
+        if (isSpeciesStagnated) {
+            deadSpeciesOffspring += countOffspring.offspring
+        } else if (champion != null) {
+            championMap[species] = champion
+            speciesOffspringMap[species] = countOffspring.offspring
+        }
 //        println("$species - ${neat.countOffspring.offspring}")
     }
+    val viableSpecies = speciesOffspringMap.keys
+    (0..deadSpeciesOffspring).forEach {
+        //TODO give access to a controlled/seeded Random instead of the global instance
+        val randomSpecies = viableSpecies.random()
+        speciesOffspringMap[randomSpecies] = speciesOffspringMap.getValue(randomSpecies) + 1
+    }
+
     if (totalOffspring < modelScoreList.size) {
-        val species = speciesSet.random()
+        val species = viableSpecies.random()
         speciesOffspringMap[species] = speciesOffspringMap.getValue(species) + 1
     }
 
     return SpeciesReport(
+        championMap,
         speciesOffspringMap.toMap(),
         overallAverageFitness,
         speciesMap(modelScoreList.toMap { it.neatMutator })
@@ -141,16 +164,19 @@ fun totalOffspring(
 
 
 fun populateNextGeneration(
+    generation: Int,
     speciationController: SpeciationController,
+    speciesScoreKeeper: SpeciesScoreKeeper,
     modelScoreList: List<ModelScore>,
     mutationEntries: List<MutationEntry>,
     simpleNeatExperiment: NeatExperiment,
     mateChance: Float,
-    survivalThreshold: Float
+    survivalThreshold: Float,
+    stagnation: Int
 ): List<NeatMutator> {
     return speciationController.reproduce(
         simpleNeatExperiment,
-        speciationController.speciesReport(modelScoreList),
+        speciationController.speciesReport(generation, speciesScoreKeeper, modelScoreList, stagnation),
         offspringFunction(mateChance, mutationEntries),
         survivalThreshold
     ).values.flatten()
@@ -163,10 +189,12 @@ fun SpeciationController.reproduce(
     offspringFunction: OffspringFunction,
     survivalThreshold: Float
 ): SpeciesMap {
-    return speciesSet.map { species ->
+    return speciesReport.speciesOffspringMap.keys.map { species ->
         val speciesPopulation = speciesReport.speciesMap.getValue(species).let { it.take(max(1, (it.size * survivalThreshold).toInt()) ) }
         val offspring = speciesReport.speciesOffspringMap.getValue(species)
-        val newGenerationPopulation = (0 until offspring).map {
+
+        val champions = if (offspring >= 5) listOf(speciesReport.championMap.getValue(species)) else emptyList()
+        val newGenerationPopulation = champions + (champions.size until offspring).map {
             offspringFunction(neatExperiment, speciesPopulation)
         }
         species to newGenerationPopulation
@@ -184,9 +212,11 @@ fun offspringFunction(chance: Float, mutationEntries: List<MutationEntry>): Offs
     }
 }
 
-fun SpeciationController.speciesReport(modelScoreList: List<ModelScore>): SpeciesReport {
+fun SpeciationController.speciesReport(
+    generation: Int, speciesScoreKeeper: SpeciesScoreKeeper, modelScoreList: List<ModelScore>, stagnation: Int
+): SpeciesReport {
     val overallAverageFitness = modelScoreList.map { modelScore -> modelScore.adjustedFitness }.average()
-    return calculateSpeciesReport(modelScoreList, overallAverageFitness)
+    return calculateSpeciesReport(generation, speciesScoreKeeper, modelScoreList, overallAverageFitness, stagnation)
 
 }
 

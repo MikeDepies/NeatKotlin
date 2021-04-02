@@ -1,6 +1,6 @@
 <script>
     export let title : string
-    export let value : number
+    export let value : number | string
 </script>
 <div class="items-center justify-items-center justify-center m-4 w-1/4">
     <div class="text-gray-700 text-xl text-center">{title}</div>

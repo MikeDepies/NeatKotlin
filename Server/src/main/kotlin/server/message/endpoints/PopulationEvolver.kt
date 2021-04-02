@@ -16,7 +16,7 @@ class PopulationEvolver(
 
     fun updateScores(updatedModelScores: List<ModelScore>) {
         val map = updatedModelScores.map { speciationController.species(it.neatMutator) to it }
-        scoreKeeper.updateScores(map)
+        scoreKeeper.updateScores(map, generation)
     }
 
     fun sortPopulationByAdjustedScore(
@@ -45,20 +45,22 @@ class PopulationEvolver(
         )*/
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
-            mateChance = .6f,
-            survivalThreshold = .6f
+            mateChance = .15f,
+            survivalThreshold = .3f,
+            speciesScoreKeeper = scoreKeeper,
+            stagnation = 12
         )
-        return weightedReproduction(neatExperiment, speciationController, scoredPopulation)
+        return weightedReproduction(neatExperiment, speciationController, scoredPopulation, generation)
     }
 
     fun mutationDictionary(): List<MutationEntry> {
         return listOf(
-            .6f chanceToMutate mutateConnections,
-            .3f chanceToMutate mutateAddNode,
-            .2f chanceToMutate mutateAddConnection,
-            .05f chanceToMutate mutatePerturbBiasConnections(),
-            .11f chanceToMutate mutateToggleConnection,
-            .05f chanceToMutate mutateNodeActivationFunction(),
+            .8f chanceToMutate getMutateConnections(.1f),
+            .15f chanceToMutate mutateAddNode,
+            .25f chanceToMutate mutateAddConnection,
+            .8f chanceToMutate mutatePerturbBiasConnections(),
+            .15f chanceToMutate mutateToggleConnection,
+//            .08f chanceToMutate mutateNodeActivationFunction(),
         )
     }
 

@@ -3,7 +3,7 @@
   import { reader } from "./store/websocket/MessageRouter";
   import { message } from "./store/WebsocketStore";
   import * as Pancake from "@sveltejs/pancake";
-  import { fly, crossfade } from "svelte/transition";
+  import { fly, crossfade, fade } from "svelte/transition";
   import ScoreChart from "./ScoreChart.svelte";
   import Stat from "./Stat.svelte";
   import { getColorMap, getColor, rgbColorString } from "./store/ColorMapStore";
@@ -16,6 +16,8 @@
   import type { Series } from "./api/types/Series";
   import MultiSeries from "./MultiSeries.svelte";
   import { prevent_default } from "svelte/internal";
+  import { flip } from "svelte/animate";
+
   /*
   Current Generation:
   Population Size:
@@ -31,7 +33,30 @@
     Score Breakdown
     Total Score
   */
-
+  function bgFor(
+    score: { species: number; generation: number },
+    currentAgent: AgentModel
+  ) {
+    const isActiveSpecies = score.species === currentAgent.species;
+    const is5FromLastTurn = score.generation < currentGeneration - 7;
+    const iswarningTurn = score.generation < currentGeneration - 3;
+    const isCurrentTurn = score.generation === currentGeneration;
+    const isLastTurn = score.generation === currentGeneration - 12;
+    return `bg-${
+      isLastTurn
+        ? "red"
+        : is5FromLastTurn
+        ? "pink"
+        : iswarningTurn
+        ? "yellow"
+        : isCurrentTurn
+        ? "green"
+        : "gray"
+    }-${isActiveSpecies ? "400" : "100"} ${
+      isLastTurn ? "animate-pulse" : ""
+    } ${isActiveSpecies ? "" : ""}`;
+    // { ? "bg-gray-300" : "bg-gray-100"}
+  }
   const r = reader<SimulationEndpoints>(message);
   const newScore = r.read("simulation.event.score.new");
   const newAgent = r.read("simulation.event.agent.new");
@@ -47,42 +72,46 @@
     id: 0,
     species: 0,
   };
-  //  let clockHistory : EvaluationClocksUpdate[] = []
-  //  let longestClockTimeSeen = 0
-  //  $: {
-  //    const cu = $clockUpdate
-  //    if (cu) {
-  //    if (currentAgent.id != cu.agentId) {
-  //      console.log(currentAgent.id + " !== " + cu.agentId);
-  //      clockHistory = []
-  //      longestClockTimeSeen = 0
-  //    }
-  //    const updateMax = cu.clocks.reduce((previous, current) => Math.max(previous, current.framesRemaining), 0)
-  //    if (updateMax > longestClockTimeSeen)
-  //     longestClockTimeSeen = updateMax
-  //    clockHistory = [...clockHistory, cu]
-  //   }
-  //  }
-  //  let clockHistorySeriesMap : Series
-  //  $: {
-  //   // console.log(clockHistorySeriesMap);
-  //    clockHistorySeriesMap = {}
-  //    clockHistory.forEach(update => {
-  //      update.clocks.forEach(clock => {
-  //        if (clockHistorySeriesMap[clock.clock] === undefined) {
-  //         const color = $clockColorMap[clock.clock]
-  //         clockHistorySeriesMap[clock.clock] = {
-  //            color: (color) ? rgbColorString(color) : "",
-  //            name: clock.clock,
-  //            series: []
-  //          }
-  //        }
-  //        const clockSeries = clockHistorySeriesMap[clock.clock].series
-  //        clockHistorySeriesMap[clock.clock].series = [...clockSeries, {x: update.frame, y: clock.framesRemaining}]
-  //        console.log(clockSeries);
-  //      })
-  //    })
-  //  }
+
+  let speciesScoreHistory: {
+    [K in number]: { score: number; generation: number; species: number }[];
+  } = {};
+  let speciesScoreLeaderboard: {
+    [K in number]: { score: number; generation: number; species: number };
+  } = {};
+  $: top20SpeciesScores = Object.values(speciesScoreLeaderboard)
+    .filter((s) => currentGeneration - s.generation <= 12)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20);
+
+  $: {
+    const newestScore = $newScore;
+    if (newestScore && currentPopulation.agents) {
+      let agent = currentAgent;
+      if (agent.id !== newestScore.agentId) {
+        agent =
+          currentPopulation.agents.find((a) => a.id === agent.id) ||
+          currentAgent;
+      }
+      if (
+        agent.id === newestScore.agentId &&
+        (speciesScoreLeaderboard[agent.species]?.score || 0) < newestScore.score
+      ) {
+        const newScoreEntry = {
+          score: newestScore.score,
+          generation: currentGeneration,
+          species: agent.species,
+        };
+        speciesScoreLeaderboard[agent.species] = newScoreEntry;
+        if (speciesScoreHistory[agent.species] === undefined)
+          speciesScoreHistory[agent.species] = [];
+        speciesScoreHistory[agent.species] = [
+          ...speciesScoreHistory[agent.species],
+          newScoreEntry,
+        ];
+      }
+    }
+  }
   $: {
     const population = $newPopulation;
     const newGeneration = population?.generation || 0;
@@ -91,7 +120,7 @@
       populationSize = population.agents.length;
     }
     if (newGeneration != currentGeneration) {
-      populationScoreHistory = new Array<number>(populationSize).fill(0);
+      populationScoreHistory = new Array<number>(populationSize + 1).fill(0);
       highestPopulationScore = 0;
     }
     currentGeneration = newGeneration;
@@ -132,7 +161,7 @@
   $: {
     const agent = currentAgent;
     // console.log(agent);
-    const score = $newScore?.score || 0;
+    const score = $newScore?.score || 2;
     if (agent !== agentScoreModel) {
       // populationScoreHistory = [...populationScoreHistory, agentLastScore]
       // if (highestPopulationScore < agentLastScore) {
@@ -184,87 +213,121 @@
     colorMap.set({});
   }
   function keyDown(event: KeyboardEvent) {
+    console.log("keydown");
     if (event.key === "r") {
-      resetColors()
+      resetColors();
     } else if (event.key === "c") {
-      clearAll()
+      clearAll();
     }
   }
   function clearAll() {
-    resetColors()
-    historyOfPopulations = []
-    
+    resetColors();
+    historyOfPopulations = [];
+    // populationScoreHistory = new Array(populationScoreHistory.length)
   }
 </script>
 
-<div class="flex">
-  <div class="flex flex-col w-4">
-    {#each currentPopulation.agents as agent}
-      {#if agent.id === currentAgent.id}
-        <div
-          class="flex-grow border my-1 border-red-500 transform translate-x-2 scale-150"
-          style="background-color: rgb({getColor(agent.species, $colorMap).join(',')})"
-        />
-      {:else}
-        <div
-          class="flex-grow"
-          style="background-color: rgb({getColor(agent.species, $colorMap).join(',')})"
-        />
-      {/if}
-    {/each}
-  </div>
-  <div>
-    <div class="flex flex-wrap">
-      <Stat title="Generations" value={currentGeneration } />
-      <Stat title="Population Size" value={populationSize} />
-      <Stat title="Sepecies In Population" value={numberOfSpecies} />
-      <Stat title="Current Agent" value={currentAgent.id} />
-      <Stat title="Species ID" value={currentAgent.species} />
-      <Stat title="Current Score" value={$newScore?.score || 0} />
-      <!-- scores: {populationScoreHistory} -->
-    </div>
-    <div class="flex">
-      <div class=" w-full">
-        <div class="ml-4">
-          <h1 class="text-xl">Population Scores</h1>
-          <div class="text-lg text-gray-600">
-            Y axis is score for the agent(second chart is in log scale).
-          </div>
-          <div class="text-lg text-gray-600">
-            X axis is agent number in the population.
-          </div>
-        </div>
-        {#if data.length > 1}
-          <ScoreChart
-            populationSize={data.length}
-            {highestPopulationScore}
-            {data}
+<div class="h-screen w-full flex flex-col overflow-hidden">
+  <div class="flex">
+    <div class="flex flex-col w-4">
+      {#each currentPopulation.agents as agent}
+        {#if agent.id === currentAgent.id}
+          <div
+            class="flex-grow border my-1 border-red-500 transform translate-x-2 scale-150"
+            style="background-color: rgb({getColor(agent.species, $colorMap).join(',')})"
           />
-          <ScoreChart
+        {:else}
+          <div
+            class="flex-grow"
+            style="background-color: rgb({getColor(agent.species, $colorMap).join(',')})"
+          />
+        {/if}
+      {/each}
+    </div>
+    <div>
+      <div class="flex flex-wrap">
+        <Stat title="Generations" value={currentGeneration + 0} />
+        <Stat title="Population Size" value={populationSize} />
+        <Stat title="Sepecies In Population" value={numberOfSpecies} />
+        <Stat title="Current Agent" value={currentAgent.id} />
+        <Stat title="Species ID" value={currentAgent.species} />
+        <Stat title="Current Score" value={$newScore?.score?.toFixed(2) || 0} />
+        <!-- scores: {populationScoreHistory} -->
+      </div>
+      <div class="flex">
+        <div class=" w-full">
+          <div class="ml-4">
+            <h1 class="text-xl">Population Scores</h1>
+            <div class="text-lg text-gray-600">
+              Y axis is score for the agent(second chart is in log scale).
+            </div>
+            <div class="text-lg text-gray-600">
+              X axis is agent number in the population.
+            </div>
+          </div>
+          {#if data.length > 1}
+            <ScoreChart
+              populationSize={data.length}
+              {highestPopulationScore}
+              {data}
+            />
+            <!-- <ScoreChart
             populationSize={data.length}
             highestPopulationScore={Math.log(highestPopulationScore)}
             data={data.map((score) => {
               const y = score.y <= 0 ? 0 : Math.log(score.y);
               return { x: score.x, y: y, color: score.color };
             })}
-          />
-        {/if}
-        <!-- <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/> -->
+          /> -->
+          {/if}
+          <!-- <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/> -->
+        </div>
       </div>
     </div>
   </div>
-</div>
-<div class="flex h-24 mt-2">
-  {#each historyOfPopulations as population}
-    <div class="flex flex-col w-full">
-      {#each population.agents as agent}
+  <div>
+    <h2 class="text-2xl text-center">Historical Species Map</h2>
+    <div class="text-sm text-center">
+      Top Species (Species [Generation] = Score)
+    </div>
+    <div class="text-sm text-center">
+      Stagnation after 12 generations without new best score
+    </div>
+    <div class="w-full">
+      {#each top20SpeciesScores as score, index (score.species)}
         <div
-          class="flex-grow"
-          style="background-color: rgb({getColor(agent.species, $colorMap).join(',')})"
-        />
+          animate:flip
+          class="relative inline-block text-sm font-medium w-1/6 m-2 {bgFor(score, currentAgent)} px-2 py-1 rounded transition-colors duration-300"
+        >
+          <div
+            class="{score.species === currentAgent.species ? "animate-bounce bg-blue-200  text-sm w-6 py-0.5 " : "bg-green-200  text-xs w-4 "} absolute -right-1 -top-1 transition-colors duration-300 rounded-full text-center font-bold "
+          >
+            {index + 1}
+          </div>
+          <div class="flex">
+            <div
+              class="w-4 h-4 inline-block border border-white mr-1"
+              style="background-color: rgb({getColor(score.species, $colorMap).join(',')})"
+            />
+            <span class="">{score.species}[{score.generation}]</span>
+          </div>
+          <div>{score.score.toFixed(2) || 0}</div>
+        </div>
       {/each}
     </div>
-  {/each}
+  </div>
+  <div class="flex h-full mt-2">
+    {#each historyOfPopulations.filter((p) => p.agents.length > 0) as population}
+      <div class="flex flex-col w-full">
+        {#each population.agents as agent (agent.id)}
+          <div
+            class="flex-grow"
+            style="background-color: rgb({getColor(agent.species, $colorMap).join(',')})"
+          />
+        {/each}
+      </div>
+    {/each}
+  </div>
 </div>
 <!-- <svelte:window on:keydown="{colorMap.resetColors}"/> -->
 <svelte:window on:keydown={keyDown} />

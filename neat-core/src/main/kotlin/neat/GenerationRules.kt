@@ -11,5 +11,5 @@ data class GenerationRules(
     val populationEvaluator: PopulationEvaluator
 )
 
-typealias ReproductionStrategy = NeatExperiment.(SpeciationController, List<ModelScore>) -> List<NeatMutator>
+typealias ReproductionStrategy = NeatExperiment.(SpeciationController, List<ModelScore>, Int) -> List<NeatMutator>
 typealias PopulationEvaluator = (List<NeatMutator>) -> List<FitnessModel<NeatMutator>>

@@ -18,6 +18,7 @@ import websockets
 import asyncio
 import threading
 import math
+import random
 from websockets.client import WebSocketClientProtocol
 # This example program demonstrates how to use the Melee API to run a console,
 #   setup controllers, and send button presses over to a console
@@ -141,6 +142,7 @@ print("Controller connected")
 
 
 class Session:
+    framesOnCharacterSelect = 0
     ws: WebSocketClientProtocol or None = None
     simulationRunning = False
     menuLoadFirstFrame = True
@@ -148,9 +150,12 @@ class Session:
     lastStockAi = 4
     lastStockOpponent = 4
     lastGamestate: GameState or None = None
-    cpu_level: 5
-    cpu_character: melee.Character.FOX
-    ai_character: melee.Character.PIKACHU
+    cpu_level = random.randint(1, 9)
+    cpu_character = melee.Character.FOX
+    ai_character = melee.Character.SAMUS
+    reassign_characters = True
+    character_pool = [melee.Character.FOX, melee.Character.SAMUS, melee.Character.FALCO, melee.Character.MARTH,
+                      melee.Character.CPTFALCON, melee.Character.PEACH, melee.Character.PIKACHU, melee.Character.ZELDA, melee.Character.GANONDORF, melee.Character.JIGGLYPUFF]
 
 
 def processMessage(message: Dict, controller: melee.Controller):
@@ -177,19 +182,27 @@ def processMessage(message: Dict, controller: melee.Controller):
     controller.tilt_analog(
         Button.BUTTON_C, message["cStickX"], message["cStickY"])
     controller.press_shoulder(Button.BUTTON_L, message["leftShoulder"])
+    if (message["leftShoulder"] >= 1):
+        controller.press_button(Button.BUTTON_L)
+    else:
+        controller.release_button(Button.BUTTON_L)
     # controller.press_shoulder(Button.BUTTON_R, message["rightShoulder"])
-    controller.flush()
+    
+    if (not Session.menuLoadFirstFrame):
+        controller.flush()
 
 
 def actionData(gameState: GameState, port: int):
     player: PlayerState = gameState.players[port]
-    rangeForward = fd.range_forward(player.character, player.action, player.action_frame)
-    rangeBackward = fd.range_backward(player.character, player.action, player.action_frame)
+    rangeForward = fd.range_forward(
+        player.character, player.action, player.action_frame)
+    rangeBackward = fd.range_backward(
+        player.character, player.action, player.action_frame)
     if (math.isnan(rangeBackward)):
         rangeBackward = 0
     if (math.isnan(rangeForward)):
         rangeForward = 0
-    
+
     return {
         "action": player.action.value,
         "isAttack": bool(fd.is_attack(character=player.character, action=player.action)),
@@ -304,7 +317,7 @@ def stageData(gameState: GameState):
             "right": topPlatform[2]
         }
     else:
-        data["platformTop"] =  {
+        data["platformTop"] = {
             "height": 0,
             "left": 0,
             "right": 0
@@ -316,7 +329,7 @@ def stageData(gameState: GameState):
             "right": rightPlatform[2]
         }
     else:
-        data["platformRight"] =  {
+        data["platformRight"] = {
             "height": 0,
             "left": 0,
             "right": 0
@@ -353,9 +366,9 @@ async def handle_message():
                         processMessage(msg["data"], controller)
                     elif (msg["data"]["controllerId"] == 1):
                         processMessage(msg["data"], controller_opponent)
-                else:
-                    controller.release_all()
-                    controller.flush()
+                # else:
+                #     controller.release_all()
+                #     controller.flush()
         except websockets.exceptions.ConnectionClosedError as cce:
             print('Connection closed!')
         except KeyboardInterrupt as ki:
@@ -376,22 +389,27 @@ async def console_loop():
     # Main loop
     costume = 0
     while True:
-        await asyncio.sleep(.001)
+        # await asyncio.sleep(.001)
         # "step" to the next frame
         gamestate = console.step()
         Session.gamestate = gamestate
-        if gamestate is None:
+        if gamestate is None or Session.ws is None:
+            await asyncio.sleep(.001)
             continue
 
         # The console object keeps track of how long your bot is taking to process frames
         #   And can warn you if it's taking too long
-        if console.processingtime * 1000 > 12:
+        if console.processingtime * 1000 > 50:
             print("WARNING: Last frame took " +
                   str(console.processingtime*1000) + "ms to process.")
 
         # What menu are we in?
         if gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-            Session.menuLoadFirstFrame = False
+            await asyncio.sleep(.00001)
+            if not Session.reassign_characters:
+                Session.reassign_characters = True
+                Session.menuLoadFirstFrame = False
+            
             ai: PlayerState = gamestate.players[args.port]
             if ai.cpu_level != 0 and Session.simulationRunning:
                 print("AI was swapped out for CPU! Pausing Simulation Server")
@@ -421,13 +439,17 @@ async def console_loop():
                 Session.lastStockAi = player.stock
                 Session.lastStockOpponent = player2.stock
                 Session.lastGamestate = gamestate
-                if (Session.lastStockAi == 0 or Session.lastStockOpponent == 0):
+                # if (Session.lastStockAi == 0 or Session.lastStockOpponent == 0):
                     # messageString = json.dumps(createMessage(
                     #     "simulation.frame.update", frameData(gamestate)), cls=NumpyEncoder)
                     # await Session.ws.send(messageString)
-                    print("stocks left: " + str(Session.lastStockAi))
-                    print("enemy stocks left: " +
-                          str(Session.lastStockOpponent))
+                    # print("stocks left: " + str(Session.lastStockAi))
+                    # print("enemy stocks left: " +
+                    #       str(Session.lastStockOpponent))
+                    # controller.release_all()
+                    # controller_opponent.release_all()
+                    # controller.flush()
+                    # controller_opponent.flush()
                 # NOTE: This is where your AI does all of its stuff!
                 # This line will get hit once per frame, so here is where you read
                 #   in the gamestate and decide what buttons to push on the controller
@@ -438,19 +460,28 @@ async def console_loop():
                 costume = random.randint(0, 4)
 
         else:
-
-            if not Session.menuLoadFirstFrame and Session.ws is not None:
-                print("tried to flush controller")
-                controller.release_all()
-                controller.flush()
+            if Session.reassign_characters:
+                Session.ai_character = random.choice(Session.character_pool)
+                Session.cpu_character = random.choice(Session.character_pool)
+                Session.cpu_level = random.randint(1, 9)
+                Session.reassign_characters = False
+                # controller_opponent.release_all()
+            if not Session.menuLoadFirstFrame:
                 Session.menuLoadFirstFrame = True
-
+                # print("tried to flush controller")
+                # controller.release_all()
+                # controller.flush()
+                # controller_opponent.release_all()
+                # controller_opponent.flush()
+            # print("in menu")
             # if (gamestate.menu_state not in [melee.Menu.CHARACTER_SELECT]):
             # if gamestate.menu_selection in [melee.Menu.STAGE_SELECT]:
+            # melee.MenuHelper.choose_character(Session.cpu_character, gamestate, controller_opponent)
+            # melee.MenuHelper.choose_character(Session.cpu_character, gamestate, controller_opponent)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller,
                                                 melee.Character.PIKACHU,
-                                                melee.Stage.RANDOM_STAGE,
+                                                melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=2,
                                                 autostart=False,
@@ -458,13 +489,14 @@ async def console_loop():
                                                 cpu_level=0)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller_opponent,
-                                                melee.Character.PIKACHU,
-                                                melee.Stage.RANDOM_STAGE,
+                                                Session.cpu_character,
+                                                melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
-                                                costume=3,
-                                                cpu_level=0,
+                                                costume=2,
                                                 autostart=True,
-                                                swag=False)
+                                                swag=False,
+                                                cpu_level=4)
+            
             # else:
             #     mh.choose_character(character=melee.Character.FOX, gamestate=gamestate, controller=controller,swag=True)
             counter = 0

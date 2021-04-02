@@ -8,9 +8,10 @@ fun simpleNeatExperiment(
     random: Random,
     innovation: Int,
     nodeInnovation: Int,
-    activationFunctions: List<ActivationGene>
+    activationFunctions: List<ActivationGene>,
+    addConnectionAttempts: Int
 ): NeatExperiment {
-    return SimpleNeatExperiment(innovation, nodeInnovation, activationFunctions, random)
+    return SimpleNeatExperiment(innovation, nodeInnovation, activationFunctions, random, addConnectionAttempts)
 }
 
 fun matchingGenes(
@@ -28,6 +29,7 @@ class SimpleNeatExperiment(
     private var nodeInnovation: Int,
     override val activationFunctions: List<ActivationGene>,
     override val random: Random,
+    val addConnectionAttempts: Int,
 ) : NeatExperiment {
 
 //    private var innovation = innovation
@@ -61,11 +63,12 @@ class SimpleNeatExperiment(
         val sourceList = nodeMap[NodeType.Hidden] ?: setOf<NodeGene>() + nodeMap.getValue(NodeType.Input)
         val targetList = nodeMap[NodeType.Hidden] ?: setOf<NodeGene>() + nodeMap.getValue(NodeType.Output)
 
-
-        var attempts = 0
+        var attempts = -addConnectionAttempts
         while (attempts++ < 1) {
             val sourceNodeGene = sourceList.random(random)
-            val targetPool = targetList - sourceNodeGene
+            val alreadyConnected =
+                neatMutator.connectionsFrom(sourceNodeGene).map { it.outNode }.map { neatMutator.node(it) }
+            val targetPool = (targetList - sourceNodeGene) - alreadyConnected
             if (targetPool.isNotEmpty()) {
                 val targetNodeGene = targetPool.random(random)
                 val sourceNode = sourceNodeGene.node
@@ -89,7 +92,7 @@ class SimpleNeatExperiment(
     override fun mutateAddNode(neatMutator: NeatMutator) {
         fun getRandomConnectionGeneWithValidNodes(): ConnectionGene {
             var rConnection = neatMutator.connections.random(random)
-            while(!neatMutator.hasNode(rConnection.inNode) || !neatMutator.hasNode(rConnection.outNode)) {
+            while (!neatMutator.hasNode(rConnection.inNode) || !neatMutator.hasNode(rConnection.outNode)) {
                 rConnection = neatMutator.connections.random(random)
             }
             return rConnection

@@ -12,18 +12,18 @@ import StageData
 private fun Boolean.facingDirectionToFloat() = if (this) 1f else -1f
 private fun Boolean.toFloat() = if (this) 1f else 0f
 suspend fun FrameUpdate.flatten2() = sequence<Float> {
-    yieldPlayerData(player1)
-    yieldPlayerData(player2)
+    yieldPlayerData(player1, stage.rightEdge, stage.blastzone.top)
+    yieldPlayerData(player2, stage.rightEdge, stage.blastzone.top)
     yieldActionData(action1)
     yieldActionData(action2)
-    yieldStageData(stage)
+//    yieldStageData(stage)
     yield(distance)
 }.toList()
 
 
 private suspend fun SequenceScope<Float>.yieldStageData(stageData: StageData) = with(stageData){
     yield(stage.toFloat())
-    yield(leftEdge)
+//    yield(leftEdge)
     yield(rightEdge)
     yieldBlastzones(blastzone)
     yieldPlatform(platformLeft ?: Platform(0f, 0f, 0f))
@@ -63,7 +63,7 @@ private suspend fun SequenceScope<Float>.yieldActionData(actionData: ActionData)
     }
 }
 
-private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: PlayerDataUpdate) {
+private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: PlayerDataUpdate, edge : Float, top : Float) {
     with(playerDataUpdate) {
         yield(character.toFloat())
         yield(x)
@@ -71,7 +71,7 @@ private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: Playe
         yield(onGround.toFloat())
         yield(hitStun.toFloat())
         yield(invulnerable.toFloat())
-        yield(offStage.toFloat())
+//        yield(offStage.toFloat())
         yield(speedAirX)
         yield(speedGroundX)
         yield(speedXAttack)
@@ -79,7 +79,7 @@ private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: Playe
         yield(speedYAttack)
         yield(facingRight.facingDirectionToFloat())
         yield(percent.toFloat())
-        yieldEnvironmentalCollisionBox(ecb)
+//        yieldEnvironmentalCollisionBox(ecb)
     }
 }
 

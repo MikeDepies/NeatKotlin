@@ -33,12 +33,11 @@ inline fun NeatExperiment.ifElseConnectionMutation(
  * A configuration found on the web.
  * https://github.com/GabrielTavernini/NeatJS/blob/master/src/connection.js#L12
  */
-val NeatExperiment.mutateConnectionWeight: ConnectionMutation
-    get() = ifElseConnectionMutation(
-        rollFrom(.05f),
-        assignConnectionRandomWeight(),
-        perturbConnectionWeight()
-    )
+fun NeatExperiment.getMutateConnectionWeight(chanceToReassignWeights: Float): ConnectionMutation = ifElseConnectionMutation(
+    rollFrom(chanceToReassignWeights),
+    assignConnectionRandomWeight(),
+    perturbConnectionWeight()
+)
 
 fun uniformWeightPerturbation(connectionMutation: ConnectionMutation): Mutation = { neatMutator ->
     neatMutator.connections.forEach { connection ->

@@ -12,7 +12,7 @@ class SpeciationTest {
         val mutationEntries = mutationDictionary()
         val df: DistanceFunction = { a, b -> compatibilityDistance(a, b, 1f, 1f, .4f) }
         val sharingFunction = shFunction(3f)
-        val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, activationFunctions)
+        val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, activationFunctions, 0)
         val population = simpleNeatExperiment.generateInitialPopulation(6, 3, 1, Activation.sigmoidal)
 
         val speciationController = SpeciationController(0, standardCompatibilityTest(sharingFunction, df))
@@ -31,15 +31,18 @@ class SpeciationTest {
             sortModelsByAdjustedFitness(speciationController, modelScoreList)
             val newPopulation =
                 populateNextGeneration(
+                    generation,
                     speciationController,
+                    speciesScoreKeeper,
                     modelScoreList,
                     mutationEntries,
                     simpleNeatExperiment,
                     1f,
-                    .7f
+                    .7f,
+                    15
                 )
             speciationController.speciate(newPopulation, speciesLineage, generation)
-            speciesScoreKeeper.updateScores(modelScoreList.map { speciationController.species(it.neatMutator) to it })
+            speciesScoreKeeper.updateScores(modelScoreList.map { speciationController.species(it.neatMutator) to it }, generation)
         }
         evaluateAndDisplayBestSpecies(speciesScoreKeeper)
     }
@@ -69,7 +72,7 @@ private fun sortModelsByAdjustedFitness(
 }
 
 private fun evaluateAndDisplayBestSpecies(speciesScoreKeeper: SpeciesScoreKeeper) {
-    val neatMutator: NeatMutator = speciesScoreKeeper.getModelScore(speciesScoreKeeper.bestSpecies())!!.neatMutator
+    val neatMutator: NeatMutator = speciesScoreKeeper.getModelScore(speciesScoreKeeper.bestSpecies())!!.modelScore.neatMutator
     val data = XORTruthTable().map { it() }
     val network = neatMutator.toNetwork()
     val score = data.map {

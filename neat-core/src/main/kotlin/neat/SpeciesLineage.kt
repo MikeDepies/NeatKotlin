@@ -25,27 +25,29 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
         map[species] = map.getValue(species).copy(mascot = mascot)
     }
 
+    fun speciesGene(species: Species) = map.getValue(species)
+
     val speciesLineageMap = map.toMap()
 }
-
+data class SpeciesScore(val species: Species, val modelScore: ModelScore, val generationLastImproved : Int)
 class SpeciesScoreKeeper {
-    private val scoreMap = mutableMapOf<Species, ModelScore>()
+    private val scoreMap = mutableMapOf<Species, SpeciesScore>()
     fun getModelScore(species: Species?) = scoreMap[species]
-    fun updateScores(modelScores: List<Pair<Species, ModelScore>>) {
+    fun updateScores(modelScores: List<Pair<Species, ModelScore>>, generation : Int) {
         modelScores.forEach { (species, modelScore) ->
             if (scoreMap.containsKey(species)) {
-                if (modelScore.fitness > scoreMap.getValue(species).fitness) {
+                if (modelScore.fitness > scoreMap.getValue(species).modelScore.fitness) {
 //                    println("update $species - ${modelScore.fitness} > ${scoreMap.getValue(species).fitness}")
-                    scoreMap[species] = modelScore
+                    scoreMap[species] = SpeciesScore(species, modelScore, generation)
                 }
             } else {
-                scoreMap[species] = modelScore
+                scoreMap[species] = SpeciesScore(species, modelScore, generation)
             }
         }
     }
 
     fun bestSpecies(): Species? {
-        return scoreMap.maxByOrNull { it.value.fitness }?.key
+        return scoreMap.maxByOrNull { it.value.modelScore.fitness }?.key
     }
 
     val speciesScoreMap = scoreMap.toMap()

@@ -7,18 +7,18 @@ suspend fun runNodeCountExample() {
     val activationFunctions = baseActivationFunctions()
     val distanceFunction: DistanceFunction = { a, b -> compatibilityDistance(a, b, 1f, 1f, .4f) }
     val sharingFunction = shFunction(10f)
-    val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, activationFunctions)
+    val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, activationFunctions, 0)
     val population = simpleNeatExperiment.generateInitialPopulation(100, 3, 1, Activation.sigmoidal)
     val speciationController = SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
+    val speciesScoreKeeper = SpeciesScoreKeeper()
     val generationRules = GenerationRules(
         speciationController = speciationController,
         adjustedFitness = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction),
-        reproductionStrategy = weightedReproduction(mutationDictionary(), .41f, .7f),
+        reproductionStrategy = weightedReproduction(speciesScoreKeeper, mutationDictionary(), .41f, .7f, 15),
         populationEvaluator = { population ->
             population.map { FitnessModel(it, 32f - (32 - it.nodes.size).absoluteValue) }
         }
     )
-    val speciesScoreKeeper = SpeciesScoreKeeper()
     val neat = Neat(generationRules) /*{
         val species = speciesScoreKeeper.bestSpecies()
         val modelScore = speciesScoreKeeper.getModelScore(species)
