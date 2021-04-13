@@ -236,7 +236,8 @@ class SimpleEvaluator(
 //        )
 //        runningScore = newScore
 //        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
-        return EvaluationScore(agentId, score, scoreContributionList)
+        TODO()
+//        return EvaluationScore(agentId, score, scoreContributionList)
     }
 }
 

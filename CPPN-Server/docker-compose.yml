@@ -1,0 +1,38 @@
+version: "3.7"
+
+services:
+  db:
+    container_name: db
+    image: mysql:8.0.19
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: sped
+      secure_file_priv: ""
+    volumes:
+      - db-data-sped:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+
+  adminer:
+    image: adminer:4.7.6
+    container_name: adminer
+    restart: always
+    ports:
+      - 8089:8080
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+volumes:
+  db-data-sped:
+    name: db-data-sped
+
+networks:
+  default:
+    name: posttradeallocation-network

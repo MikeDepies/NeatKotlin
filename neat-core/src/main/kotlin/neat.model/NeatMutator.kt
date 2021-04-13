@@ -35,14 +35,14 @@ fun neatMutator(
     var nodeNumber = 0
     var innovation = 0
     repeat(inputNumber) {
-        simpleNeatMutator.addNode(NodeGene(nodeNumber++, NodeType.Input, Activation.identity))
+        simpleNeatMutator.addNode(NodeGene(nodeNumber++, randomWeight(random), NodeType.Input, Activation.identity))
     }
     repeat(outputNumber) {
-        simpleNeatMutator.addNode(NodeGene(nodeNumber++, NodeType.Output, function))
+        simpleNeatMutator.addNode(NodeGene(nodeNumber++, randomWeight(random), NodeType.Output, function))
     }
     for (input in simpleNeatMutator.inputNodes) {
         for (output in simpleNeatMutator.outputNodes) {
-            val weight = random.nextFloat()
+            val weight = randomWeight(random)
             simpleNeatMutator.addConnection(
                 ConnectionGene(
                     input.node,

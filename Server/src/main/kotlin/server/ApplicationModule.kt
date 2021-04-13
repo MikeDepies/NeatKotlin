@@ -51,10 +51,8 @@ val applicationModule = module {
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
     single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-    single {
+    factory {
         EvaluationChannels(
-            IOController(0, getChannel(), getChannel()),
-            IOController(1, getChannel(), getChannel()),
             getChannel(),
             getChannel(),
             getChannel(),
@@ -109,44 +107,34 @@ val applicationModule = module {
             getChannel()
         )
     }
-    factory<ResourceEvaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState: MeleeState, network: ActivatableNetwork) ->
+    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel()) }
+    factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
         println("New Evaluator?")
+        val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
         ResourceEvaluator(
             network,
             agentId,
+            evaluationId,
             generation,
             controllerId,
             meleeState,
             0f,
             get(),
-            18000f *4
+            18000f
         )
     }
-    single { simulation() }
+    factory { (evaluationId: Int) -> simulation(evaluationId) }
 }
 
-fun simulation(randomSeed: Int = 250, takeSize: Int? = null): Simulation {
-    val activationFunctions = listOf(Activation.sigmoidal) /*baseActivationFunctions()listOf(
-        Activation.identity,
-        Activation.sigmoidal,
-        Activation.cosine,
-        Activation.bipolarSigmoid,
-        Activation.tanh,
-        Activation.tanhLeCun,
-        Activation.step,
-        Activation.logit,
-        Activation.complementaryLogLog
-    )*/
+
+data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generation: Int, val controllerId: Int)
+
+fun simulation(evaluationId: Int, randomSeed: Int = 922, takeSize: Int? = 50): Simulation {
+
+    val activationFunctions = baseActivationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
-//        if (it > largestCompatDistance) {
-////            log.info { "CompatDistance: $it" }
-//            largestCompatDistance = it
-//            if (it > 3f) {
-//                largestCompatDistance = 0f
-//            }
-//        }
-        shFunction(3.8f)(it)
+        shFunction(6f)(it)
     }
     val distanceFunction: (NeatMutator, NeatMutator) -> Float =
         { a, b -> compatibilityDistanceFunction(3f, 3f, 6f)(a, b) }
@@ -156,7 +144,7 @@ fun simulation(randomSeed: Int = 250, takeSize: Int? = null): Simulation {
     fun input(inputSize: Int, useBoolean: Boolean) = inputSize + if (useBoolean) 1 else 0
     val speciesLineage = SpeciesLineage()
     val scoreKeeper = SpeciesScoreKeeper()
-    val file = File("population.json")
+    val file = File("population$evaluationId.json")
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
     var simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
@@ -176,7 +164,7 @@ fun simulation(randomSeed: Int = 250, takeSize: Int? = null): Simulation {
         populationModel.map { it.toNeatMutator() }
     } else {
         simpleNeatExperiment.generateInitialPopulation(
-            200,
+            40,
             input(48 + 8, true),
             8,
             Activation.sigmoidal
@@ -185,7 +173,7 @@ fun simulation(randomSeed: Int = 250, takeSize: Int? = null): Simulation {
 
     val speciate = speciationController.speciate(population, speciesLineage, 0)
     val populationEvolver = PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment)
-    return Simulation(population, populationEvolver, adjustedFitnessCalculation)
+    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
 }
 
 
@@ -281,7 +269,7 @@ fun ConnectionGeneModel.connectionGene(): ConnectionGene {
 }
 
 fun NodeGeneModel.nodeGene(): NodeGene {
-    return NodeGene(node, nodeType.nodeType(), Activation.activationMap.getValue(activationFunction))
+    return NodeGene(node, bias, nodeType.nodeType(), Activation.activationMap.getValue(activationFunction))
 }
 
 fun NodeTypeModel.nodeType(): NodeType = when (this) {

@@ -53,18 +53,6 @@ class SpeciesScoreKeeper {
     val speciesScoreMap = scoreMap.toMap()
 }
 
-/**
- *
-, speciesProvider: (neat.model.NeatMutator) -> neat.Species) {
-modelScores.groupBy { speciesProvider(it.neat.model.neatMutator) }
-.map {
-val key = it.key
-val bestInSpecies = it.value.maxByOrNull { modelScore -> modelScore.adjustedFitness }
-key to bestInSpecies
-}
-}
- */
-
 fun <T, K> List<T>.toMap(key: (T) -> K): Map<K, T> {
     return map { key(it) to it }.toMap()
 }

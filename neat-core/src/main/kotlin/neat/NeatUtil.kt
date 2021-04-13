@@ -63,7 +63,7 @@ fun <T> FitnessModel<T>.equallyFit(model: FitnessModel<T>) = score == model.scor
 fun <A> Pair<A, A>.random(random: Random = Random) = if (random.nextBoolean()) first else second
 interface ActivatableNetwork {
     val outputNodes: List<NetworkNode>
-    fun evaluate(input: List<Float>, bias : Boolean = false) : Unit
+    fun evaluate(input: List<Float>) : Unit
     fun output(): List<Float>
 }
 

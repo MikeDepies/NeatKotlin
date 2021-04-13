@@ -99,7 +99,7 @@ class SimpleNeatExperiment(
         }
 
         val randomConnection = getRandomConnectionGeneWithValidNodes()
-        val node = NodeGene(nextNode(), NodeType.Hidden, activationFunctions.random(random))
+        val node = NodeGene(nextNode(), randomWeight(random), NodeType.Hidden, activationFunctions.random(random))
         val copiedConnection = randomConnection.copy(innovation = nextInnovation(), inNode = node.node)
         val newEmptyConnection = ConnectionGene(randomConnection.inNode, node.node, 1f, true, nextInnovation())
 //        println("\tMUTATE ADD NODE")
@@ -159,7 +159,7 @@ class SimpleNeatExperiment(
 }
 
 fun NeatExperiment.newNode(activationFunction: ActivationGene): NodeGene {
-    return NodeGene(nextNode(), NodeType.Hidden, activationFunction)
+    return NodeGene(nextNode(), randomWeight(random), NodeType.Hidden, activationFunction)
 }
 
 fun List<ConnectionGene>.condensedString(): String {
@@ -173,4 +173,21 @@ fun List<ConnectionGene>.condensedString(): String {
 @JvmName("condensedNodeGeneString")
 fun List<NodeGene>.condensedString(): String {
     return "[${joinToString(", ") { "${it.node}" }}]"
+}
+
+fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>, random: Random): NeatMutator {
+    val (disjoint1, disjoint2) = disjoint(parent1.model, parent2.model)
+    val excess = excess(parent1.model, parent2.model)
+    val matchingGenes = matchingGenes(parent1.model, parent2.model)
+    val selectedRandomGenes = matchingGenes.map { it.random(random) }
+    val offSpringConnections = when {
+        parent1.isLessFitThan(parent2) -> {
+            (selectedRandomGenes + disjoint2 + excess.excess2).sortedBy { it.innovation }
+        }
+        else -> {
+            (selectedRandomGenes + disjoint1 + excess.excess1).sortedBy { it.innovation }
+        }
+    }.map { it.copy() }
+    val nodes = (if (parent1.isLessFitThan(parent2)) parent2.model.nodes else parent1.model.nodes).map { it.copy() }
+    return simpleNeatMutator(nodes, offSpringConnections)
 }

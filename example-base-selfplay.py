@@ -495,7 +495,7 @@ async def console_loop():
                                                 costume=2,
                                                 autostart=True,
                                                 swag=False,
-                                                cpu_level=4)
+                                                cpu_level=0)
             
             # else:
             #     mh.choose_character(character=melee.Character.FOX, gamestate=gamestate, controller=controller,swag=True)

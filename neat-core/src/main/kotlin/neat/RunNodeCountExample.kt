@@ -24,6 +24,12 @@ suspend fun runNodeCountExample() {
         val modelScore = speciesScoreKeeper.getModelScore(species)
         println("$species - ${modelScore?.fitness}")
     }*/
-    neat.process(100, population, speciesScoreKeeper, SpeciesLineage(listOf()), simpleNeatExperiment)
+    neat.process(
+        times = 100,
+        population = population,
+        speciesScoreKeeper = speciesScoreKeeper,
+        speciesLineage = SpeciesLineage(listOf()),
+        simpleNeatExperiment = simpleNeatExperiment
+    )
     return speciesScoreKeeper.run { getModelScore(bestSpecies()) }
 }

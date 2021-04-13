@@ -1,7 +1,7 @@
 package server
 
 import kotlinx.serialization.Serializable
-import server.message.endpoints.NeatModel
+import server.message.endpoints.*
 
 @Serializable
 data class AgentEvaluationData(val score: EvaluationScore, val agentId: Int)
@@ -13,13 +13,13 @@ data class PopulationDataCollection(
 )
 
 @Serializable
-data class PopulationModels(val agents: List<AgentModel>, val generation: Int)
+data class PopulationModels(val agents: List<AgentModel>, val generation: Int, val evaluationId: Int)
 
 @Serializable
-data class AgentModel(val id: Int, val species: Int/*, val model: NeatModel*/)
+data class AgentModel(val id: Int, val species: Int, val model: NeatModel, val evaluationId: Int, val controllerId: Int?)
 
 @Serializable
-data class EvaluationScore(val agentId: Int, val score: Float, val evaluationScoreContributions: List<EvaluationScoreContribution>)
+data class EvaluationScore(val evaluationId: Int, val agentId: Int, val score: Float, val evaluationScoreContributions: List<EvaluationScoreContribution>)
 
 @Serializable
 data class EvaluationScoreContribution(val name: String, val score: Float, val contribution: Float)

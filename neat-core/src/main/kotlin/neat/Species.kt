@@ -73,19 +73,17 @@ fun SpeciationController.calculateSpeciesReport(
     val speciesOffspringMap = mutableMapOf<Species, Int>()
     val championMap = mutableMapOf<Species, NeatMutator>()
     val expectedOffspringMap =
-        modelScoreList.map { it.neatMutator to it.adjustedFitness / (overallAverageFitness.toFloat()) }.toMap()
+        modelScoreList.map { it.neatMutator to (it.adjustedFitness / (overallAverageFitness.toFloat())) }.toMap()
     val scoreMap =
         modelScoreList.map { it.neatMutator to it.fitness }.toMap()
     var skim = 0.0
     var totalOffspring = 0
     var deadSpeciesOffspring = 0
     for (species in speciesSet) {
-
         val speciesPopulation = getSpeciesPopulation(species)
         val champion = speciesPopulation.maxByOrNull { scoreMap.getValue(it) }
         val map = speciesPopulation.map { expectedOffspringMap.getValue(it) }
-        val countOffspring =
-            map.countOffspring(skim)
+        val countOffspring = map.countOffspring(skim)
         skim = countOffspring.skim
         totalOffspring += countOffspring.offspring
         val isSpeciesStagnated = (generation - (speciesScoreKeeper.getModelScore(species)?.generationLastImproved ?: 0)) > stagnation
@@ -108,6 +106,8 @@ fun SpeciationController.calculateSpeciesReport(
         val species = viableSpecies.random()
         speciesOffspringMap[species] = speciesOffspringMap.getValue(species) + 1
     }
+
+
 
     return SpeciesReport(
         championMap,

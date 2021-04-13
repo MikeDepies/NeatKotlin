@@ -9,11 +9,12 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.ktor.serialization.*
 import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -21,9 +22,13 @@ import neat.ModelScore
 import neat.SpeciationController
 import neat.model.NeatMutator
 import neat.toMap
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.experimental.*
+import org.koin.core.parameter.*
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import org.slf4j.event.Level
+import server.database.*
 import server.message.BroadcastMessage
 import server.message.TypedUserMessage
 import server.message.endpoints.*
@@ -86,36 +91,96 @@ fun Application.module(testing: Boolean = false) {
             }
         })
     }
+    install(ContentNegotiation) {
+        json(get())
+    }
+
+    launch {
+        fun dbProp(propName: String) = environment.config.property("ktor.database.$propName")
+        fun dbPropString(propName: String) = dbProp(propName).getString()
+
+        Database.connect(
+            url = dbPropString("url"),
+            driver = dbPropString("driver"),
+            user = dbPropString("user"),
+            password = dbPropString("password")
+        )
+        newSuspendedTransaction {
+            SchemaUtils.createMissingTablesAndColumns(
+                *DATABASE_TABLES.toTypedArray()
+            )
+        }
+    }
+
 //    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
 //    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
-    val (initialPopulation, populationEvolver, adjustedFitness) = get<Simulation>()
+    val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(0)) })
+    val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(1)) })
+    fun IOController.simulationForController() = get<Simulation>(parameters = {
+        DefinitionParameters(
+            listOf(controllerId)
+        )
+    })
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController()
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController()
 
     val evaluationChannels = get<EvaluationChannels>()
+    val evaluationChannels2 = get<EvaluationChannels>()
     val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
 //    generateFakeData(evaluationChannels)
-    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor)
+
+    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1, controller2))
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)
         }
         log.info("Start evaluation Loop!")
         evaluationLoop(
+            evaluationId = 0,
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
             adjustedFitnessCalculation = adjustedFitness,
-            evaluationChannels = evaluationChannels
+            evaluationChannels = evaluationChannels,
+            controller1
         )
     }
+
+    launch(Dispatchers.IO) {
+        while (!receivedAnyMessages) {
+            delay(100)
+        }
+        log.info("Start evaluation Loop!")
+        evaluationLoop(
+            evaluationId = 1,
+            initialPopulation = initialPopulation2,
+            populationEvolver = populationEvolver2,
+            adjustedFitnessCalculation = adjustedFitness,
+            evaluationChannels = evaluationChannels2,
+            controller2
+        )
+    }
+    val json = get<Json>()
+    routing {
+
+    }
 }
+
+fun evaluationContext(
+    controllers: List<IOController>,
+    evaluationId: Int
+) = EvaluationContext(evaluationId, controllers.map { it.controllerId })
+
+@Serializable
+data class EvaluationContext(val evaluationId: Int, val controllers: List<Int>)
+data class Controllers(val controllerList: List<IOController>)
 
 private fun Application.generateFakeData(evaluationChannels: EvaluationChannels) {
     launch {
         while (true) {
-
             val element = FrameOutput(
                 0,
                 Random.nextBoolean(),
@@ -144,16 +209,12 @@ class EvaluationMessageProcessor(
     val inputChannel: ReceiveChannel<FrameUpdate>,
     val messageWriter: MessageWriter
 ) {
-    suspend fun processOutput(controller : IOController) {
-        try {
-            for (frameOutput in controller.frameOutputChannel) {
-                messageWriter.sendAllMessage(
-                    BroadcastMessage("simulation.frame.output", frameOutput),
-                    FrameOutput.serializer()
-                )
-            }
-        } catch (e: Exception) {
-            log.error(e) { "broke..." }
+    suspend fun processOutput(controller: IOController) {
+        for (frameOutput in controller.frameOutputChannel) {
+            messageWriter.sendAllMessage(
+                BroadcastMessage("simulation.frame.output", frameOutput),
+                FrameOutput.serializer()
+            )
         }
     }
 
@@ -214,11 +275,12 @@ class EvaluationMessageProcessor(
         }
     }
 
-    suspend fun processFrameData() {
+    suspend fun processFrameData(frameUpdateChannels: List<IOController>) {
         for (frame in inputChannel) {
             //forward to evaluation and broadcast data to dashboard
-            evaluationChannels.player1.frameUpdateChannel.send(frame)
-            evaluationChannels.player2.frameUpdateChannel.send(frame)
+            frameUpdateChannels.forEach { it.frameUpdateChannel.send(frame) }
+//            evaluationChannels.player1.frameUpdateChannel.send(frame)
+//            evaluationChannels.player2.frameUpdateChannel.send(frame)
             messageWriter.sendPlayerMessage(
                 userMessage = TypedUserMessage(
                     userRef = UserRef("dashboard"),
@@ -233,27 +295,18 @@ class EvaluationMessageProcessor(
 }
 
 private fun Application.networkEvaluatorOutputBridgeLoop(
-    evaluationMessageProcessor: EvaluationMessageProcessor
+    evaluationMessageProcessor: EvaluationMessageProcessor,
+    controllers: List<IOController>
 ) {
-    launch { evaluationMessageProcessor.processOutput(evaluationMessageProcessor.evaluationChannels.player2) }
-    launch { evaluationMessageProcessor.processOutput(evaluationMessageProcessor.evaluationChannels.player1) }
-    launch { evaluationMessageProcessor.processFrameData() }
-    launch { evaluationMessageProcessor.processEvaluationClocks() }
+
+    controllers.forEach {
+        launch { evaluationMessageProcessor.processOutput(it) }
+    }
+    launch { evaluationMessageProcessor.processFrameData(controllers) }
+//    launch { evaluationMessageProcessor.processEvaluationClocks() }
     launch { evaluationMessageProcessor.processPopulation() }
     launch { evaluationMessageProcessor.processAgentModel() }
     launch { evaluationMessageProcessor.processScores() }
-}
-
-private fun sortModelsByAdjustedFitness(
-    speciationController: SpeciationController,
-    modelScoreList: List<ModelScore>
-): List<ModelScore> {
-    val adjustedPopulationScore = modelScoreList.toMap { modelScore -> modelScore.neatMutator }
-    val fitnessForModel: (NeatMutator) -> Float = { neatMutator ->
-        adjustedPopulationScore.getValue(neatMutator).adjustedFitness
-    }
-    speciationController.sortSpeciesByFitness(fitnessForModel)
-    return modelScoreList
 }
 
 fun previewMessage(frame: Frame.Text): String {

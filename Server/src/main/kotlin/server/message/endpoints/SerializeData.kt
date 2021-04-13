@@ -18,7 +18,7 @@ enum class NodeTypeModel {
 data class NeatModel(val nodes: List<NodeGeneModel>, val connections: List<ConnectionGeneModel>)
 
 @Serializable
-data class NodeGeneModel(val node: Int, val nodeType: NodeTypeModel, val activationFunction: String)
+data class NodeGeneModel(val node: Int, val bias : Float, val nodeType: NodeTypeModel, val activationFunction: String)
 
 @Serializable
 data class ConnectionGeneModel(
@@ -35,7 +35,7 @@ data class PopulationModel(val models: List<NeatModel>)
 fun List<NeatMutator>.toModel() = map { it.toModel() }
 fun NeatMutator.toModel() = NeatModel(nodes.map { it.toModel() }, connections.map { it.toModel() })
 fun ConnectionGene.toModel() = ConnectionGeneModel(inNode, outNode, weight, enabled, innovation)
-fun NodeGene.toModel() = NodeGeneModel(node, nodeType.toModel(), activationFunction.name)
+fun NodeGene.toModel() = NodeGeneModel(node, bias, nodeType.toModel(), activationFunction.name)
 fun NodeType.toModel() = when (this) {
     Input -> NodeTypeModel.Input
     Hidden -> NodeTypeModel.Hidden

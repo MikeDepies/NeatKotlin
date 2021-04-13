@@ -25,24 +25,24 @@ fun NeatExperiment.createNeatMutator(
     function: ActivationGene = Activation.identity
 ): NeatMutator {
     val simpleNeatMutator = simpleNeatMutator(listOf(), listOf())
-    createNodes(inputNumber, NodeType.Input, Activation.identity, simpleNeatMutator)
-    createNodes(outputNumber, NodeType.Output, function, simpleNeatMutator)
-    connectNodes(simpleNeatMutator, random)
+    createNodes(inputNumber, 0f, NodeType.Input, Activation.identity, simpleNeatMutator)
+    createNodes(outputNumber, randomWeight(random), NodeType.Output, function, simpleNeatMutator)
+    connectNodes(simpleNeatMutator)
     return simpleNeatMutator
 }
 
 fun NeatExperiment.createNodes(
-    numberOfNodes: Int, nodeType: NodeType, activationFunction: ActivationGene, neatMutator: NeatMutator
+    numberOfNodes: Int, bias: Float, nodeType: NodeType, activationFunction: ActivationGene, neatMutator: NeatMutator
 ) = repeat(numberOfNodes) {
-    neatMutator.addNode(NodeGene(nextNode(), nodeType, activationFunction))
+    neatMutator.addNode(NodeGene(nextNode(), bias, nodeType, activationFunction))
 }
 
 fun NeatExperiment.newConnection(input: NodeGene, output: NodeGene, neatMutator: NeatMutator) {
-    val weight = random.nextFloat()
+    val weight = randomWeight(random)
     neatMutator.addConnection(ConnectionGene(input.node, output.node, weight, true, nextInnovation()))
 }
 
-fun NeatExperiment.connectNodes(simpleNeatMutator: NeatMutator, random: Random) {
+fun NeatExperiment.connectNodes(simpleNeatMutator: NeatMutator) {
     for (input in simpleNeatMutator.inputNodes) {
         for (output in simpleNeatMutator.outputNodes) {
             newConnection(input, output, simpleNeatMutator)

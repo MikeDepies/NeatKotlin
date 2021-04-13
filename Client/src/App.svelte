@@ -296,7 +296,7 @@
     <div class="w-full">
       {#each top20SpeciesScores as score, index (score.species)}
         <div
-          animate:flip
+        
           class="relative inline-block text-sm font-medium w-1/6 m-2 {bgFor(score, currentAgent)} px-2 py-1 rounded transition-colors duration-300"
         >
           <div
@@ -317,7 +317,7 @@
     </div>
   </div>
   <div class="flex h-full mt-2">
-    {#each historyOfPopulations.filter((p) => p.agents.length > 0) as population}
+    {#each historyOfPopulations.filter((p, index) => p.agents.length > 0).slice(-100) as population}
       <div class="flex flex-col w-full">
         {#each population.agents as agent (agent.id)}
           <div

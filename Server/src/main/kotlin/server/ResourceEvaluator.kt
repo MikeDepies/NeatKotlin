@@ -13,6 +13,7 @@ private val logger = KotlinLogging.logger { }
 class ResourceEvaluator(
     val network: ActivatableNetwork,
     val agentId: Int,
+    val evaluationId: Int,
     val generation: Int,
     val controllerId: Int,
     private val meleeState: MeleeState,
@@ -82,7 +83,7 @@ class ResourceEvaluator(
     var resourceWell = startingResource * 1000
     var framesSinceLastDamage = 0f
     var scoreWell = 1f
-    private val frameCost = 100 * frameClockFactory.frameTime
+    private val frameCost = 10 * frameClockFactory.frameTime
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
 
 //        if (controllerId == 1) logger.info { "getting data?" }
@@ -194,7 +195,7 @@ class ResourceEvaluator(
                 resource += moveTimeBonus
                 resourceWell -= moveTimeBonus
             }
-            if (framesSinceLastDamage > 60 * 30) {
+            if (framesSinceLastDamage > 60 * 12) {
                 resource -= 1_00f * (framesSinceLastDamage / 60)
             }
 //            if (frameNumber % 16 == 0) {
@@ -239,9 +240,8 @@ class ResourceEvaluator(
             }
             if (player1.lostStock) {
 //                val deathPenalty = max(baseScore, runningScore * .4f)
-//                if (runningScore >= baseScore)
 //                runningScore = min(0f, runningScore - 2000f)
-//                runningScore -= (stockTakeBonus - player1.percentFrame) /4
+                runningScore -= runningScore * ((stockTakeBonus - player1.percentFrame) * .05f)
 //                runningScore -= (stockTakeBonus - player1.percentFrame) / 2
             }
             if (player2.lostStock) {
@@ -291,7 +291,7 @@ class ResourceEvaluator(
             resource += cost
             resourceWell -= cost
         }
-        scoreWell += (stockTakeBonus - player2.percentFrame)
+        scoreWell += (stockTakeBonus - player2.percentFrame) * 2
         val scoreBonus = scoreWell * .5f
         scoreWell -= scoreBonus
         runningScore += scoreBonus
@@ -335,7 +335,7 @@ class ResourceEvaluator(
         logger.info { "Banked $bankedScore" }
         logger.info { "Running Score $runningScore" }
         logger.info { "final $score" }
-        return EvaluationScore(agentId, score, scoreContributionList)
+        return EvaluationScore(evaluationId, agentId, score, scoreContributionList)
     }
 }
 
