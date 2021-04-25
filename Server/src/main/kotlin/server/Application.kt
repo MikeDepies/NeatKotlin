@@ -95,22 +95,7 @@ fun Application.module(testing: Boolean = false) {
         json(get())
     }
 
-    launch {
-        fun dbProp(propName: String) = environment.config.property("ktor.database.$propName")
-        fun dbPropString(propName: String) = dbProp(propName).getString()
-
-        Database.connect(
-            url = dbPropString("url"),
-            driver = dbPropString("driver"),
-            user = dbPropString("user"),
-            password = dbPropString("password")
-        )
-        newSuspendedTransaction {
-            SchemaUtils.createMissingTablesAndColumns(
-                *DATABASE_TABLES.toTypedArray()
-            )
-        }
-    }
+    //connectAndCreateDatabase()
 
 //    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
 //    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
@@ -166,6 +151,25 @@ fun Application.module(testing: Boolean = false) {
     val json = get<Json>()
     routing {
 
+    }
+}
+
+private fun Application.connectAndCreateDatabase() {
+    launch {
+        fun dbProp(propName: String) = environment.config.property("ktor.database.$propName")
+        fun dbPropString(propName: String) = dbProp(propName).getString()
+
+        Database.connect(
+            url = dbPropString("url"),
+            driver = dbPropString("driver"),
+            user = dbPropString("user"),
+            password = dbPropString("password")
+        )
+        newSuspendedTransaction {
+            SchemaUtils.createMissingTablesAndColumns(
+                *DATABASE_TABLES.toTypedArray()
+            )
+        }
     }
 }
 

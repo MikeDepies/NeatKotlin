@@ -121,7 +121,7 @@ suspend fun Application.evaluationLoop(
                 scoreChannel,
                 evaluator
             ) { frameUpdate -> frameUpdate.flatten2() }
-            logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
+            logger.info { "[eval: $evaluationId] Score: ${evaluationScore.score}" }
             FitnessModel(
                 model = neatMutator,
                 score = evaluationScore.score
@@ -394,7 +394,7 @@ private suspend fun evaluate(
             evaluator.evaluateFrame(frameAdjustedForController)
             if (i++ % (8) == 0) sendEvaluationScoreUpdate()
             if (evaluator.isFinished()) {
-                logger.info { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
+                logger.trace { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
                 scoreChannel.send(evaluator.finishEvaluation())
 
                 return EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
@@ -488,7 +488,7 @@ fun comboSequence() = sequence {
     var i = 1
     while (true) {
         repeat(i) {
-            logger.info { "combo multiplier: $i" }
+//            logger.info { "combo multiplier: $i" }
             yield(i)
         }
         i++

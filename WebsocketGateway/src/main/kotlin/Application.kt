@@ -42,7 +42,6 @@ fun Application.module(testing: Boolean = false) {
         masking = false
     }
 
-
     val client = HttpClient(CIO) {
         install(HttpTimeout) {}
         install(io.ktor.client.features.websocket.WebSockets)
@@ -67,7 +66,6 @@ fun Application.module(testing: Boolean = false) {
         single { client }
     }
     install(Koin) {
-
         modules(setupModule, applicationModule)
     }
 

@@ -489,7 +489,7 @@ async def console_loop():
                                                 cpu_level=0)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller_opponent,
-                                                Session.cpu_character,
+                                                melee.Character.SAMUS,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=2,

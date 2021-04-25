@@ -9,3 +9,14 @@ export type WritableArray<T> = {
   removeBy(predicate: (element: T) => boolean): void
   subscribe(run: (value: T[]) => void): () => void
 }
+
+
+export type FixedSizeWritableArray<T> = {
+  length() : number
+  setElement(index: number, element : T) : void
+  set(map: T[]): void
+  push(value: T): void
+  remove(element: T): void
+  removeBy(predicate: (element: T) => boolean): void
+  subscribe(run: (value: T[]) => void): () => void
+}
