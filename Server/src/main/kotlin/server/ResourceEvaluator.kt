@@ -7,6 +7,7 @@ import server.message.endpoints.*
 import java.lang.Float.min
 import kotlin.math.absoluteValue
 import kotlin.math.max
+import kotlin.math.pow
 
 private val logger = KotlinLogging.logger { }
 
@@ -83,7 +84,7 @@ class ResourceEvaluator(
     var resourceWell = startingResource * 100
     var framesSinceLastDamage = 0f
     var scoreWell = 0f
-    private val frameCost = 10 * frameClockFactory.frameTime
+    private val frameCost = 1 * frameClockFactory.frameTime
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
 
 //        if (controllerId == 1) logger.info { "getting data?" }
@@ -162,28 +163,39 @@ class ResourceEvaluator(
                 scoreWell -= score
             }
             scoreWell += .02f / 60f
-
+            val right = 1600f
+            val dRatio = max(0f, right - frameData.distance.pow(2) ) / right
+            runningScore += (dRatio /60f) * 50
 
             if (isAttack) {
 
                 val fastForwardSteps = 1f
                 if (frameUpdate.action1.actionFrame == 1) {
-                    resource -= 40_000 * numberOfAttacksWithoutHit
+                    val cost = runningScore * .1f
+                    runningScore -= cost
+                    scoreWell += cost
+                    resource -= 4_000 * numberOfAttacksWithoutHit
                     numberOfAttacksWithoutHit++
                     logger.trace { "Attack registered: $numberOfAttacksWithoutHit - $resource/$resourceWell" }
                 }
             } else if (currentXSpeedAbs == 0f) {
-                resource -= frameCost * 3000
+                val cost = runningScore * .002f
+                runningScore -= cost
+                scoreWell += cost
+//                resource -= frameCost * 3000
             }
             prevWasAttack = isAttack
             if (isShield) {
-                resource -= frameCost * 10_000
+//                resource -= 3_000 * frameCost
+                val cost = runningScore * .003f
+                runningScore -= cost
+                scoreWell += cost
             }
-            val moveTimeBonus = currentXSpeedAbs * 20_000
-            if (resourceWell > moveTimeBonus && !isShield && frameData.distance > 15) {
-                resource += moveTimeBonus
-                resourceWell -= moveTimeBonus
-            }
+//            val moveTimeBonus = currentXSpeedAbs * 20_000
+//            if (resourceWell > moveTimeBonus && !isShield && frameData.distance > 15) {
+//                resource += moveTimeBonus
+//                resourceWell -= moveTimeBonus
+//            }
             if (framesSinceLastDamage > 60 * 6) {
                 resource -= 10_00f * (framesSinceLastDamage / 60)
             }
@@ -210,8 +222,8 @@ class ResourceEvaluator(
                     newRunningScore - runningScore
                 )
 //                runningScore = newRunningScore
-                scoreWell += (player1.damageDone * comboMultiplier)
-                val award = scoreWell * .15f
+                scoreWell += (player1.damageDone * comboMultiplier) * 10
+                val award = scoreWell * .25f
                 scoreWell -= award
                 runningScore += award
                 if (resourceWell > 0) {
@@ -229,7 +241,7 @@ class ResourceEvaluator(
                 cumulativeDamageTaken += player1.damageTaken
 //                resource -= player1.damageTaken * 12f
 //                runningScore -= player1.damageTaken / 4
-                val cost = runningScore * .2f
+                val cost = runningScore * (player1.damageTaken / 100f)
                 runningScore -= cost
                 scoreWell += cost
             }
@@ -237,6 +249,7 @@ class ResourceEvaluator(
 //                val deathPenalty = max(baseScore, runningScore * .4f)
 //                runningScore = min(0f, runningScore - 2000f)
                 runningScore -= runningScore * (((stockTakeBonus - player1.percentFrame) / 200f) * .999f)
+                logger.info { "player died: $runningScore" }
 //                runningScore -= (stockTakeBonus - player1.percentFrame) / 2
             }
             if (player2.lostStock) {
@@ -286,10 +299,11 @@ class ResourceEvaluator(
             resource += cost
             resourceWell -= cost
         }
-        scoreWell += (stockTakeBonus - player2.percentFrame) * comboSequence.next()
+        scoreWell += (stockTakeBonus - player2.percentFrame) * comboSequence.next() * 10
         val scoreBonus = scoreWell * .5f
         scoreWell -= scoreBonus
         runningScore += scoreBonus
+        framesSinceLastDamage=0f
 //        logger.info { "Stock Taken: $scoreWell $runningScore ($scoreBonus)" }
 //        resource += 650
     }

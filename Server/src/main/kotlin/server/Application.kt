@@ -105,13 +105,13 @@ fun Application.module(testing: Boolean = false) {
     get<WebSocketManager>().attachWSRoute()
     val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(0)) })
     val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(1)) })
-    fun IOController.simulationForController() = get<Simulation>(parameters = {
+    fun IOController.simulationForController(populationSize : Int) = get<Simulation>(parameters = {
         DefinitionParameters(
-            listOf(controllerId)
+            listOf(controllerId, populationSize)
         )
     })
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController()
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController()
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(50)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(100)
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationChannels2 = get<EvaluationChannels>()
