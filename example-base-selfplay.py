@@ -480,8 +480,8 @@ async def console_loop():
             # melee.MenuHelper.choose_character(Session.cpu_character, gamestate, controller_opponent)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller,
-                                                melee.Character.MARIO,
-                                                melee.Stage.BATTLEFIELD,
+                                                melee.Character.MARTH,
+                                                melee.Stage.POKEMON_STADIUM,
                                                 args.connect_code,
                                                 costume=2,
                                                 autostart=False,
@@ -489,8 +489,8 @@ async def console_loop():
                                                 cpu_level=0)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller_opponent,
-                                                melee.Character.BOWSER,
-                                                melee.Stage.BATTLEFIELD,
+                                                melee.Character.CPTFALCON,
+                                                melee.Stage.POKEMON_STADIUM,
                                                 args.connect_code,
                                                 costume=2,
                                                 autostart=True,

@@ -120,7 +120,7 @@ val applicationModule = module {
     }
     factory { (evaluationId: Int, populationSize: Int) ->
         val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 2f, disjointCoefficient = 4f)
-        val randomSeed: Int = 0 + evaluationId
+        val randomSeed: Int = 30 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
         simulation(
@@ -131,7 +131,7 @@ val applicationModule = module {
                 //            compatibilityDistanceFunction(1f, 1f, 1f)(a, b)
             },
             sharingFunction = {
-                neat.shFunction(.5f)(it)
+                neat.shFunction(6f)(it)
             },
             speciationController = SpeciationController(0, standardCompatibilityTest({
                 shFunction(.5f)(it)

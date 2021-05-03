@@ -110,8 +110,8 @@ fun Application.module(testing: Boolean = false) {
             listOf(controllerId, populationSize)
         )
     })
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(50)
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(100)
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(250)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(75)
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationChannels2 = get<EvaluationChannels>()
@@ -133,7 +133,7 @@ fun Application.module(testing: Boolean = false) {
             controller1
         )
     }
-
+//
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)

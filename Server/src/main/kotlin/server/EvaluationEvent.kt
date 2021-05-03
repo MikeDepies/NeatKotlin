@@ -115,6 +115,8 @@ suspend fun Application.evaluationLoop(
                             )
                         )
                     })
+
+                evaluator.noAttackTimerPenaltySeconds = 2 + (populationEvolver.generation / 10)
                 val evaluationScore = evaluate(
                     evaluationId,
                     index,

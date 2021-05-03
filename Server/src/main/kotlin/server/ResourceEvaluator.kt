@@ -85,6 +85,10 @@ class ResourceEvaluator(
     var framesSinceLastDamage = 0f
     var scoreWell = 0f
     private val frameCost = 1 * frameClockFactory.frameTime
+    var distanceReward = 50
+
+    var noAttackTimerPenaltySeconds = 30
+
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
 
 //        if (controllerId == 1) logger.info { "getting data?" }
@@ -165,7 +169,7 @@ class ResourceEvaluator(
             scoreWell += .02f / 60f
             val right = 1600f
             val dRatio = max(0f, right - frameData.distance.pow(2) ) / right
-            runningScore += (dRatio /60f) * 50
+            runningScore += (dRatio /60f) * distanceReward
 
             if (isAttack) {
 
@@ -196,7 +200,7 @@ class ResourceEvaluator(
 //                resource += moveTimeBonus
 //                resourceWell -= moveTimeBonus
 //            }
-            if (framesSinceLastDamage > 60 * 6) {
+            if (framesSinceLastDamage > 60 * noAttackTimerPenaltySeconds) {
                 resource -= 10_00f * (framesSinceLastDamage / 60)
             }
 //            if (frameNumber % 16 == 0) {
