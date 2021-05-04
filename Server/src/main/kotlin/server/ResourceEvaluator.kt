@@ -85,7 +85,7 @@ class ResourceEvaluator(
     var framesSinceLastDamage = 0f
     var scoreWell = 0f
     private val frameCost = 1 * frameClockFactory.frameTime
-    var distanceReward = 50
+    var distanceReward = 100
 
     var noAttackTimerPenaltySeconds = 30
 
@@ -157,7 +157,7 @@ class ResourceEvaluator(
                 && scoreWell > 0 && (opponentInKnockback || opponentOffStage)
             ) {
                 val score = max(
-                    .00001f, scoreWell * .001f
+                    .00001f, scoreWell * .01f
                     /** currentXSpeedAbs*/
                 ) / if (!isAttack
                     && !isShield
@@ -166,7 +166,7 @@ class ResourceEvaluator(
                 runningScore += score
                 scoreWell -= score
             }
-            scoreWell += .02f / 60f
+            scoreWell += 10f / 60f
             val right = 1600f
             val dRatio = max(0f, right - frameData.distance.pow(2) ) / right
             runningScore += (dRatio /60f) * distanceReward
@@ -175,15 +175,15 @@ class ResourceEvaluator(
 
                 val fastForwardSteps = 1f
                 if (frameUpdate.action1.actionFrame == 1) {
-                    val cost = runningScore * .1f
+                    val cost = runningScore * .1f * numberOfAttacksWithoutHit
                     runningScore -= cost
                     scoreWell += cost
                     resource -= 4_000 * numberOfAttacksWithoutHit
                     numberOfAttacksWithoutHit++
-                    logger.trace { "Attack registered: $numberOfAttacksWithoutHit - $resource/$resourceWell" }
+                    logger.info { "Attack registered: $numberOfAttacksWithoutHit - $resource/$resourceWell" }
                 }
             } else if (currentXSpeedAbs == 0f) {
-                val cost = runningScore * .002f
+                val cost = runningScore * .004f
                 runningScore -= cost
                 scoreWell += cost
 //                resource -= frameCost * 3000
@@ -191,7 +191,7 @@ class ResourceEvaluator(
             prevWasAttack = isAttack
             if (isShield) {
 //                resource -= 3_000 * frameCost
-                val cost = runningScore * .003f
+                val cost = runningScore * .006f
                 runningScore -= cost
                 scoreWell += cost
             }

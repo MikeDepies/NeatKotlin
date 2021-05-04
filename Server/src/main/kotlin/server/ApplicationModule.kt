@@ -113,7 +113,7 @@ val applicationModule = module {
             generation,
             controllerId,
             meleeState,
-            100f,
+            10f,
             get(),
             12000f * 24
         )
@@ -131,10 +131,10 @@ val applicationModule = module {
                 //            compatibilityDistanceFunction(1f, 1f, 1f)(a, b)
             },
             sharingFunction = {
-                neat.shFunction(6f)(it)
+                neat.shFunction(.85f)(it)
             },
             speciationController = SpeciationController(0, standardCompatibilityTest({
-                shFunction(.5f)(it)
+                shFunction(.85f)(it)
             }, { a, b ->
                 cppnGeneRuler.measure(a, b)
                 //            compatibilityDistanceFunction(1f, 1f, 1f)(a, b)

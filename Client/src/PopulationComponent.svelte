@@ -40,6 +40,7 @@ $: {
   const populationScoreHistory = $scores
   if (populationScoreHistory) {
     let i = 0
+    highestPopulationScore=0
     data = populationScoreHistory.slice(0, $size).map(s => {
       let index =i++
       let species = agents[index].species
