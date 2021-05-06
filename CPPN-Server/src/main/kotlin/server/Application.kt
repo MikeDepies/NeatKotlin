@@ -176,7 +176,7 @@ fun Application.module(testing: Boolean = false) {
 fun distanceFromCenter(x : Float, y: Float) = sqrt((x * x) + (y * y))
 fun mutationDictionary(): List<MutationEntry> {
     return listOf(
-        .8f chanceToMutate mutateConnections,
+        .8f chanceToMutate getMutateConnections(.1f),
         .4f chanceToMutate mutateAddNode,
         .4f chanceToMutate mutateAddConnection,
         .8f chanceToMutate mutatePerturbBiasConnections(),
