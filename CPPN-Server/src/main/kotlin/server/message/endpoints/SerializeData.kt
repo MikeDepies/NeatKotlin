@@ -56,8 +56,8 @@ data class SpeciesLineageModel(val speciesMap: Map<Int, SpeciesGeneModel>)
 
 fun SpeciesGene.toModel() = SpeciesGeneModel(species.id, generationBorn, mascot.toModel())
 fun ModelScore.toModel() = ModelScoreModel(neatMutator.toModel(), fitness, adjustedFitness)
-fun SpeciesScoreKeeper.toModel() =
-    SpeciesScoreKeeperModel(this.speciesScoreMap.map { it.key.id to it.value.toModel() }.toMap())
+//fun SpeciesScoreKeeper.toModel() =
+//    SpeciesScoreKeeperModel(this.speciesScoreMap.map { it.key.id to it.value.toModel() }.toMap())
 
 fun SpeciesLineage.toModel() = SpeciesLineageModel(speciesLineageMap.map { it.key.id to it.value.toModel() }.toMap())
 

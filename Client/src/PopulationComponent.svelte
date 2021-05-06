@@ -40,6 +40,7 @@ $: {
   const populationScoreHistory = $scores
   if (populationScoreHistory) {
     let i = 0
+    highestPopulationScore=0
     data = populationScoreHistory.slice(0, $size).map(s => {
       let index =i++
       let species = agents[index].species
@@ -54,56 +55,61 @@ $: {
   }
 }
   </script>
-<div class="flex">
-  <div class="flex flex-col w-4">
-    {#each $pop?.agents || [] as agent}
-      {#if $controllerMap.has(agent.id)}
-      <div class="flex-grow border my-1 border-red-500 transform translate-x-2 scale-150" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
-      {:else}
-      <div class="flex-grow" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
-      {/if}
-    {/each}
-  </div>
-  <div>
-    <div class="flex flex-wrap">
-      <Stat title="Generations" value={$generation} />
-      <Stat title="Population Size" value={$size} />
-      <Stat title="Sepecies In Population" value={numberOfSpecies} />
-      <Stat title="Current Agent" value={activeAgents.join(",")} />
-      <Stat title="Species ID" value={activeAgents.map(a => a.agent.species).join(", ")} />
-      <Stat title="Current Score" value={activeAgents.map(a => $scores[a.agent.id]).join(", ")} />
-      <!-- scores: {populationScoreHistory} -->
-    </div>
-    <div class="flex">
-      <div class=" w-full">
-        <div class="ml-4">
-
-          <h1 class="text-xl">Population Scores</h1>
-          <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
-          <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
-        </div>
-        {#if data.length > 1}
-        <ScoreChart populationSize={data.length}  highestPopulationScore={highestPopulationScore} {data} />
-        <ScoreChart populationSize={data.length}  highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
-          const y = (score.y <= 0) ? 0 : Math.log(score.y)
-          return {
-          x: score.x,
-          y: y,
-          color: score.color
-        }
-        })} />
+<div>
+  <div class="flex">
+    <div class="flex flex-col w-4">
+      {#each $pop?.agents || [] as agent}
+        {#if activeAgents.find(a => a.agent.id == agent.id)}
+        <div class="flex-grow border my-1 border-red-500 transform translate-x-2 scale-150" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
+        {:else}
+        <div class="flex-grow" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
         {/if}
-        <!-- <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/> -->
+      {/each}
+    </div>
+    <div>
+      <div class="flex flex-wrap">
+        <Stat title="Generations" value={$generation} />
+        <Stat title="Population Size" value={$size} />
+        <Stat title="Sepecies In Population" value={numberOfSpecies} />
+        <Stat title="Current Agent" value={activeAgents.map(a => {
+          return a.agent.id
+        }).join(",")} />
+        <Stat title="Species ID" value={activeAgents.map(a => a.agent.species).join(", ")} />
+        <Stat title="Current Score" value={activeAgents.map(a => $scores[a.agent.id]?.toFixed(4)).join(", ")} />
+        <!-- scores: {populationScoreHistory} -->
+      </div>
+      <div class="flex">
+        <div class=" w-full">
+          <div class="ml-4">
+  
+            <h1 class="text-xl">Population Scores</h1>
+            <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
+            <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
+          </div>
+          {#if data.length > 1}
+          <ScoreChart populationSize={data.length}  highestPopulationScore={highestPopulationScore} {data} />
+          <!-- <ScoreChart populationSize={data.length}  highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
+            const y = (score.y <= 0) ? 0 : Math.log(score.y)
+            return {
+            x: score.x,
+            y: y,
+            color: score.color
+          }
+          })} /> -->
+          {/if}
+          <!-- <MultiSeries frameNumber={$clockUpdate?.frame || 0} longestClockTimeSeen={longestClockTimeSeen} data={clockHistorySeriesMap}/> -->
+        </div>
       </div>
     </div>
   </div>
-</div>
-<div class="flex h-24 mt-2">
-  {#each $popHistory as population}
-    <div class="flex flex-col w-full">
-      {#each population.agents as agent}
-        <div class="flex-grow" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
-      {/each}
-    </div>
-  {/each}
+  {$popHistory.length}
+  <div class="flex h-24 mt-2">
+    {#each $popHistory.filter((p, index) => p.agents.length > 0).slice(-100) as population}
+      <div class="flex flex-col w-full">
+        {#each population.agents as agent}
+          <div class="flex-grow" style="background-color: rgb({getColor(agent.species, $colorMap).join(",")})"></div>
+        {/each}
+      </div>
+    {/each}
+  </div>
 </div>

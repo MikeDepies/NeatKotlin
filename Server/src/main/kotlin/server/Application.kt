@@ -95,22 +95,7 @@ fun Application.module(testing: Boolean = false) {
         json(get())
     }
 
-    launch {
-        fun dbProp(propName: String) = environment.config.property("ktor.database.$propName")
-        fun dbPropString(propName: String) = dbProp(propName).getString()
-
-        Database.connect(
-            url = dbPropString("url"),
-            driver = dbPropString("driver"),
-            user = dbPropString("user"),
-            password = dbPropString("password")
-        )
-        newSuspendedTransaction {
-            SchemaUtils.createMissingTablesAndColumns(
-                *DATABASE_TABLES.toTypedArray()
-            )
-        }
-    }
+    //connectAndCreateDatabase()
 
 //    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
 //    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
@@ -120,13 +105,13 @@ fun Application.module(testing: Boolean = false) {
     get<WebSocketManager>().attachWSRoute()
     val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(0)) })
     val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(1)) })
-    fun IOController.simulationForController() = get<Simulation>(parameters = {
+    fun IOController.simulationForController(populationSize : Int) = get<Simulation>(parameters = {
         DefinitionParameters(
-            listOf(controllerId)
+            listOf(controllerId, populationSize)
         )
     })
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController()
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController()
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(500)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(250)
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationChannels2 = get<EvaluationChannels>()
@@ -148,7 +133,7 @@ fun Application.module(testing: Boolean = false) {
             controller1
         )
     }
-
+//
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)
@@ -166,6 +151,25 @@ fun Application.module(testing: Boolean = false) {
     val json = get<Json>()
     routing {
 
+    }
+}
+
+private fun Application.connectAndCreateDatabase() {
+    launch {
+        fun dbProp(propName: String) = environment.config.property("ktor.database.$propName")
+        fun dbPropString(propName: String) = dbProp(propName).getString()
+
+        Database.connect(
+            url = dbPropString("url"),
+            driver = dbPropString("driver"),
+            user = dbPropString("user"),
+            password = dbPropString("password")
+        )
+        newSuspendedTransaction {
+            SchemaUtils.createMissingTablesAndColumns(
+                *DATABASE_TABLES.toTypedArray()
+            )
+        }
     }
 }
 

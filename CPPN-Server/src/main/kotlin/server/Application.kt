@@ -178,9 +178,9 @@ fun mutationDictionary(): List<MutationEntry> {
     return listOf(
         .8f chanceToMutate getMutateConnections(.1f),
         .4f chanceToMutate mutateAddNode,
-        .4f chanceToMutate mutateAddConnection,
+        .2f chanceToMutate mutateAddConnection,
         .8f chanceToMutate mutatePerturbBiasConnections(),
-        .21f chanceToMutate mutateToggleConnection,
+        .11f chanceToMutate mutateToggleConnection,
         .15f chanceToMutate mutateNodeActivationFunction(),
     )
 }
@@ -193,7 +193,7 @@ fun NeatExperiment.evolvePopulation(selection: List<NeatMutator>, numberOfOffspr
         s
     }
 }
-fun probabilityToMate(neatExperiment: NeatExperiment) = rollFrom(.1f)(neatExperiment)
+fun probabilityToMate(neatExperiment: NeatExperiment) = rollFrom(.3f)(neatExperiment)
 
 fun selectOrMate(neatExperiment: NeatExperiment, selection: List<NeatMutator>): NeatMutator {
     return when {

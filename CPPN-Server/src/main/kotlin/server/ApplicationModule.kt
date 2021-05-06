@@ -120,9 +120,9 @@ fun activationFunctions(): List<ActivationGene> {
     }
 }
 
-fun simulation(evaluationId: Int, randomSeed: Int = 45, takeSize: Int? = 50): Simulation {
+fun simulation(evaluationId: Int, randomSeed: Int = 5, takeSize: Int? = 50): Simulation {
 
-    val activationFunctions = activationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
+    val activationFunctions = baseActivationFunctions()//activationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
         shFunction(5f)(it)

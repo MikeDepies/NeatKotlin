@@ -7,6 +7,7 @@ import server.message.endpoints.*
 import java.lang.Float.min
 import kotlin.math.absoluteValue
 import kotlin.math.max
+import kotlin.math.pow
 
 private val logger = KotlinLogging.logger { }
 
@@ -80,18 +81,23 @@ class ResourceEvaluator(
     var opponentInAirKnockback = false
     val edgeHangAction = 253
     var lastFrameUpdate: FrameUpdate? = null
-    var resourceWell = startingResource * 1000
+    var resourceWell = startingResource * 100
     var framesSinceLastDamage = 0f
-    var scoreWell = 1f
-    private val frameCost = 10 * frameClockFactory.frameTime
+    var scoreWell = 0f
+    private val frameCost = 1 * frameClockFactory.frameTime
+    var distanceReward = 100
+
+    var noAttackTimerPenaltySeconds = 30
+
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
 
 //        if (controllerId == 1) logger.info { "getting data?" }
         val frameData = meleeState.createSimulationFrame(frameUpdate)
         if (lastMeleeFrameData != null) {
+//
             if (initialDistance === null && (frameUpdate.player1.onGround)) {
                 initialDistance = frameUpdate.distance
-                logger.info { "$controllerId - Initial distance: $initialDistance " }
+                logger.trace { "$controllerId - Initial distance: $initialDistance " }
             }
 //            if (initialDistance === null) {
 //                resource = startingResource
@@ -118,20 +124,20 @@ class ResourceEvaluator(
             //Perform evaluations
             val platformDropAction = 244
             if (lastPlayer2?.tookDamage == true && !player2.onGround && !opponentInAirKnockback) {
-                logger.info { "$controllerId - Knocked opponent in air" }
+                logger.trace { "$controllerId - Knocked opponent in air" }
                 opponentInAirKnockback = true
                 initialDistance = null
             }
             if (player2.onGround && opponentInAirKnockback) {
-                logger.info { "$controllerId - Opponent returned to ground from knockback" }
+                logger.trace { "$controllerId - Opponent returned to ground from knockback" }
                 opponentInAirKnockback = false
             }
             if (player2.onGround && turnOffDistanceBonus) {
-                logger.info { "$controllerId - Turn on distance bonus" }
+                logger.trace { "$controllerId - Turn on distance bonus" }
                 turnOffDistanceBonus = false
             }
             if (player2.onGround && comboActive) {
-                logger.info { "reset combo sequence" }
+                logger.trace { "reset combo sequence" }
                 comboSequence = comboSequence().iterator()
                 comboActive = false
             }
@@ -141,62 +147,61 @@ class ResourceEvaluator(
             val isAttack = frameUpdate.action1.isAttack
             val rollShieldSpotDodgeActions = listOf(188, 189, 190, 196, 197, 198, 233, 234, 179, 235)
             val isShield = frameUpdate.action1.action in rollShieldSpotDodgeActions
+            val closerToCenterThanOpponent = frameUpdate.player1.x.absoluteValue < frameUpdate.player2.x.absoluteValue
+            val opponentOffStage = frameUpdate.player2.x.absoluteValue > frameUpdate.stage.rightEdge
+            val opponentInKnockback =
+                with(frameUpdate.player2) { speedXAttack.absoluteValue > 0 || speedYAttack.absoluteValue > 0 }
             val currentXSpeedAbs =
                 frameUpdate.player1.speedGroundX.absoluteValue + min(1f, frameUpdate.player1.speedAirX.absoluteValue)
-            if (frameUpdate.player1.y >=0 && frameUpdate.player1.x.absoluteValue < (frameUpdate.stage.rightEdge - 5)
-                && scoreWell > 0
+            if (frameUpdate.player1.y >= 0 && frameUpdate.player1.x.absoluteValue < (frameUpdate.stage.rightEdge - 5)
+                && scoreWell > 0 && (opponentInKnockback || opponentOffStage)
             ) {
-                val score = max(.001f, scoreWell * .01f * currentXSpeedAbs) / if (!isAttack
-                        && !isShield) 1 else 10
+                val score = max(
+                    .00001f, scoreWell * .01f
+                    /** currentXSpeedAbs*/
+                ) / if (!isAttack
+                    && !isShield
+                ) 1 else 10
 
                 runningScore += score
                 scoreWell -= score
             }
+            scoreWell += 10f / 60f
+            val right = 1600f
+            val dRatio = max(0f, right - frameData.distance.pow(2) ) / right
+            runningScore += (dRatio /60f) * distanceReward
 
-            if (isAttack /*&& listOf(
-                    peachParasol,
-                    peachParasolFall,
-                    363,
-                    369
-                ).none { it == frameUpdate.action1.action }*/
-            ) {
-//                logger.info { "attack captured ${frameUpdate.action1.action}" }
-//                runningScore -= .0125f
+            if (isAttack) {
 
                 val fastForwardSteps = 1f
-//                resource -= frameCost * 150  * fastForwardSteps * numberOfAttacksWithoutHit
-//                runningScore -= .01f
                 if (frameUpdate.action1.actionFrame == 1) {
+                    val cost = runningScore * .1f * numberOfAttacksWithoutHit
+                    runningScore -= cost
+                    scoreWell += cost
                     resource -= 4_000 * numberOfAttacksWithoutHit
                     numberOfAttacksWithoutHit++
                     logger.info { "Attack registered: $numberOfAttacksWithoutHit - $resource/$resourceWell" }
                 }
             } else if (currentXSpeedAbs == 0f) {
-                val fastForwardSteps = 1f
-                resource -= frameCost * 300
-//                        repeat(fastForwardSteps) {
-//                            xSpeedData += currentXSpeedAbs
-//                        }
-//                    runningScore -= .2f
+                val cost = runningScore * .004f
+                runningScore -= cost
+                scoreWell += cost
+//                resource -= frameCost * 3000
             }
             prevWasAttack = isAttack
-
-//            if (player1.winGame)
-//                xSpeedData.clear()
-
             if (isShield) {
-//                xSpeedData += 0f
-                resource -= frameCost * 300
-//                runningScore -= .1f
-
+//                resource -= 3_000 * frameCost
+                val cost = runningScore * .006f
+                runningScore -= cost
+                scoreWell += cost
             }
-            val moveTimeBonus = currentXSpeedAbs * 2000
-            if (resourceWell > moveTimeBonus && !isShield && frameData.distance > 15) {
-                resource += moveTimeBonus
-                resourceWell -= moveTimeBonus
-            }
-            if (framesSinceLastDamage > 60 * 12) {
-                resource -= 1_00f * (framesSinceLastDamage / 60)
+//            val moveTimeBonus = currentXSpeedAbs * 20_000
+//            if (resourceWell > moveTimeBonus && !isShield && frameData.distance > 15) {
+//                resource += moveTimeBonus
+//                resourceWell -= moveTimeBonus
+//            }
+            if (framesSinceLastDamage > 60 * noAttackTimerPenaltySeconds) {
+                resource -= 10_00f * (framesSinceLastDamage / 60)
             }
 //            if (frameNumber % 16 == 0) {
 
@@ -221,12 +226,15 @@ class ResourceEvaluator(
                     newRunningScore - runningScore
                 )
 //                runningScore = newRunningScore
-                scoreWell += (player1.damageDone * comboMultiplier)
+                scoreWell += (player1.damageDone * comboMultiplier) * 10
+                val award = scoreWell * .25f
+                scoreWell -= award
+                runningScore += award
                 if (resourceWell > 0) {
                     val cost = (player1.damageDone * 5_000) /// max(1f, (frameData.distance - 40))
                     resource += cost
                     resourceWell -= cost
-                    logger.info { "resource: $resource well: $resourceWell" }
+                    logger.trace { "resource: $resource well: $resourceWell" }
                 }
 //                if (frameData.distance < 20)
 //                resource += 45f * player1.damageDone
@@ -237,17 +245,21 @@ class ResourceEvaluator(
                 cumulativeDamageTaken += player1.damageTaken
 //                resource -= player1.damageTaken * 12f
 //                runningScore -= player1.damageTaken / 4
+                val cost = runningScore * (player1.damageTaken / 100f)
+                runningScore -= cost
+                scoreWell += cost
             }
             if (player1.lostStock) {
 //                val deathPenalty = max(baseScore, runningScore * .4f)
 //                runningScore = min(0f, runningScore - 2000f)
-                runningScore -= runningScore * ((stockTakeBonus - player1.percentFrame) * .05f)
+                runningScore -= runningScore * (((stockTakeBonus - player1.percentFrame) / 200f) * .999f)
+                logger.info { "player died: $runningScore" }
 //                runningScore -= (stockTakeBonus - player1.percentFrame) / 2
             }
             if (player2.lostStock) {
                 currentStockDamage = 0f
                 turnOffDistanceBonus = true
-                logger.info { "$controllerId - Turn off distance bonus" }
+                logger.trace { "$controllerId - Turn off distance bonus" }
             } else if (player1.damageDone > 1) currentStockDamage += player1.damageDone //Hack for damage tick offcamera
 //            if (player1.tookDamage && comboActive) {
 //                logger.info { "reset combo sequence" }
@@ -287,14 +299,16 @@ class ResourceEvaluator(
 //        runningScore += (stockTakeBonus - player2.percentFrame) ///12.5f
         opponentInAirKnockback = false
         if (resourceWell > 0) {
-            val cost = min(160_000f, resourceWell)
+            val cost = min(startingResource, resourceWell)
             resource += cost
             resourceWell -= cost
         }
-        scoreWell += (stockTakeBonus - player2.percentFrame) * 2
+        scoreWell += (stockTakeBonus - player2.percentFrame) * comboSequence.next() * 10
         val scoreBonus = scoreWell * .5f
         scoreWell -= scoreBonus
         runningScore += scoreBonus
+        framesSinceLastDamage=0f
+//        logger.info { "Stock Taken: $scoreWell $runningScore ($scoreBonus)" }
 //        resource += 650
     }
 
@@ -332,9 +346,6 @@ class ResourceEvaluator(
 //        )
 //        runningScore = newScore
 //        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
-        logger.info { "Banked $bankedScore" }
-        logger.info { "Running Score $runningScore" }
-        logger.info { "final $score" }
         return EvaluationScore(evaluationId, agentId, score, scoreContributionList)
     }
 }

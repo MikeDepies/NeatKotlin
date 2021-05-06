@@ -3,12 +3,12 @@
  *  - could we apply some distance measuring function as a way to judge output difference? what can we do with the data?
  */
 
-import { arrayWritable } from '@app/api/Store/arrayWritable';
-import { mapWritable } from '@app/api/Store/mapWritable';
-import type { AgentModel, Population, SimulationEndpoints } from '@app/api/types/Evaluation';
-import { derived, Readable, Writable } from 'svelte/store';
-import { reader } from './websocket/MessageRouter';
-import { message } from './WebsocketStore';
+import { arrayWritable, arrayWritableFixedSize } from '@app/api/Store/arrayWritable'
+import { mapWritable } from '@app/api/Store/mapWritable'
+import type { AgentModel, Population, SimulationEndpoints } from '@app/api/types/Evaluation'
+import { derived, Readable, Writable } from 'svelte/store'
+import { reader } from './websocket/MessageRouter'
+import { message } from './WebsocketStore'
 type AgentController = {
     agent: AgentModel,
     controllerId: number
@@ -48,9 +48,17 @@ function population(evaluationId: number) {
 }
 
 function populationHistory(population: Readable<Population | undefined>) {
-    const populationHistory = arrayWritable<Population>([])
+    const populationHistory = arrayWritableFixedSize<Population>([], 10)
     population.subscribe($population => {
-        if ($population) populationHistory.push($population)
+        // $population?.agents.sort((a, b) => a.species - b.species);
+
+        if ($population) {
+            populationHistory.push({
+                ...$population,
+                agents: [...$population?.agents || []].sort((a, b) => a.species - b.species)
+            })
+
+        }
     })
     return populationHistory
 }
@@ -59,7 +67,7 @@ function populationScores(evaluationId: number) {
     const newScore = filterForEvaluation(evaluationId, newScoreStore)
     const agentScoreArray = arrayWritable<number>([])
     return {
-        subscribe : (set : Subcriber<number[]>) => {
+        subscribe: (set: Subcriber<number[]>) => {
             const unsubscribeNewScore = newScore.subscribe(r => {
                 if (r) {
                     while (agentScoreArray.length() <= r.agentId) {
@@ -91,7 +99,7 @@ function controllerAgents(evaluationId: number) {
     if (evaluationNewAgentMap.has(evaluationId)) {
         newAgent = evaluationNewAgentMap.get(evaluationId)!!
     } else {
-        const newAgent = filterForEvaluation(evaluationId, r.read("simulation.event.agent.new"))
+        newAgent = filterForEvaluation(evaluationId, r.read("simulation.event.agent.new"))
         evaluationNewAgentMap.set(evaluationId, newAgent)
     }
     const controllerAgentMap = mapWritable<number, AgentController>(new Map())

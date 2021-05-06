@@ -48,7 +48,7 @@ data class IOController(
 suspend fun IOController.quitMatch() {
     pressStart()
     delay(250)
-    frameOutputChannel.send(FrameOutput(controllerId, true, false, false, false, .5f, .5f, .5f,.5f, 1f, 1f, true))
+    frameOutputChannel.send(FrameOutput(controllerId, true, false, false, false, .5f, .5f, .5f, .5f, 1f, 1f, true))
 }
 
 private suspend fun IOController.pressStart() {
@@ -97,35 +97,45 @@ suspend fun Application.evaluationLoop(
         val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
             logger.info { "[eval: $evaluationId}] New Agent (${index + 1} / ${currentPopulation.size})" }
             agentModelChannel.send(populationMap[index])
-            val network = neatMutator.toNetwork()
-            val evaluator =
-                get<ResourceEvaluator>(parameters = {
-                    DefinitionParameters(
-                        listOf(
-                            EvaluatorIdSet(
-                                evaluationId,
-                                index,
-                                populationEvolver.generation,
-                                player.controllerId
-                            ),
-                            meleeState,
-                            network
+            try {
+
+                val network = neatMutator.toNetwork()
+                val evaluator =
+                    get<ResourceEvaluator>(parameters = {
+                        DefinitionParameters(
+                            listOf(
+                                EvaluatorIdSet(
+                                    evaluationId,
+                                    index,
+                                    populationEvolver.generation,
+                                    player.controllerId
+                                ),
+                                meleeState,
+                                network
+                            )
                         )
-                    )
-                })
-            val evaluationScore = evaluate(
-                evaluationId,
-                index,
-                player,
-                network,
-                scoreChannel,
-                evaluator
-            ) { frameUpdate -> frameUpdate.flatten2() }
-            logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
-            FitnessModel(
-                model = neatMutator,
-                score = evaluationScore.score
-            )
+                    })
+
+                evaluator.noAttackTimerPenaltySeconds = 1 + (populationEvolver.generation / 10)
+                val evaluationScore = evaluate(
+                    evaluationId,
+                    index,
+                    player,
+                    network,
+                    scoreChannel,
+                    evaluator
+                ) { frameUpdate -> frameUpdate.flatten2() }
+                logger.info { "[eval: $evaluationId] Score: ${evaluationScore.score}" }
+                FitnessModel(
+                    model = neatMutator,
+                    score = evaluationScore.score
+                )
+            } catch (e: Exception) {
+                FitnessModel(
+                    model = neatMutator,
+                    score = 0f
+                )
+            }
         }.toModelScores(adjustedFitnessCalculation)
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
@@ -227,7 +237,8 @@ suspend fun Application.evaluationLoop2Agents(
                     FitnessModel(
                         model = neatMutator,
                         score = 0f
-                    ))
+                    )
+                )
             }
 
 //            logger.info { "[eval: $evaluationId}] Score: ${evaluationScore.score}" }
@@ -334,7 +345,7 @@ private fun writeGenerationToDisk(
     prefix: String
 ) {
     val modelPopulationPersist = currentPopulation.toModel()
-    val savePopulationFile = runFolder.resolve("$prefix ${populationEvolver.generation + 0}.json")
+    val savePopulationFile = runFolder.resolve("$prefix${populationEvolver.generation + 0}.json")
     val json = Json { prettyPrint = true }
     val encodedModel = json.encodeToString(modelPopulationPersist)
     savePopulationFile.bufferedWriter().use {
@@ -385,7 +396,8 @@ private suspend fun evaluate(
         var i = 0
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
-            network.evaluate(transformToInput(frameUpdate) + lastOutput)
+//            network.evaluate(transformToInput(frameUpdate) + lastOutput)
+            network.evaluate(transformToInput(frameUpdate))
             val output = network.output()
             lastOutput = output
             ioController.frameOutputChannel.send(output.toFrameOutput(ioController.controllerId))
@@ -394,7 +406,7 @@ private suspend fun evaluate(
             evaluator.evaluateFrame(frameAdjustedForController)
             if (i++ % (8) == 0) sendEvaluationScoreUpdate()
             if (evaluator.isFinished()) {
-                logger.info { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
+                logger.trace { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId" }
                 scoreChannel.send(evaluator.finishEvaluation())
 
                 return EvaluationScore(evaluationId, agentId, evaluator.score, evaluator.scoreContributionList)
@@ -488,7 +500,7 @@ fun comboSequence() = sequence {
     var i = 1
     while (true) {
         repeat(i) {
-            logger.info { "combo multiplier: $i" }
+//            logger.info { "combo multiplier: $i" }
             yield(i)
         }
         i++
