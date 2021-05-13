@@ -35,6 +35,8 @@ export function createManagedWebsocket(wsUrl: string, features: WebSocketFeature
   const websocket: WebSocketStore = {
     subscribe: _websocket.subscribe,
     set(value: string | ArrayBuffer | SharedArrayBuffer | Blob | ArrayBufferView) {
+      console.log(value);
+      
       ws.send(value)
     }
   }

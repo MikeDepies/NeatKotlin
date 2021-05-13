@@ -27,7 +27,7 @@ export function evaluationPopulation(evaluationId: number, controllerIds: number
     })
     const popHistory = populationHistory(pop)
     const controllerMap = controllerAgents(evaluationId)
-    const scores = populationScores(evaluationId)
+    const scores = populationScores(evaluationId, generation)
     return {
         pop,
         generation,
@@ -63,11 +63,13 @@ function populationHistory(population: Readable<Population | undefined>) {
     return populationHistory
 }
 
-function populationScores(evaluationId: number) {
+function populationScores(evaluationId: number, generations: Readable<number>) {
     const newScore = filterForEvaluation(evaluationId, newScoreStore)
     const agentScoreArray = arrayWritable<number>([])
+    
     return {
         subscribe: (set: Subcriber<number[]>) => {
+            let lastGeneration = -1
             const unsubscribeNewScore = newScore.subscribe(r => {
                 if (r) {
                     while (agentScoreArray.length() <= r.agentId) {
@@ -77,9 +79,16 @@ function populationScores(evaluationId: number) {
                 }
             })
             const unsubScoreArray = agentScoreArray.subscribe(set)
+            const unsusbGenerations = generations.subscribe(g => {
+                if (g != lastGeneration) {
+                    lastGeneration = g
+                    agentScoreArray.set([])
+                }
+            })
             return () => {
                 unsubScoreArray()
                 unsubscribeNewScore()
+                unsusbGenerations()
             }
         }
     }

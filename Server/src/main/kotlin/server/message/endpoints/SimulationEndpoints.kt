@@ -16,6 +16,11 @@ import org.koin.core.scope.*
 
 private val log = KotlinLogging.logger { }
 var receivedAnyMessages = false
+@Serializable
+data class Timer(val timer : Float)
+object AttackTimer {
+    var timer = 30f
+}
 fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *>> {
     registerEndpoint<FrameUpdate, SimulationSessionScope>("simulation.frame.update") {
         val frameUpdateChannel = get<Channel<FrameUpdate>>(qualifier("input"))
@@ -27,6 +32,12 @@ fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *
 
     registerEndpoint<NoData, SimulationSessionScope>("simulation.reset.game") {
 //        get<EvaluationArena>().resetEvaluation()
+    }
+
+
+    registerEndpoint<Timer, SimulationSessionScope>("timer") {
+        AttackTimer.timer = it.data.timer
+        log.info { it.data }
     }
 
 

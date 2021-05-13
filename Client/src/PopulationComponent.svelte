@@ -80,12 +80,12 @@ $: {
       </div>
       <div class="flex">
         <div class=" w-full">
-          <div class="ml-4">
+          <!-- <div class="ml-4">
   
             <h1 class="text-xl">Population Scores</h1>
             <div class="text-lg text-gray-600">Y axis is score for the agent(second chart is in log scale).</div>
             <div class="text-lg text-gray-600">X axis is agent number in the population.</div>
-          </div>
+          </div> -->
           {#if data.length > 1}
           <ScoreChart populationSize={data.length}  highestPopulationScore={highestPopulationScore} {data} />
           <!-- <ScoreChart populationSize={data.length}  highestPopulationScore={Math.log(highestPopulationScore)} data={data.map(score => {
@@ -102,7 +102,6 @@ $: {
       </div>
     </div>
   </div>
-  {$popHistory.length}
   <div class="flex h-24 mt-2">
     {#each $popHistory.filter((p, index) => p.agents.length > 0).slice(-100) as population}
       <div class="flex flex-col w-full">

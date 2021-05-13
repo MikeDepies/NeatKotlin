@@ -22,6 +22,8 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
@@ -32,6 +34,7 @@ import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
 import server.server.WebSocketManager
+import java.io.File
 import kotlin.random.Random
 
 private val log = KotlinLogging.logger { }
@@ -91,17 +94,6 @@ val applicationModule = module {
 
     factory { MeleeState(null) }
     single { FrameClockFactory() }
-    factory<Evaluator> { (agentId: Int, generation: Int, controllerId: Int, meleeState: MeleeState) ->
-        SimpleEvaluator(
-            agentId,
-            generation,
-            controllerId,
-            meleeState,
-            30f,
-            get(),
-            getChannel()
-        )
-    }
     factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel()) }
     factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
         println("New Evaluator?")
@@ -119,27 +111,47 @@ val applicationModule = module {
         )
     }
     factory { (evaluationId: Int, populationSize: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 2f, disjointCoefficient = 4f)
-        val randomSeed: Int = 30 + evaluationId
+        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 4f, disjointCoefficient = 1f)
+        val randomSeed: Int = 0 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
+        val shFunction = shFunction(.2f)
+
+//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, baseActivationFunctions(), addConnectionAttempts)
+//        val population = simpleNeatExperiment.generateInitialPopulation(
+//            populationSize,
+//            62,
+//            8,
+//            Activation.sigmoidal
+//        )
+        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
+        val models = populationModel.models
+        log.info { "population loaded with size of: ${models.size}" }
+        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
+        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
+        val simpleNeatExperiment = simpleNeatExperiment(
+            random, maxInnovation, maxNodeInnovation, baseActivationFunctions(),
+            addConnectionAttempts
+        )
+
         simulation(
             evaluationId,
-            populationSize = populationSize,
             distanceFunction = { a, b ->
                 cppnGeneRuler.measure(a, b)
                 //            compatibilityDistanceFunction(1f, 1f, 1f)(a, b)
             },
             sharingFunction = {
-                neat.shFunction(.85f)(it)
+                shFunction(it)
             },
             speciationController = SpeciationController(0, standardCompatibilityTest({
-                shFunction(.85f)(it)
+                shFunction(it)
             }, { a, b ->
                 cppnGeneRuler.measure(a, b)
                 //            compatibilityDistanceFunction(1f, 1f, 1f)(a, b)
             })),
-            simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, baseActivationFunctions(), addConnectionAttempts)
+            simpleNeatExperiment = simpleNeatExperiment,
+            population = models.map { it.toNeatMutator() },
+            generation = populationModel.generation
         )
     }
 }
@@ -149,24 +161,21 @@ data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generatio
 
 fun simulation(
     evaluationId: Int,
-    populationSize: Int,
     distanceFunction: (NeatMutator, NeatMutator) -> Float,
     sharingFunction: (Float) -> Int,
     speciationController: SpeciationController,
-    simpleNeatExperiment: NeatExperiment
+    simpleNeatExperiment: NeatExperiment,
+    population: List<NeatMutator>,
+    generation: Int
 ): Simulation {
     val adjustedFitnessCalculation = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction)
     val speciesLineage = SpeciesLineage()
     val scoreKeeper = SpeciesScoreKeeper()
 
-    val populationEvolver = PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment)
-    val population =
-        simpleNeatExperiment.generateInitialPopulation(
-            populationSize,
-            47,
-            8,
-            Activation.sigmoidal
-        )
+    val populationEvolver =
+        PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment, generation)
+
+
     val speciate = speciationController.speciate(population, speciesLineage, 0)
 
     return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
@@ -192,7 +201,14 @@ populationModel.map { it.toNeatMutator() }
 } else {
 }
  */
+data class LoadedModels(val generation: Int, val models: List<NeatModel>)
 
+fun loadPopulation(file: File): LoadedModels {
+    val string = file.bufferedReader().lineSequence().joinToString("\n")
+    log.info { "Loading population from file ${file.path}" }
+    return LoadedModels(file.name.split("_")[0].toInt(), Json {}.decodeFromString<List<NeatModel>>(string))
+
+}
 
 fun NeatExperiment.generateInitialPopulation(
     populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene

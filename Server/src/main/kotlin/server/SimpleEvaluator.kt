@@ -20,7 +20,7 @@ class SimpleEvaluator(
     frameClockFactory: FrameClockFactory,
     private val clockChannel: SendChannel<EvaluationClocksUpdate>
 ) :
-    Evaluator {
+    Evaluator<Float> {
     var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
     private var firstFrame = true
@@ -214,7 +214,7 @@ class SimpleEvaluator(
         }
     }
 
-    override fun finishEvaluation(): EvaluationScore {
+    override fun finishEvaluation() {
         /*if (runningScore < 8) {
             scoreContributionList.add(EvaluationScoreContribution("Damage Minimum Threshold", 0f, runningScore * -1))
             0f

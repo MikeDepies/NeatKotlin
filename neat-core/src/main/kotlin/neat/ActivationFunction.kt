@@ -6,7 +6,7 @@ typealias ActivationFunction = (Float) -> Float
 
 class ActivationGene(val name: String, val activationFunction: ActivationFunction)
 
-fun sigmoidalTransferFunction(x: Float): Float = min(10f, max(-10f, x)).let { 1.div(1 + exp(-4.9f * it)) }
+fun sigmoidalTransferFunction(x: Float): Float = min(4f, max(-4f, x)).let { 1.div(1 + exp(-4.9f * it)) }
 fun stepFunction(x: Float): Float = if (x <= 0) 0f else 1f
 fun piecewiseLinearFunction(xMin: Float, xMax: Float): (Float) -> Float = {
     when {
@@ -17,14 +17,14 @@ fun piecewiseLinearFunction(xMin: Float, xMax: Float): (Float) -> Float = {
 }
 
 //fun lnSafe(x : Float) = ln(max(.001f, x))
-fun bipolarSigmoid(x: Float): Float = min(10f, max(-10f, x)).let { (1 - exp(it)) / (1 + exp(it)) }
+fun bipolarSigmoid(x: Float): Float = min(4f, max(-4f, x)).let { (1 - exp(it)) / (1 + exp(it)) }
 fun leCunTanh(x: Float) = (1.7159f) * tanh((2f / 3f) * x)
 fun hardTanh(x: Float) = max(-1f, min(1f, x))
 fun relu(x: Float) = max(0f, x)
 fun complementaryLogLog(x: Float) = max(.066f, min(x, .95f)).let { 1 - ln(-1 * ln(it)) }
 fun reluCos(x: Float) = max(0f, x) + cos(x)
 fun reluSin(x: Float) = max(0f, x) + sin(x)
-fun smoothRectifier(x: Float): Float = min(10f, max(-10f, x)).let { ln(1 + exp(it))}
+fun smoothRectifier(x: Float): Float = min(4f, max(-4f, x)).let { ln(1 + exp(it))}
 fun logit(x: Float): Float = min(x, .95f).let { ln(it / ((1 - it))) }
 val Identity: ActivationFunction = { it }
 val SigmoidalTransferFunction: ActivationFunction = ::sigmoidalTransferFunction

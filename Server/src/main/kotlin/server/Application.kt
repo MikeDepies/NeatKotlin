@@ -21,6 +21,8 @@ import mu.KotlinLogging
 import neat.ModelScore
 import neat.SpeciationController
 import neat.model.NeatMutator
+import neat.novelty.KNNNoveltyArchive
+import neat.novelty.levenshtein
 import neat.toMap
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.*
@@ -105,13 +107,13 @@ fun Application.module(testing: Boolean = false) {
     get<WebSocketManager>().attachWSRoute()
     val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(0)) })
     val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(1)) })
-    fun IOController.simulationForController(populationSize : Int) = get<Simulation>(parameters = {
+    fun IOController.simulationForController(populationSize: Int) = get<Simulation>(parameters = {
         DefinitionParameters(
             listOf(controllerId, populationSize)
         )
     })
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(500)
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(250)
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(100)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(100)
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationChannels2 = get<EvaluationChannels>()
@@ -124,28 +126,34 @@ fun Application.module(testing: Boolean = false) {
             delay(100)
         }
         log.info("Start evaluation Loop!")
-        evaluationLoop(
+        evaluationLoopNovelty(
             evaluationId = 0,
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
             adjustedFitnessCalculation = adjustedFitness,
             evaluationChannels = evaluationChannels,
-            controller1
+            controller1,
+            KNNNoveltyArchive(15, 1f) { a, b ->
+                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
+            }
         )
     }
-//
+
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)
         }
         log.info("Start evaluation Loop!")
-        evaluationLoop(
+        evaluationLoopNovelty(
             evaluationId = 1,
             initialPopulation = initialPopulation2,
             populationEvolver = populationEvolver2,
             adjustedFitnessCalculation = adjustedFitness,
             evaluationChannels = evaluationChannels2,
-            controller2
+            controller2,
+            KNNNoveltyArchive(15, 5f) { a, b ->
+                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
+            }
         )
     }
     val json = get<Json>()

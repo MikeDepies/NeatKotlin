@@ -16,7 +16,7 @@ suspend fun FrameUpdate.flatten2() = sequence<Float> {
     yieldPlayerData(player2, stage.rightEdge, stage.blastzone.top)
     yieldActionData(action1)
     yieldActionData(action2)
-//    yieldStageData(stage)
+    yieldStageData(stage)
     yield(distance)
 }.toList()
 

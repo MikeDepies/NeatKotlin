@@ -22,7 +22,7 @@ class ResourceEvaluator(
     val frameClockFactory: FrameClockFactory,
     var resource: Float = 1250f
 ) :
-    Evaluator {
+    Evaluator<Float> {
     private val startingResource = resource
     private var runningScore: Float = baseScore
     private val lastMeleeFrameData get() = meleeState.lastMeleeFrameData
@@ -85,7 +85,7 @@ class ResourceEvaluator(
     var framesSinceLastDamage = 0f
     var scoreWell = 0f
     private val frameCost = 1 * frameClockFactory.frameTime
-    var distanceReward = 100
+    var distanceReward = 1
 
     var noAttackTimerPenaltySeconds = 30
 
@@ -167,7 +167,7 @@ class ResourceEvaluator(
                 scoreWell -= score
             }
             scoreWell += 10f / 60f
-            val right = 1600f
+            val right = frameUpdate.stage.rightEdge.pow(2)//1600f
             val dRatio = max(0f, right - frameData.distance.pow(2) ) / right
             runningScore += (dRatio /60f) * distanceReward
 
@@ -175,7 +175,7 @@ class ResourceEvaluator(
 
                 val fastForwardSteps = 1f
                 if (frameUpdate.action1.actionFrame == 1) {
-                    val cost = runningScore * .1f * numberOfAttacksWithoutHit
+                    val cost = runningScore * .1f
                     runningScore -= cost
                     scoreWell += cost
                     resource -= 4_000 * numberOfAttacksWithoutHit
@@ -183,17 +183,17 @@ class ResourceEvaluator(
                     logger.info { "Attack registered: $numberOfAttacksWithoutHit - $resource/$resourceWell" }
                 }
             } else if (currentXSpeedAbs == 0f) {
-                val cost = runningScore * .004f
-                runningScore -= cost
-                scoreWell += cost
+//                val cost = runningScore * .004f
+//                runningScore -= cost
+//                scoreWell += cost
 //                resource -= frameCost * 3000
             }
             prevWasAttack = isAttack
             if (isShield) {
 //                resource -= 3_000 * frameCost
-                val cost = runningScore * .006f
-                runningScore -= cost
-                scoreWell += cost
+//                val cost = runningScore * .006f
+//                runningScore -= cost
+//                scoreWell += cost
             }
 //            val moveTimeBonus = currentXSpeedAbs * 20_000
 //            if (resourceWell > moveTimeBonus && !isShield && frameData.distance > 15) {
@@ -324,7 +324,7 @@ class ResourceEvaluator(
     private fun MeleeFrameData.isPlayerInAirFromKnockBack(playerNumber: Int) =
         !this[playerNumber].onGround && lastMeleeFrameData?.let { it[playerNumber].tookDamage } ?: false
 
-    override fun finishEvaluation(): EvaluationScore {
+    override fun finishEvaluation() {
         /*if (runningScore < 8) {
             scoreContributionList.add(EvaluationScoreContribution("Damage Minimum Threshold", 0f, runningScore * -1))
             0f
@@ -346,7 +346,7 @@ class ResourceEvaluator(
 //        )
 //        runningScore = newScore
 //        val evaluationScore = EvaluationScore(agentId, runningScore, scoreContributionList)
-        return EvaluationScore(evaluationId, agentId, score, scoreContributionList)
+
     }
 }
 

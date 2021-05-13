@@ -7,19 +7,20 @@ interface NoveltyArchive<BEHAVIOR> {
     val behaviors : List<BEHAVIOR>
 }
 
-class KNNNoveltyArchive<B>(val k: Int, val behaviorDistanceMeasureFunction: (B, B) -> Float) : NoveltyArchive<B> {
+class KNNNoveltyArchive<B>(var k: Int, var noveltyThreshold : Float, val behaviorDistanceMeasureFunction: (B, B) -> Float) : NoveltyArchive<B> {
     override val behaviors = mutableListOf<B>()
     override val size: Int
         get() = behaviors.size
     override fun addBehavior(behavior: B): Float {
         val distance = measure(behavior)
-        behaviors += behavior
+        if (distance > noveltyThreshold || size == 0)
+            behaviors += behavior
         return distance
     }
 
     override fun measure(behavior: B): Float {
         return behaviors.map { behaviorDistanceMeasureFunction(behavior, it) }
-            .sortedDescending().take(k).average()
+            .sorted().take(k).average()
             .toFloat()
     }
 }
@@ -31,7 +32,7 @@ fun main() {
     val b = listOf(1, 2, 3, 4).map {
         it.toChar()
     }
-    KNNNoveltyArchive<List<Int>>(4) { a, b ->
+    KNNNoveltyArchive<List<Int>>(4, 3f) { a, b ->
         levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
     }
     val l = levenshtein(a.joinToString(""), b.joinToString(""))

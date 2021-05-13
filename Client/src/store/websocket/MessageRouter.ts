@@ -35,8 +35,8 @@ export function reader<T extends {} = any>(message: Readable<string | undefined>
 }
 export function writer<WriteMap extends {}>(message: { set<T>(value: T): void }): MessageWriter<WriteMap> {
   return {
-    write: <WriteKey extends Extract<keyof WriteMap, string>>(subject: WriteKey, data: WriteMap[WriteKey]) => {
-      message.set({ subject, data })
+    write: <WriteKey extends Extract<keyof WriteMap, string>>(topic: WriteKey, data: WriteMap[WriteKey]) => {
+      message.set({ topic, data })
     }
   }
 }
