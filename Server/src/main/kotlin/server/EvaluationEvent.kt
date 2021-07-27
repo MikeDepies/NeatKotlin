@@ -178,7 +178,7 @@ suspend fun Application.evaluationLoopNovelty(
     adjustedFitnessCalculation: AdjustedFitnessCalculation,
     evaluationChannels: EvaluationChannels,
     player: IOController,
-    noveltyArchive: NoveltyArchive<List<Int>>
+    noveltyArchive: NoveltyArchive<ActionBehavior>
 ) {
     val (scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
     var currentPopulation = initialPopulation
@@ -191,7 +191,7 @@ suspend fun Application.evaluationLoopNovelty(
         currentPopulation = currentPopulation.shuffled()
         writeGenerationToDisk(currentPopulation, runFolder, populationEvolver, "${evaluationId}_")
         launch {
-            runFolder.resolve("${evaluationId}_noveltyArhive.json").bufferedWriter().use {
+            runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
                 val json = Json { prettyPrint = true }
                 it.write(json.encodeToString(noveltyArchive.behaviors))
                 it.flush()
@@ -210,7 +210,7 @@ suspend fun Application.evaluationLoopNovelty(
             try {
 
                 val network = neatMutator.toNetwork()
-                val evaluator = NoveltyEvaluator(
+                val evaluator = NoveltyEvaluatorMultiBehavior(
                     network,
                     index,
                     evaluationId,
@@ -230,7 +230,7 @@ suspend fun Application.evaluationLoopNovelty(
                     scoreChannel,
                     evaluator,
                     noveltyArchive
-                ) { frameUpdate -> frameUpdate.flatten2() }
+                ) { frameUpdate -> frameUpdate.flatten3() }
                 logger.info { "[eval: $evaluationId] Score: ${evaluationScore.score}" }
                 FitnessModel(
                     model = neatMutator,
@@ -282,8 +282,8 @@ private suspend fun evaluateNovelty(
     ioController: IOController,
     network: ActivatableNetwork,
     scoreChannel: SendChannel<EvaluationScore>,
-    evaluator: NoveltyEvaluator,
-    noveltyArchive: NoveltyArchive<List<Int>>,
+    evaluator: NoveltyEvaluatorMultiBehavior,
+    noveltyArchive: NoveltyArchive<ActionBehavior>,
     transformToInput: suspend (FrameUpdate) -> List<Float>
 ): EvaluationScore {
 
@@ -302,6 +302,7 @@ private suspend fun evaluateNovelty(
 
             if (evaluator.isFinished()) {
                 evaluator.finishEvaluation()
+                ioController.frameOutputChannel.send(flushControllerOutput(ioController))
                 val score = when {
                     !evaluator.score.met -> 0f
                     noveltyArchive.size < 1 -> 2f.also {
@@ -309,7 +310,7 @@ private suspend fun evaluateNovelty(
                     }
                     else -> noveltyArchive.addBehavior(evaluator.score.behavior)
                 }
-                logger.trace { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId. Score: ${score}" }
+//                logger.trace { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId. Score: ${score}" }
                 return EvaluationScore(
                     evaluationId,
                     agentId,

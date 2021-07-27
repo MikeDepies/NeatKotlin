@@ -9,21 +9,17 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
-import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
 import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import neat.ModelScore
-import neat.SpeciationController
-import neat.model.NeatMutator
 import neat.novelty.KNNNoveltyArchive
 import neat.novelty.levenshtein
-import neat.toMap
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.*
 import org.koin.core.parameter.*
@@ -112,15 +108,22 @@ fun Application.module(testing: Boolean = false) {
             listOf(controllerId, populationSize)
         )
     })
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(100)
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(100)
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(500)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(500)
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationChannels2 = get<EvaluationChannels>()
     val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
 //    generateFakeData(evaluationChannels)
-
+//    val a = Json { }.decodeFromString<List<ActionBehavior>>(
+//        File("population/0_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
+//    )
+//    val b = Json { }.decodeFromString<List<ActionBehavior>>(
+//        File("population/1_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
+//    )
     networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1, controller2))
+
+    val sequenceSeparator = 2000.toChar()
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)
@@ -128,14 +131,23 @@ fun Application.module(testing: Boolean = false) {
         log.info("Start evaluation Loop!")
         evaluationLoopNovelty(
             evaluationId = 0,
-            initialPopulation = initialPopulation,
+            initialPopulation = initialPopulation ,
             populationEvolver = populationEvolver,
             adjustedFitnessCalculation = adjustedFitness,
             evaluationChannels = evaluationChannels,
             controller1,
-            KNNNoveltyArchive(15, 1f) { a, b ->
-                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
+            KNNNoveltyArchive<ActionBehavior>(20, 1f) { a, b ->
+                val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
+                val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
+                val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
+                val recoveryDistance = levenshtein(
+                    a.recovery.joinToString("$sequenceSeparator") { it.actionString() },
+                    b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
+                )
+
+                sqrt(allActionDistance.squared() + killsDistance.times(10).squared() + damageDistance.times(10).squared()  + recoveryDistance.times(10).squared().toFloat())
             }
+//                .also { it.behaviors.addAll(a) }
         )
     }
 
@@ -146,22 +158,69 @@ fun Application.module(testing: Boolean = false) {
         log.info("Start evaluation Loop!")
         evaluationLoopNovelty(
             evaluationId = 1,
-            initialPopulation = initialPopulation2,
+            initialPopulation = initialPopulation2 ,
             populationEvolver = populationEvolver2,
             adjustedFitnessCalculation = adjustedFitness,
             evaluationChannels = evaluationChannels2,
             controller2,
-            KNNNoveltyArchive(15, 5f) { a, b ->
-                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
+            KNNNoveltyArchive<ActionBehavior>(10, 2f) { a, b ->
+                val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
+                val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
+                val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
+                val recoveryDistance = levenshtein(
+                    a.recovery.joinToString("$sequenceSeparator") { it.actionString() },
+                    b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
+                )
+                sqrt(allActionDistance.squared() + killsDistance.times(1).squared() + damageDistance.times(1).squared()  + recoveryDistance.times(1).squared().toFloat())
             }
+//                .also { it.behaviors.addAll(b) }
         )
     }
+
+//    launch(Dispatchers.IO) {
+//        while (!receivedAnyMessages) {
+//            delay(100)
+//        }
+//        log.info("Start evaluation Loop!")
+//        evaluationLoopNovelty(
+//            evaluationId = 0,
+//            initialPopulation = initialPopulation,
+//            populationEvolver = populationEvolver,
+//            adjustedFitnessCalculation = adjustedFitness,
+//            evaluationChannels = evaluationChannels,
+//            controller1,
+//            KNNNoveltyArchive<List<Int>>(30, 20f) { a, b ->
+//                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
+//            }.also { it.behaviors.addAll(a) }
+//        )
+//    }
+//
+//    launch(Dispatchers.IO) {
+//        while (!receivedAnyMessages) {
+//            delay(100)
+//        }
+//        log.info("Start evaluation Loop!")
+//        evaluationLoopNovelty(
+//            evaluationId = 1,
+//            initialPopulation = initialPopulation2,
+//            populationEvolver = populationEvolver2,
+//            adjustedFitnessCalculation = adjustedFitness,
+//            evaluationChannels = evaluationChannels2,
+//            controller2,
+//            KNNNoveltyArchive<List<Int>>(15, 5f) { a, b ->
+//                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
+//            }.also { it.behaviors.addAll(b) }
+//        )
+//    }
     val json = get<Json>()
     routing {
 
     }
 }
 
+fun Int.squared() = this * this
+
+fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
 private fun Application.connectAndCreateDatabase() {
     launch {
         fun dbProp(propName: String) = environment.config.property("ktor.database.$propName")

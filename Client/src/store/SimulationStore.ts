@@ -48,7 +48,7 @@ function population(evaluationId: number) {
 }
 
 function populationHistory(population: Readable<Population | undefined>) {
-    const populationHistory = arrayWritableFixedSize<Population>([], 10)
+    const populationHistory = arrayWritableFixedSize<Population>([], 40)
     population.subscribe($population => {
         // $population?.agents.sort((a, b) => a.species - b.species);
 

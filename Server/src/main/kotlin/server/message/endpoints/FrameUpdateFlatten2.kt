@@ -20,7 +20,6 @@ suspend fun FrameUpdate.flatten2() = sequence<Float> {
     yield(distance)
 }.toList()
 
-
 private suspend fun SequenceScope<Float>.yieldStageData(stageData: StageData) = with(stageData){
     yield(stage.toFloat())
 //    yield(leftEdge)

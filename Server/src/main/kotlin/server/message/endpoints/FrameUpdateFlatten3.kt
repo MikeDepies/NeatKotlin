@@ -8,7 +8,7 @@ import Platform
 import PlayerDataUpdate
 import Position
 import StageData
-
+val positionNormalizer = 100f
 private fun Boolean.facingDirectionToFloat() = if (this) 1f else -1f
 private fun Boolean.toFloat() = if (this) 1f else 0f
 suspend fun FrameUpdate.flatten3() = sequence<Float> {
@@ -16,15 +16,15 @@ suspend fun FrameUpdate.flatten3() = sequence<Float> {
     yieldPlayerData(player2)
     yieldActionData(action1)
     yieldActionData(action2)
-//    yieldStageData(stage)
-//    yield(distance)
+    yieldStageData(stage)
+    yield(distance / positionNormalizer)
 }.toList()
 
 
 private suspend fun SequenceScope<Float>.yieldStageData(stageData: StageData) = with(stageData){
-    yield(stage.toFloat())
-    yield(leftEdge)
-    yield(rightEdge)
+    yield(stage.toFloat() / actionNormalize)
+    yield(leftEdge / positionNormalizer)
+    yield(rightEdge / positionNormalizer)
     yieldBlastzones(blastzone)
     yieldPlatform(platformLeft ?: Platform(0f, 0f, 0f))
     yieldPlatform(platformTop ?: Platform(0f, 0f, 0f))
@@ -32,27 +32,28 @@ private suspend fun SequenceScope<Float>.yieldStageData(stageData: StageData) = 
 }
 
 private suspend fun SequenceScope<Float>.yieldBlastzones(blastzone: BlastZone) = with(blastzone){
-    yield(left)
-    yield(top)
-    yield(right)
-    yield(left)
+    yield(left / positionNormalizer)
+    yield(top / positionNormalizer)
+    yield(right / positionNormalizer)
+    yield(left / positionNormalizer)
 }
 private suspend fun SequenceScope<Float>.yieldPlatform(platform: Platform) = with(platform){
-    yield(left)
-    yield(height)
-    yield(right)
+    yield(left / positionNormalizer)
+    yield(height / positionNormalizer)
+    yield(right / positionNormalizer)
 }
 
 
-
+private val actionNormalize = 10f
 private suspend fun SequenceScope<Float>.yieldActionData(actionData: ActionData) {
+
     with(actionData) {
-        yield(action.toFloat())
-        yield(rangeForward)
-        yield(rangeBackward)
-        yield(hitBoxCount.toFloat())
+        yield(action.toFloat() / positionNormalizer)
+        yield(rangeForward / positionNormalizer)
+        yield(rangeBackward / positionNormalizer)
+        yield(hitBoxCount.toFloat() / actionNormalize)
         yield(attackState.toFloat())
-        yield(actionFrame.toFloat())
+        yield(actionFrame.toFloat() / actionNormalize)
 //        yield(actionState)
 //        yield(actionFrame)
 
@@ -64,13 +65,13 @@ private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: Playe
 //        yield(character.toFloat())
 
 //        yield(offStage.toFloat())
-        yield(speedAirX)
-        yield(speedGroundX)
-        yield(speedXAttack)
-        yield(speedY)
-        yield(speedYAttack)
+        yield(speedAirX / positionNormalizer)
+        yield(speedGroundX / positionNormalizer)
+        yield(speedXAttack / positionNormalizer)
+        yield(speedY / positionNormalizer)
+        yield(speedYAttack / positionNormalizer)
         yield(facingRight.facingDirectionToFloat())
-        yield(percent.toFloat())
+        yield(percent.toFloat() / positionNormalizer)
 //        yieldEnvironmentalCollisionBox(ecb)
     }
 }
@@ -97,14 +98,7 @@ private suspend fun SequenceScope<Float>.yieldPlayerData(playerDataUpdate: Playe
  */
 
 
-private suspend fun SequenceScope<Float>.yieldEnvironmentalCollisionBox(environmentalCollisionBox: EnvironmentalCollisionBox) {
-    yieldPosition(environmentalCollisionBox.bottom)
-    yieldPosition(environmentalCollisionBox.left)
-    yieldPosition(environmentalCollisionBox.right)
-    yieldPosition(environmentalCollisionBox.top)
-}
-
 private suspend fun SequenceScope<Float>.yieldPosition(position: Position) {
-    yield(position.x)
-    yield(position.y)
+    yield(position.x / positionNormalizer)
+    yield(position.y / positionNormalizer)
 }

@@ -112,17 +112,19 @@ val applicationModule = module {
     }
     factory { (evaluationId: Int, populationSize: Int) ->
         val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 4f, disjointCoefficient = 1f)
-        val randomSeed: Int = 0 + evaluationId
+        val randomSeed: Int = 20 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
-        val shFunction = shFunction(.2f)
-
-//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, baseActivationFunctions(), addConnectionAttempts)
+        val shFunction = shFunction(.61f)
+        val activationFunctions = baseActivationFunctions()
+//
+//        val simpleNeatExperiment =
+//            simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
 //        val population = simpleNeatExperiment.generateInitialPopulation(
 //            populationSize,
 //            62,
 //            8,
-//            Activation.sigmoidal
+//            activationFunctions
 //        )
         val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
         val models = populationModel.models
@@ -130,15 +132,16 @@ val applicationModule = module {
         val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
         val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
         val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, baseActivationFunctions(),
+            random, maxInnovation, maxNodeInnovation, activationFunctions,
             addConnectionAttempts
         )
-
+        val population = models.map { it.toNeatMutator() }
+        val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
         simulation(
             evaluationId,
             distanceFunction = { a, b ->
                 cppnGeneRuler.measure(a, b)
-                //            compatibilityDistanceFunction(1f, 1f, 1f)(a, b)
+//                            compatibilityDistanceFunction(a, b)
             },
             sharingFunction = {
                 shFunction(it)
@@ -146,12 +149,12 @@ val applicationModule = module {
             speciationController = SpeciationController(0, standardCompatibilityTest({
                 shFunction(it)
             }, { a, b ->
-                cppnGeneRuler.measure(a, b)
-                //            compatibilityDistanceFunction(1f, 1f, 1f)(a, b)
+//                cppnGeneRuler.measure(a, b)
+                compatibilityDistanceFunction(a, b)
             })),
             simpleNeatExperiment = simpleNeatExperiment,
-            population = models.map { it.toNeatMutator() },
-            generation = populationModel.generation
+            population = population,
+            generation = 0
         )
     }
 }
@@ -211,21 +214,25 @@ fun loadPopulation(file: File): LoadedModels {
 }
 
 fun NeatExperiment.generateInitialPopulation(
-    populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene
+    populationSize: Int,
+    numberOfInputNodes: Int,
+    numberOfOutputNodes: Int,
+    activationFunctions: List<ActivationGene>
 ): List<NeatMutator> {
-    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, function)
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, activationFunctions.first())
     val assignConnectionRandomWeight = assignConnectionRandomWeight()
     return (0 until populationSize).map {
         val clone = neatMutator.clone()
         clone.connections.forEach { connectionGene ->
             assignConnectionRandomWeight(connectionGene)
         }
-//        clone.nodes.forEach {
-//            it.activationFunction = baseActivationFunctions().random(random)
-//        }
+        clone.nodes.forEach {
+            it.activationFunction = activationFunctions.random(random)
+        }
         clone
     }
 }
+
 
 fun PopulationModel.neatMutatorList(): List<NeatMutator> {
     return this.models.map { it.toNeatMutator() }
