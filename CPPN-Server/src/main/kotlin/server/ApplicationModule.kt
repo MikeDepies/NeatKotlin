@@ -77,52 +77,9 @@ val applicationModule = module {
 }
 
 
-data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generation: Int, val controllerId: Int)
+fun simulation(evaluationId: Int, randomSeed: Int = 15, takeSize: Int? = 50): Simulation {
 
-fun activationFunctions(): List<ActivationGene> {
-    return with(Activation) {
-        listOf(
-            identity,
-            sigmoidal,
-            step,
-            complementaryLogLog,
-            bipolarSigmoid,
-            tanh,
-//            tanhLeCun,
-            hardTanh,
-            absolute,
-            relu,
-            reluCos,
-            reluSin,
-//            cosine,
-            smoothRectifier,
-            logit,
-            ActivationGene("log") { ln(it) },
-            ActivationGene("inverse") { it * -1 },
-            ActivationGene("inverse") { sin(it * 2) },
-            ActivationGene("inverse") { cos(it * 2) },
-            ActivationGene("inverse") { sinh(it) },
-            ActivationGene("inverse") { cosh(it) },
-            ActivationGene("inverse") { tan(it) },
-            ActivationGene("inverse") { atan(it) },
-//            ActivationGene("inverse") { atan2(it) },
-//            ActivationGene("exp") { exp(it) },
-            ActivationGene("gaussian") { exp(-1 * (it * it)) },
-            ActivationGene("ramp") { 1f - (2f * (it - floor(it))) },
-//            ActivationGene("exp") { it.pow(2) },
-//            ActivationGene("exp") { it.pow(3) },
-//            ActivationGene("exp") { it.pow(4) },
-//            ActivationGene("exp") { it.pow(5) },
-//            ActivationGene("exp") { it.pow(6) },
-            ActivationGene("exp") { if (it == 0f) 0f else E.pow(-1.0 / (it.pow(2))).toFloat() },
-//            ActivationGene("exp") { 1 },
-        )
-    }
-}
-
-fun simulation(evaluationId: Int, randomSeed: Int = 5, takeSize: Int? = 50): Simulation {
-
-    val activationFunctions = baseActivationFunctions()//activationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
+    val activationFunctions = Activation.CPPN.functions//activationFunctions()//listOf(Activation.identity, Activation.sigmoidal)
     var largestCompatDistance = 0f
     val sharingFunction: (Float) -> Int = {
         shFunction(5f)(it)
@@ -171,8 +128,8 @@ fun NeatExperiment.generateInitialPopulationCPPN(
     val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, Activation.sigmoidal)
     /*fullyConnect(addNode(neatMutator), neatMutator)
     fullyConnect(addNode(neatMutator), neatMutator)*/
-    addNode(neatMutator)
-    addNode(neatMutator)
+//    addNode(neatMutator)
+//    addNode(neatMutator)
 //    fullyConnect(addNode(neatMutator), neatMutator)
 //    fullyConnect(addNode(neatMutator), neatMutator)
     addNode(neatMutator)

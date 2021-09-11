@@ -6,7 +6,7 @@ plugins {
     application
 }
 group = "com.blackthorne"
-version = "1.1-SNAPSHOT"
+version = "1.0-SNAPSHOT"
 
 val ktorVersion: String by project
 val logbackVersion: String by project
@@ -23,6 +23,13 @@ repositories {
         url = uri("https://dl.bintray.com/kotlin/kotlinx")
     }
 }
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        useIR = true
+    }
+}
+
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*SNAPSHOT.jar"))))
     testImplementation(kotlin("test-junit5"))
@@ -51,10 +58,14 @@ dependencies {
 
     implementation("io.ktor:ktor-auth:$ktorVersion")
     implementation("io.ktor:ktor-auth-jwt:$ktorVersion")
-
+    implementation("mysql:mysql-connector-java:8.0.19")
+    implementation("com.zaxxer:HikariCP:3.2.0")
+    implementation("org.optaplanner:optaplanner-core:8.0.0.Final")
     implementation(kotlin("stdlib-jdk8"))
 }
+tasks.withType<KotlinCompile>() {
 
+}
 application {
     mainClassName = "ServerKt"
 }

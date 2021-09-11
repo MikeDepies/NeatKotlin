@@ -178,10 +178,10 @@ fun mutationDictionary(): List<MutationEntry> {
     return listOf(
         .8f chanceToMutate getMutateConnections(.1f),
         .4f chanceToMutate mutateAddNode,
-        .2f chanceToMutate mutateAddConnection,
+        .4f chanceToMutate mutateAddConnection,
         .8f chanceToMutate mutatePerturbBiasConnections(),
         .11f chanceToMutate mutateToggleConnection,
-        .15f chanceToMutate mutateNodeActivationFunction(),
+        .25f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 fun NeatExperiment.evolvePopulation(selection: List<NeatMutator>, numberOfOffspring: Int, evolutions: Int): List<NeatMutator> {

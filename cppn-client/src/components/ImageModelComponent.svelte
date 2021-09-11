@@ -12,15 +12,15 @@
         for (let x = 0; x < width; x++) {
             for (let y = 0; y < height; y++) {
                 const v = imageModel.imageData[x][y]
-                ctx.fillStyle = `rgb(${toColorValue(v[0])},${toColorValue(v[1])},${toColorValue(v[2])})`;
+                ctx.fillStyle = `hsl(${toColorValue(v[0], 360)},${toColorValue(v[1], 100)}%,${toColorValue(v[2], 100)}%)`;
                 ctx.fillRect(x, y, 1, 1);
             }
         }
     }
-    function toColorValue(value : number) {
+    function toColorValue(value : number, scaleTo : number) {
         return Math.min(
-                    (1 - Math.abs(value)) * 255,
-                    255
+                    (1 - Math.abs(value)) * scaleTo,
+                    scaleTo
                 );
     }
 </script>

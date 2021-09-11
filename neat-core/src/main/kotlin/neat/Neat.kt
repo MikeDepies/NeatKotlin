@@ -12,8 +12,6 @@ data class FitnessModel<T>(val model: T, val score: Float)
 fun <T> identity(): (T) -> T = { it }
 
 
-//fun neat.SpeciationController.population() =
-//    speciesSet.flatMap { getSpeciesPopulation(it) }
 
 class Neat(
     private val generationRules: GenerationRules
