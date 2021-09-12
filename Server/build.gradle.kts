@@ -60,7 +60,7 @@ dependencies {
     implementation("io.ktor:ktor-auth-jwt:$ktorVersion")
     implementation("mysql:mysql-connector-java:8.0.19")
     implementation("com.zaxxer:HikariCP:3.2.0")
-    implementation("org.optaplanner:optaplanner-core:8.0.0.Final")
+
     implementation(kotlin("stdlib-jdk8"))
 }
 tasks.withType<KotlinCompile>() {

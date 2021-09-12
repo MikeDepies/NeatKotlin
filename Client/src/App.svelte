@@ -24,18 +24,25 @@
   const newPopulation = r.read("simulation.event.population.new");
   const evaluationSet = new Set();
   type TimerControllerEndpoint = {
+    
     timer: { timer: number };
+    maxTimer :  { timer: number };
   };
   const w = writer<TimerControllerEndpoint>(message);
   let timer = 30;
+  let maxTimer = 30;
   function updateTimer() {
     w.write("timer", { timer });
+    w.write("maxTimer", { timer: maxTimer });
   }
+  
 </script>
 
 <div>
   Timer:
-  <input type="text" bind:value={timer} />
+  <input type="text" bind:value={timer} class="w-16" />
+  Max Timer:
+  <input type="text" bind:value={maxTimer} />
   <button on:click={updateTimer}>Update</button>
 </div>
 <div class="flex flex-col">

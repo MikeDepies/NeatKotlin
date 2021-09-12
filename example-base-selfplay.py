@@ -480,7 +480,7 @@ async def console_loop():
             # melee.MenuHelper.choose_character(Session.cpu_character, gamestate, controller_opponent)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller,
-                                                melee.Character.CPTFALCON,
+                                                melee.Character.FOX,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=2,
@@ -489,7 +489,7 @@ async def console_loop():
                                                 cpu_level=0)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller_opponent,
-                                                melee.Character.MARTH,
+                                                melee.Character.LINK,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=2,

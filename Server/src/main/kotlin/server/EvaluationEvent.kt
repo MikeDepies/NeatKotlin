@@ -242,7 +242,7 @@ suspend fun Application.evaluationLoopNovelty(
                     score = 0f
                 )
             }
-        }.toModelScores(adjustedFitnessCalculation)
+        }.toModelScores(adjustedFitnessCalculation)//.filter { it.fitness > 0f }
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
@@ -305,11 +305,11 @@ private suspend fun evaluateNovelty(
                 ioController.frameOutputChannel.send(flushControllerOutput(ioController))
                 val score = when {
                     !evaluator.score.met -> 0f
-                    noveltyArchive.size < 1 -> 2f.also {
+                    noveltyArchive.size < 1 -> evaluator.score.behavior.allActions.size.toFloat().also {
                         noveltyArchive.addBehavior(evaluator.score.behavior)
                     }
                     else -> noveltyArchive.addBehavior(evaluator.score.behavior)
-                }
+                } + evaluator.score.behavior.totalDamageDone / 5
 //                logger.trace { "[eval: $evaluationId}] ${ioController.controllerId} - finished evaluating agent #$agentId. Score: ${score}" }
                 return EvaluationScore(
                     evaluationId,
