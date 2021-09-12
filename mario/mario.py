@@ -18,7 +18,7 @@ def getNetwork():
     requestNetwork = True
     network = None
     while requestNetwork:
-        res = requests.get("http://localhost:8091/model")
+        res = requests.get("http://192.168.1.132:8094/model")
         if not res.ok:
             continue
         data = res.json()
@@ -37,7 +37,7 @@ def getNetwork():
 
 def submitScore(info):
     # print(info["stage"])
-    requests.post("http://localhost:8091/score", json={
+    requests.post("http://192.168.1.132:8094/score", json={
         "coins": info["coins"],
         "flag_get": info["flag_get"],
         "life": int(info["life"]),
@@ -52,7 +52,7 @@ def submitScore(info):
     })
 
 def deadNetwork():
-    requests.post("http://localhost:8091/dead", json={
+    requests.post("http://192.168.1.132:8094/dead", json={
         "id" : id
     })
 
@@ -60,7 +60,6 @@ def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
 def mario(env: Env):
-    uri = "ws://localhost:8090/ws"
     done = False
     id, network = getNetwork()
     # network.write()
