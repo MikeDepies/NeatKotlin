@@ -15,7 +15,7 @@ class PopulationEvolver(
     }
 
     fun updateScores(updatedModelScores: List<ModelScore>) {
-        val map = updatedModelScores.map { speciationController.species(it.neatMutator) to it }
+        val map = updatedModelScores.filter { speciationController.hasSpeciesFor(it.neatMutator) }.map { speciationController.species(it.neatMutator) to it }
         scoreKeeper.updateScores(map, generation)
     }
 
