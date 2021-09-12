@@ -30,6 +30,7 @@ import server.server.*
 import java.io.*
 import java.time.*
 import java.time.format.*
+import java.util.*
 import kotlin.random.*
 
 
@@ -138,7 +139,7 @@ fun Application.module(testing: Boolean = false) {
         addConnectionAttempts
     )
     var population = models.map { it.toNeatMutator() }.mapIndexed { index, neatMutator ->
-        NetworkWithId(neatMutator, index)
+        NetworkWithId(neatMutator, UUID.randomUUID().toString())
     }
     val behaviors = Json { }.decodeFromString<List<MarioInfo>>(
         File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
@@ -184,7 +185,7 @@ fun Application.module(testing: Boolean = false) {
             logger.info { "New generation ${populationEvolver.generation}" }
             val toModelScores = scores.toModelScores(simulation.adjustedFitnessCalculation)
             population = evolve(populationEvolver, toModelScores, simpleNeatExperiment, population.size).mapIndexed { index, neatMutator ->
-                NetworkWithId(neatMutator, index)
+                NetworkWithId(neatMutator, UUID.randomUUID().toString())
             }
             mapIndexed = population.mapIndexed { index, neatMutator -> index to neatMutator }.toMap()
             finishedScores = population.mapIndexed { index, neatMutator -> index to false }.toMap().toMutableMap()
@@ -254,7 +255,7 @@ fun MarioInfo.statusAsNumber() = when (this.status) {
     "fireball" -> 2
     else -> error("failed to handle status: $status")
 }
-data class NetworkWithId(val neatMutator: NeatMutator, val id : Int)
+data class NetworkWithId(val neatMutator: NeatMutator, val id : String)
 fun toVector(marioInfo: MarioInfo) = listOf(
     marioInfo.x_pos / 50f,
     marioInfo.y_pos/ 8f,

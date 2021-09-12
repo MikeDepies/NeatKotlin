@@ -65,11 +65,11 @@ data class ConnectionLocation(
 data class NetworkDescription(
     val connections: Set<ConnectionLocation>,
     val nodes: Set<NodeLocation>,
-    val id : Int,
+    val id : String,
     val bias: NodeLocation? = null
 )
 
-fun createTaskNetwork(network: ActivatableNetwork, modelIndex: Int): NetworkDescription {
+fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
     val connectionThreshold = .3f
     val connectionMagnitude = 2f
