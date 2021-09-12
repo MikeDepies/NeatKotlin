@@ -50,6 +50,7 @@ class NoveltyEvaluatorMultiBehavior(
     var damageSinceRecovery = true
     var neverShielded = true
     var offStageTime = 0
+    var totalFrames = 0
 
     /**
      * The finalized Score
@@ -59,9 +60,10 @@ class NoveltyEvaluatorMultiBehavior(
             val meleeFrameData = lastMeleeFrameData
 
             val met = when {
-                generation < 400 -> (meleeFrameData !== null && (!meleeFrameData.player1.lostStock || (meleeFrameData.player1.lostStock && knocked)))
+                generation < 1400 -> true
+                else-> (meleeFrameData !== null && (!meleeFrameData.player1.lostStock || (meleeFrameData.player1.lostStock && knocked)))
 //                generation < 1200 -> true
-                else -> totalDamage > 0 && (meleeFrameData !== null && (!meleeFrameData.player1.lostStock || (meleeFrameData.player1.lostStock && knocked)))
+//                else -> totalDamage > 0 && (meleeFrameData !== null && (!meleeFrameData.player1.lostStock || (meleeFrameData.player1.lostStock && knocked)))
             }
             return MinimaCriteria(
                 met,
@@ -75,10 +77,9 @@ class NoveltyEvaluatorMultiBehavior(
             it.player1.x.absoluteValue < it.stage.rightEdge || it.player1.onGround
         } ?: false
         val opponentOnGround = lastFrameUpdate?.player2?.onGround ?: false
-        return (meleeFrameData !== null) && (meleeFrameData.player1.lostStock ||
+        return (meleeFrameData !== null)  && (meleeFrameData.player1.lostStock ||
                 (onStage && opponentOnGround &&
-                        (framesWithoutDamage / 60 > AttackTimer.timer)) ||
-                offStageTime / 60 > 15)// || idleGameClock.isFinished(meleeFrameData))
+                        (framesWithoutDamage / 60 > AttackTimer.timer)) ) || totalFrames / 60 > AttackTimer.maxTime// || idleGameClock.isFinished(meleeFrameData))
     }
 
     var recoveryAction = mutableListOf<Int>()
@@ -106,7 +107,7 @@ class NoveltyEvaluatorMultiBehavior(
             }
             if (offStage && knocked) {
                 knockedOffStage = true
-                logger.info { "Ai knocked off stage" }
+//                logger.info { "Ai knocked off stage" }
             }
             //recovery time bonus
             if (onStage && knockedOffStage && damageSinceRecovery) {
@@ -115,7 +116,7 @@ class NoveltyEvaluatorMultiBehavior(
                 damageSinceRecovery = false
                 recoveryActionSets.add(recoveryAction)
                 recoveryAction = mutableListOf()
-                logger.info { "Ai recovered to stage" }
+//                logger.info { "Ai recovered to stage" }
             }
             //Opponent Stage Track
             //TODO refactor into tracker concept
@@ -140,14 +141,15 @@ class NoveltyEvaluatorMultiBehavior(
             val onStage2 = !offStage2 && frameUpdate.player2.onGround && frameUpdate.player2.y >= 0
             if (offStage2 && opponentKnocked) {
                 opponentKnockedOffStage = true
-                logger.info { "opponent knocked off stage" }
+//                logger.info { "opponent knocked off stage" }
             }
             //recovery time bonus
             if (onStage2 && opponentKnockedOffStage) {
                 opponentKnockedOffStage = false
-                logger.info { "opponent recovered onto stage" }
+//                logger.info { "opponent recovered onto stage" }
             }
-            if (!opponentKnocked && !frameUpdate.player2.invulnerable && !frameUpdate.player2.hitStun)
+
+            if (!frameUpdate.player1.invulnerable && !opponentKnocked && !frameUpdate.player2.invulnerable && !frameUpdate.player2.hitStun)
                 framesWithoutDamage += 1
 
             if (frameData.player1.dealtDamage) {
@@ -159,7 +161,7 @@ class NoveltyEvaluatorMultiBehavior(
                 previousAction?.let { damageActions += it }
 //                actions += frameUpdate.action1.action
 //                actions += frameUpdate.action2.action
-                logger.info { "damage done. Reset frame counter." }
+//                logger.info { "damage done. Reset frame counter." }
             }
             if (previousAction != frameUpdate.action1.action) {
 //                if (frameUpdate.action1.isAttack)
@@ -168,7 +170,7 @@ class NoveltyEvaluatorMultiBehavior(
                     actions += frameUpdate.action1.action
                 }
                 previousActions += actions
-                if (previousActions.size > 10) {
+                if (previousActions.size > 2) {
                     previousActions.remove(0)
                 }
 //                }
@@ -177,7 +179,7 @@ class NoveltyEvaluatorMultiBehavior(
                 }
                 previousAction = frameUpdate.action1.action
 
-                logger.trace { "new action added(${actions.size})! $previousAction" }
+//                logger.trace { "new action added(${actions.size})! $previousAction" }
 //                logger.info { actions }
             }
             if (frameData.player2.lostStock) {
@@ -193,7 +195,7 @@ class NoveltyEvaluatorMultiBehavior(
 //                opponentKnocked = false
 //                framesSinceOpponentUnknocked = 0
 //                opponentTouchedGround = false
-                logger.info { "Kill occurred. Reset frame counter." }
+//                logger.info { "Kill occurred. Reset frame counter." }
             }
 
             if (opponentPreviousAction != frameUpdate.action2.action) {
@@ -202,6 +204,7 @@ class NoveltyEvaluatorMultiBehavior(
         }
         meleeState.lastMeleeFrameData = frameData
         lastFrameUpdate = frameUpdate
+        totalFrames+=1
     }
 
     override fun finishEvaluation() {

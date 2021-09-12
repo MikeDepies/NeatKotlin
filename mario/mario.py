@@ -18,7 +18,7 @@ def getNetwork():
     requestNetwork = True
     network = None
     while requestNetwork:
-        res = requests.get("http://192.168.1.132:8094/model")
+        res = requests.get("http://localhost:8094/model")
         if not res.ok:
             continue
         data = res.json()
@@ -32,12 +32,12 @@ def getNetwork():
             requestNetwork = False
         except:
             print("failed to build")
-            deadNetwork()
+            # deadNetwork()
         return (id, network)
 
 def submitScore(info):
     # print(info["stage"])
-    requests.post("http://192.168.1.132:8094/score", json={
+    requests.post("http://localhost:8094/score", json={
         "coins": info["coins"],
         "flag_get": info["flag_get"],
         "life": int(info["life"]),
@@ -52,7 +52,7 @@ def submitScore(info):
     })
 
 def deadNetwork():
-    requests.post("http://192.168.1.132:8094/dead", json={
+    requests.post("http://localhost:8094/dead", json={
         "id" : id
     })
 
@@ -60,6 +60,7 @@ def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
 def mario(env: Env):
+    uri = "ws://localhost:8090/ws"
     done = False
     id, network = getNetwork()
     # network.write()
@@ -69,6 +70,8 @@ def mario(env: Env):
     state = env.reset()
     idleCount = 0
     i =0
+    maxX=0
+    framesSinceMaxXChange = 0
     while True:
         if done:
             state = env.reset()
@@ -79,6 +82,8 @@ def mario(env: Env):
             cumulativeReward = 0
             idleCount = 0
             i=0
+            maxX=0
+            framesSinceMaxXChange = 0
         
         state, reward, done, info = env.step(action)
         
@@ -87,19 +92,24 @@ def mario(env: Env):
         network.input(state)
         network.compute()
         output =network.output()[0]
+        if (info["x_pos"] > maxX):
+            maxX = info["x_pos"]
+            framesSinceMaxXChange = 0
+        else:
+            framesSinceMaxXChange +=1
         if reward == 0:
             idleCount+= 1
         else:
             idleCount -=4
         if idleCount < 0:
             idleCount = 0
-        if idleCount > 60 or reward < -14:
+        if idleCount > 60 or reward < -14 or framesSinceMaxXChange > 20* 25:
             done=True
         # print(output)
         action = min(math.floor(output * 7), 6)
         i+= 1
-        # if (i % 20 == 0):
-        #     env.render()
+        # if (i % 2 == 0):
+        env.render()
             # print(state)
 
     env.close()

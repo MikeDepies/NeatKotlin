@@ -1,5 +1,5 @@
 from collections import defaultdict
-from graphlib import TopologicalSorter
+
 import json
 import math
 import enum
@@ -101,7 +101,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
         nodeValuePre[target] = 0
         nodeValuePost[target] = 0
     print("Constructing topological order...")
-    computationOrder = list[List[NodeLocation]](
+    computationOrder = list(
         nx.topological_generations(graph))
     print("Constructed Computable Network...")
     # print(NodeLocation(0,0,0) == NodeLocation(0,0,0))

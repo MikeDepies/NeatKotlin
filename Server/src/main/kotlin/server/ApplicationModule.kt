@@ -111,13 +111,13 @@ val applicationModule = module {
         )
     }
     factory { (evaluationId: Int, populationSize: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 4f, disjointCoefficient = 1f)
+        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
         val randomSeed: Int = 20 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
-        val shFunction = shFunction(.61f)
-        val activationFunctions = baseActivationFunctions()
-//
+        val shFunction = shFunction(.1f)
+        val activationFunctions = listOf(Activation.sigmoidal, Activation.identity)//baseActivationFunctions()
+
 //        val simpleNeatExperiment =
 //            simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
 //        val population = simpleNeatExperiment.generateInitialPopulation(
@@ -149,12 +149,12 @@ val applicationModule = module {
             speciationController = SpeciationController(0, standardCompatibilityTest({
                 shFunction(it)
             }, { a, b ->
-//                cppnGeneRuler.measure(a, b)
-                compatibilityDistanceFunction(a, b)
+                cppnGeneRuler.measure(a, b)
+//                compatibilityDistanceFunction(a, b)
             })),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
-            generation = 0
+            generation = if (evaluationId == 0) 403 else 385
         )
     }
 }

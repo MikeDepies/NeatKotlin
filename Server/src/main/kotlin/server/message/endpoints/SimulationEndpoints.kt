@@ -20,6 +20,7 @@ var receivedAnyMessages = false
 data class Timer(val timer : Float)
 object AttackTimer {
     var timer = 30f
+    var maxTime = 30f
 }
 fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *>> {
     registerEndpoint<FrameUpdate, SimulationSessionScope>("simulation.frame.update") {
@@ -37,6 +38,11 @@ fun EndpointProvider.simulationEndpoints() = sequence<SimpleMessageEndpoint<*, *
 
     registerEndpoint<Timer, SimulationSessionScope>("timer") {
         AttackTimer.timer = it.data.timer
+        log.info { it.data }
+    }
+
+    registerEndpoint<Timer, SimulationSessionScope>("maxTimer") {
+        AttackTimer.maxTime = it.data.timer
         log.info { it.data }
     }
 
