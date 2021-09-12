@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.blackthorne"
-version = "1.5-SNAPSHOT"
+version = "1.5.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
