@@ -68,10 +68,10 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     nodeValuePost: Dict[NodeLocation, float] = dict()
     # computationOrder: List[NodeLocation] = list()
     # ndarray()
-    inputNodes = list(filter(lambda n: n.z < 3, nodes))
+    inputNodes = list(filter(lambda n: n.z < 1, nodes))
     # if bias is not None:
     #     inputNodes.append(bias)
-    outputNodes = list(filter(lambda n: n.z == 4, nodes))
+    outputNodes = list(filter(lambda n: n.z == 3, nodes))
     print("Node values initializing...")
     print("input nodes:")
     print(len(inputNodes))

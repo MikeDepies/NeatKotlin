@@ -8,6 +8,7 @@ import math
 import requests
 import NeatNetwork
 from skimage.transform import rescale, resize, downscale_local_mean
+import time
 # import cv2 as cv
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 env = gym_super_mario_bros.make('SuperMarioBros-v1')
@@ -20,9 +21,10 @@ def getNetwork():
     while requestNetwork:
         res = requests.get("http://192.168.1.132:8094/model")
         if not res.ok:
+            time.sleep(2)
             continue
         data = res.json()
-        id : int = data["id"]
+        id : str = data["id"]
         connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(**c), data["connections"]))
         nodes: List[NeatNetwork.ConnectionLocation] = list(map(lambda n: NeatNetwork.NodeLocation(**n), data["nodes"]))
         print(len(connections))
@@ -48,7 +50,7 @@ def submitScore(info):
         "world": int(info["world"]),
         "x_pos": int(info["x_pos"]),
         "y_pos": int(info["y_pos"]),
-        "id" : int(info["id"])
+        "id" : info["id"]
     })
 
 def deadNetwork():
@@ -103,7 +105,7 @@ def mario(env: Env):
             idleCount -=4
         if idleCount < 0:
             idleCount = 0
-        if idleCount > 60 or reward < -14 or framesSinceMaxXChange > 20* 25:
+        if idleCount > 60 * 3 or reward < -14 or framesSinceMaxXChange > 20* 25:
             done=True
         # print(output)
         action = min(math.floor(output * 7), 6)
