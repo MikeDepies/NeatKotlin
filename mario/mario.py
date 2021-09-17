@@ -91,7 +91,7 @@ def mario(env: Env):
         state, reward, done, info = env.step(action)
         
         state = rescale(rgb2gray(state), 1/16,)
-        print(state.shape)
+        # print(state.shape)
         cumulativeReward+= reward
         network.input(state)
         network.compute()

@@ -68,7 +68,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     nodeValuePost: Dict[NodeLocation, float] = dict()
     # computationOrder: List[NodeLocation] = list()
     # ndarray()
-    inputNodes = list(filter(lambda n: n.z < 1, nodes))
+    inputNodes = list(filter(lambda n: n.z == 0, nodes))
     # if bias is not None:
     #     inputNodes.append(bias)
     outputNodes = list(filter(lambda n: n.z == 3, nodes))
@@ -151,8 +151,6 @@ class ComputableNetwork:
             # print("Processing Generation:")
             # print(computationSet)
             for source in computationSet:
-                if (source.z == 0):
-                    print(source)
                 if source.z > 0:
                     self.activateNode(source)
                     self.nodeValuePre[source] = 0
