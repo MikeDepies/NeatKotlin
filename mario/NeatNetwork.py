@@ -68,10 +68,10 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     nodeValuePost: Dict[NodeLocation, float] = dict()
     # computationOrder: List[NodeLocation] = list()
     # ndarray()
-    inputNodes = list(filter(lambda n: n.z < 3, nodes))
+    inputNodes = list(filter(lambda n: n.z < 1, nodes))
     # if bias is not None:
     #     inputNodes.append(bias)
-    outputNodes = list(filter(lambda n: n.z == 4, nodes))
+    outputNodes = list(filter(lambda n: n.z == 3, nodes))
     print("Node values initializing...")
     print("input nodes:")
     print(len(inputNodes))
@@ -138,7 +138,8 @@ class ComputableNetwork:
         self.graph = graph
 
     def input(self, input: ndarray):
-        self.inputNdArray = np.divide(input, 255)
+        self.inputNdArray = input
+        # print(self.inputNdArray)
         # for x in range(0, xSize):
         #     for y in range(0, ySize):
         #         for z in range(0, zSize):
@@ -150,7 +151,9 @@ class ComputableNetwork:
             # print("Processing Generation:")
             # print(computationSet)
             for source in computationSet:
-                if source.z > 2:
+                if (source.z == 0):
+                    print(source)
+                if source.z > 0:
                     self.activateNode(source)
                     self.nodeValuePre[source] = 0
                 descendants = self.graph.neighbors(source)
@@ -173,20 +176,20 @@ class ComputableNetwork:
             # self.nodeValuePre[source] = 0
 
     def nodePostValue(self, node: NodeLocation):
-        if (node.z <= 2):
+        if (node.z == 0):
             return self.inputNdArray.item((node.x, node.y))
         else:
             return self.nodeValuePost[node]
 
     def nodePreValue(self, node: NodeLocation):
-        if (node.z <= 2):
+        if (node.z == 0):
             return self.inputNdArray.item((node.x, node.y))
         else:
             return self.nodeValuePre[node]
 
     def activateNode(self, node: NodeLocation):
         value = self.nodeValuePre[node]
-        if (node.z <= 2):
+        if (node.z == 0):
             value = self.inputNdArray.item((node.x, node.y))
         self.nodeValuePost[node] = sigmoidal(value)
 
