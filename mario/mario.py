@@ -9,17 +9,18 @@ import requests
 import NeatNetwork
 import time
 from skimage.transform import rescale, resize, downscale_local_mean
+import time
 # import cv2 as cv
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 env = gym_super_mario_bros.make('SuperMarioBros-v1')
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
-
+host = "192.168.1.132"
 
 def getNetwork():
     requestNetwork = True
     network = None
     while requestNetwork:
-        res = requests.get("http://192.168.1.132:8094/model")
+        res = requests.get("http://"+ host + ":8094/model")
         if not res.ok:
             time.sleep(2)
             continue
@@ -54,7 +55,7 @@ def submitScore(info):
     })
 
 def deadNetwork():
-    requests.post("http://192.168.1.132:8094/dead", json={
+    requests.post("http://"+ host + ":8094/dead", json={
         "id" : id
     })
 
@@ -62,7 +63,7 @@ def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
 def mario(env: Env):
-    uri = "ws://192.168.1.132:8090/ws"
+    uri = "ws://"+ host + ":8090/ws"
     done = False
     id, network = getNetwork()
     # network.write()
