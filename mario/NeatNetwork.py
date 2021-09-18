@@ -157,7 +157,8 @@ class ComputableNetwork:
                 descendants = self.graph.neighbors(source)
                 # print("from: " + str(source) + ": Activated")
                 # print(self.nodePostValue(source))
-
+                # if source.z ==0:
+                #     print(str(source) + ": " + str(self.nodePostValue(source)))
                 # print("\t" + str(descendants))
                 for target in descendants:
                     # print(self.graph.has_edge(source, target))
@@ -175,20 +176,20 @@ class ComputableNetwork:
 
     def nodePostValue(self, node: NodeLocation):
         if (node.z == 0):
-            return self.inputNdArray.item((node.x, node.y))
+            return self.inputNdArray.item((node.y, node.x))
         else:
             return self.nodeValuePost[node]
 
     def nodePreValue(self, node: NodeLocation):
         if (node.z == 0):
-            return self.inputNdArray.item((node.x, node.y))
+            return self.inputNdArray.item((node.y, node.x))
         else:
             return self.nodeValuePre[node]
 
     def activateNode(self, node: NodeLocation):
         value = self.nodeValuePre[node]
         if (node.z == 0):
-            value = self.inputNdArray.item((node.x, node.y))
+            value = self.inputNdArray.item((node.y, node.x))
         self.nodeValuePost[node] = sigmoidal(value)
 
     def output(self) -> List[float]:
