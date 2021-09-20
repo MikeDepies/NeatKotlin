@@ -82,7 +82,7 @@ if args.debug:
 #   Through this object, we can get "GameState" objects per-frame so that your
 #       bot can actually "see" what's happening in the game
 console = melee.Console(path=args.dolphin_executable_path,
-                        slippi_address=args.address,
+                        
                         logger=log)
 
 # Create our Controller object

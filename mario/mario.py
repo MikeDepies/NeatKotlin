@@ -107,7 +107,7 @@ def mario(env: Env):
             idleCount -=4
         if idleCount < 0:
             idleCount = 0
-        if idleCount > 60*3 or reward < -14 or framesSinceMaxXChange > 20* 25:
+        if idleCount > 60*1 or reward < -14 or framesSinceMaxXChange > 20* 25:
             done=True
         # print(output)
         action = min(math.floor(output * 7), 6)
