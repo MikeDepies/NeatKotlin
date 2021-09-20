@@ -112,8 +112,8 @@ def mario(env: Env):
         # print(output)
         action = min(math.floor(output * 7), 6)
         i+= 1
-        if (i % 2 == 0):
-            env.render()
+        # if (i % 2 == 0):
+        #     env.render()
             # print(state)
 
     env.close()

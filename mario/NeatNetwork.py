@@ -138,7 +138,7 @@ class ComputableNetwork:
         self.graph = graph
 
     def input(self, input: ndarray):
-        self.inputNdArray = input
+        self.inputNdArray = input / 255.0
         # print(self.inputNdArray)
         # for x in range(0, xSize):
         #     for y in range(0, ySize):
