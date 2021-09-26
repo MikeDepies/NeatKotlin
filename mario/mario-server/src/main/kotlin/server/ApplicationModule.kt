@@ -111,10 +111,10 @@ val populationModel = loadPopulation(File("population/${evaluationId}_population
 
 data class LoadedModels(val generation: Int, val models: List<NeatModel>)
 
-fun loadPopulation(file: File): LoadedModels {
+fun loadPopulation(file: File, generation: Int): LoadedModels {
     val string = file.bufferedReader().lineSequence().joinToString("\n")
     log.info { "Loading population from file ${file.path}" }
-    return LoadedModels(0, Json {}.decodeFromString<List<NeatModel>>(string))
+    return LoadedModels(generation, Json {}.decodeFromString<List<NeatModel>>(string))
 
 }
 
@@ -134,6 +134,8 @@ fun NeatExperiment.generateInitialPopulation(
         clone.nodes.forEach {
             it.activationFunction = activationFunctions.random(random)
         }
+//        mutateAddNode(clone)
+//        mutateAddNode(clone)
         clone
     }
 }

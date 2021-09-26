@@ -14,7 +14,7 @@ import time
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 env = gym_super_mario_bros.make('SuperMarioBros-v1')
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
-host = "192.168.1.132"
+host = "192.168.0.132"
 
 def getNetwork():
     requestNetwork = True
@@ -40,7 +40,7 @@ def getNetwork():
 
 def submitScore(info):
     # print(info["stage"])
-    requests.post("http://192.168.1.132:8094/score", json={
+    requests.post("http://192.168.0.132:8094/score", json={
         "coins": info["coins"],
         "flag_get": info["flag_get"],
         "life": int(info["life"]),
@@ -75,6 +75,7 @@ def mario(env: Env):
     i =0
     maxX=0
     framesSinceMaxXChange = 0
+    status = "small"
     while True:
         if done:
             state = env.reset()
@@ -90,6 +91,9 @@ def mario(env: Env):
         
         state, reward, done, info = env.step(action)
         
+        if (status != info["status"]):
+            idleCount = 0
+        status = info["status"]
         state = rescale(rgb2gray(state), 1/16,)
         # print(state.shape)
         cumulativeReward+= reward
@@ -107,7 +111,7 @@ def mario(env: Env):
             idleCount -=4
         if idleCount < 0:
             idleCount = 0
-        if idleCount > 60*1 or reward < -14 or framesSinceMaxXChange > 20* 25:
+        if idleCount > 60*2 or reward < -14 or framesSinceMaxXChange > 20* 25:
             done=True
         # print(output)
         action = min(math.floor(output * 7), 6)

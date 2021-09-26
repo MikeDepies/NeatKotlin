@@ -23,7 +23,7 @@ import neat.model.*
 import neat.novelty.*
 import org.jetbrains.exposed.sql.*
 import org.koin.ktor.ext.*
-import org.slf4j.event.*
+import org.slf4j.event.Level
 import server.message.*
 import server.message.endpoints.*
 import server.server.*
@@ -31,6 +31,8 @@ import java.io.*
 import java.time.*
 import java.time.format.*
 import java.util.*
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.random.*
 
 
@@ -60,7 +62,7 @@ fun Application.module(testing: Boolean = false) {
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
     install(CallLogging) {
-        level = Level.INFO
+//        level = Level.INFO
     }
     val application = this
     install(Koin) {
@@ -115,22 +117,22 @@ fun Application.module(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 100
+    val populationSize = 500
 
 
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val shFunction = shFunction(.1f)
+    val shFunction = shFunction(1.0f)
     val mateChance = .1f
-    val survivalThreshold = .40f
-    val stagnation = 30
+    val survivalThreshold = .4f
+    val stagnation = 500
 
-    val randomSeed: Int = 2 + evaluationId
+    val randomSeed: Int = 40 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
 
-
-    val models = loadPopulation(File("population/population.json")).models
+//
+    val models = loadPopulation(File("population/population.json"), 55).models
     logger.info { "population loaded with size of: ${models.size}" }
     val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
     val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
@@ -144,6 +146,7 @@ fun Application.module(testing: Boolean = false) {
     val behaviors = Json { }.decodeFromString<List<MarioInfo>>(
         File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
     )
+    var settings = Settings(1f)
 //    val simpleNeatExperiment =
 //        simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
 ////    var modelIndex = 0
@@ -153,10 +156,10 @@ fun Application.module(testing: Boolean = false) {
 //        1,
 //        activationFunctions
 //    ).mapIndexed { index, neatMutator ->
-//        NetworkWithId(neatMutator, index)
+//        NetworkWithId(neatMutator, UUID.randomUUID().toString())
 //    }
-    var mapIndexed = population.mapIndexed { index, neatMutator -> index to neatMutator }.toMap()
-    var finishedScores = population.mapIndexed { index, neatMutator -> index to false }.toMap().toMutableMap()
+    var mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
+    var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
 //    createTaskNetwork(population.first().toNetwork())
     val distanceFunction = cppnGeneRuler::measure
     val simulation = createSimulation(
@@ -173,8 +176,8 @@ fun Application.module(testing: Boolean = false) {
     }
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
-    var activeModel : NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(150, 0f) { a, b ->
+    var activeModel: NetworkWithId = population.first()
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(240, settings.noveltyThreshold) { a, b ->
         euclidean(toVector(a), toVector(b))
     }
     knnNoveltyArchive.behaviors.addAll(behaviors)
@@ -184,13 +187,20 @@ fun Application.module(testing: Boolean = false) {
         if (scores.size == populationSize) {
             logger.info { "New generation ${populationEvolver.generation}" }
             val toModelScores = scores.toModelScores(simulation.adjustedFitnessCalculation)
-            population = evolve(populationEvolver, toModelScores, simpleNeatExperiment, population.size).mapIndexed { index, neatMutator ->
+            population = evolve(
+                populationEvolver,
+                toModelScores,
+                simpleNeatExperiment,
+                population.size
+            ).mapIndexed { index, neatMutator ->
                 NetworkWithId(neatMutator, UUID.randomUUID().toString())
-            }
-            mapIndexed = population.mapIndexed { index, neatMutator -> index to neatMutator }.toMap()
-            finishedScores = population.mapIndexed { index, neatMutator -> index to false }.toMap().toMutableMap()
+            }.shuffled()
+            mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
+            finishedScores =
+                population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
 
             seq = population.iterator()
+
             scores = mutableListOf()
             writeGenerationToDisk(population.map { it.neatMutator }, runFolder, populationEvolver, "")
             runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
@@ -201,6 +211,7 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 
+    val scoreChannel = Channel<MarioInfo>()
     routing {
         get("/model") {
 //            val a = activeModel
@@ -209,9 +220,11 @@ fun Application.module(testing: Boolean = false) {
 //                activeModel = null
 //                processPopulation(simulation.populationEvolver)
 //            }
+
             if (!seq.hasNext()) {
                 seq = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }.iterator()
             }
+            val seq = seq
             if (seq.hasNext()) {
                 val activeModel = seq.next()
                 val message = createTaskNetwork(activeModel.neatMutator.toNetwork(), activeModel.id)
@@ -228,42 +241,75 @@ fun Application.module(testing: Boolean = false) {
             call.respond("ok")
         }
         post<MarioInfo>("/score") {
+
+
+            scoreChannel.send(it)
+        }
+        get("behaviors") {
+            val numberOfBehaviors = call.parameters["n"]
+            val message = if (numberOfBehaviors == null) {
+                knnNoveltyArchive.behaviors
+            } else knnNoveltyArchive.behaviors.takeLast(numberOfBehaviors.toInt())
+            call.respond(message)
+        }
+        get("settings") {
+            call.respond(settings)
+        }
+        post<Settings>("settings") {
+            settings = it
+            knnNoveltyArchive.noveltyThreshold = settings.noveltyThreshold
+            logger.info { "$it applied" }
+        }
+    }
+    launch {
+        for (it in scoreChannel) {
             val populationEvolver = simulation.populationEvolver
-            val score = if (knnNoveltyArchive.size >0)
+            val score = if (knnNoveltyArchive.size > 0) {
+                val addBehavior = knnNoveltyArchive.addBehavior(it)
+                if (addBehavior < knnNoveltyArchive.noveltyThreshold) 0f else addBehavior
+            } else {
                 knnNoveltyArchive.addBehavior(it)
-            else {
-                knnNoveltyArchive.addBehavior(it)
-                euclidean(toVector(it), toVector(it).map { 0f})
+//                euclidean(toVector(it), toVector(it).map { 0f})
+                0f
             }
-            val model = mapIndexed[it.id]!!.neatMutator
-            if (finishedScores[it.id] != true) {
+            val model = mapIndexed[it.id]?.neatMutator
+            if (finishedScores[it.id] != true && model != null) {
                 scores += FitnessModel(model, score)
                 finishedScores[it.id] = true
+                val species = if (populationEvolver.speciationController.hasSpeciesFor(model)) "${
+                    populationEvolver.speciationController.species((model))
+                }" else "No Species"
+                logger.info { "[G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $score " }
+                logger.info { "$it" }
             }
-
-            logger.info { "[G${populationEvolver.generation}] Model (${scores.size}) Score: $score " }
-            logger.info { "$it" }
             processPopulation(populationEvolver)
         }
     }
-
 }
-data class DeadNetwork(val id : Int)
+@Serializable
+data class Settings(val noveltyThreshold: Float)
+data class DeadNetwork(val id: String)
+
 fun MarioInfo.statusAsNumber() = when (this.status) {
     "small" -> 0
     "tall" -> 1
     "fireball" -> 2
     else -> error("failed to handle status: $status")
 }
-data class NetworkWithId(val neatMutator: NeatMutator, val id : String)
+
+data class NetworkWithId(val neatMutator: NeatMutator, val id: String)
+
 fun toVector(marioInfo: MarioInfo) = listOf(
-    marioInfo.x_pos / 50f,
-    marioInfo.y_pos/ 8f,
-    marioInfo.stage * 10f,
-    marioInfo.world * 50f,
-    marioInfo.statusAsNumber() * 5f,
-    marioInfo.score / 100f
+    (marioInfo.x_pos).toFloat(),
+    (marioInfo.y_pos).toFloat(),
+    marioInfo.stage * 1000f,
+    marioInfo.world * 500f,
+    marioInfo.statusAsNumber() * 10f,
+    marioInfo.score.toFloat(),
+    marioInfo.coins.toFloat() * 10.toFloat(),
+    marioInfo.time.toFloat()
 )//.map { it.toFloat() }
+
 fun evolve(
     populationEvolver: PopulationEvolver,
     modelScores: List<ModelScore>,
@@ -296,7 +342,7 @@ fun evolve(
 
 @Serializable
 data class MarioInfo(
-    val id: Int,
+    val id: String,
     val coins: Int,
     val flag_get: Boolean,
     val life: Int,
