@@ -104,6 +104,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     computationOrder = list(
         nx.topological_generations(graph))
     print("Constructed Computable Network...")
+    connection = np.ndarray([16,15])
     # print(NodeLocation(0,0,0) == NodeLocation(0,0,0))
     # for n in inputNodes:
     # print(graph.has_node(n))
