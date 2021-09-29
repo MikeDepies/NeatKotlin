@@ -6,7 +6,7 @@
 	export const load: Load = async ({}) => {
 		return {
 			props: {
-				marios: (await getBehaviors(4000)),
+				marios: (await getBehaviors(null)),
 				settings: (await getSettings())
 			}
 		};
@@ -63,7 +63,7 @@ import { onMount } from 'svelte';
             updateNumber++;
     }
     function getRGB(mario : MarioInfo, index : number) {
-        const ratio = index / Math.min(40000, marios.length)
+        const ratio = index / (marios.length + 1)
         const r = 50
         const g = 0 + (255 * ratio)
         const b = 0 + (255 * scoreRatio(mario))
@@ -81,8 +81,8 @@ import { onMount } from 'svelte';
 		function size(mario : MarioInfo) {
 			return Math.floor(timeRatio(mario) * 16) + 12
 		}
-		let maxScore = marios.map(m => m.score).reduce((a,b) => Math.max(a,b), 0)
-		$: maxScore = marios.map(m => m.score).reduce((a,b) => Math.max(a,b), 0)
+		let maxScore = marios.map(m => m.score).reduce((a,b) => Math.max(a,b), .1)
+		$: maxScore = marios.map(m => m.score).reduce((a,b) => Math.max(a,b), .1)
 		let minTime = marios.map(m => m.time).reduce((a,b) => Math.min(a,b), 400)
 		$: minTime = marios.map(m => m.time).reduce((a,b) => Math.min(a,b), 400)
 		function scoreRatio(mario : MarioInfo) {
@@ -118,10 +118,10 @@ import { onMount } from 'svelte';
 	style="background-image: url(mario-1-1-stage.png);"
 >
 	<img src="mario-1-1-stage.png" alt="" />
-	{#each marios.filter(m => !useFilter || marioDict[m.id] == updateNumberFilter).slice(-40000) as mario, index (mario)}
+	{#each marios.filter(m => !useFilter || marioDict[m.id] == updateNumberFilter) as mario, index (mario)}
 		<div
 			class="absolute {recentGroup(mario) ? "animate-bounce border-2 border-black" : ""}"
-			style="opacity: {(!recentGroup(mario)) ? index / marios.length / 10 : 100};width: {size(mario)}px; height: {size(mario) * (mario.status == "small" ? 1 : 2)}px;  margin-top: -{size(mario)/2  * (mario.status == "small" ? 1 : 2)}px; background: {getRGB(mario, index)};top: {mario.y_pos * yRatio }px; left: {mario.x_pos * xRatio}px;"
+			style="background: {getRGB(mario, index)}; opacity: {(!recentGroup(mario)) ? Math.max(index / marios.length / 10, 20) : 100}; width: {size(mario)}px; height: {size(mario) * (mario.status == "small" ? 1 : 2)}px;  margin-top: -{size(mario)/2  * (mario.status == "small" ? 1 : 2)}px; top: {mario.y_pos * yRatio }px; left: {mario.x_pos * xRatio}px;"
 			on:mousemove={() => mouseOverMario(mario)}
 		/>
 	{/each}
