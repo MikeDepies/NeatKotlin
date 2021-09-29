@@ -3,11 +3,12 @@ package server
 import PopulationEvolver
 import createMutationDictionary
 import kotlinx.serialization.Serializable
+import mu.KotlinLogging
 import neat.*
 import neat.model.*
 import kotlin.math.*
 import kotlin.random.*
-
+private val log = KotlinLogging.logger {  }
 
 fun main2() {
     val evaluationId = 0
@@ -71,12 +72,15 @@ data class NetworkDescription(
 
 fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
-    val connectionThreshold = .3f
-    val connectionMagnitude = 2f
-    val width = 240 /16
-    val height = 256 /16
-    val hiddenWidth = 5
-    val hiddenHeight = 3
+    val connectionThreshold = .2f
+    val connectionMagnitude = 3f
+    val width = 256 /16
+    val height = 240 /16
+    val hiddenWidth = 2
+    val hiddenHeight = 4
+
+    val hiddenWidth2 = 2
+    val hiddenHeight2 = 2
     val outputWidth = 1
     val outputHeight = 1
 
@@ -96,6 +100,11 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val yMinHidden = centerY - hiddenHeight / 2
     val yMaxHidden = centerY + hiddenHeight / 2
 
+    val xMinHidden2 = centerX - hiddenWidth2 / 2
+    val xMaxHidden2 = centerX + hiddenWidth2 / 2
+    val yMinHidden2 = centerY - hiddenHeight2 / 2
+    val yMaxHidden2 = centerY + hiddenHeight2 / 2
+
     val xMinOutput = centerX - outputWidth / 2
     val xMaxOutput = centerX + outputWidth / 2
     val yMinOutput = 0
@@ -103,18 +112,22 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     //slice 1
     val nodeSet = mutableSetOf<NodeLocation>()
     val connectionSet = mutableSetOf<ConnectionLocation>()
-    val hiddenZ = 3
-    val outputZ = 4
+    val hiddenZ = 1
+    val hiddenZ2 = 2
+    val outputZ = 3
     val input = mutableListOf(0f, 0f, 0f, 0f, 0f, hiddenZ.toFloat())
 //    println("Creating Input to Hidden")
+    val z1 = 0
+//    log.info { "$xMin - $xMax" }
+//    log.info { "$yMin - $yMax" }
     for (x1 in xMin until xMax step resolution) {
         input[0] = x1.toFloat()
-        for (y1 in yMin until yMax step resolutionY) {
+        for (y1 in yMin .. yMax step resolutionY) {
             input[1] = y1.toFloat()
 //            for (z1 in 0..2) {
-            val z1 = 0
+
             input[2] = z1.toFloat()
-            nodeSet += NodeLocation(x1, y1, z1)
+            nodeSet += NodeLocation(x1 + 8, y1 + 7, z1)
             //slice 2
             for (x2 in xMinHidden..xMaxHidden step 1) {
                 input[3] = x2.toFloat()
@@ -126,7 +139,7 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
                     if (weight.absoluteValue > connectionThreshold) {
                         val ratio =
                             ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
-                        connectionSet += ConnectionLocation(x1, y1, z1, x2, y2, hiddenZ, ratio * connectionMagnitude)
+                        connectionSet += ConnectionLocation(x1 + 8, y1 + 7 , z1, x2, y2, hiddenZ, ratio * connectionMagnitude)
                     }
                 }
             }
@@ -160,8 +173,72 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     input[2] = hiddenZ.toFloat()
     input[5] = outputZ.toFloat()
     nodeSet += NodeLocation(0, 0, outputZ)
-    for (x1 in xMinHidden until xMaxHidden step 1) {
-        for (y1 in yMinHidden until yMaxHidden step 1) {
+    for (x1 in xMinHidden .. xMaxHidden step 1) {
+        for (y1 in yMinHidden .. yMaxHidden step 1) {
+            input[0] = x1.toFloat()
+            input[1] = y1.toFloat()
+            //slice 2
+            for (x2 in xMinOutput .. xMaxOutput step 1) {
+                for (y2 in yMinOutput .. yMaxOutput step 1) {
+                    input[3] = x2.toFloat()
+                    input[4] = y2.toFloat()
+                    network.evaluate(input)
+                    val weight = network.output()[0]
+                    if (weight.absoluteValue > connectionThreshold) {
+                        val ratio =
+                            ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+                        connectionSet += ConnectionLocation(
+                            x1,
+                            y1,
+                            hiddenZ,
+                            x2,
+                            y2,
+                            outputZ,
+                            ratio * connectionMagnitude
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    input[2] = hiddenZ.toFloat()
+    input[5] = hiddenZ2.toFloat()
+
+    for (x1 in xMinHidden .. xMaxHidden step 1) {
+        for (y1 in yMinHidden .. yMaxHidden step 1) {
+            input[0] = x1.toFloat()
+            input[1] = y1.toFloat()
+            //slice 2
+            for (x2 in xMinHidden2 .. xMaxHidden2 step 1) {
+                for (y2 in yMinHidden2 .. yMaxHidden2 step 1) {
+                    input[3] = x2.toFloat()
+                    input[4] = y2.toFloat()
+                    network.evaluate(input)
+                    val weight = network.output()[0]
+                    if (weight.absoluteValue > connectionThreshold) {
+                        val ratio =
+                            ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+                        connectionSet += ConnectionLocation(
+                            x1,
+                            y1,
+                            hiddenZ,
+                            x2,
+                            y2,
+                            outputZ,
+                            ratio * connectionMagnitude
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    input[2] = hiddenZ2.toFloat()
+    input[5] = outputZ.toFloat()
+    nodeSet += NodeLocation(0, 0, outputZ)
+    for (x1 in xMinHidden2 .. xMaxHidden2 step 1) {
+        for (y1 in yMinHidden2 .. yMaxHidden2 step 1) {
             input[0] = x1.toFloat()
             input[1] = y1.toFloat()
             //slice 2

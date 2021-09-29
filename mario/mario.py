@@ -11,9 +11,9 @@ import time
 from skimage.transform import rescale, resize, downscale_local_mean
 import time
 # import cv2 as cv
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
+from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 env = gym_super_mario_bros.make('SuperMarioBros-v1')
-env = JoypadSpace(env, SIMPLE_MOVEMENT)
+env = JoypadSpace(env, COMPLEX_MOVEMENT)
 host = "192.168.0.132"
 
 def getNetwork():
@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections)
+            network = NeatNetwork.constructNetwork(nodes, connections, [[15,16], [4,2], [2,2], [2,2]])
             requestNetwork = False
         except:
             print("failed to build")
@@ -98,7 +98,7 @@ def mario(env: Env):
         cumulativeReward+= reward
         network.input(state)
         network.compute()
-        output =network.output()[0]
+        output =network.output()
         if (info["x_pos"] > maxX):
             maxX = info["x_pos"]
             framesSinceMaxXChange = 0
@@ -113,10 +113,10 @@ def mario(env: Env):
         if idleCount > 60*2 or reward < -14 or framesSinceMaxXChange > 20* 25:
             done=True
         # print(output)
-        action = min(math.floor(output * 7), 6)
+        action = min(math.floor(output * len(COMPLEX_MOVEMENT)), 6)
         i+= 1
         # if (i % 2 == 0):
-        #     env.render()
+        env.render()
             # print(state)
 
     env.close()
