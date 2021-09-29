@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections)
+            network = NeatNetwork.constructNetwork(nodes, connections, [[15,16], [4,2], [2,2], [2,2]])
             requestNetwork = False
         except:
             print("failed to build")
@@ -90,16 +90,15 @@ def mario(env: Env):
             framesSinceMaxXChange = 0
         
         state, reward, done, info = env.step(action)
-        
         if (status != info["status"]):
-            idleCount = 0
+            idleCount=0
         status = info["status"]
         state = rescale(rgb2gray(state), 1/16,)
         # print(state.shape)
         cumulativeReward+= reward
         network.input(state)
         network.compute()
-        output =network.output()[0]
+        output =network.output()
         if (info["x_pos"] > maxX):
             maxX = info["x_pos"]
             framesSinceMaxXChange = 0
@@ -116,8 +115,8 @@ def mario(env: Env):
         # print(output)
         action = min(math.floor(output * len(COMPLEX_MOVEMENT)), 6)
         i+= 1
-        if (i % 2 == 0):
-            env.render()
+        # if (i % 2 == 0):
+        env.render()
             # print(state)
 
     env.close()
