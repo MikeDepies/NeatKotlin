@@ -109,14 +109,15 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     connection = [np.zeros(layerShapes[1] + layerShapes[0]),
                   np.zeros(layerShapes[2] + layerShapes[1]),
                   np.zeros(layerShapes[3] + layerShapes[1]),
-                  np.zeros(layerShapes[3] + layerShapes[2])]
+                  np.zeros(layerShapes[3] + layerShapes[2]),
+                  np.zeros(layerShapes[2] + layerShapes[2]),]
     # print(connection[0])
     values = [np.zeros([*layerShapes[0], 2]),
               np.zeros([*layerShapes[1], 2]),
               np.zeros([*layerShapes[2], 2]),
               np.zeros([*layerShapes[3], 2])]
     # print(computationOrder[0])
-    t = []
+    
     def getConnectionIndex(source: NodeLocation, target: NodeLocation):
         if source.z == 0:
             return 0
@@ -126,6 +127,8 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
             return 2
         if source.z == 2 and target.z == 3:
             return 3
+        if source.z == 2 and target.z == 2:
+            return 4
         else:
             print("test???")
     for set in computationOrder:
@@ -134,6 +137,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
             for target in descendants:
                 # print("updating... " + str(target) + " to " + str(source) + " = " + str(graph.get_edge_data(source, target)[
                 #     0]["weight"]))
+                # print(str(source) + " to " + str(target))
                 # print(str(source) + " to " + str(target))
                 connectionIndex = getConnectionIndex(source, target)
                 # print(str(source) + " to " + str(target) + " = " + str(connectionIndex))
@@ -216,7 +220,7 @@ class ComputableNetwork:
         self.values[1][..., 1] = vectorizedSigmoidal(v1)
 
         v2: ndarray = (self.values[1][..., 1] * self.connection[1]).sum((2, 3))
-        self.values[2][..., 0] = v2
+        self.values[2][..., 0] = v2 + (self.values[2][..., 0] * self.connection[3]).sum((2, 3))
         self.values[2][..., 1] = vectorizedSigmoidal(v2)
 
         v3: ndarray = (self.values[1][..., 1] * self.connection[2]).sum((2, 3))
@@ -281,11 +285,6 @@ class ComputableNetwork:
         self.nodeValuePost[node] = sigmoidal(value)
 
     def output(self) -> List[float]:
-        # return list(map(lambda n: self.nodeValuePost[n], self.outputNodes))
-
-        # print(self.values[2].shape)
-        # print(self.values[3].shape)
-        # print(self.values[3][0, 0, 1])
         return self.values[3][0, 0, 1]
 
     def draw(self):
