@@ -221,7 +221,7 @@ class ComputableNetwork:
 
         v2: ndarray = (self.values[1][..., 1] * self.connection[1]).sum((2, 3))
         self.values[2][..., 0] = v2 + (self.values[2][..., 1] * self.connection[3]).sum((2, 3))
-        self.values[2][..., 1] = vectorizedSigmoidal(v2)
+        self.values[2][..., 1] = vectorizedSigmoidal(self.values[2][..., 0])
 
         v3: ndarray = (self.values[1][..., 1] * self.connection[2]).sum((2, 3))
         v4: ndarray = (self.values[2][..., 1] * self.connection[3]).sum((2, 3))
