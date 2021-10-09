@@ -37,9 +37,9 @@ fun mutatePerturbBiasConnections(range: Float = standardWeightPerturbationRange)
     }
 
 
-fun getMutateConnections(chanceToReassignWeights: Float): Mutation = { neatMutator ->
+fun getMutateConnections(chanceToReassignWeights: Float, perturbRange : Float = standardWeightPerturbationRange, assignRange : Float = 2f): Mutation = { neatMutator ->
     neatMutator.connections.forEach { connectionGene ->
-        getMutateConnectionWeight(chanceToReassignWeights)(connectionGene)
+        getMutateConnectionWeight(chanceToReassignWeights, perturbRange, assignRange)(connectionGene)
     }
 }
 

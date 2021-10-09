@@ -53,8 +53,8 @@ fun compatibilityDifference(
 }
 
 fun lastInnovation(neatMutator: NeatMutator) = neatMutator.connections.last().innovation
-fun randomWeight(random: Random): Float {
-    return (random.nextFloat() * 2) - 1
+fun randomWeight(random: Random, range : Float= 2f): Float {
+    return (random.nextFloat() * range) - (range/2)
 }
 
 fun <T> FitnessModel<T>.isLessFitThan(model: FitnessModel<T>) = score < model.score

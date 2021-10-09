@@ -17,7 +17,7 @@ fun mutationDictionary(): List<MutationEntry> {
 
 fun NeatBuilder.generationRules(): GenerationRules {
     val speciationController =
-        SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
+        SpeciationController(0)
     return GenerationRules(
         speciationController,
         adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction),
@@ -25,12 +25,12 @@ fun NeatBuilder.generationRules(): GenerationRules {
         evaluationFunction
     )
 }
-
-fun neat(speciesScoreKeeper: SpeciesScoreKeeper, mutationEntries: List<MutationEntry>, builder: NeatBuilder.() -> Unit): Neat {
-    val neatBuilder = NeatBuilder(mutationEntries, speciesScoreKeeper)
-    neatBuilder.builder()
-    return Neat(neatBuilder.generationRules())
-}
+//
+//fun neat(speciesScoreKeeper: SpeciesScoreKeeper, mutationEntries: List<MutationEntry>, builder: NeatBuilder.() -> Unit): Neat {
+//    val neatBuilder = NeatBuilder(mutationEntries, speciesScoreKeeper)
+//    neatBuilder.builder()
+//    return Neat(neatBuilder.generationRules())
+//}
 
 class NeatBuilder(mutationEntries: List<MutationEntry>, speciesScoreKeeper: SpeciesScoreKeeper) {
     var sharingFunction: SharingFunction = shFunction(3f)

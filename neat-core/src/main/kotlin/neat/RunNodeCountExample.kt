@@ -9,7 +9,7 @@ suspend fun runNodeCountExample() {
     val sharingFunction = shFunction(10f)
     val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, activationFunctions, 0)
     val population = simpleNeatExperiment.generateInitialPopulation(100, 3, 1, Activation.sigmoidal)
-    val speciationController = SpeciationController(0, standardCompatibilityTest(sharingFunction, distanceFunction))
+    val speciationController = SpeciationController(0, )
     val speciesScoreKeeper = SpeciesScoreKeeper()
     val generationRules = GenerationRules(
         speciationController = speciationController,
@@ -19,17 +19,18 @@ suspend fun runNodeCountExample() {
             population.map { FitnessModel(it, 32f - (32 - it.nodes.size).absoluteValue) }
         }
     )
-    val neat = Neat(generationRules) /*{
+//    val neat = Neat(generationRules)
+    /*{
         val species = speciesScoreKeeper.bestSpecies()
         val modelScore = speciesScoreKeeper.getModelScore(species)
         println("$species - ${modelScore?.fitness}")
     }*/
-    neat.process(
-        times = 100,
-        population = population,
-        speciesScoreKeeper = speciesScoreKeeper,
-        speciesLineage = SpeciesLineage(listOf()),
-        simpleNeatExperiment = simpleNeatExperiment
-    )
+//    neat.process(
+//        times = 100,
+//        population = population,
+//        speciesScoreKeeper = speciesScoreKeeper,
+//        speciesLineage = SpeciesLineage(listOf()),
+//        simpleNeatExperiment = simpleNeatExperiment
+//    )
     return speciesScoreKeeper.run { getModelScore(bestSpecies()) }
 }

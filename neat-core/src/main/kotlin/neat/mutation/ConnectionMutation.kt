@@ -16,7 +16,7 @@ fun NeatExperiment.perturbConnectionWeight(range: Float = standardWeightPerturba
     }
 }
 
-fun NeatExperiment.assignConnectionRandomWeight(): ConnectionMutation = { weight = randomWeight(random) }
+fun NeatExperiment.assignConnectionRandomWeight(range :Float = 2f): ConnectionMutation = { weight = randomWeight(random, range) }
 inline fun NeatExperiment.ifElseConnectionMutation(
     crossinline mutationRoll: MutationRoll,
     crossinline onRollSuccess: ConnectionMutation,
@@ -33,10 +33,10 @@ inline fun NeatExperiment.ifElseConnectionMutation(
  * A configuration found on the web.
  * https://github.com/GabrielTavernini/NeatJS/blob/master/src/connection.js#L12
  */
-fun NeatExperiment.getMutateConnectionWeight(chanceToReassignWeights: Float): ConnectionMutation = ifElseConnectionMutation(
+fun NeatExperiment.getMutateConnectionWeight(chanceToReassignWeights: Float, perturbRange : Float = standardWeightPerturbationRange, assignRange : Float = 2f): ConnectionMutation = ifElseConnectionMutation(
     rollFrom(chanceToReassignWeights),
-    assignConnectionRandomWeight(),
-    perturbConnectionWeight()
+    assignConnectionRandomWeight(assignRange),
+    perturbConnectionWeight(range = perturbRange)
 )
 
 fun uniformWeightPerturbation(connectionMutation: ConnectionMutation): Mutation = { neatMutator ->

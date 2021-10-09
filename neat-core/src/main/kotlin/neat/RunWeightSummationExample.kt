@@ -9,7 +9,7 @@ suspend fun runWeightSummationExample() {
     val sharingFunction = shFunction(1f)
     val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, baseActivationFunctions(), 0)
     val population = simpleNeatExperiment.generateInitialPopulation(100, 3, 1, Activation.sigmoidal)
-    val speciationController = SpeciationController(0, standardCompatibilityTest(sharingFunction, dataFunction))
+    val speciationController = SpeciationController(0, )
     val speciesScoreKeeper = SpeciesScoreKeeper()
     val generationRules = GenerationRules(
         speciationController = speciationController,
@@ -19,10 +19,11 @@ suspend fun runWeightSummationExample() {
             population.map { FitnessModel(it, 100f - (100 - it.connections.map { c -> c.weight }.sum()).absoluteValue) }
         }
     )
-    val neat = Neat(generationRules) /*{
+//    val neat = Neat(generationRules)
+    /*{
         val species = speciesScoreKeeper.bestSpecies()
         val modelScore = speciesScoreKeeper.getModelScore(species)
         println("$species - ${modelScore?.fitness}")
     }*/
-    neat.process(100, population, speciesScoreKeeper, SpeciesLineage(listOf()), simpleNeatExperiment)
+//    neat.process(100, population, speciesScoreKeeper, SpeciesLineage(listOf()), simpleNeatExperiment)
 }

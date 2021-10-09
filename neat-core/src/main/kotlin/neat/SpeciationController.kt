@@ -7,14 +7,18 @@ import kotlin.math.roundToInt
 //val neat.Species?.notNull get() = null != this
 
 class SpeciationController(
-    private var speciesId: Int,
-    private val compatibilityTest: (NeatMutator, NeatMutator) -> Boolean
+    private var speciesId: Int
 ) {
     private val neatMutatorToSpeciesMap = mutableMapOf<NeatMutator, Species>()
     private val speciesMap = mutableMapOf<Species, MutableList<NeatMutator>>()
     private fun nextSpecies(): Species = Species(speciesId++)
     fun hasSpeciesFor(neatMutator: NeatMutator) = neatMutatorToSpeciesMap.containsKey(neatMutator)
-    fun speciate(population: List<NeatMutator>, speciesLineage: SpeciesLineage, generation: Int): Map<Species, MutableList<NeatMutator>> {
+    fun speciate(
+        population: List<NeatMutator>,
+        speciesLineage: SpeciesLineage,
+        generation: Int,
+        compatibilityTest: (NeatMutator, NeatMutator) -> Boolean
+    ): Map<Species, MutableList<NeatMutator>> {
         speciesMap.clear()
 
         neatMutatorToSpeciesMap.clear()

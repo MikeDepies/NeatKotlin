@@ -6,7 +6,7 @@
 	export const load: Load = async ({}) => {
 		return {
 			props: {
-				marios: (await getBehaviors(null)),
+				marios: (await getBehaviors(1000)),
 				settings: (await getSettings())
 			}
 		};
@@ -92,6 +92,7 @@ import { onMount } from 'svelte';
 		function timeRatio(mario : MarioInfo) {
 			return (mario.time - minTime) / (400 - minTime)
 		}
+		
 		function recentGroup(mario : MarioInfo) {
 			return (marioDict[mario.id] <= updateNumber -1 && marioDict[mario.id] >= updateNumber -20 && marioDict[mario.id] > 1)
 		}
@@ -121,7 +122,7 @@ import { onMount } from 'svelte';
 	{#each marios.filter(m => !useFilter || marioDict[m.id] == updateNumberFilter) as mario, index (mario)}
 		<div
 			class="absolute {recentGroup(mario) ? "animate-bounce border-2 border-black" : ""}"
-			style="background: {getRGB(mario, index)}; opacity: {(!recentGroup(mario)) ? Math.max(index / marios.length / 10, 20) : 100}; width: {size(mario)}px; height: {size(mario) * (mario.status == "small" ? 1 : 2)}px;  margin-top: -{size(mario)/2  * (mario.status == "small" ? 1 : 2)}px; top: {mario.y_pos * yRatio }px; left: {mario.x_pos * xRatio}px;"
+			style="background: {getRGB(mario, index)}; opacity: {(!recentGroup(mario)) ? Math.max(index / marios.length / 10, .5) : 1}; width: {size(mario)}px; height: {size(mario) * (mario.status == "small" ? 1 : 2)}px;  margin-top: -{size(mario)/2  * (mario.status == "small" ? 1 : 2)}px; top: {mario.y_pos * yRatio }px; left: {mario.x_pos * xRatio}px;"
 			on:mousemove={() => mouseOverMario(mario)}
 		/>
 	{/each}

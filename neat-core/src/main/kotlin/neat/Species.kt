@@ -96,10 +96,12 @@ fun SpeciationController.calculateSpeciesReport(
 //        println("$species - ${neat.countOffspring.offspring}")
     }
     val viableSpecies = speciesOffspringMap.keys
-    (0..deadSpeciesOffspring).forEach {
-        //TODO give access to a controlled/seeded Random instead of the global instance
-        val randomSpecies = viableSpecies.random()
-        speciesOffspringMap[randomSpecies] = speciesOffspringMap.getValue(randomSpecies) + 1
+    if (deadSpeciesOffspring > 0) {
+        (0 until deadSpeciesOffspring).forEach {
+            //TODO give access to a controlled/seeded Random instead of the global instance
+            val randomSpecies = viableSpecies.random()
+            speciesOffspringMap[randomSpecies] = speciesOffspringMap.getValue(randomSpecies) + 1
+        }
     }
 
     if (totalOffspring < modelScoreList.size) {

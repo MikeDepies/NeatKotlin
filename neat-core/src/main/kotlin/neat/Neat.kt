@@ -13,49 +13,49 @@ fun <T> identity(): (T) -> T = { it }
 
 
 
-class Neat(
-    private val generationRules: GenerationRules
-) {
-    val generationFinishedHandlers = mutableListOf<suspend (SpeciesMap, Int) -> Unit>()
-    val modelScoresHandlers = mutableListOf<(List<ModelScore>, Int) -> Unit>()
-    suspend fun process(
-        times: Int,
-        population: List<NeatMutator>,
-        speciesScoreKeeper: SpeciesScoreKeeper,
-        speciesLineage: SpeciesLineage,
-        simpleNeatExperiment: NeatExperiment
-    ) {
-        val (speciationController, adjustedFitness, reproductionStrategy, populationEvaluator) = generationRules
-        var currentPopulation = population
-        speciationController.speciate(currentPopulation, speciesLineage, 0)
-        repeat(times) { generation ->
-            println("Generation $generation Population: ${currentPopulation.size} NumberOfSpecies: ${speciationController.speciesSet.size} TotalSpeciesCount: ${speciesLineage.species.lastOrNull()}")
-            val modelScoreList =
-                populationEvaluator(currentPopulation).toModelScores(adjustedFitness)
-            sortModelsByAdjustedFitness(speciationController, modelScoreList)
-            modelScoresHandlers.forEach { it(modelScoreList, generation) }
-            speciesScoreKeeper.updateScores(modelScoreList.map { speciationController.species(it.neatMutator) to it }, generation)
-            val newPopulation = reproductionStrategy(simpleNeatExperiment, speciationController, modelScoreList, generation)
-            val speciesMap = speciationController.speciate(newPopulation, speciesLineage, generation)
-            println("speciesMapSize: ${speciesMap.values.flatten().size} newPopulationSize: ${newPopulation.size} controllerSize: ${speciationController.population().size}")
-            generationFinishedHandlers.forEach { it(speciesMap, generation) }
-            currentPopulation = newPopulation
-        }
-    }
-
-    private fun sortModelsByAdjustedFitness(
-        speciationController: SpeciationController,
-        modelScoreList: List<ModelScore>
-    ): List<ModelScore> {
-        val adjustedPopulationScore = modelScoreList.toMap { modelScore -> modelScore.neatMutator }
-        val fitnessForModel: (NeatMutator) -> Float = { neatMutator ->
-            adjustedPopulationScore.getValue(neatMutator).adjustedFitness
-        }
-        speciationController.sortSpeciesByFitness(fitnessForModel)
-        return modelScoreList
-    }
-
-}
+//class Neat(
+//    private val generationRules: GenerationRules
+//) {
+//    val generationFinishedHandlers = mutableListOf<suspend (SpeciesMap, Int) -> Unit>()
+//    val modelScoresHandlers = mutableListOf<(List<ModelScore>, Int) -> Unit>()
+//    suspend fun process(
+//        times: Int,
+//        population: List<NeatMutator>,
+//        speciesScoreKeeper: SpeciesScoreKeeper,
+//        speciesLineage: SpeciesLineage,
+//        simpleNeatExperiment: NeatExperiment
+//    ) {
+//        val (speciationController, adjustedFitness, reproductionStrategy, populationEvaluator) = generationRules
+//        var currentPopulation = population
+//        speciationController.speciate(currentPopulation, speciesLineage, 0, standardCompatibilityTest(shFunction(.5f), distanceFunction))
+//        repeat(times) { generation ->
+//            println("Generation $generation Population: ${currentPopulation.size} NumberOfSpecies: ${speciationController.speciesSet.size} TotalSpeciesCount: ${speciesLineage.species.lastOrNull()}")
+//            val modelScoreList =
+//                populationEvaluator(currentPopulation).toModelScores(adjustedFitness)
+//            sortModelsByAdjustedFitness(speciationController, modelScoreList)
+//            modelScoresHandlers.forEach { it(modelScoreList, generation) }
+//            speciesScoreKeeper.updateScores(modelScoreList.map { speciationController.species(it.neatMutator) to it }, generation)
+//            val newPopulation = reproductionStrategy(simpleNeatExperiment, speciationController, modelScoreList, generation)
+//            val speciesMap = speciationController.speciate(newPopulation, speciesLineage, generation)
+//            println("speciesMapSize: ${speciesMap.values.flatten().size} newPopulationSize: ${newPopulation.size} controllerSize: ${speciationController.population().size}")
+//            generationFinishedHandlers.forEach { it(speciesMap, generation) }
+//            currentPopulation = newPopulation
+//        }
+//    }
+//
+//    private fun sortModelsByAdjustedFitness(
+//        speciationController: SpeciationController,
+//        modelScoreList: List<ModelScore>
+//    ): List<ModelScore> {
+//        val adjustedPopulationScore = modelScoreList.toMap { modelScore -> modelScore.neatMutator }
+//        val fitnessForModel: (NeatMutator) -> Float = { neatMutator ->
+//            adjustedPopulationScore.getValue(neatMutator).adjustedFitness
+//        }
+//        speciationController.sortSpeciesByFitness(fitnessForModel)
+//        return modelScoreList
+//    }
+//
+//}
 
 fun validatePopulation(currentPopulation: List<NeatMutator>) {
     currentPopulation.forEach { neatMutator ->

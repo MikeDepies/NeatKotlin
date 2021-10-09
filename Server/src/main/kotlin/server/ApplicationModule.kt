@@ -154,7 +154,7 @@ val applicationModule = module {
             })),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
-            generation = if (evaluationId == 0) 489 else 505
+            generation = if (evaluationId == 0) 519 else 550
         )
     }
 }
