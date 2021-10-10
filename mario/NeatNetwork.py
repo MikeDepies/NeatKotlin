@@ -288,8 +288,8 @@ class ComputableNetwork:
             value = self.inputNdArray.item((node.y, node.x))
         self.nodeValuePost[node] = sigmoidal(value)
 
-    def output(self) -> List[float]:
-        return self.values[3][0, 0, 1]
+    def output(self) -> ndarray:
+        return self.values[3][..., 1]
 
     def draw(self):
         nx.draw_spring(self.graph)
