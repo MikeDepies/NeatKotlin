@@ -62,7 +62,19 @@ class ConnectionLocation:
         self.z2 = z2
         self.weight = weight
 
-
+def getConnectionIndex(source: NodeLocation, target: NodeLocation):
+        if source.z == 0:
+            return 0
+        if source.z == 1 and target.z == 2:
+            return 1
+        if source.z == 1 and target.z == 3:
+            return 2
+        if source.z == 2 and target.z == 3:
+            return 3
+        if source.z == 2 and target.z == 2:
+            return 4
+        else:
+            print("test???")
 # Identify input, hidden and output nodes
 def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLocation], layerShapes: List[List[int]], bias: NodeLocation = None):
     nodeValuePre: Dict[NodeLocation, float] = dict()
@@ -92,7 +104,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     #             NodeLocation(c.x2, c.y2, c.z2), c.weight), connections))
     print("construct graph")
     graph = nx.MultiDiGraph()
-    for c in connections:
+    for c in filter(lambda c: c.z1 != c.z2, connections):
         source = NodeLocation(c.x1, c.y1, c.z1)
         target = NodeLocation(c.x2, c.y2, c.z2)
         graph.add_edge(source,
@@ -118,19 +130,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
               np.zeros([*layerShapes[3], 2])]
     # print(computationOrder[0])
     
-    def getConnectionIndex(source: NodeLocation, target: NodeLocation):
-        if source.z == 0:
-            return 0
-        if source.z == 1 and target.z == 2:
-            return 1
-        if source.z == 1 and target.z == 3:
-            return 2
-        if source.z == 2 and target.z == 3:
-            return 3
-        if source.z == 2 and target.z == 2:
-            return 4
-        else:
-            print("test???")
+    
     for set in computationOrder:
         for source in set:
             descendants = graph.neighbors(source)
@@ -140,9 +140,13 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
                 # print(str(source) + " to " + str(target))
                 # print(str(source) + " to " + str(target))
                 connectionIndex = getConnectionIndex(source, target)
-                # print(str(source) + " to " + str(target) + " = " + str(connectionIndex))
+                
+                
                 # print(connection[connectionIndex].shape)
-                connection[connectionIndex][target.y, target.x, source.y, source.x ] = graph.get_edge_data(source, target)[0]["weight"]
+                try:
+                    connection[connectionIndex][target.y, target.x, source.y, source.x ] = graph.get_edge_data(source, target)[0]["weight"]
+                except:
+                    print(str(source) + " to " + str(target) + " = " + str(connectionIndex))
                
                 # if (array[source.y, source.x, target.y, target.x] != 0):
                 #     print(array[source.y, source.x, target.y, target.x])
