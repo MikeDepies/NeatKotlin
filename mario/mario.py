@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [9,9], [31,31], [1,12]])
+            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [9,9], [9,9], [1,12]])
             requestNetwork = False
         except Exception as e:
             print(e)

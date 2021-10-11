@@ -77,8 +77,7 @@ def getConnectionIndex(source: NodeLocation, target: NodeLocation):
             print("test???")
 # Identify input, hidden and output nodes
 def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLocation], layerShapes: List[List[int]], bias: NodeLocation = None):
-    nodeValuePre: Dict[NodeLocation, float] = dict()
-    nodeValuePost: Dict[NodeLocation, float] = dict()
+    
     # computationOrder: List[NodeLocation] = list()
     # ndarray()
     inputNodes = list(filter(lambda n: n.z == 0, nodes))
@@ -90,12 +89,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     print(len(inputNodes))
     print("outputnodes")
     print(len(outputNodes))
-    for n in inputNodes:
-        nodeValuePre[n] = 0
-        nodeValuePost[n] = 0
-    for n in outputNodes:
-        nodeValuePre[n] = 0
-        nodeValuePost[n] = 0
+    
     # for node in nodes:
     #     nodeValuePre[node] = 0
     #     nodeValuePost[node] = 0
@@ -103,21 +97,6 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     # data = list(map(lambda c: (NodeLocation(c.x1, c.y1, c.z1),
     #             NodeLocation(c.x2, c.y2, c.z2), c.weight), connections))
     print("construct graph")
-    graph = nx.MultiDiGraph()
-    for c in filter(lambda c: c.z1 != c.z2, connections):
-        source = NodeLocation(c.x1, c.y1, c.z1)
-        target = NodeLocation(c.x2, c.y2, c.z2)
-        graph.add_edge(source,
-                       target, weight=c.weight)
-        nodeValuePre[source] = 0
-        nodeValuePost[source] = 0
-        nodeValuePre[target] = 0
-        nodeValuePost[target] = 0
-    print("Constructing topological order...")
-    computationOrder: List[List[NodeLocation]] = list(
-        nx.topological_generations(graph))
-    print("Constructed Computable Network...")
-    # [15, 16]
     connection = [np.zeros(layerShapes[1] + layerShapes[0]),
                   np.zeros(layerShapes[2] + layerShapes[1]),
                   np.zeros(layerShapes[3] + layerShapes[1]),
@@ -128,26 +107,23 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
               np.zeros([*layerShapes[1], 2]),
               np.zeros([*layerShapes[2], 2]),
               np.zeros([*layerShapes[3], 2])]
+    graph = nx.MultiDiGraph()
+    for c in filter(lambda c: c.z1 != c.z2, connections):
+        source = NodeLocation(c.x1, c.y1, c.z1)
+        target = NodeLocation(c.x2, c.y2, c.z2)
+        connectionIndex = getConnectionIndex(source, target)
+        
+        try:
+            connection[connectionIndex][target.y, target.x, source.y, source.x ] = c.weight
+        except:
+            print(str(source) + " to " + str(target) + " = " + str(connectionIndex))
+    print("Constructing topological order...")
+    print("Constructed Computable Network...")
+    # [15, 16]
+    
     # print(computationOrder[0])
     
     
-    for set in computationOrder:
-        for source in set:
-            descendants = graph.neighbors(source)
-            for target in descendants:
-                # print("updating... " + str(target) + " to " + str(source) + " = " + str(graph.get_edge_data(source, target)[
-                #     0]["weight"]))
-                # print(str(source) + " to " + str(target))
-                # print(str(source) + " to " + str(target))
-                connectionIndex = getConnectionIndex(source, target)
-                
-                
-                # print(connection[connectionIndex].shape)
-                try:
-                    connection[connectionIndex][target.y, target.x, source.y, source.x ] = graph.get_edge_data(source, target)[0]["weight"]
-                except:
-                    print(str(source) + " to " + str(target) + " = " + str(connectionIndex))
-               
                 # if (array[source.y, source.x, target.y, target.x] != 0):
                 #     print(array[source.y, source.x, target.y, target.x])
     # print("===0===")
@@ -167,13 +143,10 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     # print(graph.has_node(n))
     # print(graph.has_node(outputNodes[0]))
     # nx.has_path(graph,n, outputNodes[0])
-    return ComputableNetwork(computationOrder, nodeValuePre, nodeValuePost, inputNodes, outputNodes, graph, connection, values)
+    return ComputableNetwork(inputNodes, outputNodes, graph, connection, values)
 
 
 class ComputableNetwork:
-    computationOrder: List[List[NodeLocation]]
-    nodeValuePre: Dict[NodeLocation, float]
-    nodeValuePost: Dict[NodeLocation, float]
     # nodeMap: Dict[NodeLocation, List[Tuple[NodeLocation, ConnectionLocation]]]
     inputNodes: List[NodeLocation]
     outputNodes: List[NodeLocation]
@@ -182,19 +155,15 @@ class ComputableNetwork:
     connection: List[ndarray]
     values: List[ndarray]
 
-    def __init__(self, computationOrder: List[List[NodeLocation]],
-                 nodeValuePre: Dict[NodeLocation, float],
-                 nodeValuePost: Dict[NodeLocation, float],
+    def __init__(self, 
                  #  nodeMap: Dict[NodeLocation, List[Tuple[NodeLocation, ConnectionLocation]]],
                  inputNodes: List[NodeLocation],
                  outputNodes: List[NodeLocation],
                  graph: nx.MultiDiGraph,
                  connection: List[ndarray],
                  values: List[ndarray]):
-        self.computationOrder = computationOrder
+
         # self.nodeMap = nodeMap
-        self.nodeValuePre = nodeValuePre
-        self.nodeValuePost = nodeValuePost
         self.inputNodes = inputNodes
         self.outputNodes = outputNodes
         self.graph = graph
