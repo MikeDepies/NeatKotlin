@@ -26,12 +26,12 @@ def getNetwork():
             continue
         data = res.json()
         id : str = data["id"]
-        connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(**c), data["connections"]))
-        nodes: List[NeatNetwork.ConnectionLocation] = list(map(lambda n: NeatNetwork.NodeLocation(**n), data["nodes"]))
+        connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(c[0], c[1], c[2], c[3], c[4], c[5], c[6]), data["connections"]))
+        nodes: List[NeatNetwork.ConnectionLocation] = list(map(lambda n: NeatNetwork.NodeLocation(n[0], n[1], n[2]), data["nodes"]))
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [9,9], [1,12]])
+            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [9,9], [31,31], [1,12]])
             requestNetwork = False
         except Exception as e:
             print(e)
