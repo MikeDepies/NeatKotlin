@@ -108,7 +108,7 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
               np.zeros([*layerShapes[2], 2]),
               np.zeros([*layerShapes[3], 2])]
     graph = nx.MultiDiGraph()
-    for c in filter(lambda c: c.z1 != c.z2, connections):
+    for c in connections:
         source = NodeLocation(c.x1, c.y1, c.z1)
         target = NodeLocation(c.x2, c.y2, c.z2)
         connectionIndex = getConnectionIndex(source, target)

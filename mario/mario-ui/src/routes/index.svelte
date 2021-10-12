@@ -64,7 +64,7 @@ import { onMount } from 'svelte';
     }
     function getRGB(mario : MarioInfo, index : number) {
         const ratio = index / (marios.length + 1)
-        const r = 50
+        const r = 50 + mario.stage * 60
         const g = 0 + (255 * ratio)
         const b = 0 + (255 * scoreRatio(mario))
         return `rgb(${r},${g},${b})`
@@ -122,7 +122,7 @@ import { onMount } from 'svelte';
 	{#each marios.filter(m => !useFilter || marioDict[m.id] == updateNumberFilter) as mario, index (mario)}
 		<div
 			class="absolute {recentGroup(mario) ? "animate-bounce border-2 border-black" : ""}"
-			style="background: {getRGB(mario, index)}; opacity: {(!recentGroup(mario)) ? Math.max(index / marios.length / 10, .5) : 1}; width: {size(mario)}px; height: {size(mario) * (mario.status == "small" ? 1 : 2)}px;  margin-top: -{size(mario)/2  * (mario.status == "small" ? 1 : 2)}px; top: {mario.y_pos * yRatio }px; left: {mario.x_pos * xRatio}px;"
+			style="background: {getRGB(mario, index)}; opacity: {(!recentGroup(mario)) ? Math.max(index / marios.length / 10, .5) : 1}; width: {size(mario)}px; height: {size(mario) * (mario.status == "small" ? 1 : 2)}px;  margin-top: -{size(mario)/2  * (mario.status == "small" ? 1 : 2)}px; top: {mario.y_pos * yRatio + 210 * (mario.stage - 1) }px; left: {mario.x_pos * xRatio}px;"
 			on:mousemove={() => mouseOverMario(mario)}
 		/>
 	{/each}
