@@ -123,7 +123,7 @@ def mario(env: Env):
         # print(output.argmax(1))
         # print(output)
         action = output.argmax(1)[0]
-        if (output[action] < .5):
+        if (output.item(action) < .5):
             action = 0
         # action = min(math.floor(output * len(COMPLEX_MOVEMENT)), len(COMPLEX_MOVEMENT)-1)
         
