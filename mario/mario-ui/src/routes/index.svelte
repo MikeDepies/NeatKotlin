@@ -19,8 +19,8 @@ import { onMount } from 'svelte';
 
 	let width: number;
 	let height: number;
-	const actualWidth = 3376;
-	const actualHeight = 480;
+	const actualWidth = 3072;//3376;
+	const actualHeight = 720;//480;
 	$: xRatio = width / actualWidth;
 	$: yRatio = height / actualHeight;
     let updateNumber = 0
@@ -118,7 +118,7 @@ import { onMount } from 'svelte';
 	class="w-full bg-contain bg-no-repeat relative"
 	style="background-image: url(mario-1-1-stage.png);"
 >
-	<img src="mario-1-1-stage.png" alt="" />
+	<img src="mario-1-2-stage.png" alt="" />
 	{#each marios.filter(m => !useFilter || marioDict[m.id] == updateNumberFilter) as mario, index (mario)}
 		<div
 			class="absolute {recentGroup(mario) ? "animate-bounce border-2 border-black" : ""}"

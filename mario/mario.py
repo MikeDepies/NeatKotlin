@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [9,9], [1,12]])
+            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [21,21], [1,12]])
             requestNetwork = False
         except Exception as e:
             print(e)
@@ -95,6 +95,7 @@ def mario(env: Env):
             idleCount=-60*2
             framesSinceMaxXChange = 0
         if (stage != info["stage"]):
+            maxX = 0
             framesSinceMaxXChange =0
             idleCount = 0
         
@@ -120,7 +121,10 @@ def mario(env: Env):
             done=True
         # print(output)
         # print(output.argmax(1))
+        # print(output)
         action = output.argmax(1)[0]
+        if (output[action] < .5):
+            action = 0
         # action = min(math.floor(output * len(COMPLEX_MOVEMENT)), len(COMPLEX_MOVEMENT)-1)
         
         i+= 1
