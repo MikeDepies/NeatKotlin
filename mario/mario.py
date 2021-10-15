@@ -92,9 +92,10 @@ def mario(env: Env):
     status = "small"
     stage = 0
     startInfo = None
+    idle = False
     while True:
-        if done:
-            if reward < -14:
+        if done or idle:
+            if done:
                 state = env.reset()
             info["reward"] = cumulativeReward
             info["id"] = id
@@ -115,6 +116,7 @@ def mario(env: Env):
             maxX=0
             framesSinceMaxXChange = 0
             startInfo = None
+            idle=False
         
         state, reward, done, info = env.step(action)
         if (startInfo == None):
@@ -148,7 +150,7 @@ def mario(env: Env):
         if idleCount > 60*6 or reward < -14 or framesSinceMaxXChange > 20* 45:
             if reward < -14:
                 info["life"] = info["life"] - 1
-            done=True
+            idle=True
         # print(output)
         # print(output.argmax(1))
         # print(output)
