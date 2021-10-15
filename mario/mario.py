@@ -51,7 +51,15 @@ def submitScore(info):
         "world": int(info["world"]),
         "x_pos": int(info["x_pos"]),
         "y_pos": int(info["y_pos"]),
-        "statusDelta": int(info["statusDelta"]),
+        "dstatus": int(info["dstatus"]),
+        "dworld": int(info["dworld"]),
+        "dstage": int(info["dstage"]),
+        "dx": int(info["dx"]),
+        "dy": int(info["dy"]),
+        "dtime": info["dtime"],
+        "dlife": int(info["dlife"]),
+        "dcoins": info["dcoins"],
+        "dscore": info["dscore"],
         "id" : info["id"]
     })
 
@@ -90,12 +98,15 @@ def mario(env: Env):
                 state = env.reset()
             info["reward"] = cumulativeReward
             info["id"] = id
-            info["x_pos"] = info["x_pos"] - startInfo["x_pos"]
-            info["y_pos"] = info["y_pos"] - startInfo["y_pos"]
-            info["world"] = info["world"] - startInfo["world"]
-            info["stage"] = info["stage"] - startInfo["stage"]
-            info["coins"] = info["coins"] - startInfo["coins"]
-            info["statusDelta"] = statusValue(info["status"]) - statusValue(startInfo["status"])
+            info["dx"] = info["x_pos"] - startInfo["x_pos"]
+            info["dy"] = info["y_pos"] - startInfo["y_pos"]
+            info["dworld"] = info["world"] - startInfo["world"]
+            info["dstage"] = info["stage"] - startInfo["stage"]
+            info["dcoins"] = info["coins"] - startInfo["coins"]
+            info["dscore"] = info["score"] - startInfo["score"]
+            info["dtime"] = info["time"] - startInfo["time"]
+            info["dlife"] = info["life"] - startInfo["life"]
+            info["dstatus"] = statusValue(info["status"]) - statusValue(startInfo["status"])
             submitScore(info)
             id, network = getNetwork()
             cumulativeReward = 0

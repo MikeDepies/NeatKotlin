@@ -141,7 +141,7 @@
 				: 1}; width: {size(mario)}px; height: {size(mario) *
 				(mario.status == 'small' ? 1 : 2)}px;  margin-top: -{(size(mario) / 2) *
 				(mario.status == 'small' ? 1 : 2)}px; top: {mario.y_pos * yRatio +
-				-69}px; left: {mario.x_pos * xRatio}px;"
+				stage[mario.stage -1].offset}px; left: {mario.x_pos * xRatio}px;"
 			on:mousemove={() => mouseOverMario(mario)}
 		/>
 	{/each}
