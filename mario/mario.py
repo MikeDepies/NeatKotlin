@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [21,21], [1,12]])
+            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [13,13], [1,12]])
             requestNetwork = False
         except Exception as e:
             print(e)
@@ -115,9 +115,11 @@ def mario(env: Env):
         if reward == 0:
             idleCount+= 1
         elif idleCount > 0:
-            idleCount -=8
+            idleCount -=2
         
-        if idleCount > 60*2 or reward < -14 or framesSinceMaxXChange > 20* 25:
+        if idleCount > 60*6 or reward < -14 or framesSinceMaxXChange > 20* 45:
+            if reward < -14:
+                info["life"] = info["life"] - 1
             done=True
         # print(output)
         # print(output.argmax(1))
