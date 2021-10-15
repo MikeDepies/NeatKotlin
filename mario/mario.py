@@ -51,6 +51,7 @@ def submitScore(info):
         "world": int(info["world"]),
         "x_pos": int(info["x_pos"]),
         "y_pos": int(info["y_pos"]),
+        "statusDelta": int(info["statusDelta"]),
         "id" : info["id"]
     })
 
@@ -58,6 +59,11 @@ def deadNetwork():
     requests.post("http://"+ host + ":8094/dead", json={
         "id" : id
     })
+    
+def statusValue(status):
+    if (status == "small"): return 0
+    elif (status == "tall"): return 1
+    else: return 4
 
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
@@ -77,11 +83,18 @@ def mario(env: Env):
     framesSinceMaxXChange = 0
     status = "small"
     stage = 0
+    startInfo = None
     while True:
         if done:
             state = env.reset()
-            info["reward"] = reward
+            info["reward"] = cumulativeReward
             info["id"] = id
+            info["x_pos"] = info["x_pos"] - startInfo["x_pos"]
+            info["y_pos"] = info["y_pos"] - startInfo["y_pos"]
+            info["world"] = info["world"] - startInfo["world"]
+            info["stage"] = info["stage"] - startInfo["stage"]
+            info["coins"] = info["coins"] - startInfo["coins"]
+            info["statusDelta"] = statusValue(info["status"]) - statusValue(startInfo["status"])
             submitScore(info)
             id, network = getNetwork()
             cumulativeReward = 0
@@ -89,8 +102,11 @@ def mario(env: Env):
             i=0
             maxX=0
             framesSinceMaxXChange = 0
+            startInfo = None
         
         state, reward, done, info = env.step(action)
+        if (startInfo == None):
+            startInfo = info
         if (status != info["status"]):
             idleCount=-60*2
             framesSinceMaxXChange = 0
