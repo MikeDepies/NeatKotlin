@@ -86,7 +86,8 @@ def mario(env: Env):
     startInfo = None
     while True:
         if done:
-            state = env.reset()
+            if reward < -14:
+                state = env.reset()
             info["reward"] = cumulativeReward
             info["id"] = id
             info["x_pos"] = info["x_pos"] - startInfo["x_pos"]
