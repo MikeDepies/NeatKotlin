@@ -20,40 +20,244 @@
 	let width: number;
 	let height: number;
 	const stage = [
-		{
-			width: 3376,
-			height: 480,
-			image: 'mario-1-1-stage.png',
-			offset: 0
-		},
-		{
-			width: 3072,
-			height: 720,
-			image: 'mario-1-2-stage.png',
-			offset: 210
-		}
+		[
+			{
+				width: 3376,
+				height: 480,
+				image: 'mario-1-1-stage.png',
+				offset: 0
+			},
+			{
+				width: 3072,
+				height: 720,
+				image: 'mario-1-2-stage.png',
+				offset: 240
+			},
+			{
+				width: 2624,
+				height: 240,
+				image: 'mario-1-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 2560,
+				height: 240,
+				image: 'mario-1-4-stage.png',
+				offset: 0
+			}
+		],
+		[
+			{
+				width: 3408,
+				height: 720,
+				image: 'mario-2-1-stage.png',
+				offset: 240
+			},
+			{
+				width: 3072,
+				height: 480,
+				image: 'mario-2-2-stage.png',
+				offset: 240
+			},
+			{
+				width: 2624,
+				height: 240,
+				image: 'mario-2-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 3782,
+				height: 240,
+				image: 'mario-2-4-stage.png',
+				offset: 0
+			}
+		],
+		[
+			{
+				width: 3408,
+				height: 720,
+				image: 'mario-3-1-stage.png',
+				offset: 240
+			},
+			{
+				width: 2552,
+				height: 240,
+				image: 'mario-3-2-stage.png',
+				offset: 0
+			},
+			{
+				width: 2608,
+				height: 240,
+				image: 'mario-3-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 2560,
+				height: 240,
+				image: 'mario-3-4-stage.png',
+				offset: 0
+			}
+		],
+		[
+			{
+				width: 3808,
+				height: 480,
+				image: 'mario-4-1-stage.png',
+				offset: 0
+			},
+			{
+				width: 3584,
+				height: 720,
+				image: 'mario-4-2-stage.png',
+				offset: 240
+			},
+			{
+				width: 2544,
+				height: 240,
+				image: 'mario-4-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 3072,
+				height: 240,
+				image: 'mario-4-4-stage.png',
+				offset: 0
+			}
+		],
+		[
+			{
+				width: 3392,
+				height: 480,
+				image: 'mario-5-1-stage.png',
+				offset: 0
+			},
+			{
+				width: 3408,
+				height: 720,
+				image: 'mario-5-2-stage.png',
+				offset: 240
+			},
+			{
+				width: 2624,
+				height: 240,
+				image: 'mario-5-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 2560,
+				height: 240,
+				image: 'mario-5-4-stage.png',
+				offset: 0
+			}
+		],
+		[
+			{
+				width: 3216,
+				height: 240,
+				image: 'mario-6-1-stage.png',
+				offset: 0
+			},
+			{
+				width: 3664,
+				height: 720,
+				image: 'mario-6-2-stage.png',
+				offset: 240
+			},
+			{
+				width: 2864,
+				height: 240,
+				image: 'mario-6-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 2560,
+				height: 240,
+				image: 'mario-6-4-stage.png',
+				offset: 0
+			}
+		],
+		[
+			{
+				width: 3072,
+				height: 480,
+				image: 'mario-7-1-stage.png',
+				offset: 0
+			},
+			{
+				width: 3072,
+				height: 480,
+				image: 'mario-7-2-stage.png',
+				offset: 240
+			},
+			{
+				width: 3792,
+				height: 240,
+				image: 'mario-7-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 3584,
+				height: 240,
+				image: 'mario-7-4-stage.png',
+				offset: 0
+			}
+		],
+		[
+			{
+				width: 6224,
+				height: 480,
+				image: 'mario-8-1-stage.png',
+				offset: 0
+			},
+			{
+				width: 3664,
+				height: 480,
+				image: 'mario-8-2-stage.png',
+				offset: 0
+			},
+			{
+				width: 3664,
+				height: 240,
+				image: 'mario-8-3-stage.png',
+				offset: 0
+			},
+			{
+				width: 5120,
+				height: 480,
+				image: 'mario-8-4-stage.png',
+				offset: 0
+			}
+		]
 	];
+	let worldIndex = 0;
 	let stageIndex = 0;
-	$: actualWidth = stage[stageIndex].width; //3376;
-	$: actualHeight = stage[stageIndex].height;  //480;
+	let useAutoStageRotation = true;
+	$: {
+		if (stageIndex > 3) {
+			stageIndex = 0;
+			worldIndex++;
+		}
+		if (stageIndex < 0) {
+			stageIndex = 3;
+			worldIndex--;
+		}
+		if (worldIndex > 7) {
+			worldIndex = 0;
+		}
+		if (worldIndex < 0) {
+			worldIndex = 7;
+		}
+	}
+	$: actualWidth = stage[worldIndex][stageIndex].width; //3376;
+	$: actualHeight = stage[worldIndex][stageIndex].height; //480;
 	$: xRatio = width / actualWidth;
 	$: yRatio = height / actualHeight;
 	let updateNumber = 0;
 	let marioDict: Record<string, number> = {};
-	function getMarioInfo(x: number, y: number): MarioInfo {
-		return {
-			coins: 0,
-			id: 'test',
-			score: 0,
-			stage: 0,
-			status: 'small',
-			time: 0,
-			world: 0,
-			x_pos: x,
-			y_pos: 261 - y
-		};
-	}
+	
 	export let marios: MarioInfo[];
+	let filteredMarios = [];
+	$: filteredMarios = marios.filter((m) => m.stage - 1 == stageIndex && m.world - 1 == worldIndex);
 
 	let selectedMario: MarioInfo | null = null;
 	function mouseOverMario(mario: MarioInfo) {
@@ -77,8 +281,8 @@
 		if (mariosToRecord.length > 0) updateNumber++;
 	}
 	function getRGB(mario: MarioInfo, index: number) {
-		const ratio = index / (marios.length + 1);
-		const r = 50 + mario.stage * 60;
+		const ratio = index / (filteredMarios.length + 1);
+		const r = 0 + 255 * (mario.coins / maxCoins);
 		const g = 0 + 255 * ratio;
 		const b = 0 + 255 * scoreRatio(mario);
 		return `rgb(${r},${g},${b})`;
@@ -88,16 +292,21 @@
 		setInterval(() => {
 			refresh();
 		}, 2000);
+		setInterval(() => {
+			if (useAutoStageRotation) stageIndex++;
+		}, 10_000);
 	});
 	let useFilter = false;
 	let updateNumberFilter = 0;
 	function size(mario: MarioInfo) {
 		return Math.floor(timeRatio(mario) * 16) + 12;
 	}
-	let maxScore = marios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
-	$: maxScore = marios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
-	let minTime = marios.map((m) => m.time).reduce((a, b) => Math.min(a, b), 400);
-	$: minTime = marios.map((m) => m.time).reduce((a, b) => Math.min(a, b), 400);
+	let maxScore = filteredMarios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
+	$: maxScore = filteredMarios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
+	let maxCoins = filteredMarios.map((m) => m.coins).reduce((a, b) => Math.max(a, b), 0.1);
+	$: maxCoins = filteredMarios.map((m) => m.coins).reduce((a, b) => Math.max(a, b), 0.1);
+	let minTime = filteredMarios.map((m) => m.time).reduce((a, b) => Math.min(a, b), 400);
+	$: minTime = filteredMarios.map((m) => m.time).reduce((a, b) => Math.min(a, b), 400);
 	function scoreRatio(mario: MarioInfo) {
 		return mario.score / maxScore;
 	}
@@ -132,21 +341,33 @@
 	bind:clientWidth={width}
 	class="w-full bg-contain bg-no-repeat relative"
 >
-	<img src="{stage[stageIndex].image}" alt="" />
-	{#each marios.filter((m) => !useFilter || marioDict[m.id] == updateNumberFilter) as mario, index (mario)}
+	<img src={stage[worldIndex][stageIndex].image} alt="" />
+	{#each filteredMarios as mario, index (mario)}
 		<div
-			class="absolute {recentGroup(mario) ? 'animate-bounce border-2 border-black' : ''}"
+			class="{mario.dstage != 0 || mario.dworld != 0 ? "animate-spin" : ""} absolute {recentGroup(mario)
+				? 'animate-bounce border-2 border-black'
+				: 'border-white border'}"
 			style="background: {getRGB(mario, index)}; opacity: {!recentGroup(mario)
-				? Math.max(index / marios.length / 10, 0.5)
+				? Math.max(index / filteredMarios.length / 10, 0.5)
 				: 1}; width: {size(mario)}px; height: {size(mario) *
 				(mario.status == 'small' ? 1 : 2)}px;  margin-top: -{(size(mario) / 2) *
 				(mario.status == 'small' ? 1 : 2)}px; top: {mario.y_pos * yRatio +
-				stage[mario.stage -1].offset}px; left: {mario.x_pos * xRatio}px;"
+				stage[worldIndex][mario.stage - 1]?.offset * yRatio}px; left: {mario.x_pos * xRatio}px;"
 			on:mousemove={() => mouseOverMario(mario)}
 		/>
 	{/each}
 </div>
 <div>
+	<div>
+		World: <input type="number" bind:value={worldIndex} />
+		Stage: <input type="number" bind:value={stageIndex} />
+	</div>
+	<div>
+		<label for="autoRotate">
+			Auto Rotate
+		</label>
+		<input type="checkbox" bind:checked={useAutoStageRotation} id="autoRotate">
+	</div>
 	<div>Threshold:</div>
 	<div><input type="number" bind:value={settings.noveltyThreshold} /></div>
 	<div><button on:click={updateSettings}>Update Settings</button></div>

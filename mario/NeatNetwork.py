@@ -67,12 +67,18 @@ def getConnectionIndex(source: NodeLocation, target: NodeLocation):
             return 0
         if source.z == 1 and target.z == 2:
             return 1
-        if source.z == 1 and target.z == 3:
+        if source.z == 1 and target.z == 4:
             return 2
-        if source.z == 2 and target.z == 3:
+        if source.z == 2 and target.z == 4:
             return 3
-        if source.z == 2 and target.z == 2:
+        if source.z == 2 and target.z == 3:
             return 4
+        if source.z == 3 and target.z == 4:
+            return 5
+        if source.z == 2 and target.z == 2:
+            return 6
+        if source.z == 3 and target.z == 3:
+            return 7
         else:
             print("test???")
 # Identify input, hidden and output nodes
@@ -99,14 +105,19 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
     print("construct graph")
     connection = [np.zeros(layerShapes[1] + layerShapes[0]),
                   np.zeros(layerShapes[2] + layerShapes[1]),
-                  np.zeros(layerShapes[3] + layerShapes[1]),
+                  np.zeros(layerShapes[4] + layerShapes[1]),
+                  np.zeros(layerShapes[4] + layerShapes[2]),
                   np.zeros(layerShapes[3] + layerShapes[2]),
-                  np.zeros(layerShapes[2] + layerShapes[2]),]
+                  np.zeros(layerShapes[4] + layerShapes[3]),
+                  np.zeros(layerShapes[2] + layerShapes[2]),
+                  np.zeros(layerShapes[3] + layerShapes[3]),
+                  ]
     # print(connection[0])
     values = [np.zeros([*layerShapes[0], 2]),
               np.zeros([*layerShapes[1], 2]),
               np.zeros([*layerShapes[2], 2]),
-              np.zeros([*layerShapes[3], 2])]
+              np.zeros([*layerShapes[3], 2]),
+              np.zeros([*layerShapes[4], 2])]
     graph = nx.MultiDiGraph()
     for c in connections:
         source = NodeLocation(c.x1, c.y1, c.z1)
@@ -183,30 +194,47 @@ class ComputableNetwork:
 
     def compute(self):
 
-        # [np.zeros(layerShapes[1] + layerShapes[0]),
-        # np.zeros(layerShapes[2] + layerShapes[1]),
-        # np.zeros(layerShapes[3] + layerShapes[1]),
-        # np.zeros(layerShapes[3] + layerShapes[2])]
+
+        #  connection = [
+        #           np.zeros(layerShapes[1] + layerShapes[0]),
+        #           np.zeros(layerShapes[2] + layerShapes[1]),
+        #           np.zeros(layerShapes[4] + layerShapes[1]),
+        #           np.zeros(layerShapes[4] + layerShapes[2]),
+        #           np.zeros(layerShapes[3] + layerShapes[2]),
+        #           np.zeros(layerShapes[4] + layerShapes[3]),
+        #           np.zeros(layerShapes[2] + layerShapes[2]),
+        #           np.zeros(layerShapes[3] + layerShapes[3]),
+        #           ]
+        # values = [np.zeros([*layerShapes[0], 2]),
+        #         np.zeros([*layerShapes[1], 2]),
+        #         np.zeros([*layerShapes[2], 2]),
+        #         np.zeros([*layerShapes[3], 2]),
+        #         np.zeros([*layerShapes[4], 2])]
         vectorizedSigmoidal = np.vectorize(sigmoidal)
         v1: ndarray = (self.inputNdArray * self.connection[0]).sum((2, 3))
         self.values[1][..., 0] = v1
         self.values[1][..., 1] = vectorizedSigmoidal(v1)
 
         v2: ndarray = (self.values[1][..., 1] * self.connection[1]).sum((2, 3))
-        self.values[2][..., 0] = v2 + (self.values[2][..., 1] * self.connection[4]).sum((2, 3))
+        self.values[2][..., 0] = v2 + (self.values[2][..., 1] * self.connection[6]).sum((2, 3))
         self.values[2][..., 1] = vectorizedSigmoidal(self.values[2][..., 0])
+        
+        v3: ndarray = (self.values[2][..., 1] * self.connection[4]).sum((2, 3))
+        self.values[3][..., 0] = v3 + (self.values[3][..., 1] * self.connection[7]).sum((2, 3))
+        self.values[3][..., 1] = vectorizedSigmoidal(self.values[3][..., 0])
 
-        v3: ndarray = (self.values[1][..., 1] * self.connection[2]).sum((2, 3))
-        v4: ndarray = (self.values[2][..., 1] * self.connection[3]).sum((2, 3))
-        sum = v3 + v4
+        v4: ndarray = (self.values[1][..., 1] * self.connection[2]).sum((2, 3))
+        v5: ndarray = (self.values[2][..., 1] * self.connection[3]).sum((2, 3))
+        v6: ndarray = (self.values[3][..., 1] * self.connection[5]).sum((2, 3))
+        sum = v4 + v5 + v6
         # print("=========")
         # print(v3)
         # print(self.connection[2])
         # print(v4)
         # print(self.connection[3])
         # print("=========")
-        self.values[3][..., 0] = sum
-        self.values[3][..., 1] = vectorizedSigmoidal(sum)
+        self.values[4][..., 0] = sum
+        self.values[4][..., 1] = vectorizedSigmoidal(sum)
         # for v in self.values:
         #     print(v[...,1])
         # for computationSet in self.computationOrder:
@@ -258,7 +286,7 @@ class ComputableNetwork:
         self.nodeValuePost[node] = sigmoidal(value)
 
     def output(self) -> ndarray:
-        return self.values[3][..., 1]
+        return self.values[4][..., 1]
 
     def draw(self):
         nx.draw_spring(self.graph)

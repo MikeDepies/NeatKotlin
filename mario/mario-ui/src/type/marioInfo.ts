@@ -7,7 +7,9 @@ export type MarioInfo = {
     id: string,
     time: number,
     stage: number,
-    world: number
+    world: number,
+    dstage: number,
+    dworld: number
 };
 export type Settings = {
     noveltyThreshold : number

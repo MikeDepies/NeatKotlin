@@ -12,7 +12,7 @@ from skimage.transform import rescale, resize, downscale_local_mean
 import time
 # import cv2 as cv
 from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
-env = gym_super_mario_bros.make('SuperMarioBros-v1')
+env = gym_super_mario_bros.make('SuperMarioBrosRandomStages-v1')
 env = JoypadSpace(env, COMPLEX_MOVEMENT)
 host = "192.168.0.132"
 
@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [13,13], [1,12]])
+            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [5,5], [5,5], [1,12]])
             requestNetwork = False
         except Exception as e:
             print(e)
@@ -95,7 +95,7 @@ def mario(env: Env):
     idle = False
     while True:
         if done or idle:
-            if done:
+            if done or idle:
                 state = env.reset()
             info["reward"] = cumulativeReward
             info["id"] = id
@@ -155,8 +155,8 @@ def mario(env: Env):
         # print(output.argmax(1))
         # print(output)
         action = output.argmax(1)[0]
-        if (output.item(action) < .5):
-            action = 0
+        # if (output.item(action) < .5):
+        #     action = 0
         # action = min(math.floor(output * len(COMPLEX_MOVEMENT)), len(COMPLEX_MOVEMENT)-1)
         
         i+= 1
