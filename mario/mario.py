@@ -108,7 +108,7 @@ def mario(env: Env):
             info["dtime"] = info["time"] - startInfo["time"]
             info["dlife"] = info["life"] - startInfo["life"]
             info["dstatus"] = statusValue(info["status"]) - statusValue(startInfo["status"])
-            if (info["flag_get"]):
+            if (not info["flag_get"]):
                 submitScore(info)
                 id, network = getNetwork()
                 cumulativeReward = 0
