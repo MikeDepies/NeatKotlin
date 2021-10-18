@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[30,32], [5,5], [5,5], [5,5], [1,12]])
+            network = NeatNetwork.constructNetwork(nodes, connections, [[60,64], [5,5], [5,5], [5,5], [1,12]])
             requestNetwork = False
         except Exception as e:
             print(e)
@@ -42,7 +42,7 @@ def submitScore(info):
     # print(info["stage"])
     requests.post("http://192.168.0.132:8094/score", json={
         "coins": info["coins"],
-        "flag_get": info["flag_get"],
+        "flag_get": bool(info["flag_get"]),
         "life": int(info["life"]),
         "score":info["score"],
         "stage": int(info["stage"]),
@@ -108,14 +108,16 @@ def mario(env: Env):
             info["dtime"] = info["time"] - startInfo["time"]
             info["dlife"] = info["life"] - startInfo["life"]
             info["dstatus"] = statusValue(info["status"]) - statusValue(startInfo["status"])
-            submitScore(info)
-            id, network = getNetwork()
-            cumulativeReward = 0
+            if (info["flag_get"]):
+                submitScore(info)
+                id, network = getNetwork()
+                cumulativeReward = 0
+                startInfo = None
             idleCount = 0
             i=0
             maxX=0
             framesSinceMaxXChange = 0
-            startInfo = None
+            
             idle=False
         
         state, reward, done, info = env.step(action)
@@ -131,7 +133,7 @@ def mario(env: Env):
         
         status = info["status"]
         stage = info["stage"]
-        state = rescale(rgb2gray(state), 1/8,)
+        state = rescale(rgb2gray(state), 1/4,)
         # print(state.shape)
         cumulativeReward+= reward
         network.input(state)
