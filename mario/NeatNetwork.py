@@ -310,7 +310,7 @@ class ComputableNetwork:
         self.nodeValuePost[node] = sigmoidal(value)
 
     def output(self) -> ndarray:
-        return self.values[4][..., 1]
+        return self.values[5][..., 1]
 
     def draw(self):
         nx.draw_spring(self.graph)
