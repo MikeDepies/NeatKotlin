@@ -64,3 +64,12 @@ fun NeatMutator.computationSequence(
         }
     }
 }
+
+
+fun NeatMutator.computationSequence2(
+    networkNodeMap: Map<NodeGene, NetworkNode>,
+    idNodeMap: Map<Int, NodeGene>
+): Sequence<() -> Unit> {
+
+    TODO()
+}

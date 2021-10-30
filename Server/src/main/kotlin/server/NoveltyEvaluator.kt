@@ -19,7 +19,7 @@ data class ActionBehavior(
 )
 
 class NoveltyEvaluatorMultiBehavior(
-    val network: ActivatableNetwork,
+//    val network: ActivatableNetwork,
     val agentId: Int,
     val evaluationId: Int,
     val generation: Int,
