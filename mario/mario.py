@@ -152,7 +152,7 @@ def mario(env: Env):
         elif idleCount > 0:
             idleCount -=2
         
-        if reward < -14 or framesSinceMaxXChange > 20* 45:
+        if reward < -14 or framesSinceMaxXChange > 20* 20:
             if reward < -14:
                 info["life"] = info["life"] - 1
             idle=True

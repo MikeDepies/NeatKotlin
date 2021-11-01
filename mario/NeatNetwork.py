@@ -63,7 +63,7 @@ class ConnectionLocation:
         self.weight = weight
 
 def getConnectionIndex(source: NodeLocation, target: NodeLocation):
-        if source.z == 0:
+        if source.z == 0 and target.z == 1:
             return 0
         if source.z == 1 and target.z == 2:
             return 1
@@ -97,6 +97,18 @@ def getConnectionIndex(source: NodeLocation, target: NodeLocation):
             return 15
         if source.z == 6 and target.z == 4:
             return 16
+        if source.z == -2 and target.z == 1:
+            return 17
+        if source.z == -2 and target.z == 2:
+            return 18
+        if source.z == -2 and target.z == 3:
+            return 19
+        if source.z == -2 and target.z == 4:
+            return 20
+        if source.z == -2 and target.z == 5:
+            return 21
+        if source.z == -2 and target.z == 6:
+            return 22
         else:
             print("test???")
 # Identify input, hidden and output nodes
@@ -138,6 +150,12 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
                 np.zeros(layerShapes[6] + layerShapes[6]),
                 np.zeros(layerShapes[5] + layerShapes[6]),
                 np.zeros(layerShapes[4] + layerShapes[6]),
+                np.zeros(layerShapes[1]),
+                np.zeros(layerShapes[2]),
+                np.zeros(layerShapes[3]),
+                np.zeros(layerShapes[4]),
+                np.zeros(layerShapes[5]),
+                np.zeros(layerShapes[6]),
                 ]
     # print(connection[0])
     values = [np.zeros([*layerShapes[0], 2]),
@@ -154,7 +172,10 @@ def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLoca
         connectionIndex = getConnectionIndex(source, target)
         
         try:
-            connection[connectionIndex][target.y, target.x, source.y, source.x ] = c.weight
+            if source.z == -2: # Bias only has target dimensions
+                connection[connectionIndex][target.y, target.x ] = c.weight
+            else:
+                connection[connectionIndex][target.y, target.x, source.y, source.x ] = c.weight
         except:
             print(str(source) + " to " + str(target) + " = " + str(connectionIndex))
     print("Constructing topological order...")
@@ -242,17 +263,17 @@ class ComputableNetwork:
         vectorizedSigmoidal = np.vectorize(sigmoidal)
         # layer 1
         v1: ndarray = (self.inputNdArray * self.connection[0]).sum((2, 3))
-        self.values[1][..., 0] = v1
+        self.values[1][..., 0] = v1 + self.connection[17]
         self.values[1][..., 1] = vectorizedSigmoidal(v1)
 
         # layer 2
         v2: ndarray = (self.values[1][..., 1] * self.connection[1]).sum((2, 3))
-        self.values[2][..., 0] = v2 + (self.values[2][..., 1] * self.connection[10]).sum((2, 3))
+        self.values[2][..., 0] = v2 + (self.values[2][..., 1] * self.connection[10]).sum((2, 3))  + self.connection[18]
         self.values[2][..., 1] = vectorizedSigmoidal(self.values[2][..., 0])
         
         # layer 3
         v3: ndarray = (self.values[2][..., 1] * self.connection[4]).sum((2, 3))
-        self.values[3][..., 0] = v3 + (self.values[3][..., 1] * self.connection[11]).sum((2, 3))
+        self.values[3][..., 0] = v3 + (self.values[3][..., 1] * self.connection[11]).sum((2, 3)) +  + self.connection[19]
         self.values[3][..., 1] = vectorizedSigmoidal(self.values[3][..., 0])
         
         # layer 4
@@ -261,12 +282,12 @@ class ComputableNetwork:
         # print(self.connection[16].sum((2, 3)).shape)
         # print((self.values[5][..., 1].shape))
         # print(self.connection[9].sum((2, 3)).shape)
-        self.values[4][..., 0] = v4 + (self.values[4][..., 1] * self.connection[12]).sum((2, 3)) + (self.values[6][..., 1] * self.connection[16]).sum((2, 3))
+        self.values[4][..., 0] = v4 + (self.values[4][..., 1] * self.connection[12]).sum((2, 3)) + (self.values[6][..., 1] * self.connection[16]).sum((2, 3))  + self.connection[20]
         self.values[4][..., 1] = vectorizedSigmoidal(self.values[4][..., 0])
         
         # layer 5
         v4: ndarray = (self.values[4][..., 1] * self.connection[7]).sum((2, 3))
-        self.values[5][..., 0] = v4 + (self.values[5][..., 1] * self.connection[13]).sum((2, 3)) + (self.values[6][..., 1] * self.connection[15]).sum((2, 3))
+        self.values[5][..., 0] = v4 + (self.values[5][..., 1] * self.connection[13]).sum((2, 3)) + (self.values[6][..., 1] * self.connection[15]).sum((2, 3))  + self.connection[21]
         self.values[5][..., 1] = vectorizedSigmoidal(self.values[5][..., 0])
 
 
@@ -276,7 +297,7 @@ class ComputableNetwork:
         v9: ndarray = (self.values[4][..., 1] * self.connection[8]).sum((2, 3))
         v10: ndarray = (self.values[5][..., 1] * self.connection[9]).sum((2, 3))
         vSelf: ndarray = (self.values[6][..., 1] * self.connection[14]).sum((2, 3))
-        sum = v10 + v6 + v7 + v8 + v9 + vSelf
+        sum = v10 + v6 + v7 + v8 + v9 + vSelf  + self.connection[22]
         # print("=========")
         # print(v3)
         # print(self.connection[2])

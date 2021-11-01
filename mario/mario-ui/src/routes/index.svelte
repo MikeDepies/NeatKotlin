@@ -376,7 +376,7 @@
 	{#each filteredMarios as mario, index (mario)}
 		<div
 			class="{mario.dstage != 0 || mario.dworld != 0 ? '' : ''} absolute {recentGroup(mario)
-				? 'animate-bounce border-2 border-black'
+				? ' border-2 border-black'
 				: 'border-white border'}"
 			style="background: {getRGB(mario, index)}; opacity: {!recentGroup(mario)
 				? Math.max(index / filteredMarios.length / 10, 0.5)
