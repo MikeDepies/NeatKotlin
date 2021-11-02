@@ -6,7 +6,7 @@
 	export const load: Load = async ({}) => {
 		return {
 			props: {
-				marios: await getBehaviors(1000),
+				marios: await getBehaviors(null),
 				settings: await getSettings()
 			}
 		};
@@ -379,7 +379,7 @@
 				? ' border-2 border-black'
 				: 'border-white border'}"
 			style="background: {getRGB(mario, index)}; opacity: {!recentGroup(mario)
-				? Math.max(index / filteredMarios.length / 10, 0.5)
+				? Math.max(Math.min(index / filteredMarios.length / 10, 0.5), .2)
 				: 1}; width: {size(mario)}px; height: {size(mario) *
 				(mario.status == 'small' ? 1 : 2)}px;  margin-top: -{(size(mario) / 2) *
 				(mario.status == 'small' ? 1 : 2)}px; top: {mario.y_pos * yRatio +
