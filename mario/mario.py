@@ -90,6 +90,7 @@ def mario(env: Env):
     maxX=0
     framesSinceMaxXChange = 0
     status = "small"
+    score = 0
     stage = 0
     startInfo = None
     idle = False
@@ -142,6 +143,10 @@ def mario(env: Env):
         network.input(state)
         network.compute()
         output =network.output()
+        if (score != info["score"]):
+            maxX = info["x_pos"]
+            framesSinceMaxXChange = 0
+            score = info["score"]
         if (info["x_pos"] > maxX):
             maxX = info["x_pos"]
             framesSinceMaxXChange = 0

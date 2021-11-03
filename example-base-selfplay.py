@@ -439,22 +439,7 @@ async def console_loop():
                 Session.lastStockAi = player.stock
                 Session.lastStockOpponent = player2.stock
                 Session.lastGamestate = gamestate
-                # if (Session.lastStockAi == 0 or Session.lastStockOpponent == 0):
-                    # messageString = json.dumps(createMessage(
-                    #     "simulation.frame.update", frameData(gamestate)), cls=NumpyEncoder)
-                    # await Session.ws.send(messageString)
-                    # print("stocks left: " + str(Session.lastStockAi))
-                    # print("enemy stocks left: " +
-                    #       str(Session.lastStockOpponent))
-                    # controller.release_all()
-                    # controller_opponent.release_all()
-                    # controller.flush()
-                    # controller_opponent.flush()
-                # NOTE: This is where your AI does all of its stuff!
-                # This line will get hit once per frame, so here is where you read
-                #   in the gamestate and decide what buttons to push on the controller
-                # melee.techskill.multishine(
-                #     ai_state=gamestate.players[discovered_port], controller=controller)
+                
             else:
                 # If the discovered port was unsure, reroll our costume for next time
                 costume = random.randint(0, 4)
@@ -468,16 +453,6 @@ async def console_loop():
                 # controller_opponent.release_all()
             if not Session.menuLoadFirstFrame:
                 Session.menuLoadFirstFrame = True
-                # print("tried to flush controller")
-                # controller.release_all()
-                # controller.flush()
-                # controller_opponent.release_all()
-                # controller_opponent.flush()
-            # print("in menu")
-            # if (gamestate.menu_state not in [melee.Menu.CHARACTER_SELECT]):
-            # if gamestate.menu_selection in [melee.Menu.STAGE_SELECT]:
-            # melee.MenuHelper.choose_character(Session.cpu_character, gamestate, controller_opponent)
-            # melee.MenuHelper.choose_character(Session.cpu_character, gamestate, controller_opponent)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller,
                                                 melee.Character.FOX,
@@ -497,14 +472,8 @@ async def console_loop():
                                                 swag=False,
                                                 cpu_level=0)
             
-            # else:
-            #     mh.choose_character(character=melee.Character.FOX, gamestate=gamestate, controller=controller,swag=True)
             counter = 0
             resetCounter = 0
-        # if log:
-        #     log.logframe(gamestate)
-        #     log.writeframe()
-
 loop = asyncio.get_event_loop()
 
 
@@ -542,6 +511,7 @@ console.step()
 #
 # console_loop()
 # asyncio.ensure_future(test1("test"))
+
 asyncio.ensure_future(console_loop())
 asyncio.ensure_future(handle_message())
 try:
