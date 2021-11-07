@@ -6,7 +6,7 @@
 	export const load: Load = async ({}) => {
 		return {
 			props: {
-				marios: await getBehaviors(1000),
+				marios: await getBehaviors(null),
 				settings: await getSettings()
 			}
 		};

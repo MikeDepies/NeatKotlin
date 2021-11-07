@@ -18,6 +18,7 @@ import server.message.endpoints.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.math.ceil
 
 private val logger = KotlinLogging.logger { }
@@ -330,16 +331,18 @@ private suspend fun evaluateNovelty(
 
 
 suspend fun Application.evaluationLoopNoveltyHyperNeat(
+    modelManager: ModelManager,
     evaluationId: Int,
     initialPopulation: List<NeatMutator>,
     populationEvolver: PopulationEvolver,
     adjustedFitnessCalculation: AdjustedFitnessCalculation,
     evaluationChannels: EvaluationChannels,
     player: IOController,
-    noveltyArchive: NoveltyArchive<ActionBehavior>
+    noveltyArchive: NoveltyArchive<ActionBehavior>,
+
 ) {
     val (scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
-    var currentPopulation = initialPopulation
+    var currentPopulation = initialPopulation.map { NetworkWithId(it, "${UUID.randomUUID()}")}
     val populationSize = initialPopulation.size
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
@@ -347,7 +350,8 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
     runFolder.mkdirs()
     while (true) {
         currentPopulation = currentPopulation.shuffled()
-        writeGenerationToDisk(currentPopulation, runFolder, populationEvolver, "${evaluationId}_")
+
+        writeGenerationToDisk(currentPopulation.map { it.neatMutator }, runFolder, populationEvolver, "${evaluationId}_")
         launch {
             runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
                 val json = Json { prettyPrint = true }
@@ -356,8 +360,9 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
             }
         }
         val populationMap =
-            currentPopulation.mapIndexed { index, neatMutator ->
+            currentPopulation.mapIndexed { index, (neatMutator, id) ->
                 val species = populationEvolver.speciationController.species(neatMutator).id
+                //replace index w/ id
                 AgentModel(index, species, neatMutator.toModel(), evaluationId, player.controllerId)
             }
 
@@ -367,7 +372,7 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
             agentModelChannel.send(populationMap[index])
             try {
 
-
+//                modelManager[player] =
                 val evaluator = NoveltyEvaluatorMultiBehavior(
                     index,
                     evaluationId,

@@ -118,14 +118,6 @@ val applicationModule = module {
         val shFunction = shFunction(.1f)
         val activationFunctions = listOf(Activation.sigmoidal, Activation.identity)//baseActivationFunctions()
 
-//        val simpleNeatExperiment =
-//            simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
-//        val population = simpleNeatExperiment.generateInitialPopulation(
-//            populationSize,
-//            62,
-//            8,
-//            activationFunctions
-//        )
         val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
         val models = populationModel.models
         log.info { "population loaded with size of: ${models.size}" }
@@ -137,7 +129,13 @@ val applicationModule = module {
         )
         val population = models.map { it.toNeatMutator() }
         val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
+        val standardCompatibilityTest = standardCompatibilityTest({
+            shFunction(it)
+        }, { a, b ->
+            cppnGeneRuler.measure(a, b)
+        })
         simulation(
+            standardCompatibilityTest,
             evaluationId,
             distanceFunction = { a, b ->
                 cppnGeneRuler.measure(a, b)
@@ -146,12 +144,7 @@ val applicationModule = module {
             sharingFunction = {
                 shFunction(it)
             },
-            speciationController = SpeciationController(0, standardCompatibilityTest({
-                shFunction(it)
-            }, { a, b ->
-                cppnGeneRuler.measure(a, b)
-//                compatibilityDistanceFunction(a, b)
-            })),
+            speciationController = SpeciationController(0),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
             generation = if (evaluationId == 0) 562 else 628
@@ -163,6 +156,7 @@ val applicationModule = module {
 data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generation: Int, val controllerId: Int)
 
 fun simulation(
+    standardCompatibilityTest: CompatibilityTest,
     evaluationId: Int,
     distanceFunction: (NeatMutator, NeatMutator) -> Float,
     sharingFunction: (Float) -> Int,
@@ -176,12 +170,12 @@ fun simulation(
     val scoreKeeper = SpeciesScoreKeeper()
 
     val populationEvolver =
-        PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment, generation)
+        PopulationEvolver(speciationController, scoreKeeper, speciesLineage, simpleNeatExperiment, generation, standardCompatibilityTest)
 
 
-    val speciate = speciationController.speciate(population, speciesLineage, 0)
+    val speciate = speciationController.speciate(population, speciesLineage, 0, standardCompatibilityTest)
 
-    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
+    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId, standardCompatibilityTest)
 //    val file = File("population/${evaluationId}_population.json")
 }
 

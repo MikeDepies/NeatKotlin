@@ -9,17 +9,18 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
+import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
 import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.novelty.KNNNoveltyArchive
 import neat.novelty.levenshtein
+import neat.toNetwork
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.*
 import org.koin.core.parameter.*
@@ -114,22 +115,26 @@ fun Application.module(testing: Boolean = false) {
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationChannels2 = get<EvaluationChannels>()
     val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
-//    generateFakeData(evaluationChannels)
-    val a = Json { }.decodeFromString<List<ActionBehavior>>(
-        File("population/0_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
-    )
-    val b = Json { }.decodeFromString<List<ActionBehavior>>(
-        File("population/1_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
-    )
-    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1, controller2))
 
+//    val a = Json { }.decodeFromString<List<ActionBehavior>>(
+//        File("population/0_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
+//    )
+//    val b = Json { }.decodeFromString<List<ActionBehavior>>(
+//        File("population/1_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
+//    )
+    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1, controller2))
+    val modelManager = ModelManager(mapOf(
+        controller1 to EvolutionGeneration(0, mapOf()),
+        controller2 to EvolutionGeneration(0, mapOf())
+    ).toMutableMap())
     val sequenceSeparator = 2000.toChar()
     launch(Dispatchers.IO) {
         while (!receivedAnyMessages) {
             delay(100)
         }
         log.info("Start evaluation Loop!")
-        evaluationLoopNovelty(
+        evaluationLoopNoveltyHyperNeat(
+            modelManager = modelManager,
             evaluationId = 0,
             initialPopulation = initialPopulation,
             populationEvolver = populationEvolver,
@@ -144,13 +149,12 @@ fun Application.module(testing: Boolean = false) {
                     a.recovery.joinToString("$sequenceSeparator") { it.actionString() },
                     b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
                 )
-
                 sqrt(
                     allActionDistance.times(3).squared() + killsDistance.times(30).squared() + damageDistance.times(2)
                         .squared() + recoveryDistance.times(10).squared().toFloat()
                 )
             }
-                .also { it.behaviors.addAll(a) }
+//                .also { it.behaviors.addAll(a) }
         )
     }
 //
@@ -159,7 +163,8 @@ fun Application.module(testing: Boolean = false) {
             delay(100)
         }
         log.info("Start evaluation Loop!")
-        evaluationLoopNovelty(
+        evaluationLoopNoveltyHyperNeat(
+            modelManager = modelManager,
             evaluationId = 1,
             initialPopulation = initialPopulation2,
             populationEvolver = populationEvolver2,
@@ -178,52 +183,39 @@ fun Application.module(testing: Boolean = false) {
                     allActionDistance.times(3).squared() + killsDistance.times(30).squared() + damageDistance.times(2)
                         .squared() + recoveryDistance.times(10).squared().toFloat()
                 )
-            }
-                .also { it.behaviors.addAll(b) }
+            },
+
+//                .also { it.behaviors.addAll(b) }
         )
     }
 
-//    launch(Dispatchers.IO) {
-//        while (!receivedAnyMessages) {
-//            delay(100)
-//        }
-//        log.info("Start evaluation Loop!")
-//        evaluationLoopNovelty(
-//            evaluationId = 0,
-//            initialPopulation = initialPopulation,
-//            populationEvolver = populationEvolver,
-//            adjustedFitnessCalculation = adjustedFitness,
-//            evaluationChannels = evaluationChannels,
-//            controller1,
-//            KNNNoveltyArchive<List<Int>>(30, 20f) { a, b ->
-//                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
-//            }.also { it.behaviors.addAll(a) }
-//        )
-//    }
-//
-//    launch(Dispatchers.IO) {
-//        while (!receivedAnyMessages) {
-//            delay(100)
-//        }
-//        log.info("Start evaluation Loop!")
-//        evaluationLoopNovelty(
-//            evaluationId = 1,
-//            initialPopulation = initialPopulation2,
-//            populationEvolver = populationEvolver2,
-//            adjustedFitnessCalculation = adjustedFitness,
-//            evaluationChannels = evaluationChannels2,
-//            controller2,
-//            KNNNoveltyArchive<List<Int>>(15, 5f) { a, b ->
-//                levenshtein(a.map { it.toChar() }.joinToString(""), b.map { it.toChar() }.joinToString("")).toFloat()
-//            }.also { it.behaviors.addAll(b) }
-//        )
-//    }
     val json = get<Json>()
+    fun fromId(controllerId: Int) : IOController = when(controllerId) {
+        0 -> controller1
+        1 -> controller2
+        else -> throw Exception()
+    }
     routing {
-
+        post<ModelRequest>("model") {
+            val evolutionGeneration = modelManager[fromId(it.controllerId)]
+            val networkWithId = evolutionGeneration.networkMap[it.modelId]!!
+            val taskNetwork = createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
+            call.respond(taskNetwork)
+        }
     }
 }
-
+@Serializable
+data class ModelRequest(val controllerId : Int, val modelId : String)
+//data class Model(val )
+class ModelManager(var controllerModelManagers : MutableMap<IOController, EvolutionGeneration>) {
+    operator fun set(ioController: IOController, evolutionGeneration: EvolutionGeneration) {
+        controllerModelManagers[ioController] = evolutionGeneration
+    }
+    operator fun get(ioController: IOController) : EvolutionGeneration {
+        return controllerModelManagers.getValue(ioController)
+    }
+}
+data class EvolutionGeneration(val generation: Int, var networkMap : Map<String, NetworkWithId>)
 fun Int.squared() = this * this
 
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")

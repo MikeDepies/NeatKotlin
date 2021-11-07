@@ -151,11 +151,11 @@ def mario(env: Env):
             maxX = info["x_pos"]
             framesSinceMaxXChange = 0
         else:
-            framesSinceMaxXChange +=1
-        if reward == 0:
-            idleCount+= 1
-        elif idleCount > 0:
-            idleCount -=2
+            if reward > 0:
+                framesSinceMaxXChange -=.5
+            else:
+                framesSinceMaxXChange +=1
+        
         
         if reward < -14 or framesSinceMaxXChange > 20* 20:
             if reward < -14:

@@ -7,11 +7,12 @@ class PopulationEvolver(
     val scoreKeeper: SpeciesScoreKeeper,
     val speciesLineage: SpeciesLineage,
     val neatExperiment: NeatExperiment,
-    var generation: Int = 0
+    var generation: Int = 0,
+    val standardCompatibilityTest: CompatibilityTest
 ) {
 
     fun speciate(population: List<NeatMutator>) {
-        speciationController.speciate(population, speciesLineage, generation++)
+        speciationController.speciate(population, speciesLineage, generation++, standardCompatibilityTest)
     }
 
     fun updateScores(updatedModelScores: List<ModelScore>) {
@@ -53,19 +54,21 @@ class PopulationEvolver(
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation, generation)
     }
 
-    fun mutationDictionary(): List<MutationEntry> {
-        return listOf(
-            .6f chanceToMutate getMutateConnections(.1f),
-            .2f chanceToMutate mutateAddNode,
-            .2f chanceToMutate mutateAddConnection,
-            .6f chanceToMutate mutatePerturbBiasConnections(),
-            .1f chanceToMutate mutateToggleConnection,
-            .2f chanceToMutate mutateNodeActivationFunction(),
-        )
-    }
+
 
     fun uniformMutationRateDictionary(mutationRate : Float, mutations : List<Mutation>): List<MutationEntry> {
         return mutations.map { (mutationRate / mutations.size) chanceToMutate  it }
     }
 
+}
+
+fun mutationDictionary(): List<MutationEntry> {
+    return listOf(
+        .6f chanceToMutate getMutateConnections(.1f),
+        .2f chanceToMutate mutateAddNode,
+        .2f chanceToMutate mutateAddConnection,
+        .6f chanceToMutate mutatePerturbBiasConnections(),
+        .1f chanceToMutate mutateToggleConnection,
+        .2f chanceToMutate mutateNodeActivationFunction(),
+    )
 }

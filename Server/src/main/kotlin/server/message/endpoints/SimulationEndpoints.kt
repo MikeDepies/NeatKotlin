@@ -68,6 +68,7 @@ data class Simulation(
     val initialPopulation: List<NeatMutator>,
     val populationEvolver: PopulationEvolver,
     val adjustedFitnessCalculation: AdjustedFitnessCalculation,
-    val evaluationId: Int
+    val evaluationId: Int,
+    val standardCompatibilityTest: CompatibilityTest
 )
 
