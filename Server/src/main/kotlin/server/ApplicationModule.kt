@@ -46,6 +46,7 @@ val applicationModule = module {
     single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
     factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel(Channel.CONFLATED) }
     factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
+    factory<Channel<FrameOutput>>(qualifier<ModelUpdate>()) { Channel() }
     single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
     single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
@@ -94,7 +95,7 @@ val applicationModule = module {
 
     factory { MeleeState(null) }
     single { FrameClockFactory() }
-    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel()) }
+    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel(), getChannel()) }
     factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
         println("New Evaluator?")
         val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
@@ -111,29 +112,36 @@ val applicationModule = module {
         )
     }
     factory { (evaluationId: Int, populationSize: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
+        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
         val randomSeed: Int = 20 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
-        val shFunction = shFunction(.1f)
-        val activationFunctions = listOf(Activation.sigmoidal, Activation.identity)//baseActivationFunctions()
+        val shFunction = shFunction(1f)
 
-        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
-        val models = populationModel.models
-        log.info { "population loaded with size of: ${models.size}" }
-        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
-        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
-        val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, activationFunctions,
-            addConnectionAttempts
-        )
-        val population = models.map { it.toNeatMutator() }
+
+//        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
+//        val models = populationModel.models
+//        log.info { "population loaded with size of: ${models.size}" }
+//        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+//        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+//        val simpleNeatExperiment = simpleNeatExperiment(
+//            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
+//            addConnectionAttempts
+//        )
+//        val population = models.map { it.toNeatMutator() }
         val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
         val standardCompatibilityTest = standardCompatibilityTest({
             shFunction(it)
         }, { a, b ->
             cppnGeneRuler.measure(a, b)
         })
+        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
+        val population = simpleNeatExperiment.generateInitialPopulation2(
+            populationSize,
+            6,
+            1,
+            Activation.CPPN.functions
+        )
         simulation(
             standardCompatibilityTest,
             evaluationId,
@@ -147,13 +155,49 @@ val applicationModule = module {
             speciationController = SpeciationController(0),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
-            generation = if (evaluationId == 0) 562 else 628
+            generation = 0
         )
     }
 }
 
 
 data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generation: Int, val controllerId: Int)
+
+
+fun NeatExperiment.generateInitialPopulation2(
+    populationSize: Int,
+    numberOfInputNodes: Int,
+    numberOfOutputNodes: Int,
+    activationFunctions: List<ActivationGene>
+): List<NeatMutator> {
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, activationFunctions.first())
+    val assignConnectionRandomWeight = assignConnectionRandomWeight()
+    return (0 until populationSize).map {
+        val clone = neatMutator.clone()
+        clone.connections.forEach { connectionGene ->
+            assignConnectionRandomWeight(connectionGene)
+        }
+        clone.nodes.filter { it.nodeType != NodeType.Input }.forEach {
+            it.activationFunction = activationFunctions.random(random)
+        }
+        val mutate = .4f chanceToMutate neat.mutation.mutateAddNode
+        val mutateConnection = .4f chanceToMutate neat.mutation.mutateAddConnection
+        repeat(2) {
+            if (mutate.roll(this)) {
+                mutate.mutation(this, clone)
+            }
+            if (mutateConnection.roll(this)) {
+                mutateConnection.mutation(this, clone)
+            }
+        }
+//        repeat(5) {
+//            if (mutateConnection.roll(this)) {
+//                mutateConnection.mutation(this, clone)
+//            }
+//        }
+        clone
+    }
+}
 
 fun simulation(
     standardCompatibilityTest: CompatibilityTest,
@@ -237,9 +281,10 @@ fun NeatModel.toNeatMutator() = simpleNeatMutator(nodes.map { it.nodeGene() }, c
 fun ConnectionGeneModel.connectionGene(): ConnectionGene {
     return ConnectionGene(inNode, outNode, weight, enabled, innovation)
 }
-
+val toMap = Activation.CPPN.functions.toMap { it.name }
 fun NodeGeneModel.nodeGene(): NodeGene {
-    return NodeGene(node, bias, nodeType.nodeType(), Activation.activationMap.getValue(activationFunction))
+
+    return NodeGene(node, bias, nodeType.nodeType(), toMap.getValue(activationFunction))
 }
 
 fun NodeTypeModel.nodeType(): NodeType = when (this) {

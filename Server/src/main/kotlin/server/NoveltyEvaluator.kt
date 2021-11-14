@@ -1,9 +1,9 @@
 package server
 
+import ActionData
 import FrameUpdate
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
-import neat.ActivatableNetwork
 import server.message.endpoints.*
 import kotlin.math.absoluteValue
 
@@ -61,7 +61,7 @@ class NoveltyEvaluatorMultiBehavior(
 
             val met = when {
                 generation < 1400 -> true
-                else-> (meleeFrameData !== null && (!meleeFrameData.player1.lostStock || (meleeFrameData.player1.lostStock && knocked)))
+                else -> (meleeFrameData !== null && (!meleeFrameData.player1.lostStock || (meleeFrameData.player1.lostStock && knocked)))
 //                generation < 1200 -> true
 //                else -> totalDamage > 0 && (meleeFrameData !== null && (!meleeFrameData.player1.lostStock || (meleeFrameData.player1.lostStock && knocked)))
             }
@@ -77,9 +77,9 @@ class NoveltyEvaluatorMultiBehavior(
             it.player1.x.absoluteValue < it.stage.rightEdge || it.player1.onGround
         } ?: false
         val opponentOnGround = lastFrameUpdate?.player2?.onGround ?: false
-        return (meleeFrameData !== null)  && (meleeFrameData.player1.lostStock ||
-                (onStage && opponentOnGround &&
-                        (framesWithoutDamage / 60 > AttackTimer.timer)) ) || totalFrames / 60 > AttackTimer.maxTime// || idleGameClock.isFinished(meleeFrameData))
+        return (meleeFrameData !== null) && (meleeFrameData.player1.lostStock ||
+                (((onStage || lastFrameUpdate?.action1?.action == 253) && (opponentOnGround  || lastFrameUpdate?.action2?.action == 253)) &&
+                        (framesWithoutDamage / 60 > AttackTimer.timer))) || totalFrames / 60 > AttackTimer.maxTime// || idleGameClock.isFinished(meleeFrameData))
     }
 
     var recoveryAction = mutableListOf<Int>()
@@ -93,7 +93,7 @@ class NoveltyEvaluatorMultiBehavior(
                 frameUpdate.player1.run { speedXAttack.absoluteValue + speedYAttack.absoluteValue }
             val offStage =
                 frameUpdate.player1.x.absoluteValue > frameUpdate.stage.rightEdge
-            val onStage = !offStage && frameUpdate.player1.y >= 0
+            val onStage = !offStage && frameUpdate.player1.y >= 0 || frameUpdate.action1.action == 253
             if (offStage || frameUpdate.player1.y < 0)
                 offStageTime += 1
             else offStageTime = 0
@@ -149,7 +149,16 @@ class NoveltyEvaluatorMultiBehavior(
 //                logger.info { "opponent recovered onto stage" }
             }
 
-            if (!frameUpdate.player1.invulnerable && !opponentKnocked && !frameUpdate.player2.invulnerable && !frameUpdate.player2.hitStun)
+            fun isRolling(actionData: ActionData) =
+                (actionData.action == 234 || actionData.action == 233 || actionData.action == 235 || actionData.action == 253)
+
+            if (!frameUpdate.player1.invulnerable && !opponentKnocked && !frameUpdate.player2.invulnerable && !frameUpdate.player2.hitStun || isRolling(
+                    frameUpdate.action1
+                )
+                || isRolling(
+                    frameUpdate.action2
+                )
+            )
                 framesWithoutDamage += 1
 
             if (frameData.player1.dealtDamage) {
@@ -204,7 +213,7 @@ class NoveltyEvaluatorMultiBehavior(
         }
         meleeState.lastMeleeFrameData = frameData
         lastFrameUpdate = frameUpdate
-        totalFrames+=1
+        totalFrames += 1
     }
 
     override fun finishEvaluation() {

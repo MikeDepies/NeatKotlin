@@ -49,7 +49,7 @@ class PopulationEvolver(
             mateChance = .1f,
             survivalThreshold = .40f,
             speciesScoreKeeper = scoreKeeper,
-            stagnation = 30
+            stagnation = 15
         )
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation, generation)
     }
@@ -64,10 +64,10 @@ class PopulationEvolver(
 
 fun mutationDictionary(): List<MutationEntry> {
     return listOf(
-        .6f chanceToMutate getMutateConnections(.1f),
-        .2f chanceToMutate mutateAddNode,
-        .2f chanceToMutate mutateAddConnection,
-        .6f chanceToMutate mutatePerturbBiasConnections(),
+        .4f chanceToMutate getMutateConnections(.1f, 1f),
+        .4f chanceToMutate mutateAddNode,
+        .4f chanceToMutate mutateAddConnection,
+        .4f chanceToMutate mutatePerturbBiasConnections(1f),
         .1f chanceToMutate mutateToggleConnection,
         .2f chanceToMutate mutateNodeActivationFunction(),
     )

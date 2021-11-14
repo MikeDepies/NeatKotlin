@@ -15,6 +15,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
+import server.message.endpoints.Simulation
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -92,15 +93,15 @@ data class NetworkDescription(
 
 fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
-    val connectionThreshold = .6f
+    val connectionThreshold = .2f
     val connectionMagnitude = 3f
-    val width = 64
-    val height = 60
-    val hiddenWidth = 5
-    val hiddenHeight = 5
+    val width = 125
+    val height = 1
+    val hiddenWidth = 11
+    val hiddenHeight = 11
 
-    val hiddenWidth2 = 5
-    val hiddenHeight2 = 5
+    val hiddenWidth2 = 7
+    val hiddenHeight2 = 7
 
     val hiddenWidth3 = 5
     val hiddenHeight3 = 5
@@ -135,10 +136,10 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val yMinHidden2 = centerY - hiddenHeight2 / 2
     val yMaxHidden2 = centerY + hiddenHeight2 / 2
 
-    fun rangeFor(distance: Int) = (centerX - distance / 2)..(centerX + hiddenWidth / 2)
-    fun rangeForUntil(distance: Int) = (centerX - distance / 2) until (centerX + hiddenWidth / 2)
+    fun rangeFor(distance: Int) = (centerX - distance / 2)..(centerX + distance / 2)
+    fun rangeForUntil(distance: Int) = (centerX - distance / 2) until (centerX + distance / 2)
     val xMinOutput = 0
-    val xMaxOutput = 12
+    val xMaxOutput = 9
     val yMinOutput = 0
     val yMaxOutput = 1
     //slice 1
@@ -148,7 +149,7 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val hiddenZ2 = 2
     val hiddenZ3 = 3
     val hiddenZ4 = 4
-    val hiddenZ5 = 4
+    val hiddenZ5 = 5
     val outputZ = 6
     val input = mutableListOf(0f, 0f, 0f, 0f, 0f, hiddenZ.toFloat() / outputZ)
 //    println("Creating Input to Hidden")
@@ -397,6 +398,8 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
             listOf(hiddenHeight, hiddenWidth),
             listOf(hiddenHeight2, hiddenWidth2),
             listOf(hiddenHeight3, hiddenWidth3),
+            listOf(hiddenHeight4, hiddenWidth4),
+            listOf(hiddenHeight5, hiddenWidth5),
             listOf(outputHeight, outputWidth),
         )
     )
@@ -471,26 +474,26 @@ fun createSimulation(
     val populationEvolver = PopulationEvolver(
         speciationController, scoreKeeper, speciesLineage, neatExperiment, generation, compatibilityTest
     )
-    return simulation(evaluationId, population, populationEvolver, adjustedFitnessCalculation)
+    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId, compatibilityTest)
 }
-
-fun simulation(
-    evaluationId: Int,
-    population: List<NeatMutator>,
-    populationEvolver: PopulationEvolver,
-    adjustedFitnessCalculation: AdjustedFitnessCalculation,
-
-    ): Simulation {
-
-    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
-}
-
-data class Simulation(
-    val initialPopulation: List<NeatMutator>,
-    val populationEvolver: PopulationEvolver,
-    val adjustedFitnessCalculation: AdjustedFitnessCalculation,
-    val evaluationId: Int
-)
+//
+//fun simulation(
+//    evaluationId: Int,
+//    population: List<NeatMutator>,
+//    populationEvolver: PopulationEvolver,
+//    adjustedFitnessCalculation: AdjustedFitnessCalculation,
+//
+//    ): Simulation {
+//
+//    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
+//}
+//
+//data class Simulation(
+//    val initialPopulation: List<NeatMutator>,
+//    val populationEvolver: PopulationEvolver,
+//    val adjustedFitnessCalculation: AdjustedFitnessCalculation,
+//    val evaluationId: Int
+//)
 
 fun main() {
     (0..3).forEach { println(it) }

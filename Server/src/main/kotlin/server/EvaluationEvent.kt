@@ -6,6 +6,7 @@ import PopulationEvolver
 import io.ktor.application.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -41,10 +42,12 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
  The action includes: ScoreModification (variables ing general?), Clock Controls, EndAgentTurn
  */
 typealias SimulationSnapshot = SimulationState
-
+@Serializable
+data class ModelUpdate(val controllerId: Int, val modelId: String)
 data class IOController(
     val controllerId: Int, val frameUpdateChannel: Channel<FrameUpdate>,
     val frameOutputChannel: Channel<FrameOutput>,
+    val modelChannel: Channel<ModelUpdate>
 )
 
 suspend fun IOController.quitMatch() {
@@ -340,9 +343,9 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
     player: IOController,
     noveltyArchive: NoveltyArchive<ActionBehavior>,
 
-) {
+    ) {
     val (scoreChannel, agentModelChannel, populationChannel) = evaluationChannels
-    var currentPopulation = initialPopulation.map { NetworkWithId(it, "${UUID.randomUUID()}")}
+    var currentPopulation = initialPopulation.map { NetworkWithId(it, "${UUID.randomUUID()}") }
     val populationSize = initialPopulation.size
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = File("runs/run-${LocalDateTime.now().format(format)}")
@@ -351,7 +354,12 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
     while (true) {
         currentPopulation = currentPopulation.shuffled()
 
-        writeGenerationToDisk(currentPopulation.map { it.neatMutator }, runFolder, populationEvolver, "${evaluationId}_")
+        writeGenerationToDisk(
+            currentPopulation.map { it.neatMutator },
+            runFolder,
+            populationEvolver,
+            "${evaluationId}_"
+        )
         launch {
             runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
                 val json = Json { prettyPrint = true }
@@ -365,9 +373,11 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
                 //replace index w/ id
                 AgentModel(index, species, neatMutator.toModel(), evaluationId, player.controllerId)
             }
-
+        //Updates the register for http requests
+        modelManager[player] =
+            EvolutionGeneration(populationEvolver.generation, currentPopulation.associateBy { it.id })
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation, evaluationId))
-        val modelScores = currentPopulation.mapIndexed { index, neatMutator ->
+        val modelScores = currentPopulation.mapIndexed { index, (neatMutator, id) ->
             logger.info { "[eval: $evaluationId}] New Agent (${index + 1} / ${currentPopulation.size})" }
             agentModelChannel.send(populationMap[index])
             try {
@@ -382,7 +392,9 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
                     get()
                 )
 
-
+                modelManager[player].activeId = id
+                player.modelChannel.send(ModelUpdate(player.controllerId, id))
+                log.info("Applied active model id for controller ${player.controllerId}")
 //                evaluator.noAttackTimerPenaltySeconds = 6 + (populationEvolver.generation / 20)
                 val evaluationScore = evaluateNoveltyHyperNeat(
                     evaluationId,
@@ -390,7 +402,8 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
                     player,
                     scoreChannel,
                     evaluator,
-                    noveltyArchive
+                    noveltyArchive,
+                    id
                 )
                 logger.info { "[eval: $evaluationId] Score: ${evaluationScore.score}" }
                 FitnessModel(
@@ -432,7 +445,7 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
 
             }
         }
-        currentPopulation = newPopulation.take(populationSize)
+        currentPopulation = newPopulation.take(populationSize).map { NetworkWithId(it, "${UUID.randomUUID()}") }
     }
 }
 
@@ -442,10 +455,12 @@ private suspend fun evaluateNoveltyHyperNeat(
     ioController: IOController,
     scoreChannel: SendChannel<EvaluationScore>,
     evaluator: NoveltyEvaluatorMultiBehavior,
-    noveltyArchive: NoveltyArchive<ActionBehavior>
+    noveltyArchive: NoveltyArchive<ActionBehavior>,
+    id: String
 ): EvaluationScore {
 
     try {
+
         var i = 0
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)

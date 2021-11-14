@@ -16,6 +16,7 @@ import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.novelty.KNNNoveltyArchive
@@ -109,17 +110,19 @@ fun Application.module(testing: Boolean = false) {
             listOf(controllerId, populationSize)
         )
     })
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(500)
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(500)
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(100)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(100)
 
     val evaluationChannels = get<EvaluationChannels>()
     val evaluationChannels2 = get<EvaluationChannels>()
     val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
-
+//
 //    val a = Json { }.decodeFromString<List<ActionBehavior>>(
+//        ListSerializer(ActionBehavior.serializer()),
 //        File("population/0_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
 //    val b = Json { }.decodeFromString<List<ActionBehavior>>(
+//        ListSerializer(ActionBehavior.serializer()),
 //        File("population/1_noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
     networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1, controller2))
@@ -129,9 +132,7 @@ fun Application.module(testing: Boolean = false) {
     ).toMutableMap())
     val sequenceSeparator = 2000.toChar()
     launch(Dispatchers.IO) {
-        while (!receivedAnyMessages) {
-            delay(100)
-        }
+
         log.info("Start evaluation Loop!")
         evaluationLoopNoveltyHyperNeat(
             modelManager = modelManager,
@@ -159,9 +160,7 @@ fun Application.module(testing: Boolean = false) {
     }
 //
     launch(Dispatchers.IO) {
-        while (!receivedAnyMessages) {
-            delay(100)
-        }
+
         log.info("Start evaluation Loop!")
         evaluationLoopNoveltyHyperNeat(
             modelManager = modelManager,
@@ -171,7 +170,7 @@ fun Application.module(testing: Boolean = false) {
             adjustedFitnessCalculation = adjustedFitness,
             evaluationChannels = evaluationChannels2,
             controller2,
-            KNNNoveltyArchive<ActionBehavior>(120, 2f) { a, b ->
+            KNNNoveltyArchive<ActionBehavior>(12, 2f) { a, b ->
                 val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
                 val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
                 val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
@@ -183,12 +182,10 @@ fun Application.module(testing: Boolean = false) {
                     allActionDistance.times(3).squared() + killsDistance.times(30).squared() + damageDistance.times(2)
                         .squared() + recoveryDistance.times(10).squared().toFloat()
                 )
-            },
-
+            }
 //                .also { it.behaviors.addAll(b) }
         )
     }
-
     val json = get<Json>()
     fun fromId(controllerId: Int) : IOController = when(controllerId) {
         0 -> controller1
@@ -196,7 +193,10 @@ fun Application.module(testing: Boolean = false) {
         else -> throw Exception()
     }
     routing {
-        post<ModelRequest>("model") {
+        post<ActiveModelRequest>("/model/active") {
+            call.respond(ModelRequest(it.controllerId, modelManager[fromId(it.controllerId)].activeId ?: ""))
+        }
+        post<ModelRequest>("/model") {
             val evolutionGeneration = modelManager[fromId(it.controllerId)]
             val networkWithId = evolutionGeneration.networkMap[it.modelId]!!
             val taskNetwork = createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
@@ -204,6 +204,9 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 }
+@Serializable
+data class ActiveModelRequest(val controllerId: Int)
+
 @Serializable
 data class ModelRequest(val controllerId : Int, val modelId : String)
 //data class Model(val )
@@ -215,7 +218,7 @@ class ModelManager(var controllerModelManagers : MutableMap<IOController, Evolut
         return controllerModelManagers.getValue(ioController)
     }
 }
-data class EvolutionGeneration(val generation: Int, var networkMap : Map<String, NetworkWithId>)
+data class EvolutionGeneration(val generation: Int, var networkMap : Map<String, NetworkWithId>, var activeId: String? = null)
 fun Int.squared() = this * this
 
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
@@ -279,11 +282,12 @@ class EvaluationMessageProcessor(
     val messageWriter: MessageWriter
 ) {
     suspend fun processOutput(controller: IOController) {
-        for (frameOutput in controller.frameOutputChannel) {
+        for (frameOutput in controller.modelChannel) {
             messageWriter.sendAllMessage(
                 BroadcastMessage("simulation.frame.output", frameOutput),
-                FrameOutput.serializer()
+                ModelUpdate.serializer()
             )
+
         }
     }
 
@@ -370,6 +374,7 @@ private fun Application.networkEvaluatorOutputBridgeLoop(
 
     controllers.forEach {
         launch { evaluationMessageProcessor.processOutput(it) }
+
     }
     launch { evaluationMessageProcessor.processFrameData(controllers) }
 //    launch { evaluationMessageProcessor.processEvaluationClocks() }
