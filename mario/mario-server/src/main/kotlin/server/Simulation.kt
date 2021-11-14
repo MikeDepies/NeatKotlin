@@ -2,56 +2,75 @@ package server
 
 import PopulationEvolver
 import createMutationDictionary
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.IntArraySerializer
+import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
 import kotlin.math.*
-import kotlin.random.*
-private val log = KotlinLogging.logger {  }
 
-fun main2() {
-    val evaluationId = 0
-    val populationSize = 100
+private val log = KotlinLogging.logger { }
 
 
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 4f, disjointCoefficient = 1f)
-    val shFunction = shFunction(.61f)
-    val mateChance = .1f
-    val survivalThreshold = .30f
-    val stagnation = 200
-
-    val randomSeed: Int = 20 + evaluationId
-    val addConnectionAttempts = 5
-    val activationFunctions = Activation.CPPN.functions
-    val random = Random(randomSeed)
-
-
-    val simpleNeatExperiment =
-        simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
-    val population = simpleNeatExperiment.generateInitialPopulation(
-        populationSize,
-        6,
-        1,
-        activationFunctions
-    )
-//    createTaskNetwork(population.first().toNetwork())
-    val distanceFunction = cppnGeneRuler::measure
-    val simulation = createSimulation(
-        evaluationId,
-        population,
-        distanceFunction,
-        shFunction,
-        mateChance,
-        survivalThreshold,
-        stagnation
-    )
-}
-
-@Serializable
+@Serializable(with = NodeLocationSerializer::class)
 data class NodeLocation(val x: Int, val y: Int, val z: Int)
 
-@Serializable
+object NodeLocationSerializer : KSerializer<NodeLocation> {
+    override fun deserialize(decoder: Decoder): NodeLocation {
+        val (x, y, z) = decoder.decodeSerializableValue(delegate)
+        return NodeLocation(x, y, z)
+    }
+
+    val delegate = IntArraySerializer()
+    override val descriptor: SerialDescriptor = delegate.descriptor
+
+    override fun serialize(encoder: Encoder, value: NodeLocation) {
+        encoder.encodeSerializableValue(delegate, intArrayOf(value.x, value.y, value.z))
+    }
+
+}
+
+object ConnectionLocationSerializer : KSerializer<ConnectionLocation> {
+    val serializer = JsonArray.serializer()
+    override val descriptor: SerialDescriptor = serializer.descriptor
+    override fun deserialize(decoder: Decoder): ConnectionLocation {
+        val a = decoder.decodeSerializableValue(serializer)
+        return ConnectionLocation(
+            a[0].jsonPrimitive.int,
+            a[1].jsonPrimitive.int,
+            a[2].jsonPrimitive.int,
+            a[3].jsonPrimitive.int,
+            a[4].jsonPrimitive.int,
+            a[5].jsonPrimitive.int,
+            a[6].jsonPrimitive.float
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: ConnectionLocation) {
+        encoder.encodeStructure(descriptor) {
+            encodeIntElement(descriptor, 0, value.x1)
+            encodeIntElement(descriptor, 1, value.y1)
+            encodeIntElement(descriptor, 2, value.z1)
+            encodeIntElement(descriptor, 3, value.x2)
+            encodeIntElement(descriptor, 4, value.y2)
+            encodeIntElement(descriptor, 5, value.z2)
+            encodeFloatElement(descriptor, 6, value.weight)
+        }
+
+    }
+
+}
+
+@Serializable(with = ConnectionLocationSerializer::class)
 data class ConnectionLocation(
     val x1: Int,
     val y1: Int,
@@ -66,21 +85,32 @@ data class ConnectionLocation(
 data class NetworkDescription(
     val connections: Set<ConnectionLocation>,
     val nodes: Set<NodeLocation>,
-    val id : String,
-    val bias: NodeLocation? = null
+    val id: String,
+    val bias: NodeLocation? = null,
+    val shapes: List<List<Int>>
 )
 
 fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
     val connectionThreshold = .2f
     val connectionMagnitude = 3f
-    val width = 256 /16
-    val height = 240 /16
-    val hiddenWidth = 2
-    val hiddenHeight = 4
+    val width = 64
+    val height = 60
+    val hiddenWidth = 5
+    val hiddenHeight = 5
 
-    val hiddenWidth2 = 2
-    val hiddenHeight2 = 2
+    val hiddenWidth2 = 5
+    val hiddenHeight2 = 5
+
+    val hiddenWidth3 = 5
+    val hiddenHeight3 = 5
+
+    val hiddenWidth4 = 5
+    val hiddenHeight4 = 5
+
+    val hiddenWidth5 = 5
+    val hiddenHeight5 = 5
+
     val outputWidth = 1
     val outputHeight = 1
 
@@ -105,8 +135,10 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val yMinHidden2 = centerY - hiddenHeight2 / 2
     val yMaxHidden2 = centerY + hiddenHeight2 / 2
 
-    val xMinOutput = centerX - outputWidth / 2
-    val xMaxOutput = centerX + outputWidth / 2
+    fun rangeFor(distance: Int) = (centerX - distance / 2)..(centerX + hiddenWidth / 2)
+    fun rangeForUntil(distance: Int) = (centerX - distance / 2) until (centerX + hiddenWidth / 2)
+    val xMinOutput = 0
+    val xMaxOutput = 12
     val yMinOutput = 0
     val yMaxOutput = 1
     //slice 1
@@ -114,188 +146,300 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val connectionSet = mutableSetOf<ConnectionLocation>()
     val hiddenZ = 1
     val hiddenZ2 = 2
-    val outputZ = 3
-    val input = mutableListOf(0f, 0f, 0f, 0f, 0f, hiddenZ.toFloat())
+    val hiddenZ3 = 3
+    val hiddenZ4 = 4
+    val hiddenZ5 = 4
+    val outputZ = 6
+    val input = mutableListOf(0f, 0f, 0f, 0f, 0f, hiddenZ.toFloat() / outputZ)
 //    println("Creating Input to Hidden")
     val z1 = 0
-//    log.info { "$xMin - $xMax" }
-//    log.info { "$yMin - $yMax" }
-    for (x1 in xMin until xMax step resolution) {
-        input[0] = x1.toFloat()
-        for (y1 in yMin .. yMax step resolutionY) {
-            input[1] = y1.toFloat()
-//            for (z1 in 0..2) {
 
-            input[2] = z1.toFloat()
-            nodeSet += NodeLocation(x1 + 8, y1 + 7, z1)
-            //slice 2
-            for (x2 in xMinHidden..xMaxHidden step 1) {
-                input[3] = x2.toFloat()
-                for (y2 in yMinHidden..yMaxHidden step 1) {
-                    input[4] = y2.toFloat()
-                    network.evaluate(input)
-                    val weight = network.output()[0]
 
-                    if (weight.absoluteValue > connectionThreshold) {
-                        val ratio =
-                            ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
-                        connectionSet += ConnectionLocation(x1 + 8, y1 + 7 , z1, x2, y2, hiddenZ, ratio * connectionMagnitude)
+    fun connectSubstrate(xRange1: IntRange, yRange1: IntRange, z1: Int, xRange2: IntRange, yRange2: IntRange, z2: Int) {
+        input[2] = ((z1.toFloat() / outputZ) * 2) - 1
+        input[5] = ((z2.toFloat() / outputZ) * 2) - 1
+        for (x1 in xRange1 step 1) {
+            for (y1 in yRange1 step 1) {
+                input[0] = x1.toFloat() / (xRange1.last + 1)
+                input[1] = y1.toFloat() / (yRange1.last + 1)
+                //slice 2
+                for (x2 in xRange2 step 1) {
+                    for (y2 in yRange2 step 1) {
+                        input[3] = x2.toFloat() / (xRange2.last + 1)
+                        input[4] = y2.toFloat() / (yRange2.last + 1)
+                        network.evaluate(input)
+                        val weight = network.output()[0]
+                        if (weight.absoluteValue > connectionThreshold) {
+                            val ratio =
+                                ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+                            connectionSet += ConnectionLocation(
+                                x1 - xRange1.first,
+                                y1 - yRange1.first,
+                                z1,
+                                x2 - xRange2.first,
+                                y2 - yRange2.first,
+                                z2,
+                                ratio * connectionMagnitude
+                            )
+                        }
                     }
                 }
             }
-//            }
         }
     }
-//    println("Creating Hidden Connection to Hidden Connection")
-    /*input[2] = hiddenZ.toFloat()
-    input[5] = hiddenZ.toFloat()
-    for (x1 in xMinHidden..xMaxHidden step 1) {
-        for (y1 in yMinHidden..yMaxHidden step 1) {
-            input[0] = x1.toFloat()
-            input[1] = y1.toFloat()
 
-            //slice 2
-            for (x2 in xMinHidden..xMaxHidden step 1) {
-                for (y2 in yMinHidden..yMaxHidden step 1) {
-                    input[3] = x2.toFloat()
-                    input[4] = y2.toFloat()
-                    network.evaluate(input)
-                    val weight = network.output()[0]
-                    if (weight.absoluteValue > connectionThreshold) {
-                        val ratio = ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
-                        connectionSet += ConnectionLocation(x1, y1, hiddenZ, x2, y2, hiddenZ, ratio * connectionMagnitude)
-                    }
+    fun bias(xRange2: IntRange, yRange2: IntRange, z2: Int) {
+        input[2] = -2f
+        input[5] = ((z2.toFloat() / outputZ) * 2) - 1
+
+        input[0] = 0f
+        input[1] = 0f
+        //slice 2
+        for (x2 in xRange2 step 1) {
+            for (y2 in yRange2 step 1) {
+                input[3] = x2.toFloat() / (xRange2.last + 1)
+                input[4] = y2.toFloat() / (yRange2.last + 1)
+                network.evaluate(input)
+                val weight = network.output()[0]
+                if (weight.absoluteValue > connectionThreshold) {
+                    val ratio =
+                        ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+                    connectionSet += ConnectionLocation(
+                        0,
+                        0,
+                        -2,
+                        x2 - xRange2.first,
+                        y2 - yRange2.first,
+                        z2,
+                        ratio * connectionMagnitude
+                    )
                 }
             }
+
         }
-    }*/
-//    println("Creating hidden to output")
-    input[2] = hiddenZ.toFloat()
-    input[5] = outputZ.toFloat()
+    }
+
+    bias(
+        xMinHidden..xMaxHidden,
+        yMinHidden..yMaxHidden,
+        hiddenZ
+    )
+    bias(
+        xMinHidden2..xMaxHidden2,
+        yMinHidden2..yMaxHidden2,
+        hiddenZ2
+    )
+    bias(
+        rangeFor(hiddenWidth3),
+        rangeFor(hiddenHeight3),
+        hiddenZ3
+    )
+    bias(
+        rangeFor(hiddenWidth4),
+        rangeFor(hiddenHeight4),
+        hiddenZ4
+    )
+    bias(
+        rangeFor(hiddenWidth5),
+        rangeFor(hiddenHeight5),
+        hiddenZ5
+    )
+    bias(
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ
+    )
+    connectSubstrate(
+        xMin until xMax,
+        yMin until yMax,
+        z1,
+        xMinHidden..xMaxHidden,
+        yMinHidden..yMaxHidden,
+        hiddenZ
+    )
+    connectSubstrate(
+        xMinHidden..xMaxHidden,
+        yMinHidden..yMaxHidden,
+        hiddenZ,
+        xMinHidden2..xMaxHidden2,
+        yMinHidden2..yMaxHidden2,
+        hiddenZ2
+    )
+
+    connectSubstrate(
+        xMinHidden..xMaxHidden,
+        yMinHidden..yMaxHidden,
+        hiddenZ,
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ
+    )
+    connectSubstrate(
+        xMinHidden2..xMaxHidden2,
+        yMinHidden2..yMaxHidden2,
+        hiddenZ2,
+        rangeFor(hiddenWidth3),
+        rangeFor(hiddenHeight3),
+        hiddenZ3
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth3),
+        rangeFor(hiddenHeight3),
+        hiddenZ3,
+        rangeFor(hiddenWidth4),
+        rangeFor(hiddenHeight4),
+        hiddenZ4
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth4),
+        rangeFor(hiddenHeight4),
+        hiddenZ4,
+        rangeFor(hiddenWidth5),
+        rangeFor(hiddenHeight5),
+        hiddenZ5
+    )
+    connectSubstrate(
+        xMinHidden2..xMaxHidden2,
+        yMinHidden2..yMaxHidden2,
+        hiddenZ2,
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth3),
+        rangeFor(hiddenHeight3),
+        hiddenZ3,
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth4),
+        rangeFor(hiddenHeight4),
+        hiddenZ4,
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth5),
+        rangeFor(hiddenHeight5),
+        hiddenZ5,
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ
+    )
+
+    // cyclic
+    connectSubstrate(
+        xMinHidden2..xMaxHidden2,
+        yMinHidden2..yMaxHidden2,
+        hiddenZ2,
+        xMinHidden2..xMaxHidden2,
+        yMinHidden2..yMaxHidden2,
+        hiddenZ2
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth3),
+        rangeFor(hiddenHeight3),
+        hiddenZ3,
+        rangeFor(hiddenWidth3),
+        rangeFor(hiddenHeight3),
+        hiddenZ3
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth4),
+        rangeFor(hiddenHeight4),
+        hiddenZ4,
+        rangeFor(hiddenWidth4),
+        rangeFor(hiddenHeight4),
+        hiddenZ4
+    )
+    connectSubstrate(
+        rangeFor(hiddenWidth5),
+        rangeFor(hiddenHeight5),
+        hiddenZ5,
+        rangeFor(hiddenWidth5),
+        rangeFor(hiddenHeight5),
+        hiddenZ5
+    )
+    connectSubstrate(
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ,
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ
+    )
+    // Backwards
+    connectSubstrate(
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ,
+        rangeFor(hiddenWidth5),
+        rangeFor(hiddenHeight5),
+        hiddenZ5
+    )
+    connectSubstrate(
+        xMinOutput until xMaxOutput,
+        yMinOutput until yMaxOutput,
+        outputZ,
+        rangeFor(hiddenWidth4),
+        rangeFor(hiddenHeight4),
+        hiddenZ4
+    )
     nodeSet += NodeLocation(0, 0, outputZ)
-    for (x1 in xMinHidden .. xMaxHidden step 1) {
-        for (y1 in yMinHidden .. yMaxHidden step 1) {
-            input[0] = x1.toFloat()
-            input[1] = y1.toFloat()
-            //slice 2
-            for (x2 in xMinOutput .. xMaxOutput step 1) {
-                for (y2 in yMinOutput .. yMaxOutput step 1) {
-                    input[3] = x2.toFloat()
-                    input[4] = y2.toFloat()
-                    network.evaluate(input)
-                    val weight = network.output()[0]
-                    if (weight.absoluteValue > connectionThreshold) {
-                        val ratio =
-                            ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
-                        connectionSet += ConnectionLocation(
-                            x1,
-                            y1,
-                            hiddenZ,
-                            x2,
-                            y2,
-                            outputZ,
-                            ratio * connectionMagnitude
-                        )
-                    }
-                }
-            }
-        }
-    }
 
-    input[2] = hiddenZ.toFloat()
-    input[5] = hiddenZ2.toFloat()
-
-    for (x1 in xMinHidden .. xMaxHidden step 1) {
-        for (y1 in yMinHidden .. yMaxHidden step 1) {
-            input[0] = x1.toFloat()
-            input[1] = y1.toFloat()
-            //slice 2
-            for (x2 in xMinHidden2 .. xMaxHidden2 step 1) {
-                for (y2 in yMinHidden2 .. yMaxHidden2 step 1) {
-                    input[3] = x2.toFloat()
-                    input[4] = y2.toFloat()
-                    network.evaluate(input)
-                    val weight = network.output()[0]
-                    if (weight.absoluteValue > connectionThreshold) {
-                        val ratio =
-                            ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
-                        connectionSet += ConnectionLocation(
-                            x1,
-                            y1,
-                            hiddenZ,
-                            x2,
-                            y2,
-                            outputZ,
-                            ratio * connectionMagnitude
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    input[2] = hiddenZ2.toFloat()
-    input[5] = outputZ.toFloat()
-    nodeSet += NodeLocation(0, 0, outputZ)
-    for (x1 in xMinHidden2 .. xMaxHidden2 step 1) {
-        for (y1 in yMinHidden2 .. yMaxHidden2 step 1) {
-            input[0] = x1.toFloat()
-            input[1] = y1.toFloat()
-            //slice 2
-            for (x2 in xMinOutput .. xMaxOutput step 1) {
-                for (y2 in yMinOutput .. yMaxOutput step 1) {
-                    input[3] = x2.toFloat()
-                    input[4] = y2.toFloat()
-                    network.evaluate(input)
-                    val weight = network.output()[0]
-                    if (weight.absoluteValue > connectionThreshold) {
-                        val ratio =
-                            ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
-                        connectionSet += ConnectionLocation(
-                            x1,
-                            y1,
-                            hiddenZ,
-                            x2,
-                            y2,
-                            outputZ,
-                            ratio * connectionMagnitude
-                        )
-                    }
-                }
-            }
-        }
-    }
-//    val idMap = mutableMapOf<NodeLocation, Int>()
-//    println("Creating Node Genes")
-//    val nodeGenes = nodeSet.map {
-//        input[0] = it.x.toFloat()
-//        input[1] = it.y.toFloat()
-//        input[2] = it.z.toFloat()
-//        input[3] = it.x.toFloat()
-//        input[4] = it.y.toFloat()
-//        input[5] = it.z.toFloat()
-//        network.evaluate(input)
-//        val bias = network.output()[0]
-//        val nodeType = when (it.z) {
-//            0 -> NodeType.Input
-//            1 -> NodeType.Hidden
-//            2 -> NodeType.Output
-//            else -> error("Too large of z index")
-//        }
-//        val nodeGene = NodeGene(nodeId, bias, nodeType, Activation.sigmoidal)
-//        idMap[it] = nodeId
-//        nodeId += 1
-//        nodeGene
-//    }
-//    println("Creating Connection Genes")
-//    val connectionGenes = connectionSet.map {
-//        val sourceNode = idMap[NodeLocation(it.x1, it.y1, it.z1)]!!
-//        val targetNode = idMap[NodeLocation(it.x2, it.y2, it.z2)]!!
-//        ConnectionGene(sourceNode, targetNode, it.weight, true, innovationId++)
-//    }
-
-    return NetworkDescription(connectionSet, nodeSet, modelIndex)
+    return NetworkDescription(
+        connectionSet, nodeSet, modelIndex, shapes = listOf(
+            listOf(height, width),
+            listOf(hiddenHeight, hiddenWidth),
+            listOf(hiddenHeight2, hiddenWidth2),
+            listOf(hiddenHeight3, hiddenWidth3),
+            listOf(outputHeight, outputWidth),
+        )
+    )
 }
+
+interface DimensionLocation {
+    val size: Int
+}
+
+data class DimensionDescription(
+    val dimensionLocation: DimensionLocation,
+)
+
+data class TaskNetworkDefinition(
+    val connectionThreshold: Float,
+    val connectionMagnitude: Float,
+    val dimensions: List<List<Int>>,
+    val normalizeFactors: List<Int>,
+    val centerX: Float = 0f,
+    val centerY: Float = 0f,
+    val dimensionMin: Float = -1f,
+    val dimensionMax: Float = 1f,
+)
+
+fun createTaskNetwork2(
+    network: ActivatableNetwork,
+    modelIndex: String,
+    taskNetworkDefinition: TaskNetworkDefinition
+): NetworkDescription {
+    val numberOfDimensions = taskNetworkDefinition.normalizeFactors.size
+    require(taskNetworkDefinition.dimensions.all { numberOfDimensions == it.size })
+    val connectionSet = mutableSetOf<ConnectionLocation>()
+    val normalizeFactors = taskNetworkDefinition.normalizeFactors
+
+    val input = mutableListOf<Float>()
+    repeat(numberOfDimensions * 2) { _ -> input += 0f }
+
+    for (d in taskNetworkDefinition.dimensions) {
+
+    }
+    TODO()
+}
+
 
 fun createSimulation(
     evaluationId: Int,
@@ -309,7 +453,7 @@ fun createSimulation(
     val mutationEntries = createMutationDictionary()
     val speciesId = 0
     val speciationController =
-        SpeciationController(speciesId, standardCompatibilityTest(shFunction, distanceFunction))
+        SpeciationController(speciesId)
     val adjustedFitnessCalculation =
         adjustedFitnessCalculation(speciationController, distanceFunction, shFunction)
     val speciesLineage = SpeciesLineage()
@@ -327,7 +471,7 @@ fun createSimulation(
         speciationController,
         scoreKeeper,
         speciesLineage,
-        weightedReproduction
+        weightedReproduction,
     )
     return simulation(evaluationId, population, populationEvolver, adjustedFitnessCalculation)
 }

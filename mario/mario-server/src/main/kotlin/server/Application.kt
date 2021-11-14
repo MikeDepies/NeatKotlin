@@ -12,6 +12,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
 import io.ktor.util.*
+import io.ktor.util.date.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.*
@@ -23,7 +24,6 @@ import neat.model.*
 import neat.novelty.*
 import org.jetbrains.exposed.sql.*
 import org.koin.ktor.ext.*
-import org.slf4j.event.Level
 import server.message.*
 import server.message.endpoints.*
 import server.server.*
@@ -31,14 +31,19 @@ import java.io.*
 import java.time.*
 import java.time.format.*
 import java.util.*
-import kotlin.math.pow
-import kotlin.math.sqrt
 import kotlin.random.*
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 private val logger = KotlinLogging.logger { }
+val minSpeices = 15
+val maxSpecies = 20
+val speciesThresholdDelta = .1f
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 2f, disjointCoefficient = 1f)
+var distanceFunction = cppnGeneRuler::measure
+var speciesSharingDistance = 2f
+var shFunction = shFunction(speciesSharingDistance)
 
 @KtorExperimentalAPI
 @Suppress("unused") // Referenced in application.conf
@@ -120,48 +125,47 @@ fun Application.module(testing: Boolean = false) {
     val populationSize = 500
 
 
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val shFunction = shFunction(1.0f)
-    val mateChance = .1f
-    val survivalThreshold = .4f
-    val stagnation = 500
 
-    val randomSeed: Int = 40 + evaluationId
+    val mateChance = .2f
+    val survivalThreshold = .2f
+    val stagnation = 15
+
+    val randomSeed: Int = 2200 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
 
 //
-    val models = loadPopulation(File("population/population.json"), 55).models
-    logger.info { "population loaded with size of: ${models.size}" }
-    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it }
-    val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it }
-    val simpleNeatExperiment = simpleNeatExperiment(
-        random, maxInnovation, maxNodeInnovation, activationFunctions,
-        addConnectionAttempts
-    )
-    var population = models.map { it.toNeatMutator() }.mapIndexed { index, neatMutator ->
-        NetworkWithId(neatMutator, UUID.randomUUID().toString())
-    }
-    val behaviors = Json { }.decodeFromString<List<MarioInfo>>(
-        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
-    )
-    var settings = Settings(1f)
-//    val simpleNeatExperiment =
-//        simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
-////    var modelIndex = 0
-//    var population = simpleNeatExperiment.generateInitialPopulation(
-//        populationSize,
-//        6,
-//        1,
-//        activationFunctions
-//    ).mapIndexed { index, neatMutator ->
+//    val models = loadPopulation(File("population/population.json"), 0).models
+//    logger.info { "population loaded with size of: ${models.size}" }
+//    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+//    val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+//    val simpleNeatExperiment = simpleNeatExperiment(
+//        random, maxInnovation, maxNodeInnovation, activationFunctions,
+//        addConnectionAttempts
+//    )
+//    var population = models.map { it.toNeatMutator() }.mapIndexed { index, neatMutator ->
 //        NetworkWithId(neatMutator, UUID.randomUUID().toString())
 //    }
+//    val behaviors = Json { }.decodeFromString<List<MarioInfo>>(
+//        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
+//    )
+    var settings = Settings(2f)
+    val simpleNeatExperiment =
+        simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
+//    var modelIndex = 0
+    var population = simpleNeatExperiment.generateInitialPopulation(
+        populationSize,
+        6,
+        1,
+        activationFunctions
+    ).mapIndexed { index, neatMutator ->
+        NetworkWithId(neatMutator, UUID.randomUUID().toString())
+    }
     var mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
 //    createTaskNetwork(population.first().toNetwork())
-    val distanceFunction = cppnGeneRuler::measure
+
     val simulation = createSimulation(
         evaluationId,
         population.map { it.neatMutator },
@@ -172,21 +176,21 @@ fun Application.module(testing: Boolean = false) {
         stagnation
     )
     with(simulation.populationEvolver) {
-        speciationController.speciate(population.map { it.neatMutator }, speciesLineage, generation)
+        speciationController.speciate(population.map { it.neatMutator }, speciesLineage, generation, standardCompatibilityTest(shFunction, distanceFunction))
     }
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(240, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(100, settings.noveltyThreshold) { a, b ->
         euclidean(toVector(a), toVector(b))
     }
-    knnNoveltyArchive.behaviors.addAll(behaviors)
+//    knnNoveltyArchive.behaviors.addAll(behaviors)
 
     fun processPopulation(populationEvolver: PopulationEvolver) {
 
         if (scores.size == populationSize) {
             logger.info { "New generation ${populationEvolver.generation}" }
-            val toModelScores = scores.toModelScores(simulation.adjustedFitnessCalculation)
+            val toModelScores = scores.toModelScores(adjustedFitnessCalculation(simulation.populationEvolver.speciationController, distanceFunction, shFunction))
             population = evolve(
                 populationEvolver,
                 toModelScores,
@@ -210,26 +214,36 @@ fun Application.module(testing: Boolean = false) {
             }
         }
     }
+    val modelChannel = Channel<NetworkDescription>(40)
+    val neatMutatorChannel = Channel<NetworkWithId>(Channel.UNLIMITED)
+    launch {
+        var lastRefill = getTimeMillis()
+        while (true) {
+            if (seq.hasNext()) {
 
-    val scoreChannel = Channel<MarioInfo>()
+                neatMutatorChannel.send(seq.next())
+            } else if (neatMutatorChannel.isEmpty && modelChannel.isEmpty && !seq.hasNext() && getTimeMillis() - lastRefill > 15_000) {
+                seq = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }.iterator()
+                lastRefill = getTimeMillis()
+            }
+        }
+    }
+    repeat(5) {
+        launch(Dispatchers.IO) {
+            while (true) {
+                val network = neatMutatorChannel.receive()
+                val message = createTaskNetwork(network.neatMutator.toNetwork(), network.id)
+//                logger.info { "added model... ${message.id}" }
+                modelChannel.send(message)
+            }
+        }
+    }
+    val scoreChannel = Channel<MarioInfo>(Channel.UNLIMITED)
     routing {
         get("/model") {
-//            val a = activeModel
-//            if (a != null) {
-//                scores += FitnessModel(a, 0f)
-//                activeModel = null
-//                processPopulation(simulation.populationEvolver)
-//            }
+            val model = modelChannel.receive()
 
-            if (!seq.hasNext()) {
-                seq = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }.iterator()
-            }
-            val seq = seq
-            if (seq.hasNext()) {
-                val activeModel = seq.next()
-                val message = createTaskNetwork(activeModel.neatMutator.toNetwork(), activeModel.id)
-                call.respond(message)
-            }
+            call.respond(model)
         }
         post<DeadNetwork>("/dead") {
             val a = mapIndexed[it.id]
@@ -261,12 +275,12 @@ fun Application.module(testing: Boolean = false) {
             logger.info { "$it applied" }
         }
     }
-    launch {
+    launch(Dispatchers.IO) {
         for (it in scoreChannel) {
             val populationEvolver = simulation.populationEvolver
             val score = if (knnNoveltyArchive.size > 0) {
                 val addBehavior = knnNoveltyArchive.addBehavior(it)
-                if (addBehavior < knnNoveltyArchive.noveltyThreshold) 0f else addBehavior
+                if (addBehavior < knnNoveltyArchive.noveltyThreshold) 0f else addBehavior // + it.dstage * 100  + it.dworld * 500 + it.x_pos / 128
             } else {
                 knnNoveltyArchive.addBehavior(it)
 //                euclidean(toVector(it), toVector(it).map { 0f})
@@ -293,7 +307,7 @@ data class DeadNetwork(val id: String)
 fun MarioInfo.statusAsNumber() = when (this.status) {
     "small" -> 0
     "tall" -> 1
-    "fireball" -> 2
+    "fireball" -> 4
     else -> error("failed to handle status: $status")
 }
 
@@ -301,13 +315,16 @@ data class NetworkWithId(val neatMutator: NeatMutator, val id: String)
 
 fun toVector(marioInfo: MarioInfo) = listOf(
     (marioInfo.x_pos).toFloat(),
-    (marioInfo.y_pos).toFloat(),
-    marioInfo.stage * 1000f,
-    marioInfo.world * 500f,
-    marioInfo.statusAsNumber() * 10f,
+    (marioInfo.y_pos ).toFloat() ,
+    marioInfo.stage * 2000f,
+    marioInfo.world * 5000f,
+//    marioInfo.dstage * 1000f,
+//    marioInfo.dworld * 5000f,
+    marioInfo.dstatus * 500f,
     marioInfo.score.toFloat(),
-    marioInfo.coins.toFloat() * 10.toFloat(),
-    marioInfo.time.toFloat()
+    marioInfo.coins.toFloat() * 500f,
+
+//    marioInfo.life.toFloat() * 1000
 )//.map { it.toFloat() }
 
 fun evolve(
@@ -321,10 +338,19 @@ fun evolve(
     var newPopulation = populationEvolver.evolveNewPopulation(modelScores, neatExperiment)
 
     while (newPopulation.size < populationSize) {
-
         newPopulation = newPopulation + newPopulation.first().clone()
     }
-    populationEvolver.speciate(newPopulation)
+    if (populationEvolver.speciationController.speciesSet.size < minSpeices) {
+        if (speciesSharingDistance > speciesThresholdDelta) {
+            speciesSharingDistance -= speciesThresholdDelta
+        }
+    }
+    else if (populationEvolver.speciationController.speciesSet.size > maxSpecies) {
+        speciesSharingDistance += speciesThresholdDelta
+    }
+    logger.info { "Species (${populationEvolver.speciationController.speciesSet.size}) Sharing Function Distance: $speciesSharingDistance" }
+    shFunction = neat.shFunction(speciesSharingDistance)
+    populationEvolver.speciate(newPopulation, standardCompatibilityTest(shFunction, distanceFunction))
     if (newPopulation.size > populationSize) {
         val dropList = newPopulation.drop(populationSize)
         val speciationController = populationEvolver.speciationController
@@ -352,7 +378,17 @@ data class MarioInfo(
     val time: Int,
     val world: Int,
     val x_pos: Int,
-    val y_pos: Int
+    val y_pos: Int,
+    val dstatus: Int,
+    val dx: Int,
+    val dy: Int,
+    val dtime: Int,
+    val dstage: Int,
+    val dworld: Int,
+    val dlife: Int,
+    val dscore: Int,
+    val dcoins: Int,
+
 )
 
 fun Int.squared() = this * this

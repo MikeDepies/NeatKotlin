@@ -131,11 +131,24 @@ fun NeatExperiment.generateInitialPopulation(
         clone.connections.forEach { connectionGene ->
             assignConnectionRandomWeight(connectionGene)
         }
-        clone.nodes.forEach {
+        clone.nodes.filter{ it.nodeType != NodeType.Input}.forEach {
             it.activationFunction = activationFunctions.random(random)
         }
-//        mutateAddNode(clone)
-//        mutateAddNode(clone)
+        val mutate = .4f chanceToMutate mutateAddNode
+        val mutateConnection = .4f chanceToMutate mutateAddConnection
+        repeat(2) {
+            if (mutate.roll(this)) {
+                mutate.mutation(this, clone)
+            }
+            if (mutateConnection.roll(this)) {
+                mutateConnection.mutation(this, clone)
+            }
+        }
+//        repeat(5) {
+//            if (mutateConnection.roll(this)) {
+//                mutateConnection.mutation(this, clone)
+//            }
+//        }
         clone
     }
 }

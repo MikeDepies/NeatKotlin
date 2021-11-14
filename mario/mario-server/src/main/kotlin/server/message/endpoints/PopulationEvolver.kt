@@ -7,11 +7,11 @@ class PopulationEvolver(
     val speciationController: SpeciationController,
     val scoreKeeper: SpeciesScoreKeeper,
     val speciesLineage: SpeciesLineage,
-    val weightedReproduction: NeatExperiment.(SpeciationController, List<ModelScore>, Int) -> List<NeatMutator>
+    var weightedReproduction: NeatExperiment.(SpeciationController, List<ModelScore>, Int) -> List<NeatMutator>,
 ) {
 
-    fun speciate(population: List<NeatMutator>) {
-        speciationController.speciate(population, speciesLineage, generation++)
+    fun speciate(population: List<NeatMutator>, compatibilityTest: (NeatMutator, NeatMutator) -> Boolean) {
+        speciationController.speciate(population, speciesLineage, generation++, compatibilityTest)
     }
 
     fun updateScores(updatedModelScores: List<ModelScore>) {
@@ -36,7 +36,7 @@ class PopulationEvolver(
     }
 
     fun evolveNewPopulation(scoredPopulation: List<ModelScore>, experiment: NeatExperiment): List<NeatMutator> {
-        return weightedReproduction(experiment, speciationController, scoredPopulation, generation)
+        return if ((generation / 20) % 2 == 0) weightedReproduction(experiment, speciationController, scoredPopulation, generation) else weightedReproduction(experiment, speciationController, scoredPopulation, generation)
     }
 
 }
@@ -44,12 +44,24 @@ class PopulationEvolver(
 
 fun createMutationDictionary(): List<MutationEntry> {
     return listOf(
-        .6f chanceToMutate getMutateConnections(.1f),
-        .8f chanceToMutate mutateAddNode,
-        .8f chanceToMutate mutateAddConnection,
-        .6f chanceToMutate mutatePerturbBiasConnections(),
+        .15f chanceToMutate getMutateConnections(.1f),
+        .4f chanceToMutate mutateAddNode,
+        .4f chanceToMutate mutateAddConnection,
+        .15f chanceToMutate mutatePerturbBiasConnections(),
         .1f chanceToMutate mutateToggleConnection,
         .1f chanceToMutate mutateNodeActivationFunction(),
+    )
+}
+
+
+fun createMutationDictionary2(): List<MutationEntry> {
+    return listOf(
+        .8f chanceToMutate getMutateConnections(.1f),
+        .1f chanceToMutate mutateAddNode,
+        .1f chanceToMutate mutateAddConnection,
+        .8f chanceToMutate mutatePerturbBiasConnections(),
+        .1f chanceToMutate mutateToggleConnection,
+        .5f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 
