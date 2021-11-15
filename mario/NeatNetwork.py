@@ -24,6 +24,8 @@ def relu(x: float):
     # print(x)
     if (x < 0):
         x = 0
+    if (x > 10000):
+        x = 10000
 
     return x
 
