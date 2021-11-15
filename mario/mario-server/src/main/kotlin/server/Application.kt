@@ -37,10 +37,10 @@ import kotlin.random.*
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 private val logger = KotlinLogging.logger { }
-val minSpeices = 15
-val maxSpecies = 20
+val minSpeices = 5
+val maxSpecies = 10
 val speciesThresholdDelta = .1f
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 2f, disjointCoefficient = 1f)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
 var distanceFunction = cppnGeneRuler::measure
 var speciesSharingDistance = 2f
 var shFunction = shFunction(speciesSharingDistance)
@@ -122,15 +122,15 @@ fun Application.module(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 500
+    val populationSize = 100
 
 
 
-    val mateChance = .2f
+    val mateChance = .02f
     val survivalThreshold = .2f
     val stagnation = 15
 
-    val randomSeed: Int = 2200 + evaluationId
+    val randomSeed: Int = 22 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)

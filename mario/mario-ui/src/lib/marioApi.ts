@@ -1,6 +1,6 @@
 import type { MarioInfo, Settings } from 'src/type/marioInfo'
 
-export const host = "http://192.168.0.132"
+export const host = "http://192.168.0.211"
 export async function getBehaviors(numberOfBehaviors : number | null) {
     const res = await fetch(host + ":8094/behaviors" + ((numberOfBehaviors) ? "?n=" + numberOfBehaviors : ""))
     if (res.ok) {

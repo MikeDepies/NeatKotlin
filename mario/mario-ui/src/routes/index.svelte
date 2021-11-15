@@ -330,7 +330,7 @@
 	let useFilter = false;
 	let updateNumberFilter = 0;
 	function size(mario: MarioInfo) {
-		return Math.floor(timeRatio(mario) * 16) + 12;
+		return (Math.floor(timeRatio(mario) * 16) + 12);
 	}
 	let maxScore = filteredMarios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
 	$: maxScore = filteredMarios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
@@ -380,9 +380,9 @@
 				: 'border-white border'}"
 			style="background: {getRGB(mario, index)}; opacity: {!recentGroup(mario)
 				? Math.max(Math.min(index / filteredMarios.length / 10, 0.5), .2)
-				: 1}; width: {size(mario)}px; height: {size(mario) *
-				(mario.status == 'small' ? 1 : 2)}px;  margin-top: -{(size(mario) / 2) *
-				(mario.status == 'small' ? 1 : 2)}px; top: {mario.y_pos * yRatio +
+				: 1}; width: {size(mario) * xRatio}px; height: {(size(mario) *
+				(mario.status == 'small' ? 1 : 2)) * yRatio}px;  margin-top: -{((size(mario) / 2) *
+				(mario.status == 'small' ? 1 : 2)) * yRatio}px; top: {mario.y_pos * yRatio +
 				stage[worldIndex][mario.stage - 1]?.offset * yRatio}px; left: {mario.x_pos * xRatio}px;"
 			on:mousemove={() => mouseOverMario(mario)}
 		/>
