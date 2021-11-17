@@ -683,7 +683,7 @@ async def console_loop():
                                                 melee.Character.PIKACHU,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
-                                                costume=2,
+                                                costume=0,
                                                 autostart=False,
                                                 swag=False,
                                                 cpu_level=0)
@@ -692,7 +692,7 @@ async def console_loop():
                                                 melee.Character.LINK,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
-                                                costume=2,
+                                                costume=0,
                                                 autostart=True,
                                                 swag=False,
                                                 cpu_level=0)

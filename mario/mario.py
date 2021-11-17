@@ -14,7 +14,7 @@ import time
 from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 env = gym_super_mario_bros.make('SuperMarioBros-v1')
 env = JoypadSpace(env, COMPLEX_MOVEMENT)
-host = "192.168.0.132"
+host = "192.168.0.211"
 
 def getNetwork():
     requestNetwork = True
@@ -40,7 +40,7 @@ def getNetwork():
 
 def submitScore(info):
     # print(info["stage"])
-    requests.post("http://192.168.0.132:8094/score", json={
+    requests.post("http://"+ host + ":8094/score", json={
         "coins": info["coins"],
         "flag_get": bool(info["flag_get"]),
         "life": int(info["life"]),

@@ -119,29 +119,29 @@ val applicationModule = module {
         val shFunction = shFunction(1f)
 
 
-//        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
-//        val models = populationModel.models
-//        log.info { "population loaded with size of: ${models.size}" }
-//        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-//        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
-//        val simpleNeatExperiment = simpleNeatExperiment(
-//            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
-//            addConnectionAttempts
-//        )
-//        val population = models.map { it.toNeatMutator() }
+        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
+        val models = populationModel.models
+        log.info { "population loaded with size of: ${models.size}" }
+        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+        val simpleNeatExperiment = simpleNeatExperiment(
+            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
+            addConnectionAttempts
+        )
+        val population = models.map { it.toNeatMutator() }
         val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
         val standardCompatibilityTest = standardCompatibilityTest({
             shFunction(it)
         }, { a, b ->
             cppnGeneRuler.measure(a, b)
         })
-        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
-        val population = simpleNeatExperiment.generateInitialPopulation2(
-            populationSize,
-            6,
-            1,
-            Activation.CPPN.functions
-        )
+//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
+//        val population = simpleNeatExperiment.generateInitialPopulation2(
+//            populationSize,
+//            6,
+//            1,
+//            Activation.CPPN.functions
+//        )
         simulation(
             standardCompatibilityTest,
             evaluationId,
@@ -281,7 +281,7 @@ fun NeatModel.toNeatMutator() = simpleNeatMutator(nodes.map { it.nodeGene() }, c
 fun ConnectionGeneModel.connectionGene(): ConnectionGene {
     return ConnectionGene(inNode, outNode, weight, enabled, innovation)
 }
-val toMap = Activation.CPPN.functions.toMap { it.name }
+val toMap = (Activation.CPPN.functions + Activation.identity).toMap { it.name }
 fun NodeGeneModel.nodeGene(): NodeGene {
 
     return NodeGene(node, bias, nodeType.nodeType(), toMap.getValue(activationFunction))

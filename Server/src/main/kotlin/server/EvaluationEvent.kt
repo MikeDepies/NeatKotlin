@@ -375,8 +375,9 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
             }
         //Updates the register for http requests
         modelManager[player] =
-            EvolutionGeneration(populationEvolver.generation, currentPopulation.associateBy { it.id })
+            EvolutionGeneration(populationEvolver.generation, currentPopulation.associateBy { it.id }, currentPopulation, mutableMapOf())
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation, evaluationId))
+//        modelManager.setPopulation(player, currentPopulation)
         val modelScores = currentPopulation.mapIndexed { index, (neatMutator, id) ->
             logger.info { "[eval: $evaluationId}] New Agent (${index + 1} / ${currentPopulation.size})" }
             agentModelChannel.send(populationMap[index])
