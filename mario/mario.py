@@ -171,7 +171,7 @@ def mario(env: Env):
         
         i+= 1
         # if (i % 2 == 0):
-        env.render()
+        # env.render()
             # print(state)
 
     env.close()

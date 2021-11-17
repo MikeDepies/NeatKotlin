@@ -37,8 +37,8 @@ import kotlin.random.*
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 private val logger = KotlinLogging.logger { }
-val minSpeices = 5
-val maxSpecies = 10
+val minSpeices = 200
+val maxSpecies = 50
 val speciesThresholdDelta = .1f
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
 var distanceFunction = cppnGeneRuler::measure
@@ -122,12 +122,12 @@ fun Application.module(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 100
+    val populationSize = 500
 
 
 
-    val mateChance = .02f
-    val survivalThreshold = .2f
+    val mateChance = .1f
+    val survivalThreshold = .4f
     val stagnation = 15
 
     val randomSeed: Int = 22 + evaluationId
