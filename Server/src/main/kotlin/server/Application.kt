@@ -127,8 +127,8 @@ fun Application.module(testing: Boolean = false) {
 //    )
     networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1, controller2))
     val modelManager = ModelManager(mapOf(
-        controller1 to EvolutionGeneration(0, mapOf()),
-        controller2 to EvolutionGeneration(0, mapOf())
+        controller1 to EvolutionGeneration(0, mapOf(), listOf(), mutableMapOf()),
+        controller2 to EvolutionGeneration(0, mapOf(), listOf(), mutableMapOf())
     ).toMutableMap())
     val sequenceSeparator = 2000.toChar()
     launch(Dispatchers.IO) {
@@ -198,8 +198,50 @@ fun Application.module(testing: Boolean = false) {
         }
         post<ModelRequest>("/model") {
             val evolutionGeneration = modelManager[fromId(it.controllerId)]
-            val networkWithId = evolutionGeneration.networkMap[it.modelId]!!
-            val taskNetwork = createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
+            server.log.info { it.modelId }
+//            evolutionGeneration.readiedNetworkMap[networkDescription.id] = networkDescription
+            val taskNetwork = when {
+                it.modelId.isEmpty() -> {
+                    val networkWithId = evolutionGeneration.networkList.first()
+                    evolutionGeneration.networkList[1].let {
+                        val createTaskNetwork = createTaskNetwork(it.neatMutator.toNetwork(), it.id)
+                        evolutionGeneration.readiedNetworkMap[createTaskNetwork.id] = createTaskNetwork
+                        createTaskNetwork
+                    }
+                    createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
+                }
+                evolutionGeneration.readiedNetworkMap.containsKey(it.modelId) -> {
+                    val indexOfFirst = evolutionGeneration.networkList.indexOfFirst { n -> it.modelId == n.id }
+                    launch(Dispatchers.IO) {
+                        if (indexOfFirst + 1 < evolutionGeneration.networkList.size) {
+                            val networkWithId = evolutionGeneration.networkList[indexOfFirst + 1]
+                            if (!evolutionGeneration.readiedNetworkMap.containsKey(networkWithId.id)) {
+                                val createTaskNetwork = createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
+                                evolutionGeneration.readiedNetworkMap[createTaskNetwork.id] = createTaskNetwork
+                            }
+                        }
+                    }
+                    val description = evolutionGeneration.readiedNetworkMap[it.modelId]!!
+                    description
+                }
+                else -> {
+                    val indexOfFirst = evolutionGeneration.networkList.indexOfFirst { n -> it.modelId == n.id }
+                    server.log.info { "else statement $indexOfFirst" }
+                    launch(Dispatchers.IO) {
+                        if (indexOfFirst + 1 < evolutionGeneration.networkList.size)
+                            evolutionGeneration.networkList[indexOfFirst + 1].let {
+                                val createTaskNetwork = createTaskNetwork(it.neatMutator.toNetwork(), it.id)
+                                server.log.info { "Created task network for next request" }
+                                evolutionGeneration.readiedNetworkMap[createTaskNetwork.id] = createTaskNetwork
+                                server.log.info { "set task network ${createTaskNetwork.id}" }
+                                createTaskNetwork
+                            }
+                    }
+                    val networkWithId = evolutionGeneration.networkMap[it.modelId]!!
+                    createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
+                }
+            }
+
             call.respond(taskNetwork)
         }
     }
@@ -210,7 +252,7 @@ data class ActiveModelRequest(val controllerId: Int)
 @Serializable
 data class ModelRequest(val controllerId : Int, val modelId : String)
 //data class Model(val )
-class ModelManager(var controllerModelManagers : MutableMap<IOController, EvolutionGeneration>) {
+class ModelManager(var controllerModelManagers : MutableMap<IOController, EvolutionGeneration>, val channel : Channel<NetworkDescription> = Channel<NetworkDescription>(5)) {
     operator fun set(ioController: IOController, evolutionGeneration: EvolutionGeneration) {
         controllerModelManagers[ioController] = evolutionGeneration
     }
@@ -218,7 +260,7 @@ class ModelManager(var controllerModelManagers : MutableMap<IOController, Evolut
         return controllerModelManagers.getValue(ioController)
     }
 }
-data class EvolutionGeneration(val generation: Int, var networkMap : Map<String, NetworkWithId>, var activeId: String? = null)
+data class EvolutionGeneration(val generation: Int, var networkMap : Map<String, NetworkWithId>, var networkList : List<NetworkWithId>, var readiedNetworkMap: MutableMap<String, NetworkDescription>, var activeId: String? = null)
 fun Int.squared() = this * this
 
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
