@@ -44,12 +44,12 @@ class PopulationEvolver(
 
 fun createMutationDictionary(): List<MutationEntry> {
     return listOf(
-        .15f chanceToMutate getMutateConnections(.1f),
+        .4f chanceToMutate getMutateConnections(.1f, 1f),
         .4f chanceToMutate mutateAddNode,
         .4f chanceToMutate mutateAddConnection,
-        .15f chanceToMutate mutatePerturbBiasConnections(),
+        .4f chanceToMutate mutatePerturbBiasConnections(1f),
         .1f chanceToMutate mutateToggleConnection,
-        .1f chanceToMutate mutateNodeActivationFunction(),
+        .2f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 

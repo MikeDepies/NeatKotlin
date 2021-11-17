@@ -20,6 +20,15 @@ def sigmoidal(x: float):
 
     return 1 / (1 + math.exp(-4.9*x))
 
+def relu(x: float):
+    # print(x)
+    if (x < 0):
+        x = 0
+    if (x > 10000):
+        x = 10000
+
+    return x
+
 
 class NodeLocation:
     x: int
@@ -261,15 +270,16 @@ class ComputableNetwork:
         #           np.zeros([*layerShapes[5], 2]),
         #           np.zeros([*layerShapes[6], 2])]
         vectorizedSigmoidal = np.vectorize(sigmoidal)
+        vectorizedRelu = np.vectorize(relu)
         # layer 1
         v1: ndarray = (self.inputNdArray * self.connection[0]).sum((2, 3))
         self.values[1][..., 0] = v1 + self.connection[17]
-        self.values[1][..., 1] = vectorizedSigmoidal(v1)
+        self.values[1][..., 1] = vectorizedRelu(v1)
 
         # layer 2
         v2: ndarray = (self.values[1][..., 1] * self.connection[1]).sum((2, 3))
         self.values[2][..., 0] = v2 + (self.values[2][..., 1] * self.connection[10]).sum((2, 3))  + self.connection[18]
-        self.values[2][..., 1] = vectorizedSigmoidal(self.values[2][..., 0])
+        self.values[2][..., 1] = vectorizedRelu(self.values[2][..., 0])
         
         # layer 3
         v3: ndarray = (self.values[2][..., 1] * self.connection[4]).sum((2, 3))
