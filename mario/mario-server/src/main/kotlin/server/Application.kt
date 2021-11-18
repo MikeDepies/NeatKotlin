@@ -37,9 +37,9 @@ import kotlin.random.*
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 private val logger = KotlinLogging.logger { }
-val minSpeices = 200
-val maxSpecies = 50
-val speciesThresholdDelta = .1f
+val minSpeices = 5
+val maxSpecies = 30
+val speciesThresholdDelta = .3f
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
 var distanceFunction = cppnGeneRuler::measure
 var speciesSharingDistance = 2f
@@ -122,7 +122,7 @@ fun Application.module(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 500
+    val populationSize = 100
 
 
 
@@ -130,16 +130,16 @@ fun Application.module(testing: Boolean = false) {
     val survivalThreshold = .4f
     val stagnation = 15
 
-    val randomSeed: Int = 22 + evaluationId
+    val randomSeed: Int = 12 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
 
 //
-//    val models = loadPopulation(File("population/population.json"), 0).models
-//    logger.info { "population loaded with size of: ${models.size}" }
-//    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-//    val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+    val models = loadPopulation(File("population/population.json"), 0).models
+    logger.info { "population loaded with size of: ${models.size}" }
+    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+    val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
 //    val simpleNeatExperiment = simpleNeatExperiment(
 //        random, maxInnovation, maxNodeInnovation, activationFunctions,
 //        addConnectionAttempts
@@ -181,7 +181,7 @@ fun Application.module(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(100, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(10, settings.noveltyThreshold) { a, b ->
         euclidean(toVector(a), toVector(b))
     }
 //    knnNoveltyArchive.behaviors.addAll(behaviors)
@@ -228,7 +228,7 @@ fun Application.module(testing: Boolean = false) {
             }
         }
     }
-    repeat(5) {
+    repeat(3) {
         launch(Dispatchers.IO) {
             while (true) {
                 val network = neatMutatorChannel.receive()
@@ -316,14 +316,14 @@ data class NetworkWithId(val neatMutator: NeatMutator, val id: String)
 fun toVector(marioInfo: MarioInfo) = listOf(
     (marioInfo.x_pos).toFloat(),
     (marioInfo.y_pos ).toFloat() ,
-    marioInfo.stage * 2000f,
-    marioInfo.world * 5000f,
+//    marioInfo.stage * 2000f,
+//    marioInfo.world * 5000f,
 //    marioInfo.dstage * 1000f,
 //    marioInfo.dworld * 5000f,
     marioInfo.dstatus * 500f,
     marioInfo.score.toFloat(),
-    marioInfo.coins.toFloat() * 500f,
-
+    marioInfo.coins.toFloat() * 100f,
+    marioInfo.time.toFloat()
 //    marioInfo.life.toFloat() * 1000
 )//.map { it.toFloat() }
 

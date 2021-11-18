@@ -136,7 +136,7 @@ fun NeatExperiment.generateInitialPopulation(
         }
         val mutate = .4f chanceToMutate mutateAddNode
         val mutateConnection = .4f chanceToMutate mutateAddConnection
-        repeat(2) {
+        repeat(4) {
             if (mutate.roll(this)) {
                 mutate.mutation(this, clone)
             }
@@ -165,7 +165,7 @@ fun ConnectionGeneModel.connectionGene(): ConnectionGene {
 }
 
 fun NodeGeneModel.nodeGene(): NodeGene {
-    return NodeGene(node, bias, nodeType.nodeType(), Activation.CPPN.functions.toMap { it.name }.getValue(activationFunction))
+    return NodeGene(node, bias, nodeType.nodeType(), (Activation.CPPN.functions + Activation.identity).toMap { it.name }.getValue(activationFunction))
 }
 
 fun NodeTypeModel.nodeType(): NodeType = when (this) {
