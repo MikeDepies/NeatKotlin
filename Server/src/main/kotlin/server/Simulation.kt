@@ -93,7 +93,7 @@ data class NetworkDescription(
 
 fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
-    val connectionThreshold = .2f
+//    val connectionThreshold = .2f
     val connectionMagnitude = 3f
     val width = 125
     val height = 1
@@ -170,9 +170,11 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
                         input[4] = y2.toFloat() / (yRange2.last + 1)
                         network.evaluate(input)
                         val weight = network.output()[0]
-                        if (weight.absoluteValue > connectionThreshold) {
-                            val ratio =
-                                ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+                        val expressValue = network.output()[1]
+                        val express = expressValue > 0
+
+                        if (express) {
+                            val ratio = weight
                             connectionSet += ConnectionLocation(
                                 x1 - xRange1.first,
                                 y1 - yRange1.first,
@@ -202,9 +204,11 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
                 input[4] = y2.toFloat() / (yRange2.last + 1)
                 network.evaluate(input)
                 val weight = network.output()[0]
-                if (weight.absoluteValue > connectionThreshold) {
-                    val ratio =
-                        ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+                val expressValue = network.output()[1]
+                val express = expressValue > 0
+
+                if (express) {
+                    val ratio = weight
                     connectionSet += ConnectionLocation(
                         0,
                         0,

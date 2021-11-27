@@ -112,36 +112,36 @@ val applicationModule = module {
         )
     }
     factory { (evaluationId: Int, populationSize: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
+        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
         val randomSeed: Int = 20 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
-        val shFunction = shFunction(1f)
+        val shFunction = shFunction(.9f)
 
-
-        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
-        val models = populationModel.models
-        log.info { "population loaded with size of: ${models.size}" }
-        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
-        val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
-            addConnectionAttempts
-        )
-        val population = models.map { it.toNeatMutator() }
-        val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
+////
+//        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
+//        val models = populationModel.models
+//        log.info { "population loaded with size of: ${models.size}" }
+//        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+//        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+//        val simpleNeatExperiment = simpleNeatExperiment(
+//            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
+//            addConnectionAttempts
+//        )
+//        val population = models.map { it.toNeatMutator() }
+//        val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
         val standardCompatibilityTest = standardCompatibilityTest({
             shFunction(it)
         }, { a, b ->
             cppnGeneRuler.measure(a, b)
         })
-//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
-//        val population = simpleNeatExperiment.generateInitialPopulation2(
-//            populationSize,
-//            6,
-//            1,
-//            Activation.CPPN.functions
-//        )
+        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
+        val population = simpleNeatExperiment.generateInitialPopulation2(
+            populationSize,
+            6,
+            2,
+            Activation.CPPN.functions
+        )
         simulation(
             standardCompatibilityTest,
             evaluationId,
@@ -182,7 +182,7 @@ fun NeatExperiment.generateInitialPopulation2(
         }
         val mutate = .4f chanceToMutate neat.mutation.mutateAddNode
         val mutateConnection = .4f chanceToMutate neat.mutation.mutateAddConnection
-        repeat(2) {
+        repeat(1) {
             if (mutate.roll(this)) {
                 mutate.mutation(this, clone)
             }

@@ -127,8 +127,8 @@ fun Application.module(testing: Boolean = false) {
 //    )
     networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1, controller2))
     val modelManager = ModelManager(mapOf(
-        controller1 to EvolutionGeneration(0, mapOf(), listOf(), mutableMapOf()),
-        controller2 to EvolutionGeneration(0, mapOf(), listOf(), mutableMapOf())
+        controller1 to EvolutionGeneration(0, mapOf(), listOf(), mutableMapOf(), mutableMapOf()),
+        controller2 to EvolutionGeneration(0, mapOf(), listOf(), mutableMapOf(), mutableMapOf())
     ).toMutableMap())
     val sequenceSeparator = 2000.toChar()
     launch(Dispatchers.IO) {
@@ -142,7 +142,7 @@ fun Application.module(testing: Boolean = false) {
             adjustedFitnessCalculation = adjustedFitness,
             evaluationChannels = evaluationChannels,
             controller1,
-            KNNNoveltyArchive<ActionBehavior>(60, 1f) { a, b ->
+            KNNNoveltyArchive<ActionBehavior>(7, 0f) { a, b ->
                 val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
                 val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
                 val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
@@ -159,33 +159,33 @@ fun Application.module(testing: Boolean = false) {
         )
     }
 //
-    launch(Dispatchers.IO) {
-
-        log.info("Start evaluation Loop!")
-        evaluationLoopNoveltyHyperNeat(
-            modelManager = modelManager,
-            evaluationId = 1,
-            initialPopulation = initialPopulation2,
-            populationEvolver = populationEvolver2,
-            adjustedFitnessCalculation = adjustedFitness,
-            evaluationChannels = evaluationChannels2,
-            controller2,
-            KNNNoveltyArchive<ActionBehavior>(12, 2f) { a, b ->
-                val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
-                val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
-                val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
-                val recoveryDistance = levenshtein(
-                    a.recovery.joinToString("$sequenceSeparator") { it.actionString() },
-                    b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
-                )
-                sqrt(
-                    allActionDistance.times(3).squared() + killsDistance.times(30).squared() + damageDistance.times(2)
-                        .squared() + recoveryDistance.times(10).squared().toFloat()
-                )
-            }
-//                .also { it.behaviors.addAll(b) }
-        )
-    }
+//    launch(Dispatchers.IO) {
+//
+//        log.info("Start evaluation Loop!")
+//        evaluationLoopNoveltyHyperNeat(
+//            modelManager = modelManager,
+//            evaluationId = 1,
+//            initialPopulation = initialPopulation2,
+//            populationEvolver = populationEvolver2,
+//            adjustedFitnessCalculation = adjustedFitness,
+//            evaluationChannels = evaluationChannels2,
+//            controller2,
+//            KNNNoveltyArchive<ActionBehavior>(12, 2f) { a, b ->
+//                val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
+//                val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
+//                val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
+//                val recoveryDistance = levenshtein(
+//                    a.recovery.joinToString("$sequenceSeparator") { it.actionString() },
+//                    b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
+//                )
+//                sqrt(
+//                    allActionDistance.times(3).squared() + killsDistance.times(30).squared() + damageDistance.times(2)
+//                        .squared() + recoveryDistance.times(10).squared().toFloat()
+//                )
+//            }
+////                .also { it.behaviors.addAll(b) }
+//        )
+//    }
     val json = get<Json>()
     fun fromId(controllerId: Int) : IOController = when(controllerId) {
         0 -> controller1
@@ -194,7 +194,7 @@ fun Application.module(testing: Boolean = false) {
     }
     routing {
         post<ActiveModelRequest>("/model/active") {
-            call.respond(ModelRequest(it.controllerId, modelManager[fromId(it.controllerId)].activeId ?: ""))
+            call.respond(ModelRequest(it.controllerId, modelManager[fromId(it.controllerId)].activeId ?: modelManager[fromId(it.controllerId)].networkList.first().id))
         }
         post<ModelRequest>("/model") {
             val evolutionGeneration = modelManager[fromId(it.controllerId)]
@@ -213,29 +213,41 @@ fun Application.module(testing: Boolean = false) {
                 evolutionGeneration.readiedNetworkMap.containsKey(it.modelId) -> {
                     val indexOfFirst = evolutionGeneration.networkList.indexOfFirst { n -> it.modelId == n.id }
                     launch(Dispatchers.IO) {
-                        if (indexOfFirst + 1 < evolutionGeneration.networkList.size) {
-                            val networkWithId = evolutionGeneration.networkList[indexOfFirst + 1]
-                            if (!evolutionGeneration.readiedNetworkMap.containsKey(networkWithId.id)) {
-                                val createTaskNetwork = createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
-                                evolutionGeneration.readiedNetworkMap[createTaskNetwork.id] = createTaskNetwork
+                        repeat(5) { index ->
+                            if (indexOfFirst + index < evolutionGeneration.networkList.size) {
+                                val networkWithId = evolutionGeneration.networkList[indexOfFirst + index]
+                                if (!evolutionGeneration.readiedNetworkMap.containsKey(networkWithId.id) && !evolutionGeneration.buildingNetwork.containsKey(networkWithId.id)) {
+                                    evolutionGeneration.buildingNetwork[networkWithId.id] = true
+                                    val createTaskNetwork = createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
+                                    evolutionGeneration.readiedNetworkMap[createTaskNetwork.id] = createTaskNetwork
+                                }
                             }
                         }
                     }
                     val description = evolutionGeneration.readiedNetworkMap[it.modelId]!!
                     description
                 }
+                evolutionGeneration.buildingNetwork.containsKey(it.modelId) -> {
+                    while (!evolutionGeneration.readiedNetworkMap.containsKey(it.modelId)) {
+                        delay(200)
+                    }
+                    evolutionGeneration.readiedNetworkMap[it.modelId]!!
+                }
                 else -> {
                     val indexOfFirst = evolutionGeneration.networkList.indexOfFirst { n -> it.modelId == n.id }
                     server.log.info { "else statement $indexOfFirst" }
                     launch(Dispatchers.IO) {
-                        if (indexOfFirst + 1 < evolutionGeneration.networkList.size)
-                            evolutionGeneration.networkList[indexOfFirst + 1].let {
-                                val createTaskNetwork = createTaskNetwork(it.neatMutator.toNetwork(), it.id)
-                                server.log.info { "Created task network for next request" }
-                                evolutionGeneration.readiedNetworkMap[createTaskNetwork.id] = createTaskNetwork
-                                server.log.info { "set task network ${createTaskNetwork.id}" }
-                                createTaskNetwork
-                            }
+                        repeat(5) { index ->
+                            if (indexOfFirst + index < evolutionGeneration.networkList.size)
+                                evolutionGeneration.networkList[indexOfFirst + index].let {
+                                    evolutionGeneration.buildingNetwork[it.id] = true
+                                    val createTaskNetwork = createTaskNetwork(it.neatMutator.toNetwork(), it.id)
+                                    server.log.info { "Created task network for next request" }
+                                    evolutionGeneration.readiedNetworkMap[createTaskNetwork.id] = createTaskNetwork
+                                    server.log.info { "set task network ${createTaskNetwork.id}" }
+                                    createTaskNetwork
+                                }
+                        }
                     }
                     val networkWithId = evolutionGeneration.networkMap[it.modelId]!!
                     createTaskNetwork(networkWithId.neatMutator.toNetwork(), networkWithId.id)
@@ -260,7 +272,7 @@ class ModelManager(var controllerModelManagers : MutableMap<IOController, Evolut
         return controllerModelManagers.getValue(ioController)
     }
 }
-data class EvolutionGeneration(val generation: Int, var networkMap : Map<String, NetworkWithId>, var networkList : List<NetworkWithId>, var readiedNetworkMap: MutableMap<String, NetworkDescription>, var activeId: String? = null)
+data class EvolutionGeneration(val generation: Int, var networkMap : Map<String, NetworkWithId>, var networkList : List<NetworkWithId>, var readiedNetworkMap: MutableMap<String, NetworkDescription>, var buildingNetwork: MutableMap<String, Boolean>, var activeId: String? = null)
 fun Int.squared() = this * this
 
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")

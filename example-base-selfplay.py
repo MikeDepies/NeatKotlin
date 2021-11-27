@@ -30,43 +30,44 @@ from websockets.client import WebSocketClientProtocol
 #   setup controllers, and send button presses over to a console
 
 
-def getActiveNetwork(controllerId):
+async def getActiveNetwork(controllerId):
     res = requests.post("http://" + host + ":8091/model/active", json={
         "controllerId": controllerId
     })
     if res.ok:
         data = res.json()
-        return getNetwork(data["controllerId"], data["modelId"])
+        return await getNetwork(data["controllerId"], data["modelId"])
     else:
         raise Exception("No response for active model for " +
                         str(controllerId))
 
 
-def getNetwork(controllerId, modelId):
+async def getNetwork(controllerId, modelId):
     requestNetwork = True
     network = None
     while requestNetwork:
-        res = requests.post("http://" + host + ":8091/model",  json={
-            "controllerId": controllerId,
-            "modelId": modelId
-        })
-        if not res.ok:
-            time.sleep(2)
-            continue
-        data = res.json()
-        id: str = data["id"]
-        connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(
-            c[0], c[1], c[2], c[3], c[4], c[5], c[6]), data["connections"]))
-        nodes: List[NeatNetwork.ConnectionLocation] = list(
-            map(lambda n: NeatNetwork.NodeLocation(n[0], n[1], n[2]), data["nodes"]))
-        print(len(connections))
-        print(len(nodes))
         try:
+            res = requests.post("http://" + host + ":8091/model", timeout=.5, json={
+                "controllerId": controllerId,
+                "modelId": modelId
+            })
+            if not res.ok:
+                await asyncio.sleep(1)
+                continue
+            data = res.json()
+            id: str = data["id"]
+            connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(
+                c[0], c[1], c[2], c[3], c[4], c[5], c[6]), data["connections"]))
+            nodes: List[NeatNetwork.ConnectionLocation] = list(
+                map(lambda n: NeatNetwork.NodeLocation(n[0], n[1], n[2]), data["nodes"]))
+            print(len(connections))
+            print(len(nodes))
+        
             network = NeatNetwork.constructNetwork(nodes, connections, [[1, 125], [11, 11], 
                                                                         [7, 7], [5, 5], [5, 5], [5, 5], [1, 9]])
             requestNetwork = False
-        except Exception as e:
-            print(e)
+        except:
+            await asyncio.sleep(1)
             # deadNetwork()
         return network
 
@@ -192,8 +193,8 @@ host = "192.168.0.132"
 
 
 class Session:
-    network0 = getActiveNetwork(0)
-    network1 = getActiveNetwork(1)
+    network0 = None
+    network1 = None
     framesOnCharacterSelect = 0
     ws: WebSocketClientProtocol or None = None
     simulationRunning = False
@@ -211,6 +212,7 @@ class Session:
 
 
 def processMessage(message: Dict, controller: melee.Controller):
+    
     if (message["a"] == True):
         controller.press_button(Button.BUTTON_A)
     else:
@@ -416,11 +418,11 @@ async def handle_message():
                     msg: Dict = json.loads(got_back)
                     if (msg["data"]["controllerId"] == 0):
                         # processMessage(msg["data"], controller)
-                        Session.network0 = getNetwork(
+                        Session.network0 = await getNetwork(
                             msg["data"]["controllerId"], msg["data"]["modelId"])
                     elif (msg["data"]["controllerId"] == 1):
                         # processMessage(msg["data"], controller_opponent)
-                        Session.network1 = getNetwork(
+                        Session.network1 = await getNetwork(
                             msg["data"]["controllerId"], msg["data"]["modelId"])
                 # else:
                 #     controller.release_all()
@@ -451,6 +453,10 @@ actionNormalizer = 60.0
 
 async def console_loop():
     # Main loop
+    if (Session.network0 == None):
+        Session.network0 = await getActiveNetwork(0)
+        # Session.network1 = await getActiveNetwork(1)
+    
     costume = 0
     while True:
         # await asyncio.sleep(.001)
@@ -469,7 +475,7 @@ async def console_loop():
 
         # What menu are we in?
         if gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-            await asyncio.sleep(.00001)
+            # await asyncio.sleep(.00001)
             if not Session.reassign_characters:
                 Session.reassign_characters = True
                 Session.menuLoadFirstFrame = False
@@ -497,7 +503,7 @@ async def console_loop():
                     "simulation.frame.update", gameStateFrameData), cls=NumpyEncoder)
                 # print(messageString)
                 await Session.ws.send(messageString)
-                state = np.ndarray((1, 125))
+                state : np.ndarray = np.zeros((1, 125))
                 player0: PlayerState = gamestate.players[args.port]
 
                 state[0, 0] = player0.speed_air_x_self / positionNormalizer
@@ -514,7 +520,7 @@ async def console_loop():
                 state[0, 9] = (
                     (player0.hitstun_frames_left / actionNormalizer))
                 state[0, 10] = ((player0.character.value / 25))
-                state[0, 11] = ((player0.action.value - 386))
+                state[0, 11] = ((player0.action.value / 386))
                 state[0, 12] = ((player0.iasa / actionNormalizer))
                 state[0, 13] = (
                     (player0.invulnerability_left / actionNormalizer))
@@ -565,7 +571,7 @@ async def console_loop():
                 state[0, 37] = (
                     (player1.hitstun_frames_left / actionNormalizer))
                 state[0, 38] = ((player1.character.value / 25))
-                state[0, 39] = ((player1.action.value - 386))
+                state[0, 39] = ((player1.action.value / 386))
                 state[0, 40] = ((player1.iasa / actionNormalizer))
                 state[0, 41] = (
                     (player1.invulnerability_left / actionNormalizer))
@@ -626,44 +632,53 @@ async def console_loop():
                     statePosition +=1
                     state[0,statePosition] = projectile.subtype / 10.0
                     statePosition +=1
-                Session.network0.input(state)
-                Session.network0.compute()
-                output0 = Session.network0.output()
-                Session.network1.input(state)
-                Session.network1.compute()
-                output1 = Session.network1.output()
-                # print(player0.action.value)
-                # print(player0.action)
-                # print(str(state.argmax()) + " - " + str(state.max()))
-                processMessage({
-                    "a": output0[0, 0] > .5,
-                    "b": output0[0,1] > .5,
-                    "y": output0[0,2] > .5,
-                    "z": output0[0,3] > .5,
-                    "mainStickX": output0[0,4],
-                    "mainStickY": output0[0,5],
-                    "cStickX": output0[0,6],
-                    "cStickY": output0[0,7],
-                    "leftShoulder": output0[0,8],
+                if Session.network0:
+                    Session.network0.input(state)
+                    Session.network0.compute()
+                    output0 = Session.network0.output()
+                    outputUnActivated0 = Session.network0.outputUnActivated()
+                    
+                    # print(player0.action.value)
+                    # print(player0.action)
+                    # print(str(state.argmax()) + " - " + str(state.max()))
+                    print(Session.network0.outputUnActivated())
+                    # print(str(state.argmax()) + str(state.max()))
+                    # print(output0)
+                    processMessage({
+                        "a": output0[0, 0] > .5,
+                        "b": output0[0,1] > .5,
+                        "y": output0[0,2] > .5,
+                        "z": output0[0,3] > .5,
+                        "mainStickX": output0[0,4],
+                        "mainStickY": output0[0,5],
+                        "cStickX": output0[0,6],
+                        "cStickY": output0[0,7],
+                        "leftShoulder": output0[0,8],
 
-                }, controller)
-                processMessage({
-                    "a": output1[0,0] > .5,
-                    "b": output1[0,1] > .5,
-                    "y": output1[0,2] > .5,
-                    "z": output1[0,3] > .5,
-                    "mainStickX": output1[0,4],
-                    "mainStickY": output1[0,5],
-                    "cStickX": output1[0,6],
-                    "cStickY": output1[0,7],
-                    "leftShoulder": output1[0,8],
-                    }, controller_opponent)
-                # counter += 1
+                    }, controller)
+                if Session.network1:
+                    Session.network1.input(state)
+                    Session.network1.compute()
+                    output1 = Session.network1.output()
+                    print(Session.network1.outputUnActivated())
+                    print(output1)
+                    processMessage({
+                        "a": output1[0,0] > .5,
+                        "b": output1[0,1] > .5,
+                        "y": output1[0,2] > .5,
+                        "z": output1[0,3] > .5,
+                        "mainStickX": output1[0,4],
+                        "mainStickY": output1[0,5],
+                        "cStickX": output1[0,6],
+                        "cStickY": output1[0,7],
+                        "leftShoulder": output1[0,8],
+                        }, controller_opponent)
+                    # counter += 1
 
-                # print("enemy stocks left: " + str(player2.stock))
-                Session.lastStockAi = player0.stock
-                Session.lastStockOpponent = player1.stock
-                Session.lastGamestate = gamestate
+                    # print("enemy stocks left: " + str(player2.stock))
+                    Session.lastStockAi = player0.stock
+                    Session.lastStockOpponent = player1.stock
+                    Session.lastGamestate = gamestate
 
             else:
                 # If the discovered port was unsure, reroll our costume for next time
@@ -689,13 +704,13 @@ async def console_loop():
                                                 cpu_level=0)
             melee.MenuHelper.menu_helper_simple(gamestate,
                                                 controller_opponent,
-                                                melee.Character.LINK,
+                                                melee.Character.FOX,
                                                 melee.Stage.FINAL_DESTINATION,
                                                 args.connect_code,
                                                 costume=0,
                                                 autostart=True,
                                                 swag=False,
-                                                cpu_level=0)
+                                                cpu_level=1)
 
             counter = 0
             resetCounter = 0
