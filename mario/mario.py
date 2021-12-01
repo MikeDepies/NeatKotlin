@@ -159,7 +159,7 @@ def mario(env: Env):
                 framesSinceMaxXChange +=1
         prevX = info["x_pos"]
         
-        if reward < -14 or framesSinceMaxXChange > 20* 10:
+        if reward < -14 or framesSinceMaxXChange > 20* 100:
             if reward < -14:
                 info["life"] = info["life"] - 1
             idle=True

@@ -92,7 +92,7 @@ data class NetworkDescription(
 
 fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
-    val connectionThreshold = .2f
+//    val connectionThreshold = .2f
     val connectionMagnitude = 3f
     val width = 64
     val height = 60
@@ -168,10 +168,14 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
                         input[3] = x2.toFloat() / (xRange2.last + 1)
                         input[4] = y2.toFloat() / (yRange2.last + 1)
                         network.evaluate(input)
-                        val weight = network.output()[0]
-                        if (weight.absoluteValue > connectionThreshold) {
-                            val ratio =
-                                ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+
+                        val expressValue = network.output()[10]
+                        val express = expressValue > 0
+
+                        if (express) {
+                            val expressOutIndex = (expressValue * 9).toInt()
+                            val weight = network.output()[expressOutIndex]
+                            val ratio = weight
                             connectionSet += ConnectionLocation(
                                 x1 - xRange1.first,
                                 y1 - yRange1.first,
@@ -200,10 +204,14 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
                 input[3] = x2.toFloat() / (xRange2.last + 1)
                 input[4] = y2.toFloat() / (yRange2.last + 1)
                 network.evaluate(input)
-                val weight = network.output()[0]
-                if (weight.absoluteValue > connectionThreshold) {
-                    val ratio =
-                        ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
+
+                val expressValue = network.output()[10]
+                val express = expressValue > 0
+
+                if (express) {
+                    val expressOutIndex = (expressValue * 9).toInt()
+                    val weight = network.output()[expressOutIndex]
+                    val ratio = weight
                     connectionSet += ConnectionLocation(
                         0,
                         0,
