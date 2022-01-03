@@ -1,10 +1,11 @@
 package server
 
 import PopulationEvolver
+import createMutationDictionary
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.IntArraySerializer
-import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.encodeStructure
@@ -14,10 +15,8 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import neat.*
-import neat.model.NeatMutator
-import server.message.endpoints.Simulation
-import kotlin.math.absoluteValue
-import kotlin.math.sign
+import neat.model.*
+import kotlin.math.*
 
 private val log = KotlinLogging.logger { }
 
@@ -81,7 +80,7 @@ data class ConnectionLocation(
     val z2: Int,
     val weight: Float
 )
-data class NetworkWithId(val neatMutator: NeatMutator, val id: String)
+
 @Serializable
 data class NetworkDescription(
     val connections: Set<ConnectionLocation>,
@@ -93,26 +92,26 @@ data class NetworkDescription(
 
 fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
-//    val connectionThreshold = .2f
-    val connectionMagnitude = 1f
-    val width = 1095
-    val height = 1
-    val hiddenWidth = 9
-    val hiddenHeight = 9
+    val connectionThreshold = .2f
+    val connectionMagnitude = 3f
+    val width = 64
+    val height = 60
+    val hiddenWidth = 5
+    val hiddenHeight = 5
 
-    val hiddenWidth2 = 9
-    val hiddenHeight2 = 9
+    val hiddenWidth2 = 5
+    val hiddenHeight2 = 5
 
-    val hiddenWidth3 = 9
-    val hiddenHeight3 = 9
+    val hiddenWidth3 = 5
+    val hiddenHeight3 = 5
 
-    val hiddenWidth4 = 7
-    val hiddenHeight4 = 7
+    val hiddenWidth4 = 5
+    val hiddenHeight4 = 5
 
     val hiddenWidth5 = 5
     val hiddenHeight5 = 5
 
-    val outputWidth = 1105
+    val outputWidth = 1
     val outputHeight = 1
 
     var nodeId = 0
@@ -124,7 +123,7 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val xMin = centerX - width / 2
     val xMax = centerX + width / 2
     val yMin = centerY - height / 2
-    val yMax = 1
+    val yMax = centerY + height / 2
 
     val xMinHidden = centerX - hiddenWidth / 2
     val xMaxHidden = centerX + hiddenWidth / 2
@@ -136,10 +135,10 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val yMinHidden2 = centerY - hiddenHeight2 / 2
     val yMaxHidden2 = centerY + hiddenHeight2 / 2
 
-    fun rangeFor(distance: Int) = (centerX - distance / 2)..(centerX + distance / 2)
-    fun rangeForUntil(distance: Int) = (centerX - distance / 2) until (centerX + distance / 2)
+    fun rangeFor(distance: Int) = (centerX - distance / 2)..(centerX + hiddenWidth / 2)
+    fun rangeForUntil(distance: Int) = (centerX - distance / 2) until (centerX + hiddenWidth / 2)
     val xMinOutput = 0
-    val xMaxOutput = 9
+    val xMaxOutput = 12
     val yMinOutput = 0
     val yMaxOutput = 1
     //slice 1
@@ -149,7 +148,7 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
     val hiddenZ2 = 2
     val hiddenZ3 = 3
     val hiddenZ4 = 4
-    val hiddenZ5 = 5
+    val hiddenZ5 = 4
     val outputZ = 6
     val input = mutableListOf(0f, 0f, 0f, 0f, 0f, hiddenZ.toFloat() / outputZ)
 //    println("Creating Input to Hidden")
@@ -170,13 +169,9 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
                         input[4] = y2.toFloat() / (yRange2.last + 1)
                         network.evaluate(input)
                         val weight = network.output()[0]
-                        val expressValue = network.output()[1]
-                        val express = expressValue > 0
-//                        if (z1 == 0 && z2 == 1)
-//                            log.info { "($x1, $y1, $z1, $x2, $y2, $z2 = $weight, $expressValue " }
-
-                        if (express) {
-                            val ratio = weight
+                        if (weight.absoluteValue > connectionThreshold) {
+                            val ratio =
+                                ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
                             connectionSet += ConnectionLocation(
                                 x1 - xRange1.first,
                                 y1 - yRange1.first,
@@ -206,11 +201,9 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
                 input[4] = y2.toFloat() / (yRange2.last + 1)
                 network.evaluate(input)
                 val weight = network.output()[0]
-                val expressValue = network.output()[1]
-                val express = expressValue > 0
-
-                if (express) {
-                    val ratio = weight
+                if (weight.absoluteValue > connectionThreshold) {
+                    val ratio =
+                        ((weight.absoluteValue - connectionThreshold) / (1f - connectionThreshold)) * weight.sign
                     connectionSet += ConnectionLocation(
                         0,
                         0,
@@ -257,8 +250,8 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
         outputZ
     )
     connectSubstrate(
-        rangeFor(width),
-        0 until 1,
+        xMin until xMax,
+        yMin until yMax,
         z1,
         xMinHidden..xMaxHidden,
         yMinHidden..yMaxHidden,
@@ -404,8 +397,6 @@ fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkD
             listOf(hiddenHeight, hiddenWidth),
             listOf(hiddenHeight2, hiddenWidth2),
             listOf(hiddenHeight3, hiddenWidth3),
-            listOf(hiddenHeight4, hiddenWidth4),
-            listOf(hiddenHeight5, hiddenWidth5),
             listOf(outputHeight, outputWidth),
         )
     )
@@ -457,11 +448,9 @@ fun createSimulation(
     shFunction: SharingFunction,
     mateChance: Float,
     survivalThreshold: Float,
-    stagnation: Int,
-    neatExperiment: NeatExperiment,
-    compatibilityTest: CompatibilityTest
+    stagnation: Int
 ): Simulation {
-    val mutationEntries = mutationDictionary()
+    val mutationEntries = createMutationDictionary()
     val speciesId = 0
     val speciationController =
         SpeciationController(speciesId)
@@ -478,28 +467,32 @@ fun createSimulation(
     )
     val generation = 0
     val populationEvolver = PopulationEvolver(
-        speciationController, scoreKeeper, speciesLineage, neatExperiment, generation, compatibilityTest
+        generation,
+        speciationController,
+        scoreKeeper,
+        speciesLineage,
+        weightedReproduction,
     )
-    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId, compatibilityTest)
+    return simulation(evaluationId, population, populationEvolver, adjustedFitnessCalculation)
 }
-//
-//fun simulation(
-//    evaluationId: Int,
-//    population: List<NeatMutator>,
-//    populationEvolver: PopulationEvolver,
-//    adjustedFitnessCalculation: AdjustedFitnessCalculation,
-//
-//    ): Simulation {
-//
-//    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
-//}
-//
-//data class Simulation(
-//    val initialPopulation: List<NeatMutator>,
-//    val populationEvolver: PopulationEvolver,
-//    val adjustedFitnessCalculation: AdjustedFitnessCalculation,
-//    val evaluationId: Int
-//)
+
+fun simulation(
+    evaluationId: Int,
+    population: List<NeatMutator>,
+    populationEvolver: PopulationEvolver,
+    adjustedFitnessCalculation: AdjustedFitnessCalculation,
+
+    ): Simulation {
+
+    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
+}
+
+data class Simulation(
+    val initialPopulation: List<NeatMutator>,
+    val populationEvolver: PopulationEvolver,
+    val adjustedFitnessCalculation: AdjustedFitnessCalculation,
+    val evaluationId: Int
+)
 
 fun main() {
     (0..3).forEach { println(it) }

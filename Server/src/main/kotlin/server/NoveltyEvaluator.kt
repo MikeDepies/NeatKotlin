@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import server.message.endpoints.*
 import kotlin.math.absoluteValue
+import kotlin.math.sign
 
 private val logger = KotlinLogging.logger { }
 
@@ -15,7 +16,8 @@ data class ActionBehavior(
     val recovery: List<List<Int>>,
     val kills: List<Int>,
     val damage: List<Int>,
-    val totalDamageDone: Float
+    val totalDamageDone: Float,
+    val totalDistanceTowardOpponent: Float
 )
 
 class NoveltyEvaluatorMultiBehavior(
@@ -51,6 +53,7 @@ class NoveltyEvaluatorMultiBehavior(
     var neverShielded = true
     var offStageTime = 0
     var totalFrames = 0
+    var totalDistanceTowardOpponent = 0f
 
     /**
      * The finalized Score
@@ -67,7 +70,7 @@ class NoveltyEvaluatorMultiBehavior(
             }
             return MinimaCriteria(
                 met,
-                ActionBehavior(actions, recoveryActionSets, kills, damageActions, totalDamage)
+                ActionBehavior(actions, recoveryActionSets, kills, damageActions, totalDamage, totalDistanceTowardOpponent)
             )// + if (meleeState.lastMeleeFrameData?.player1?.onGround == true) 0f else 0f// + bankedScore// + distanceScore// + max(-10f, moveBonus / 2f)
         }
 
@@ -86,9 +89,14 @@ class NoveltyEvaluatorMultiBehavior(
     val previousActions = mutableListOf<Int>()
     var previousAction: Int? = null
     var opponentPreviousAction: Int? = null
+    var lastX = 0f
+
+    fun isRolling(actionData: ActionData) =
+        (actionData.action == 234 || actionData.action == 233 || actionData.action == 235 || actionData.action == 253)
     override suspend fun evaluateFrame(frameUpdate: FrameUpdate) {
         val frameData = meleeState.createSimulationFrame(frameUpdate)
         if (lastMeleeFrameData != null) {
+
             val kockbackCombinedSpeed =
                 frameUpdate.player1.run { speedXAttack.absoluteValue + speedYAttack.absoluteValue }
             val offStage =
@@ -109,6 +117,13 @@ class NoveltyEvaluatorMultiBehavior(
                 knockedOffStage = true
 //                logger.info { "Ai knocked off stage" }
             }
+            val xDiff = frameUpdate.player1.x - lastX
+            val xDiffOpponent = frameUpdate.player2.x - frameUpdate.player1.x
+            val towardOpponent = xDiff.sign == xDiffOpponent.sign
+            if (towardOpponent && !isRolling(frameUpdate.action1)) {
+                totalDistanceTowardOpponent += xDiff.absoluteValue
+            }
+//            if ()
             //recovery time bonus
             if (onStage && knockedOffStage && damageSinceRecovery) {
                 framesWithoutDamage = 0
@@ -149,8 +164,6 @@ class NoveltyEvaluatorMultiBehavior(
 //                logger.info { "opponent recovered onto stage" }
             }
 
-            fun isRolling(actionData: ActionData) =
-                (actionData.action == 234 || actionData.action == 233 || actionData.action == 235 || actionData.action == 253)
 
             if (!frameUpdate.player1.invulnerable && !opponentKnocked && !frameUpdate.player2.invulnerable && !frameUpdate.player2.hitStun || isRolling(
                     frameUpdate.action1
@@ -179,7 +192,7 @@ class NoveltyEvaluatorMultiBehavior(
                     actions += frameUpdate.action1.action
                 }
                 previousActions += actions
-                if (previousActions.size > 2) {
+                if (previousActions.size > 6) {
                     previousActions.remove(0)
                 }
 //                }
@@ -192,6 +205,7 @@ class NoveltyEvaluatorMultiBehavior(
 //                logger.info { actions }
             }
             if (frameData.player2.lostStock) {
+                logger.info { "Opponent lost a stock" }
                 if (opponentKnocked) {
                     opponentPreviousAction?.let {
                         kills += it
@@ -214,6 +228,7 @@ class NoveltyEvaluatorMultiBehavior(
         meleeState.lastMeleeFrameData = frameData
         lastFrameUpdate = frameUpdate
         totalFrames += 1
+        lastX = frameUpdate.player1.x
     }
 
     override fun finishEvaluation() {

@@ -42,6 +42,7 @@ These events correspond to a given snapshot of the game. (delta?) Various querie
  The action includes: ScoreModification (variables ing general?), Clock Controls, EndAgentTurn
  */
 typealias SimulationSnapshot = SimulationState
+
 @Serializable
 data class ModelUpdate(val controllerId: Int, val modelId: String)
 data class IOController(
@@ -375,7 +376,14 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
             }
         //Updates the register for http requests
         modelManager[player] =
-            EvolutionGeneration(populationEvolver.generation, currentPopulation.associateBy { it.id }, currentPopulation, mutableMapOf(), mutableMapOf())
+            EvolutionGeneration(
+                populationEvolver.generation,
+                currentPopulation.associateBy { it.id },
+                currentPopulation,
+                mutableMapOf(),
+                mutableMapOf(),
+                mutableMapOf()
+            )
         populationChannel.send(PopulationModels(populationMap, populationEvolver.generation, evaluationId))
 //        modelManager.setPopulation(player, currentPopulation)
         val modelScores = currentPopulation.mapIndexed { index, (neatMutator, id) ->
@@ -404,7 +412,8 @@ suspend fun Application.evaluationLoopNoveltyHyperNeat(
                     scoreChannel,
                     evaluator,
                     noveltyArchive,
-                    id
+                    id,
+                    modelManager
                 )
                 logger.info { "[eval: $evaluationId] Score: ${evaluationScore.score}" }
                 FitnessModel(
@@ -457,7 +466,8 @@ private suspend fun evaluateNoveltyHyperNeat(
     scoreChannel: SendChannel<EvaluationScore>,
     evaluator: NoveltyEvaluatorMultiBehavior,
     noveltyArchive: NoveltyArchive<ActionBehavior>,
-    id: String
+    id: String,
+    modelManager: ModelManager
 ): EvaluationScore {
 
     try {
@@ -465,23 +475,26 @@ private suspend fun evaluateNoveltyHyperNeat(
         var i = 0
         for (frameUpdate in ioController.frameUpdateChannel) {
             val frameAdjustedForController = controllerFrameUpdate(ioController, frameUpdate)
-            evaluator.evaluateFrame(frameAdjustedForController)
+            if (modelManager[ioController].requestedNetwork[id] == true) {
+                evaluator.evaluateFrame(frameAdjustedForController)
 
-            if (evaluator.isFinished()) {
-                evaluator.finishEvaluation()
-                val score = when {
-                    !evaluator.score.met -> 0f
-                    noveltyArchive.size < 1 -> evaluator.score.behavior.allActions.size.toFloat().also {
-                        noveltyArchive.addBehavior(evaluator.score.behavior)
-                    }
-                    else -> noveltyArchive.addBehavior(evaluator.score.behavior)
-                } + evaluator.score.behavior.totalDamageDone / 5
-                return EvaluationScore(
-                    evaluationId,
-                    agentId,
-                    score,
-                    evaluator.scoreContributionList
-                ).also { scoreChannel.send(it) }
+
+                if (evaluator.isFinished()) {
+                    evaluator.finishEvaluation()
+                    val score = when {
+                        !evaluator.score.met -> 0f
+                        noveltyArchive.size < 1 -> evaluator.score.behavior.allActions.size.toFloat().also {
+                            noveltyArchive.addBehavior(evaluator.score.behavior)
+                        }
+                        else -> noveltyArchive.addBehavior(evaluator.score.behavior)
+                    } + evaluator.score.behavior.totalDamageDone / 5 + evaluator.score.behavior.totalDistanceTowardOpponent / 10
+                    return EvaluationScore(
+                        evaluationId,
+                        agentId,
+                        score,
+                        evaluator.scoreContributionList
+                    ).also { scoreChannel.send(it) }
+                }
             }
         }
     } catch (e: Exception) {

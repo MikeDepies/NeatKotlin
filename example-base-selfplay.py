@@ -4,6 +4,8 @@ import argparse
 from asyncio.tasks import sleep
 from asyncio.windows_events import NULL
 import json
+from multiprocessing.connection import Connection
+from multiprocessing.managers import Namespace
 import signal
 import sys
 from typing import Dict
@@ -25,51 +27,147 @@ import requests
 import NeatNetwork
 import time
 from typing import List
+from threading import Thread
 from websockets.client import WebSocketClientProtocol
-# This example program demonstrates how to use the Melee API to run a console,
-#   setup controllers, and send button presses over to a console
+from multiprocessing import Pool, Process, Pipe, Manager
 
 
-async def getActiveNetwork(controllerId):
+def check_port(value):
+    ivalue = int(value)
+    if ivalue < 1 or ivalue > 4:
+        raise argparse.ArgumentTypeError("%s is an invalid controller port. \
+                                         Must be 1, 2, 3, or 4." % value)
+    return ivalue
+
+
+# This isn't necessary, but makes it so that Dolphin will get killed when you ^C
+fd = melee.framedata.FrameData()
+
+
+def startConsole():
+        
+    # This example program demonstrates how to use the Melee API to run a console,
+    #   setup controllers, and send button presses over to a console
+    parser = argparse.ArgumentParser(description='Example of libmelee in action')
+    parser.add_argument('--port', '-p', type=check_port,
+                        help='The controller port (1-4) your AI will play on',
+                        default=2)
+    parser.add_argument('--opponent', '-o', type=check_port,
+                        help='The controller port (1-4) the opponent will play on',
+                        default=1)
+    parser.add_argument('--debug', '-d', action='store_true',
+                        help='Debug mode. Creates a CSV of all game states')
+    parser.add_argument('--address', '-a', default="127.0.0.1",
+                        help='IP address of Slippi/Wii')
+    parser.add_argument('--dolphin_executable_path', '-e', default=None,
+                        help='The directory where dolphin is')
+    parser.add_argument('--connect_code', '-t', default="",
+                        help='Direct connect code to connect to in Slippi Online')
+    parser.add_argument('--iso', default=None, type=str,
+                        help='Path to melee iso.')
+
+    # This logger object is useful for retroactively debugging issues in your bot
+    #   You can write things to it each frame, and it will create a CSV file describing the match
+    args = parser.parse_args()
+    log = None
+    if args.debug:
+        log = melee.Logger()
+    controller = None
+    controller_opponent = None
+    console = melee.Console(path=args.dolphin_executable_path,
+                            logger=log)
+    controller = melee.Controller(console=console,
+                                port=args.port,
+                                type=melee.ControllerType.STANDARD)
+    print("Player port: " + str(args.opponent))
+    controller_opponent = melee.Controller(console=console,
+                                        port=args.opponent,
+                                        type=melee.ControllerType.STANDARD)
+    def signal_handler(sig, frame):
+        console.stop()
+        # Session.ws.send(json.dumps(createMessage("simulation.pause", {})))
+        if args.debug:
+            log.writelog()
+            print("")  # because the ^C will be on the terminal
+            print("Log file created: " + log.filename)
+        print("Shutting down cleanly...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Run the console
+    console.run(iso_path=args.iso)
+
+    # Connect to the console
+    print("Connecting to console... ")
+    if not console.connect():
+        print("ERROR: Failed to connect to the console.")
+        sys.exit(-1)
+    print("Console connected")
+
+    # Plug our controller in
+    #   Due to how named pipes work, this has to come AFTER running dolphin
+    #   NOTE: If you're loading a movie file, don't connect the controller,
+    #   dolphin will hang waiting for input and never receive it
+    print("Connecting controller to console...")
+    if not controller.connect():
+        print("ERROR: Failed to connect the controller.")
+        sys.exit(-1)
+    print("Controller connected")
+
+    print("Connecting controller to console...")
+    if not controller_opponent.connect():
+        print("ERROR: Failed to connect the controller.")
+        sys.exit(-1)
+    print("Controller connected")
+    return (console, controller, controller_opponent, args)
+
+
+def getActiveNetwork(controllerId):
     res = requests.post("http://" + host + ":8091/model/active", json={
         "controllerId": controllerId
     })
     if res.ok:
         data = res.json()
-        return await getNetwork(data["controllerId"], data["modelId"])
+        return getNetwork(data["controllerId"], data["modelId"])
     else:
         raise Exception("No response for active model for " +
                         str(controllerId))
 
 
-async def getNetwork(controllerId, modelId):
+def getNetwork(controllerId, modelId):
     requestNetwork = True
     network = None
-    while requestNetwork:
-        try:
-            res = requests.post("http://" + host + ":8091/model", timeout=.5, json={
-                "controllerId": controllerId,
-                "modelId": modelId
-            })
-            if not res.ok:
-                await asyncio.sleep(1)
-                continue
-            data = res.json()
-            id: str = data["id"]
-            connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(
-                c[0], c[1], c[2], c[3], c[4], c[5], c[6]), data["connections"]))
-            nodes: List[NeatNetwork.ConnectionLocation] = list(
-                map(lambda n: NeatNetwork.NodeLocation(n[0], n[1], n[2]), data["nodes"]))
-            print(len(connections))
-            print(len(nodes))
+    try:
+        res = requests.post("http://" + host + ":8091/model", json={
+            "controllerId": controllerId,
+            "modelId": modelId,
+            
+        }, timeout=2)
+        if not res.ok:
+            raise Exception("No data for request")
+        data = res.json()
+        id: str = data["id"]
+        connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(
+            c[0], c[1], c[2], c[3], c[4], c[5], c[6]), data["connections"]))
+        nodes: List[NeatNetwork.ConnectionLocation] = list(
+            map(lambda n: NeatNetwork.NodeLocation(n[0], n[1], n[2]), data["nodes"]))
+        print(len(connections))
+        # print(len(nodes))
+
+        network = NeatNetwork.constructNetwork(nodes, connections, [[1, 1105], [9,9],
+                                                                    [9, 9], [9, 9], [7, 7], [5, 5], [1, 9]])
+    except requests.Timeout as err:
         
-            network = NeatNetwork.constructNetwork(nodes, connections, [[1, 125], [11, 11], 
-                                                                        [7, 7], [5, 5], [5, 5], [5, 5], [1, 9]])
-            requestNetwork = False
-        except:
-            await asyncio.sleep(1)
-            # deadNetwork()
-        return network
+        print("timeout: failed to get " + str(modelId) + " for " + str(controllerId))
+        getNetwork(controllerId, modelId)
+    requestNetwork = False
+    # requests.post("http://" + host + ":8091/start", json={
+    #         "controllerId": controllerId,
+    #         "modelId": modelId,
+            
+    #     }, timeout=2)
+    return network
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -90,113 +188,14 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def check_port(value):
-    ivalue = int(value)
-    if ivalue < 1 or ivalue > 4:
-        raise argparse.ArgumentTypeError("%s is an invalid controller port. \
-                                         Must be 1, 2, 3, or 4." % value)
-    return ivalue
-
-
-parser = argparse.ArgumentParser(description='Example of libmelee in action')
-parser.add_argument('--port', '-p', type=check_port,
-                    help='The controller port (1-4) your AI will play on',
-                    default=2)
-parser.add_argument('--opponent', '-o', type=check_port,
-                    help='The controller port (1-4) the opponent will play on',
-                    default=1)
-parser.add_argument('--debug', '-d', action='store_true',
-                    help='Debug mode. Creates a CSV of all game states')
-parser.add_argument('--address', '-a', default="127.0.0.1",
-                    help='IP address of Slippi/Wii')
-parser.add_argument('--dolphin_executable_path', '-e', default=None,
-                    help='The directory where dolphin is')
-parser.add_argument('--connect_code', '-t', default="",
-                    help='Direct connect code to connect to in Slippi Online')
-parser.add_argument('--iso', default=None, type=str,
-                    help='Path to melee iso.')
-
-args = parser.parse_args()
-
-# This logger object is useful for retroactively debugging issues in your bot
-#   You can write things to it each frame, and it will create a CSV file describing the match
-log = None
-if args.debug:
-    log = melee.Logger()
-
-# Create our Console object.
-#   This will be one of the primary objects that we will interface with.
-#   The Console represents the virtual or hardware system Melee is playing on.
-#   Through this object, we can get "GameState" objects per-frame so that your
-#       bot can actually "see" what's happening in the game
-console = melee.Console(path=args.dolphin_executable_path,
-
-                        logger=log)
-
-# Create our Controller object
-#   The controller is the second primary object your bot will interact with
-#   Your controller is your way of sending button presses to the game, whether
-#   virtual or physical.
-controller = melee.Controller(console=console,
-                              port=args.port,
-                              type=melee.ControllerType.STANDARD)
-print("Player port: " + str(args.opponent))
-controller_opponent = melee.Controller(console=console,
-                                       port=args.opponent,
-                                       type=melee.ControllerType.STANDARD)
-
-# This isn't necessary, but makes it so that Dolphin will get killed when you ^C
-fd = melee.framedata.FrameData()
-
-
-def signal_handler(sig, frame):
-    console.stop()
-    # Session.ws.send(json.dumps(createMessage("simulation.pause", {})))
-    if args.debug:
-        log.writelog()
-        print("")  # because the ^C will be on the terminal
-        print("Log file created: " + log.filename)
-    print("Shutting down cleanly...")
-    sys.exit(0)
-
-
-signal.signal(signal.SIGINT, signal_handler)
-
-# Run the console
-console.run(iso_path=args.iso)
-
-# Connect to the console
-print("Connecting to console... ")
-if not console.connect():
-    print("ERROR: Failed to connect to the console.")
-    sys.exit(-1)
-print("Console connected")
-
-# Plug our controller in
-#   Due to how named pipes work, this has to come AFTER running dolphin
-#   NOTE: If you're loading a movie file, don't connect the controller,
-#   dolphin will hang waiting for input and never receive it
-print("Connecting controller to console...")
-if not controller.connect():
-    print("ERROR: Failed to connect the controller.")
-    sys.exit(-1)
-print("Controller connected")
-
-print("Connecting controller to console...")
-if not controller_opponent.connect():
-    print("ERROR: Failed to connect the controller.")
-    sys.exit(-1)
-print("Controller connected")
-
 host = "192.168.0.132"
-
 
 
 class Session:
     network0 = None
     network1 = None
     framesOnCharacterSelect = 0
-    ws: WebSocketClientProtocol or None = None
+    # ws: WebSocketClientProtocol or None = None
     simulationRunning = False
     menuLoadFirstFrame = True
     gamestate: GameState or None = None
@@ -208,11 +207,12 @@ class Session:
     ai_character = melee.Character.SAMUS
     reassign_characters = True
     character_pool = [melee.Character.FOX, melee.Character.SAMUS, melee.Character.FALCO, melee.Character.MARTH,
-                      melee.Character.CPTFALCON, melee.Character.PEACH, melee.Character.PIKACHU, melee.Character.ZELDA, melee.Character.GANONDORF, melee.Character.JIGGLYPUFF]
+                      melee.Character.CPTFALCON, melee.Character.PEACH, melee.Character.PIKACHU, melee.Character.ZELDA, melee.Character.GANONDORF, melee.Character.JIGGLYPUFF,
+                      melee.Character.MARIO, melee.Character.DK, melee.Character.KIRBY, melee.Character.BOWSER, melee.Character.LINK, melee.Character.NESS, melee.Character.PEACH, melee.Character.YOSHI,melee.Character.MEWTWO, melee.Character.LUIGI, melee.Character.YLINK, melee.Character.DOC, melee.Character.GAMEANDWATCH, melee.Character.ROY]
 
 
 def processMessage(message: Dict, controller: melee.Controller):
-    
+
     if (message["a"] == True):
         controller.press_button(Button.BUTTON_A)
     else:
@@ -391,7 +391,7 @@ def stageData(gameState: GameState):
     return data
 
 
-def frameData(gameState: GameState):
+def frameData(gameState: GameState, args):
     return {
         "player1": playerData(gameState, args.port),
         "player2": playerData(gameState, args.opponent),
@@ -403,37 +403,62 @@ def frameData(gameState: GameState):
     }
 
 
-async def handle_message():
+async def send_messages(connection: Connection, ws : WebSocketClientProtocol):
+    print("waiting on ws")
+    while(True):
+        value = connection.recv()
+        if (value is not None):
+            await ws.send(json.dumps(value, cls=NumpyEncoder))
+        # print("")
+
+
+async def handle_message(connection: Connection, ns : Namespace):
     uri = "ws://localhost:8090/ws"
+    print("Start websocket")
     async with websockets.connect(uri) as websocket:
+        await websocket.send(json.dumps({
+            "clientId": "pythonAgent"
+        }))
+        
+        print("send value'd ws")
+        # ns.ws = websocket
+        asyncio.ensure_future(send_messages(out_rec, websocket))
+        # Session.ws = websocket
+        while True:
+            got_back = await websocket.recv()
+            msg: Dict = json.loads(got_back)
+            connection.send(msg["data"])
+            # if (msg["data"]["controllerId"] == 0):
+            # processMessage(msg["data"], controller)
+            # controller.release_all()
+            # controller.flush()
+            # Thread(target=getNetwork0, args=[msg["data"]["controllerId"], msg["data"]["modelId"]], daemon=True).start()
+            # elif (msg["data"]["controllerId"] == 1):
+            # processMessage(msg["data"], controller_opponent)
+            # controller_opponent.release_all()
+            # controller_opponent.flush()
 
+            # Thread(target=getNetwork1, args=[msg["data"]["controllerId"], msg["data"]["modelId"]], daemon=True).start()
+
+            # else:
+            #     controller.release_all()
+            #     controller.flush()
+
+
+def requestNewNetworks(connection: Connection, ns : Namespace):
+    while True:
+        msg = connection.recv()
+        print(msg)
+        controllerId = msg["controllerId"]
+        modelId = msg["modelId"]
         try:
-            await websocket.send(json.dumps({
-                "clientId": "pythonAgent"
-            }))
-            Session.ws = websocket
-            while True:
-                got_back = await websocket.recv()
-                if (Session.gamestate is not None and Session.gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]):
-                    msg: Dict = json.loads(got_back)
-                    if (msg["data"]["controllerId"] == 0):
-                        # processMessage(msg["data"], controller)
-                        Session.network0 = await getNetwork(
-                            msg["data"]["controllerId"], msg["data"]["modelId"])
-                    elif (msg["data"]["controllerId"] == 1):
-                        # processMessage(msg["data"], controller_opponent)
-                        Session.network1 = await getNetwork(
-                            msg["data"]["controllerId"], msg["data"]["modelId"])
-                # else:
-                #     controller.release_all()
-                #     controller.flush()
-        except websockets.exceptions.ConnectionClosedError as cce:
-            print('Connection closed!')
-        except KeyboardInterrupt as ki:
-            print('Ending...')
-        finally:
-            console.stop()
-
+            if (msg["controllerId"] == 0):
+              ns.network0 = getNetwork(controllerId, modelId)
+            elif (msg["controllerId"] == 1):
+                ns.network1 = None
+                ns.network1 = getNetwork(controllerId, modelId)
+        except:
+            print("failed to assign network for " + str(controllerId))
 # network.input(state)
 #         network.compute()
 #         output =network.output()
@@ -451,22 +476,101 @@ positionNormalizer = 100.0
 actionNormalizer = 60.0
 
 
-async def console_loop():
-    # Main loop
-    if (Session.network0 == None):
-        Session.network0 = await getActiveNetwork(0)
-        # Session.network1 = await getActiveNetwork(1)
+def initializeNetworks(ns : Namespace):
+    ns.network1 = getActiveNetwork(1)
+    ns.network0 =  None # getActiveNetwork(0)
+    print("init")
+
+
+def embedCategory(state, statePosition, embedValue, embedSize):
+    for i in range(0, embedSize):
+        if (i == embedValue):
+            state[0, statePosition + i] = 1
+        else:
+            state[0, statePosition + i] = 0
+
+def applyPlatform(platform, state, statePosition, positionNormalizer):
+    if (platform[0]):
+        state[0, statePosition + 0] = platform[0] / positionNormalizer
+    if (platform[1]):
+        state[0, statePosition + 1] = platform[1] / positionNormalizer
+    if (platform[2]):
+        state[0, statePosition + 2] = platform[2] / positionNormalizer
+    return statePosition + 3
     
+
+def applyPlayerState(player0, state, statePosition):
+    state[0, statePosition + 0] = player0.speed_air_x_self / positionNormalizer
+    state[0, statePosition + 1] = player0.speed_ground_x_self / positionNormalizer
+    state[0, statePosition + 2] = player0.speed_x_attack / positionNormalizer
+    state[0, statePosition + 3] = player0.speed_y_attack / positionNormalizer
+    state[0, statePosition + 4] = player0.speed_y_self / positionNormalizer
+    state[0, statePosition + 5] = ((player0.percent / positionNormalizer))
+    state[0, statePosition + 6] = ((player0.shield_strength / 100))
+    state[0, statePosition + 7] = ((player0.stock / 4))
+    state[0, statePosition + 8] = (
+        (player0.action_frame / actionNormalizer))
+    state[0, statePosition + 9] = (
+        (player0.hitstun_frames_left / actionNormalizer))
+    embedCategory(state, statePosition + 10, player0.character.value, 26)
+    embedCategory(state, statePosition + 36, player0.action.value, 386)
+    state[0, statePosition + 412] = ((player0.iasa / actionNormalizer))
+    state[0, statePosition + 413] = (
+        (player0.invulnerability_left / actionNormalizer))
+    state[0, statePosition + 414] = ((player0.jumps_left / 2))
+    state[0, statePosition + 415] = ((player0.x / positionNormalizer))
+    state[0, statePosition + 416] = ((player0.y / positionNormalizer))
+
+    rangeForward = fd.range_forward(
+        player0.character, player0.action, player0.action_frame)
+    rangeBackward = fd.range_backward(
+        player0.character, player0.action, player0.action_frame)
+    if (math.isnan(rangeBackward)):
+        rangeBackward = 0
+    if (math.isnan(rangeForward)):
+        rangeForward = 0
+    embedCategory(state, statePosition + 417, fd.attack_state(
+        player0.character, player0.action, player0.action_frame).value, 4)
+    embedCategory(state, statePosition + 421,
+                  fd.hitbox_count(player0.character, player0.action), 6)
+    state[0, statePosition + 421] = (
+        (fd.hitbox_count(player0.character, player0.action) / 5))
+    state[0, statePosition + 427] = ((rangeForward / positionNormalizer))
+    state[0, statePosition + 428] = ((rangeBackward / positionNormalizer))
+
+    state[0, statePosition + 429] = 1 if player0.facing else 0
+    state[0, statePosition + 430] = 1 if player0.off_stage else 0
+    state[0, statePosition + 431] = 1 if player0.on_ground else 0
+    state[0, statePosition + 432] = 1 if fd.is_attack(
+        player0.character, player0.action) else 0
+    state[0, statePosition + 433] = 1 if fd.is_grab(
+        player0.character, player0.action) else 0
+    state[0, statePosition + 434] = 1 if fd.is_bmove(
+        player0.character, player0.action) else 0
+    state[0, statePosition + 435] = 1 if fd.is_roll(
+        player0.character, player0.action) else 0
+    return statePosition + 436
+
+
+def console_loop(connection: Connection, ns : Namespace):
+    # Main loop
+    # if (Session.network0 != None and Session.network1 == None):
+    console, controller, controller_opponent, args = startConsole()
+    console.step()
+    print("START CONSOLE LOOP")
+    Session.cpu_level = 3
     costume = 0
     while True:
         # await asyncio.sleep(.001)
         # "step" to the next frame
         gamestate = console.step()
-        Session.gamestate = gamestate
-        if gamestate is None or Session.ws is None:
-            await asyncio.sleep(.001)
+        # gamestate = None
+        # Session.gamestate = gamestate
+        # print(gamestate.menu_state)
+        if gamestate is None:
+            # await asyncio.sleep(.001)
             continue
-
+        
         # The console object keeps track of how long your bot is taking to process frames
         #   And can warn you if it's taking too long
         if console.processingtime * 1000 > 50:
@@ -481,265 +585,203 @@ async def console_loop():
                 Session.menuLoadFirstFrame = False
 
             ai: PlayerState = gamestate.players[args.port]
-            if ai.cpu_level != 0 and Session.simulationRunning:
-                print("AI was swapped out for CPU! Pausing Simulation Server")
-                await Session.ws.send(json.dumps(createMessage("simulation.pause", {})))
-                Session.simulationRunning = False
 
-            if ai.cpu_level == 0 and not Session.simulationRunning:
-                print("Server and simulation now resumed.")
-                await Session.ws.send(json.dumps(createMessage("simulation.resume", {})))
-                Session.simulationRunning = True
-            if gamestate.frame == 0:
-                print("new game!")
-                await Session.ws.send(json.dumps(createMessage("simulation.reset.game", {})))
-                newGame = False
+            # if gamestate.frame == 0:
+            #     print("new game!")
+            #     await Session.ws.send(json.dumps(createMessage("simulation.reset.game", {})))
+            #     newGame = False
 
-            if Session.ws is not None and Session.simulationRunning:
+            
                 # if (counter % 10 == 0):
                 # print("sending data")
-                gameStateFrameData = frameData(gamestate)
-                messageString = json.dumps(createMessage(
-                    "simulation.frame.update", gameStateFrameData), cls=NumpyEncoder)
-                # print(messageString)
-                await Session.ws.send(messageString)
-                state : np.ndarray = np.zeros((1, 125))
-                player0: PlayerState = gamestate.players[args.port]
+            gameStateFrameData = frameData(gamestate, args)
+            message = createMessage(
+                "simulation.frame.update", gameStateFrameData)
 
-                state[0, 0] = player0.speed_air_x_self / positionNormalizer
-                state[0, 1] = player0.speed_ground_x_self / positionNormalizer
-                state[0, 2] = player0.speed_x_attack / positionNormalizer
-                state[0, 3] = player0.speed_y_attack / positionNormalizer
-                state[0, 4] = player0.speed_y_self / positionNormalizer
-                state[0, 5] = ((player0.percent / positionNormalizer))
-                state[0, 6] = ((player0.shield_strength / 100))
-                state[0, 7] = ((player0.stock / 4))
-                state[0, 8] = (
-                    (player0.action_frame / actionNormalizer))
+            connection.send(message)
+            # messageString = json.dumps(message, cls=NumpyEncoder)
 
-                state[0, 9] = (
-                    (player0.hitstun_frames_left / actionNormalizer))
-                state[0, 10] = ((player0.character.value / 25))
-                state[0, 11] = ((player0.action.value / 386))
-                state[0, 12] = ((player0.iasa / actionNormalizer))
-                state[0, 13] = (
-                    (player0.invulnerability_left / actionNormalizer))
-                state[0, 14] = ((player0.jumps_left / 2))
-                state[0, 15] = ((player0.x / positionNormalizer))
-                state[0, 16] = ((player0.y / positionNormalizer))
+            # await Session.ws.send(messageString)
+            state: np.ndarray = np.zeros((1, 1105))
+            player0: PlayerState = gamestate.players[args.port]
 
-                rangeForward = fd.range_forward(
-                    player0.character, player0.action, player0.action_frame)
-                rangeBackward = fd.range_backward(
-                    player0.character, player0.action, player0.action_frame)
-                if (math.isnan(rangeBackward)):
-                    rangeBackward = 0
-                if (math.isnan(rangeForward)):
-                    rangeForward = 0
-                state[0, 17] = ((fd.attack_state(
-                    player0.character, player0.action, player0.action_frame).value / 3))
-                state[0, 18] = (
-                    (fd.hitbox_count(player0.character, player0.action) / 5))
-                state[0, 19] = ((rangeForward / positionNormalizer))
-                state[0, 20] = ((rangeBackward / positionNormalizer))
+            statePosition = applyPlayerState(player0, state, 0)
 
-                state[0, 21] = 1 if player0.facing else 0
-                state[0, 22] = 1 if player0.off_stage else 0
-                state[0, 23] = 1 if player0.on_ground else 0
-                state[0, 24] = 1 if fd.is_attack(
-                    player0.character, player0.action) else 0
-                state[0, 25] = 1 if fd.is_grab(
-                    player0.character, player0.action) else 0
-                state[0, 26] = 1 if fd.is_bmove(
-                    player0.character, player0.action) else 0
-                state[0, 27] = 1 if fd.is_roll(
-                    player0.character, player0.action) else 0
+            player1: PlayerState = gamestate.players[args.opponent]
+            statePosition = applyPlayerState(player1, state, statePosition)
+            embedCategory(state, statePosition, gamestate.stage.value, 26)
+            statePosition = statePosition + 26
+            edge = melee.stages.EDGE_GROUND_POSITION[gamestate.stage]
+            leftPlatform = melee.stages.left_platform_position(gamestate.stage)
+            topPlatform = melee.stages.top_platform_position(gamestate.stage)
+            rightPlatform = melee.stages.right_platform_position(gamestate.stage)
+            state[0, statePosition] = edge / positionNormalizer
+            state[0, statePosition + 1] = (edge * -1) / positionNormalizer
+            blastzones: tuple[float, float, float,
+                                float] = melee.stages.BLASTZONES[gamestate.stage]
+            state[0, statePosition +
+                    2] = (blastzones[0]) / positionNormalizer
+            state[0, statePosition +
+                    3] = (blastzones[1]) / positionNormalizer
+            state[0, statePosition +
+                    4] = (blastzones[2]) / positionNormalizer
+            state[0, statePosition +
+                    5] = (blastzones[3]) / positionNormalizer
+            statePosition +=6
+            statePosition = applyPlatform(leftPlatform, state, statePosition, positionNormalizer)
+            statePosition = applyPlatform(topPlatform, state, statePosition, positionNormalizer)
+            statePosition = applyPlatform(rightPlatform, state, statePosition, positionNormalizer)
+            state[0, statePosition] = (gamestate.distance) / positionNormalizer
+            statePosition += 1
+            # # state[0, 63] = (gamestate.projectiles) / positionNormalizer
+            for projectile in gamestate.projectiles[:10]:
+                projectile: Projectile
+                embedCategory(state, statePosition, projectile.owner, 4)
+                statePosition += 4
+                state[0, statePosition] = float(
+                    projectile.position.x) / positionNormalizer
+                statePosition += 1
+                state[0, statePosition] = float(
+                    projectile.position.y) / positionNormalizer
+                statePosition += 1
+                state[0, statePosition] = float(
+                    projectile.speed.x) / positionNormalizer
+                statePosition += 1
+                state[0, statePosition] = float(
+                    projectile.speed.y) / positionNormalizer
+                statePosition += 1
+                embedCategory(state, statePosition, projectile.subtype, 11)
+                statePosition += 11
+            network0 = ns.network0
+            if network0:
+                network0.input(state)
+                network0.compute()
+                output0 = network0.output()
+                # outputUnActivated0 = ns.network0.outputUnActivated()
 
-                player1: PlayerState = gamestate.players[args.opponent]
+                # print(player0.action.value)
+                # print(player0.action)
+                # print(str(state.argmax()) + " - " + str(state.max()))
+                # print(ns.network0.outputUnActivated())
+                # print(str(state.argmax()) + str(state.max()))
+                # print(output0)
+                
+                processMessage({
+                    "a": output0[0, 0] > .5,
+                    "b": output0[0, 1] > .5,
+                    "y": output0[0, 2] > .5,
+                    "z": output0[0, 3] > .5,
+                    "mainStickX": math.cos(output0[0, 4] * 2 * math.pi) * output0[0, 5],
+                    "mainStickY": math.sin(output0[0, 4] * 2 * math.pi) * output0[0, 5],
+                    "cStickX": math.cos(output0[0, 6] * 2 * math.pi) * output0[0, 7],
+                    "cStickY": math.sin(output0[0, 6] * 2 * math.pi) * output0[0, 7],
+                    "leftShoulder": max(output0[0, 8]-.5, 0) *2,
 
-                state[0, 28] = player1.speed_air_x_self / positionNormalizer
-                state[0, 29] = player1.speed_ground_x_self / positionNormalizer
-                state[0, 30] = player1.speed_x_attack / positionNormalizer
-                state[0, 31] = player1.speed_y_attack / positionNormalizer
-                state[0, 32] = player1.speed_y_self / positionNormalizer
-                state[0, 33] = ((player1.percent / positionNormalizer))
-                state[0, 34] = ((player1.shield_strength / 100))
-                state[0, 35] = ((player1.stock / 4))
-                state[0, 36] = (
-                    (player1.action_frame / actionNormalizer))
-
-                state[0, 37] = (
-                    (player1.hitstun_frames_left / actionNormalizer))
-                state[0, 38] = ((player1.character.value / 25))
-                state[0, 39] = ((player1.action.value / 386))
-                state[0, 40] = ((player1.iasa / actionNormalizer))
-                state[0, 41] = (
-                    (player1.invulnerability_left / actionNormalizer))
-                state[0, 42] = ((player1.jumps_left / 2))
-                state[0, 43] = ((player1.x / positionNormalizer))
-                state[0, 44] = ((player1.y / positionNormalizer))
-
-                rangeForward = fd.range_forward(
-                    player1.character, player1.action, player1.action_frame)
-                rangeBackward = fd.range_backward(
-                    player1.character, player1.action, player1.action_frame)
-                if (math.isnan(rangeBackward)):
-                    rangeBackward = 0
-                if (math.isnan(rangeForward)):
-                    rangeForward = 0
-                state[0, 45] = ((fd.attack_state(
-                    player1.character, player1.action, player1.action_frame).value / 3))
-                state[0, 46] = (
-                    (fd.hitbox_count(player1.character, player1.action) / 5))
-                state[0, 47] = ((rangeForward / positionNormalizer))
-                state[0, 48] = ((rangeBackward / positionNormalizer))
-
-                state[0, 49] = 1 if player1.facing else 0
-                state[0, 50] = 1 if player1.off_stage else 0
-                state[0, 51] = 1 if player1.on_ground else 0
-                state[0, 52] = 1 if fd.is_attack(
-                    player1.character, player1.action) else 0
-                state[0, 53] = 1 if fd.is_grab(
-                    player1.character, player1.action) else 0
-                state[0, 54] = 1 if fd.is_bmove(
-                    player1.character, player1.action) else 0
-                state[0, 55] = 1 if fd.is_roll(
-                    player1.character, player1.action) else 0
-                state[0, 56] = gamestate.stage.value / 25.0
-                edge = melee.stages.EDGE_GROUND_POSITION[gamestate.stage]
-                state[0, 57] = edge / positionNormalizer
-                state[0, 58] = (edge * -1) / positionNormalizer
-                blastzones: tuple[float, float, float,
-                                  float] = melee.stages.BLASTZONES[gamestate.stage]
-                state[0, 59] = (blastzones[0]) / positionNormalizer
-                state[0, 60] = (blastzones[1]) / positionNormalizer
-                state[0, 61] = (blastzones[2]) / positionNormalizer
-                state[0, 62] = (blastzones[3]) / positionNormalizer
-                state[0, 63] = (gamestate.distance) / positionNormalizer
-                statePosition = 64
-                # state[0, 63] = (gamestate.projectiles) / positionNormalizer
-                for projectile in gamestate.projectiles[:10]:
-                    projectile : Projectile
-                    state[0,statePosition] = projectile.owner / 4.0
-                    statePosition +=1
-                    state[0,statePosition] = float(projectile.position.x) / positionNormalizer
-                    statePosition +=1
-                    state[0,statePosition] = float(projectile.position.y) / positionNormalizer
-                    statePosition +=1
-                    state[0,statePosition] = float(projectile.speed.x) / positionNormalizer
-                    statePosition +=1
-                    state[0,statePosition] = float(projectile.speed.y) / positionNormalizer
-                    statePosition +=1
-                    state[0,statePosition] = projectile.subtype / 10.0
-                    statePosition +=1
-                if Session.network0:
-                    Session.network0.input(state)
-                    Session.network0.compute()
-                    output0 = Session.network0.output()
-                    outputUnActivated0 = Session.network0.outputUnActivated()
-                    
-                    # print(player0.action.value)
-                    # print(player0.action)
-                    # print(str(state.argmax()) + " - " + str(state.max()))
-                    print(Session.network0.outputUnActivated())
-                    # print(str(state.argmax()) + str(state.max()))
-                    # print(output0)
-                    processMessage({
-                        "a": output0[0, 0] > .5,
-                        "b": output0[0,1] > .5,
-                        "y": output0[0,2] > .5,
-                        "z": output0[0,3] > .5,
-                        "mainStickX": output0[0,4],
-                        "mainStickY": output0[0,5],
-                        "cStickX": output0[0,6],
-                        "cStickY": output0[0,7],
-                        "leftShoulder": output0[0,8],
-
-                    }, controller)
-                if Session.network1:
-                    Session.network1.input(state)
-                    Session.network1.compute()
-                    output1 = Session.network1.output()
-                    print(Session.network1.outputUnActivated())
-                    print(output1)
-                    processMessage({
-                        "a": output1[0,0] > .5,
-                        "b": output1[0,1] > .5,
-                        "y": output1[0,2] > .5,
-                        "z": output1[0,3] > .5,
-                        "mainStickX": output1[0,4],
-                        "mainStickY": output1[0,5],
-                        "cStickX": output1[0,6],
-                        "cStickY": output1[0,7],
-                        "leftShoulder": output1[0,8],
-                        }, controller_opponent)
-                    # counter += 1
-
-                    # print("enemy stocks left: " + str(player2.stock))
-                    Session.lastStockAi = player0.stock
-                    Session.lastStockOpponent = player1.stock
-                    Session.lastGamestate = gamestate
-
+                }, controller)
+            network1 = ns.network1
+            if network1:
+                network1.input(state)
+                network1.compute()
+                output1 = network1.output()
+                outputUnActivated1 = network1.outputUnActivated()
+                # print(state[0,415])
+                # print(network1.outputUnActivated())
+            #     # print(output1)
+                # print("xRaw: " + str(output1[0, 4]) + " magRaw: " + str(output1[0, 5]))
+                # print("xStick: " + str(math.cos(output1[0, 4] * 2 * math.pi)) + " magXStick: " + str((((math.cos(output1[0, 4] * 2 * math.pi)  * output1[0, 5]) + 1) / 2)))
+                # print("yStick: " + str(math.sin(output1[0, 4] * 2 * math.pi)) + " magYStick: " + str((((math.sin(output1[0, 4] * 2 * math.pi)  * output1[0, 5]) + 1) / 2)))
+        
+                processMessage({
+                    "a": output1[0, 0] > .5,
+                    "b": output1[0, 1] > .5,
+                    "y": output1[0, 2] > .5,
+                    "z": output1[0, 3] > .5,
+                    "mainStickX": (((math.cos(outputUnActivated1[0, 4] * 2 * math.pi)  * output1[0, 5]) + 1) / 2),
+                    "mainStickY": (((math.sin(outputUnActivated1[0, 4] * 2 * math.pi) * output1[0, 5]) + 1) / 2),
+                    "cStickX": (((math.cos(outputUnActivated1[0, 6] * 2 * math.pi)* output1[0, 7]) + 1) / 2),
+                    "cStickY": (((math.sin(outputUnActivated1[0, 6] * 2 * math.pi) * output1[0, 7]) + 1) / 2) ,
+                    "leftShoulder": max(output1[0, 8]-.5, 0) *2,
+                }, controller_opponent)
+                # counter += 1
             else:
-                # If the discovered port was unsure, reroll our costume for next time
-                costume = random.randint(0, 4)
+                controller_opponent.release_all()
+                controller_opponent.flush()
+                    # print("enemy stocks left: " + str(player2.stock))
+            Session.lastStockAi = player0.stock
+            Session.lastStockOpponent = player1.stock
+            if player0 and player0.stock == 0 or player1 and player1.stock == 0:
+                controller_opponent.release_all()
+                controller_opponent.flush()
+                    # Session.lastGamestate = gamestate
+
+            # else:
+            #     # If the discovered port was unsure, reroll our costume for next time
+            #     costume = random.randint(0, 4)
 
         else:
             if Session.reassign_characters:
+                counter = 0
                 Session.ai_character = random.choice(Session.character_pool)
                 Session.cpu_character = random.choice(Session.character_pool)
-                Session.cpu_level = random.randint(1, 9)
+              
                 Session.reassign_characters = False
                 # controller_opponent.release_all()
             if not Session.menuLoadFirstFrame:
                 Session.menuLoadFirstFrame = True
+           
             melee.MenuHelper.menu_helper_simple(gamestate,
-                                                controller,
-                                                melee.Character.PIKACHU,
-                                                melee.Stage.FINAL_DESTINATION,
+                                                controller_opponent,
+                                                Session.ai_character,
+                                                melee.Stage.RANDOM_STAGE,
                                                 args.connect_code,
                                                 costume=0,
                                                 autostart=False,
                                                 swag=False,
                                                 cpu_level=0)
-            melee.MenuHelper.menu_helper_simple(gamestate,
-                                                controller_opponent,
-                                                melee.Character.FOX,
-                                                melee.Stage.FINAL_DESTINATION,
+            if gamestate.players and gamestate.players[args.opponent].character == Session.ai_character:
+                # print(gamestate.players[args.opponent].character)
+            # if Session.ai_character == gamestate.players[args.opponent].character_selected:
+                melee.MenuHelper.menu_helper_simple(gamestate,
+                                                controller,
+                                                Session.cpu_character,
+                                                melee.Stage.RANDOM_STAGE,
                                                 args.connect_code,
                                                 costume=0,
                                                 autostart=True,
                                                 swag=False,
-                                                cpu_level=1)
+                                                cpu_level=3)
 
-            counter = 0
-            resetCounter = 0
+            counter +=1
+            if counter > 6* 60:
+                Session.reassign_characters = True
+
+
 loop = asyncio.get_event_loop()
 
 
-def restartGame(resetCounter):
-    if not Session.simulationRunning and gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-        if resetCounter == 0:
-            print("release all buttons")
-            controller.release_all()
-            resetCounter = 1
-        elif resetCounter == 1:
-            print("press start to pause")
-            controller.press_button(Button.BUTTON_START)
-            resetCounter = 2
-        elif resetCounter == 2:
-            print("release start")
-            controller.release_all()
-            resetCounter = 3
-        elif resetCounter == 3:
-            print("press buttons to exit match")
-            controller.press_button(Button.BUTTON_START)
-            controller.press_button(Button.BUTTON_L)
-            controller.press_button(Button.BUTTON_R)
-            controller.press_button(Button.BUTTON_A)
-            resetCounter = 4
-        controller.flush()
-    # continue
+# def restartGame(resetCounter):
+#     if not Session.simulationRunning and gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
+#         if resetCounter == 0:
+#             print("release all buttons")
+#             controller.release_all()
+#             resetCounter = 1
+#         elif resetCounter == 1:
+#             print("press start to pause")
+#             controller.press_button(Button.BUTTON_START)
+#             resetCounter = 2
+#         elif resetCounter == 2:
+#             print("release start")
+#             controller.release_all()
+#             resetCounter = 3
+#         elif resetCounter == 3:
+#             print("press buttons to exit match")
+#             controller.press_button(Button.BUTTON_START)
+#             controller.press_button(Button.BUTTON_L)
+#             controller.press_button(Button.BUTTON_R)
+#             controller.press_button(Button.BUTTON_A)
+#             resetCounter = 4
+#         controller.flush()
+#     # continue
 
 
 async def test1(value: str):
@@ -747,17 +789,49 @@ async def test1(value: str):
         print(f'message: {value}')
         await asyncio.sleep(.1)
 
-console.step()
+# console.step()
 #
 # console_loop()
 # asyncio.ensure_future(test1("test"))
 
-asyncio.ensure_future(console_loop())
-asyncio.ensure_future(handle_message())
-try:
+
+
+
+
+if __name__ == '__main__':
+    
+    mgr = Manager()
+    ns = mgr.Namespace()
+    ns.ws = None
+    initializeNetworks(ns)
+    in_send, in_rec = Pipe()
+    out_send, out_rec = Pipe()
+    ws_send, ws_rec = Pipe()
+    # .add_done_callback(callback)
+    Process(target=requestNewNetworks, args=(in_send, ns), daemon=True).start()
+    
+    consoleProcess = Process(target=console_loop, args=(out_send, ns), daemon=True)
+    consoleProcess.start()
+    # consoleProcess.join()
+    # p = Process(target=f, args=(in_rec,))
+    # p.start()
+    # print("waiting for message")
+    # print(in_send.recv())
+    # Process(target=requestNewNetworks, args=(in_send,)).start()
+    # loop = Process(target=loop.run_forever, args=(in_send,))
+    # loop.start()
+    # console_loop
+    print("Start async io loop")
+    loop = asyncio.get_event_loop()
+    asyncio.ensure_future(handle_message(in_rec, ns))
+    
     loop.run_forever()
-finally:
-    console.stop()
+
+# Process(target=requestNewNetworks, args=(in_send,)).start()
+# loop = Process(target=loop.run_forever, args=(in_send,))
+# loop.start()
+# loop.join()
+
     # main.start()
     # loop.run_until_complete(handle_message())
     # main.join()

@@ -40,13 +40,7 @@ fun NeatMutator.computationSequence(
             }
 
             val nextNodeMap = connections.groupBy {
-                try {
-                    idNodeMap.getValue(it.outNode)
-                } catch (e: Exception) {
-                    println(model)
-                    error("failed for $it => ${e.message}")
-
-                }
+                idNodeMap.getValue(it.outNode)
             }
             val fn = {
                 capturedSet.activate(networkNodeMap)

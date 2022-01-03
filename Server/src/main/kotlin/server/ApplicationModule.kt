@@ -112,42 +112,41 @@ val applicationModule = module {
         )
     }
     factory { (evaluationId: Int, populationSize: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-        val randomSeed: Int = 20 + evaluationId
+        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
+        val randomSeed: Int = 200 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
-        val shFunction = shFunction(.9f)
+        val shFunction = shFunction(.1f)
 
 ////
-//        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
-//        val models = populationModel.models
-//        log.info { "population loaded with size of: ${models.size}" }
-//        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-//        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
-//        val simpleNeatExperiment = simpleNeatExperiment(
-//            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
-//            addConnectionAttempts
-//        )
-//        val population = models.map { it.toNeatMutator() }
-//        val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
+        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
+        val models = populationModel.models
+        log.info { "population loaded with size of: ${models.size}" }
+        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+        val simpleNeatExperiment = simpleNeatExperiment(
+            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
+            addConnectionAttempts
+        )
+        val population = models.map { it.toNeatMutator() }
+        val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
         val standardCompatibilityTest = standardCompatibilityTest({
             shFunction(it)
         }, { a, b ->
             cppnGeneRuler.measure(a, b)
         })
-        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
-        val population = simpleNeatExperiment.generateInitialPopulation2(
-            populationSize,
-            6,
-            2,
-            Activation.CPPN.functions
-        )
+//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
+//        val population = simpleNeatExperiment.generateInitialPopulation2(
+//            populationSize,
+//            6,
+//            2,
+//            Activation.CPPN.functions
+//        )
         simulation(
             standardCompatibilityTest,
             evaluationId,
             distanceFunction = { a, b ->
                 cppnGeneRuler.measure(a, b)
-//                            compatibilityDistanceFunction(a, b)
             },
             sharingFunction = {
                 shFunction(it)
@@ -155,7 +154,7 @@ val applicationModule = module {
             speciationController = SpeciationController(0),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
-            generation = 0
+            generation = populationModel.generation
         )
     }
 }
@@ -163,7 +162,25 @@ val applicationModule = module {
 
 data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generation: Int, val controllerId: Int)
 
+fun NeatExperiment.connectNodes2(simpleNeatMutator: NeatMutator) {
+    for (input in simpleNeatMutator.inputNodes) {
+            newConnection(input, simpleNeatMutator.outputNodes[0], simpleNeatMutator)
+    }
+}
 
+
+fun NeatExperiment.createNeatMutator2(
+    inputNumber: Int,
+    outputNumber: Int,
+    random: Random = Random,
+    function: ActivationGene = Activation.identity
+): NeatMutator {
+    val simpleNeatMutator = simpleNeatMutator(listOf(), listOf())
+    createNodes(inputNumber, 0f, NodeType.Input, Activation.identity, simpleNeatMutator)
+    createNodes(outputNumber, randomWeight(random), NodeType.Output, function, simpleNeatMutator)
+    connectNodes2(simpleNeatMutator)
+    return simpleNeatMutator
+}
 fun NeatExperiment.generateInitialPopulation2(
     populationSize: Int,
     numberOfInputNodes: Int,
@@ -172,29 +189,44 @@ fun NeatExperiment.generateInitialPopulation2(
 ): List<NeatMutator> {
     val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, activationFunctions.first())
     val assignConnectionRandomWeight = assignConnectionRandomWeight()
+    fun addConnectionNode(sourceNode : Int, targetNode : Int): ConnectionGene {
+        return ConnectionGene(
+            sourceNode,
+            targetNode,
+            randomWeight(random),
+            true,
+            nextInnovation()
+        )
+    }
+    fun addNode() = NodeGene(nextNode(), randomWeight(random), NodeType.Hidden, Activation.CPPN.gaussian)
+//        clone.addConnection(connection)
+//    val xNode = addNode()
+//    val yNode = addNode()
+//    val zNode = addNode()
+//
+//    neatMutator.addNode(xNode)
+//    neatMutator.addNode(yNode)
+//    neatMutator.addNode(zNode)
+//    neatMutator.addConnection(addConnectionNode(0, xNode.node))
+//    neatMutator.addConnection(addConnectionNode(3, xNode.node))
+//    neatMutator.addConnection(addConnectionNode(1, yNode.node))
+//    neatMutator.addConnection(addConnectionNode(4, yNode.node))
+//    neatMutator.addConnection(addConnectionNode(2, zNode.node))
+//    neatMutator.addConnection(addConnectionNode(5, zNode.node))
+//    neatMutator.addConnection(addConnectionNode(xNode.node, 7))
+//    neatMutator.addConnection(addConnectionNode(yNode.node, 7))
+//    neatMutator.addConnection(addConnectionNode(zNode.node, 7))
+
     return (0 until populationSize).map {
         val clone = neatMutator.clone()
         clone.connections.forEach { connectionGene ->
             assignConnectionRandomWeight(connectionGene)
         }
-        clone.nodes.filter { it.nodeType != NodeType.Input }.forEach {
+//        clone.outputNodes.forEach { println(it.node) }
+        clone.outputNodes.forEach {
             it.activationFunction = activationFunctions.random(random)
         }
-        val mutate = .4f chanceToMutate neat.mutation.mutateAddNode
-        val mutateConnection = .4f chanceToMutate neat.mutation.mutateAddConnection
-        repeat(1) {
-            if (mutate.roll(this)) {
-                mutate.mutation(this, clone)
-            }
-            if (mutateConnection.roll(this)) {
-                mutateConnection.mutation(this, clone)
-            }
-        }
-//        repeat(5) {
-//            if (mutateConnection.roll(this)) {
-//                mutateConnection.mutation(this, clone)
-//            }
-//        }
+        clone.outputNodes[1].activationFunction = Activation.CPPN.linear
         clone
     }
 }
@@ -247,7 +279,7 @@ data class LoadedModels(val generation: Int, val models: List<NeatModel>)
 fun loadPopulation(file: File): LoadedModels {
     val string = file.bufferedReader().lineSequence().joinToString("\n")
     log.info { "Loading population from file ${file.path}" }
-    return LoadedModels(file.name.split("_")[0].toInt(), Json {}.decodeFromString<List<NeatModel>>(string))
+    return LoadedModels(1774, Json {}.decodeFromString<List<NeatModel>>(string))
 
 }
 

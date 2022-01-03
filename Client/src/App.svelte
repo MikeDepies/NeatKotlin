@@ -46,6 +46,6 @@
   <button on:click={updateTimer}>Update</button>
 </div>
 <div class="flex flex-col">
-  <PopulationComponent evaluationId={0} controllerIds={[0]} />
+  <!-- <PopulationComponent evaluationId={0} controllerIds={[0]} /> -->
   <PopulationComponent evaluationId={1} controllerIds={[1]} />
 </div>
