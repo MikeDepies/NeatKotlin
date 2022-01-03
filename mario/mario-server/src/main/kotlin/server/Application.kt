@@ -38,7 +38,7 @@ fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 private val logger = KotlinLogging.logger { }
 val minSpeices = 5
-val maxSpecies = 30
+val maxSpecies = 20
 val speciesThresholdDelta = .3f
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
 var distanceFunction = cppnGeneRuler::measure
@@ -126,8 +126,8 @@ fun Application.module(testing: Boolean = false) {
 
 
 
-    val mateChance = .1f
-    val survivalThreshold = .4f
+    val mateChance = .2f
+    val survivalThreshold = .2f
     val stagnation = 15
 
     val randomSeed: Int = 12 + evaluationId
@@ -136,10 +136,10 @@ fun Application.module(testing: Boolean = false) {
     val random = Random(randomSeed)
 
 //
-    val models = loadPopulation(File("population/population.json"), 0).models
-    logger.info { "population loaded with size of: ${models.size}" }
-    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-    val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+//    val models = loadPopulation(File("population/population.json"), 0).models
+//    logger.info { "population loaded with size of: ${models.size}" }
+//    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+//    val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
 //    val simpleNeatExperiment = simpleNeatExperiment(
 //        random, maxInnovation, maxNodeInnovation, activationFunctions,
 //        addConnectionAttempts
@@ -150,14 +150,14 @@ fun Application.module(testing: Boolean = false) {
 //    val behaviors = Json { }.decodeFromString<List<MarioInfo>>(
 //        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
-    var settings = Settings(2f)
+    var settings = Settings(0f)
     val simpleNeatExperiment =
         simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
 //    var modelIndex = 0
     var population = simpleNeatExperiment.generateInitialPopulation(
         populationSize,
         6,
-        1,
+        11,
         activationFunctions
     ).mapIndexed { index, neatMutator ->
         NetworkWithId(neatMutator, UUID.randomUUID().toString())
@@ -181,7 +181,7 @@ fun Application.module(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(10, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioInfo>(40, settings.noveltyThreshold) { a, b ->
         euclidean(toVector(a), toVector(b))
     }
 //    knnNoveltyArchive.behaviors.addAll(behaviors)
@@ -282,6 +282,7 @@ fun Application.module(testing: Boolean = false) {
                 val addBehavior = knnNoveltyArchive.addBehavior(it)
                 if (addBehavior < knnNoveltyArchive.noveltyThreshold) 0f else addBehavior // + it.dstage * 100  + it.dworld * 500 + it.x_pos / 128
             } else {
+                logger.info { "No items in archive... 0 score" }
                 knnNoveltyArchive.addBehavior(it)
 //                euclidean(toVector(it), toVector(it).map { 0f})
                 0f
@@ -320,11 +321,11 @@ fun toVector(marioInfo: MarioInfo) = listOf(
 //    marioInfo.world * 5000f,
 //    marioInfo.dstage * 1000f,
 //    marioInfo.dworld * 5000f,
-    marioInfo.dstatus * 500f,
-    marioInfo.score.toFloat(),
-    marioInfo.coins.toFloat() * 100f,
-    marioInfo.time.toFloat()
-//    marioInfo.life.toFloat() * 1000
+    marioInfo.dstatus * 100f,
+    marioInfo.score.toFloat() / 10f,
+    marioInfo.coins.toFloat() * 50f,
+//    marioInfo.time.toFloat(),
+//    marioInfo.life.toFloat() * 50
 )//.map { it.toFloat() }
 
 fun evolve(

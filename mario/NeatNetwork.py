@@ -283,7 +283,7 @@ class ComputableNetwork:
         
         # layer 3
         v3: ndarray = (self.values[2][..., 1] * self.connection[4]).sum((2, 3))
-        self.values[3][..., 0] = v3 + (self.values[3][..., 1] * self.connection[11]).sum((2, 3)) +  + self.connection[19]
+        self.values[3][..., 0] = v3 + (self.values[3][..., 1] * self.connection[11]).sum((2, 3)) + self.connection[19]
         self.values[3][..., 1] = vectorizedSigmoidal(self.values[3][..., 0])
         
         # layer 4

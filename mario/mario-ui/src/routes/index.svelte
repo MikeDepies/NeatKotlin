@@ -261,7 +261,7 @@
 	$: {
 		map = new Map();
 		const result : MarioInfo[] = [];
-		for (const item of [...marios].reverse()) {
+		for (const item of [...filteredMarios].reverse()) {
 			const key = marioInfoPositionString(item)
 			if (!map.has(key)) {
 				map.set(key, 1); // set any value to Map
