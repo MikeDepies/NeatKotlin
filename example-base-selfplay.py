@@ -2,7 +2,7 @@
 
 import argparse
 from asyncio.tasks import sleep
-from asyncio.windows_events import NULL
+# from asyncio.windows_events import NULL
 import json
 from multiprocessing.connection import Connection
 from multiprocessing.managers import Namespace
@@ -30,6 +30,7 @@ from typing import List
 from threading import Thread
 from websockets.client import WebSocketClientProtocol
 from multiprocessing import Pool, Process, Pipe, Manager
+import multiprocessing as mp
 
 
 def check_port(value):
@@ -75,7 +76,8 @@ def startConsole():
     controller = None
     controller_opponent = None
     console = melee.Console(path=args.dolphin_executable_path,
-                            logger=log)
+                            logger=log,
+                            blocking_input=True)
     controller = melee.Controller(console=console,
                                 port=args.port,
                                 type=melee.ControllerType.STANDARD)
@@ -188,7 +190,7 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-host = "192.168.0.132"
+host = "192.168.0.139"
 
 
 class Session:
@@ -413,7 +415,7 @@ async def send_messages(connection: Connection, ws : WebSocketClientProtocol):
 
 
 async def handle_message(connection: Connection, ns : Namespace):
-    uri = "ws://localhost:8090/ws"
+    uri = "ws://" + host +":8090/ws"
     print("Start websocket")
     async with websockets.connect(uri) as websocket:
         await websocket.send(json.dumps({
@@ -799,7 +801,7 @@ async def test1(value: str):
 
 
 if __name__ == '__main__':
-    
+    mp.set_start_method('spawn')
     mgr = Manager()
     ns = mgr.Namespace()
     ns.ws = None

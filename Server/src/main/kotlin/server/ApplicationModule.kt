@@ -112,11 +112,11 @@ val applicationModule = module {
         )
     }
     factory { (evaluationId: Int, populationSize: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 2f)
+        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
         val randomSeed: Int = 200 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
-        val shFunction = shFunction(.1f)
+        val shFunction = shFunction(.3f)
 
 ////
         val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
@@ -154,7 +154,7 @@ val applicationModule = module {
             speciationController = SpeciationController(0),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
-            generation = populationModel.generation
+            generation = 2846//populationModel.generation
         )
     }
 }

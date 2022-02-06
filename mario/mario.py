@@ -14,7 +14,7 @@ import time
 from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 env = gym_super_mario_bros.make('SuperMarioBros-v1')
 env = JoypadSpace(env, COMPLEX_MOVEMENT)
-host = "localhost"
+host = "192.168.0.139"
 
 def getNetwork():
     requestNetwork = True
@@ -31,7 +31,7 @@ def getNetwork():
         print(len(connections))
         print(len(nodes))
         try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[60,64], [25,25], [21,21], [17,17], [9,9],[5,5], [1,12]])
+            network = NeatNetwork.constructNetwork(nodes, connections, [[60,64], [15,15], [11,11], [11,11], [9,9],[5,5], [1,12]])
             requestNetwork = False
         except Exception as e:
             print(e)
@@ -159,7 +159,7 @@ def mario(env: Env):
                 framesSinceMaxXChange +=1
         prevX = info["x_pos"]
         
-        if reward < -14 or framesSinceMaxXChange > 20* 100:
+        if reward < -14 or framesSinceMaxXChange > 20* 10:
             if reward < -14:
                 info["life"] = info["life"] - 1
             idle=True
@@ -173,7 +173,7 @@ def mario(env: Env):
         
         i+= 1
         # if (i % 2 == 0):
-        # env.render()
+        # env.render() 
             # print(state)
 
     env.close()

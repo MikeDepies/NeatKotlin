@@ -34,12 +34,14 @@ class MessageEndpointRegistryImpl(
     private suspend fun <T> MessageEndpoint.adapt(message: JsonUserMessage): TypedUserMessage<T> {
         return when (this) {
             is SimpleMessageEndpoint<*, *> -> adapter.transform(json, message) as TypedUserMessage<T>
+            else -> throw Exception()
         }
     }
 
     private fun MessageEndpoint.match(message: Message): Boolean {
         return when (this) {
             is SimpleMessageEndpoint<*, *> -> message.topic == endpoint
+            else -> throw Exception()
         }
     }
 
