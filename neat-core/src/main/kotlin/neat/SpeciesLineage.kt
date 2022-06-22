@@ -14,11 +14,11 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
 //    fun createSpecies(neat.model.neatMutator: neat.model.NeatMutator): neat.Species = neat.Species(speciesInnovation++).also { addSpecies(it, 0, neat.model.neatMutator) }
 
     fun compatibleSpecies(neatMutator: NeatMutator, compatible: CompatibilityTest): Species? {
-        return map.keys.firstOrNull {
-            val avatarForSpecies = map[it]?.mascot
 
-            avatarForSpecies != null && compatible(neatMutator, avatarForSpecies)
-        }
+        return map.keys.map {
+            val avatarForSpecies = map[it]!!.mascot
+            compatible(neatMutator, avatarForSpecies) to it
+        }.sortedBy { it.first.distance }.firstOrNull { it.first.compatible }?.second
     }
 
     fun updateMascot(species: Species, mascot: NeatMutator) {

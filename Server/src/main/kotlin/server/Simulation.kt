@@ -94,25 +94,25 @@ data class NetworkDescription(
 fun createTaskNetwork(network: ActivatableNetwork, modelIndex: String): NetworkDescription {
 //    println("Creating Task Network")
 //    val connectionThreshold = .2f
-    val connectionMagnitude = 1f
-    val width = 1095
+    val connectionMagnitude = 3f
+    val width = 132
     val height = 1
-    val hiddenWidth = 9
-    val hiddenHeight = 9
+    val hiddenWidth = 5
+    val hiddenHeight = 5
 
-    val hiddenWidth2 = 9
-    val hiddenHeight2 = 9
+    val hiddenWidth2 = 5
+    val hiddenHeight2 = 5
 
-    val hiddenWidth3 = 9
-    val hiddenHeight3 = 9
+    val hiddenWidth3 = 5
+    val hiddenHeight3 = 5
 
-    val hiddenWidth4 = 7
-    val hiddenHeight4 = 7
+    val hiddenWidth4 = 5
+    val hiddenHeight4 = 5
 
     val hiddenWidth5 = 5
     val hiddenHeight5 = 5
 
-    val outputWidth = 1105
+    val outputWidth = 9
     val outputHeight = 1
 
     var nodeId = 0

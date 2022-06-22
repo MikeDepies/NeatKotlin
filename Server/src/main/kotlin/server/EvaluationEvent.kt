@@ -645,7 +645,7 @@ fun writeGenerationToDisk(
     prefix: String
 ) {
     val modelPopulationPersist = currentPopulation.toModel()
-    val savePopulationFile = runFolder.resolve("$prefix${populationEvolver.generation + 0}.json")
+    val savePopulationFile = runFolder.resolve("${prefix}population.json")
     val json = Json { prettyPrint = true }
     val encodedModel = json.encodeToString(modelPopulationPersist)
     savePopulationFile.bufferedWriter().use {

@@ -42,20 +42,28 @@ class ControllerHelper:
 
         # controller.flush()
     
+    def clamp(self, value : float, min_value : float = -4, max_value: float = 4):
+        return max(min_value, min(max_value, value))
+
     def process(self, network : ComputableNetwork, controller : melee.Controller, state : ndarray):
         network.input(state)
         network.compute()
         output1 = network.output()
         outputUnActivated1 = network.outputUnActivated()
-
+        c_stick_angle = self.clamp(outputUnActivated1[0, 6])
+        main_stick_angle = self.clamp(outputUnActivated1[0, 4])
         self.processMessage({
             "a": output1[0, 0] > .5,
             "b": output1[0, 1] > .5,
             "y": output1[0, 2] > .5,
             "z": output1[0, 3] > .5,
-            "mainStickX": (((math.cos(outputUnActivated1[0, 4] * 2 * math.pi)  * output1[0, 5]) + 1) / 2),
-            "mainStickY": (((math.sin(outputUnActivated1[0, 4] * 2 * math.pi) * output1[0, 5]) + 1) / 2),
-            "cStickX": (((math.cos(outputUnActivated1[0, 6] * 2 * math.pi)* output1[0, 7]) + 1) / 2),
-            "cStickY": (((math.sin(outputUnActivated1[0, 6] * 2 * math.pi) * output1[0, 7]) + 1) / 2) ,
+            "mainStickX": (((math.cos(main_stick_angle  * math.pi)  * output1[0, 5]) + 1) / 2),
+            "mainStickY": (((math.sin(main_stick_angle * math.pi) * output1[0, 5]) + 1) / 2),
+            "cStickX": (((math.cos(c_stick_angle * math.pi)* output1[0, 7]) + 1) / 2),
+            "cStickY": (((math.sin(c_stick_angle * math.pi) * output1[0, 7]) + 1) / 2) ,
+            # "mainStickX": output1[0, 4],
+            # "mainStickY": output1[0, 5],
+            # "cStickX": output1[0, 6],
+            # "cStickY": output1[0, 7],
             "leftShoulder": max(output1[0, 8]-.5, 0) *2,
         }, controller)

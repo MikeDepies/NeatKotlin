@@ -20,14 +20,14 @@ class ModelHelper:
     host : str
     controller_id : str
     network_shape : List[List[int]]
-    def __init__(self, controller_id :str, host : str, network_shape : List[List[int]] = [[1, 1105], [9,9], [9, 9], [9, 9], [7, 7], [5, 5], [1, 9]]) -> None:
+    def __init__(self, controller_id :str, host : str, network_shape : List[List[int]] = [[1, 133], [5,5], [5, 5], [5, 5], [5, 5], [5, 5], [1, 9]]) -> None:
         self.host = host
         self.controller_id = controller_id
         self.network_shape = network_shape
     def getModels(self) -> List[str]:
         res = httpx.post("http://" + self.host + ":8091/models", json={
                 "controllerId": self.controller_id,
-            }, timeout=2)
+            }, timeout=.5)
         # if not res.ok:
         #     raise Exception("No data for request")
         
@@ -44,7 +44,7 @@ class ModelHelper:
         res = httpx.post("http://" + self.host + ":8091/model/check", json={
                 "controllerId": self.controller_id,
                 "modelId": model_id,
-            }, timeout=2)
+            }, timeout=30)
         
         data = res.json()
         return ModelTestResult(model_id, data["available"], data["scored"], data["valid"])
@@ -61,8 +61,9 @@ class ModelHelper:
                     "damage" : score.damage_actions,
                     "totalDamageDone" : score.total_damage,
                     "totalDistanceTowardOpponent" : score.total_distance_toward_opponent,
+                    "playerDied" : score.player_died
                 }
-            }, timeout=2)
+            }, timeout=30)
         print("eval send for " + model_id)
         # if not res.ok:
         #     raise Exception("No data for request")
@@ -77,7 +78,7 @@ class ModelHelper:
                 "controllerId": controllerId,
                 "modelId": modelId,
                 
-            }, timeout=2)
+            }, timeout=10)
             if not res.is_success:
                 raise Exception("No data for request")
             data = res.json()
@@ -99,3 +100,27 @@ class ModelHelper:
                 
         #     }, timeout=2)
         return network
+    
+    def randomBest(self) -> ComputableNetwork:
+        requestNetwork = True
+        network = None
+        print("getting a \"best\" network")
+        try:
+            res = httpx.post("http://" + self.host + ":8091/model/best",json={
+                    "controllerId": self.controller_id,
+                }, timeout=30)
+            if not res.is_success:
+                raise Exception("No data for request")
+            data = res.json()
+            connections: List[ConnectionLocation] = list(map(lambda c: ConnectionLocation(
+                c[0], c[1], c[2], c[3], c[4], c[5], c[6]), data["connections"]))
+            nodes: List[ConnectionLocation] = list(
+                map(lambda n: NodeLocation(n[0], n[1], n[2]), data["nodes"]))
+            print(len(connections))
+            print(data["id"])
+            return constructNetwork(nodes, connections, self.network_shape)
+        except Exception as e:
+            print(e)
+            # print("timeout: failed to get " + str(modelId) + " for " + str(controllerId))
+            # time.sleep(1)
+            return None

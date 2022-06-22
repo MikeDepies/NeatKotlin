@@ -47,9 +47,9 @@ fun Collection<Float>.countOffspring(skim: Double, y1: Float = 1f): Offspring {
 }
 
 typealias ExpectedOffSpring = Pair<NeatMutator, Float>
-
+data class CompatibilityResult(val distance : Float, val compatible : Boolean)
 data class ModelScore(val neatMutator: NeatMutator, val fitness: Float, val adjustedFitness: Float)
-typealias CompatibilityTest = (NeatMutator, NeatMutator) -> Boolean
+typealias CompatibilityTest = (NeatMutator, NeatMutator) -> CompatibilityResult
 typealias SpeciesScoredMap = Map<Species, Collection<ModelScore>>
 typealias SpeciesMap = Map<Species, Collection<NeatMutator>>
 typealias SpeciesFitnessFunction = (Species) -> Float
@@ -81,7 +81,7 @@ fun SpeciationController.calculateSpeciesReport(
     var deadSpeciesOffspring = 0
     for (species in speciesSet) {
         val speciesPopulation = getSpeciesPopulation(species)
-        val champion = speciesPopulation.maxByOrNull { scoreMap.getValue(it) }
+        val champion = speciesPopulation.maxByOrNull { scoreMap[it] ?: 0f }
         val map = speciesPopulation.map { expectedOffspringMap.getValue(it) }
         val countOffspring = map.countOffspring(skim)
         skim = countOffspring.skim

@@ -17,7 +17,8 @@ data class ActionBehavior(
     val kills: List<Int>,
     val damage: List<Int>,
     val totalDamageDone: Float,
-    val totalDistanceTowardOpponent: Float
+    val totalDistanceTowardOpponent: Float,
+    val playerDied: Boolean
 )
 
 class NoveltyEvaluatorMultiBehavior(
@@ -70,7 +71,7 @@ class NoveltyEvaluatorMultiBehavior(
             }
             return MinimaCriteria(
                 met,
-                ActionBehavior(actions, recoveryActionSets, kills, damageActions, totalDamage, totalDistanceTowardOpponent)
+                ActionBehavior(actions, recoveryActionSets, kills, damageActions, totalDamage, totalDistanceTowardOpponent, false)
             )// + if (meleeState.lastMeleeFrameData?.player1?.onGround == true) 0f else 0f// + bankedScore// + distanceScore// + max(-10f, moveBonus / 2f)
         }
 

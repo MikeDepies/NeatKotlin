@@ -256,28 +256,12 @@ def console_loop(port : int):
     while True:
         game_state = console.step()
         i+=1
-        # if i % 240 == 0:
-        #         print("still working: " + str(i) + " stage: " + str(game_state.stage))
+
         if game_state is None:
             print("We hit this None BS")
             continue
-
-        # The console object keeps track of how long your bot is taking to process frames
-        #   And can warn you if it's taking too long
-        # if console.processingtime * 1000 > 50:
-        #     print("WARNING: Last frame took " +
-        #           str(console.processingtime*1000) + "ms to process.")
-        
-        # What menu are we in?
-        # print(game_state.menu_state)
-        # if log is not None:
-        #     log.logframe(game_state)
-        # log.writelog()
         
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-            # if not session.reassign_characters:
-            #     session.reassign_characters = True
-            #     session.menuLoadFirstFrame = False
 
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
@@ -293,6 +277,9 @@ def console_loop(port : int):
                 if network is not None:
                     behavior = evaluator.score(game_state)
                     print(behavior.recovery_sets)
+                    print(behavior.kills)
+                    print(behavior.actions)
+                    print(behavior.damage_actions)
                     model_helper.send_evaluation_result(model_id, behavior)
                     network = None
                     
@@ -315,7 +302,7 @@ def console_loop(port : int):
                         network = model_helper.getNetwork(
                             ai_controller_id, model_id)
                         print("creating new evaluator")
-                        evaluator = Evaluator(player_index, opponent_index, 60, 360, action_limit= 12)
+                        evaluator = Evaluator(player_index, opponent_index, 5, 45, action_limit= 8)
                         # break
                     elif not result.model_part_of_generation:
                         network = None
@@ -346,7 +333,7 @@ def console_loop(port : int):
             #     session.menuLoadFirstFrame = True
             melee.MenuHelper.menu_helper_simple(game_state,
                                                     controller,
-                                                    melee.Character.MEWTWO,
+                                                    melee.Character.MARIO,
                                                     melee.Stage.FINAL_DESTINATION,
                                                     args.connect_code,
                                                     costume=0,
@@ -354,7 +341,10 @@ def console_loop(port : int):
                                                     swag=False,
                                                     cpu_level=0)            
             # if game_state.players and game_state.players[player_index].character == melee.Character.MARIO:
-            melee.MenuHelper.menu_helper_simple(game_state,
+            if game_state.players:
+                player : melee.PlayerState = game_state.players[player_index]
+                if player and player.cpu_level == 0 and player.character == melee.Character.MARIO:
+                    melee.MenuHelper.menu_helper_simple(game_state,
                                             controller_opponent,
                                             melee.Character.FOX,
                                             melee.Stage.FINAL_DESTINATION,
@@ -362,7 +352,7 @@ def console_loop(port : int):
                                             costume=0,
                                             autostart=True,
                                             swag=False,
-                                            cpu_level=5)
+                                            cpu_level=8)
                 
 
             # counter += 1
@@ -372,7 +362,7 @@ def console_loop(port : int):
 
 if __name__ == '__main__':
     processes : List[mp.Process]= []
-    for i in range(20):
+    for i in range(15):
         p = mp.Process(target=console_loop, args=(i + 51460,), daemon=True)
         processes.append(p)
         p.start()

@@ -16,7 +16,7 @@ data class PopulationDataCollection(
 data class PopulationModels(val agents: List<AgentModel>, val generation: Int, val evaluationId: Int)
 
 @Serializable
-data class AgentModel(val id: Int, val species: Int, val model: NeatModel, val evaluationId: Int, val controllerId: Int?)
+data class AgentModel(val id: Int, val species: Int, val modelId: String, val evaluationId: Int, val controllerId: Int?)
 
 @Serializable
 data class EvaluationScore(val evaluationId: Int, val agentId: String, val score: Float, val evaluationScoreContributions: List<EvaluationScoreContribution>)

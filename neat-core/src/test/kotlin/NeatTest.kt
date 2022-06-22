@@ -71,15 +71,15 @@ class NeatTest {
         assertTrue(connectionsToOutputNode1.all { it.enabled })
     }
 
-    @Test
-    fun `Node without connections`() {
-        val neatMutator = neatMutator(2, 2)
-        neatMutator.apply {
-            val nodeId = 4
-            val node = NodeGene(nodeId, NodeType.Hidden, Activation.identity)
-            addNode(node)
-            assertTrue(neatMutator.connectionsFrom(node).isEmpty())
-            assertTrue(neatMutator.connectionsTo(node).isEmpty())
-        }
-    }
+//    @Test
+//    fun `Node without connections`() {
+//        val neatMutator = neatMutator(2, 2)
+//        neatMutator.apply {
+//            val nodeId = 4
+//            val node = NodeGene(nodeId, NodeType.Hidden, Activation.identity)
+//            addNode(node)
+//            assertTrue(neatMutator.connectionsFrom(node).isEmpty())
+//            assertTrue(neatMutator.connectionsTo(node).isEmpty())
+//        }
+//    }
 }

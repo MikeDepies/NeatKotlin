@@ -280,6 +280,7 @@ data class EvolutionGeneration(
 )
 
 fun Int.squared() = this * this
+fun Float.squared() = this * this
 
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
 private fun Application.connectAndCreateDatabase() {

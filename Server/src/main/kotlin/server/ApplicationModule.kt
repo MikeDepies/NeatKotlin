@@ -113,10 +113,10 @@ val applicationModule = module {
     }
     factory { (evaluationId: Int, populationSize: Int) ->
         val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-        val randomSeed: Int = 200 + evaluationId
+        val randomSeed: Int = 3858 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
-        val shFunction = shFunction(.3f)
+        val shFunction = shFunction(.7f)
 
 ////
         val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
@@ -129,7 +129,7 @@ val applicationModule = module {
             addConnectionAttempts
         )
         val population = models.map { it.toNeatMutator() }
-        val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
+//        val compatibilityDistanceFunction = compatibilityDistanceFunction(1f, 1f, 1f)
         val standardCompatibilityTest = standardCompatibilityTest({
             shFunction(it)
         }, { a, b ->
@@ -154,7 +154,7 @@ val applicationModule = module {
             speciationController = SpeciationController(0),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
-            generation = 2846//populationModel.generation
+            generation = if (evaluationId == 0) 4301 else 4318
         )
     }
 }

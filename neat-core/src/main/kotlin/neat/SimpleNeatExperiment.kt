@@ -67,7 +67,13 @@ class SimpleNeatExperiment(
         while (attempts++ < 1) {
             val sourceNodeGene = sourceList.random(random)
             val alreadyConnected =
-                neatMutator.connectionsFrom(sourceNodeGene).map { it.outNode }.map { neatMutator.node(it) }
+                neatMutator.connectionsFrom(sourceNodeGene).map { it.outNode }.mapNotNull {
+                    try {
+                        neatMutator.node(it)
+                    } catch (e: NoSuchElementException) {
+                        null
+                    }
+                }
             val targetPool = (targetList - sourceNodeGene) - alreadyConnected
             if (targetPool.isNotEmpty()) {
                 val targetNodeGene = targetPool.random(random)
