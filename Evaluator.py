@@ -134,7 +134,7 @@ class Evaluator:
         opponent_on_stage = self.is_on_stage(
             game_state, opponent) or opponent.action == melee.Action.EDGE_HANGING
         attack_timer_elapsed = self.frames_without_damage / \
-            60 > self.attack_timer and (player_on_stage and opponent_on_stage)
+            60 > self.attack_timer and (not self.knocked and player_on_stage and opponent_on_stage)
         max_timer_elapsed = self.total_frames / 60 > self.max_timer
         return attack_timer_elapsed or max_timer_elapsed or self.player_died
 
@@ -241,8 +241,8 @@ class Evaluator:
 
             if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action):
                 self.frames_without_damage += 1
-                if self.player_took_damage(game_state):
-                    self.frames_without_damage += self.player_damage_amount_taken(game_state) * 100
+                # if self.player_took_damage(game_state):
+                #     self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
 
             if self.player_dealt_damage(game_state):
                 self.damage_since_recovery = True
@@ -255,13 +255,13 @@ class Evaluator:
                 self.last_damage_action = player.action
             
             if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
-                self.frames_without_damage += 7
+                self.frames_without_damage += 4
             
             if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
                 self.actions_without_damage += 3
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
-                self.frames_without_damage += 20
-                if self.capture_action(player):
+                self.frames_without_damage += 10
+                if self.capture_action(player) and on_stage:
                     # print("prev actions:")
                     # print(self.player_previous_actions)
                     self.actions.append(player.action.value)

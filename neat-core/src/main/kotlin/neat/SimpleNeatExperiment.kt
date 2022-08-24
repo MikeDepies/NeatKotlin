@@ -138,19 +138,10 @@ class SimpleNeatExperiment(
         val selectedRandomGenes = matchingGenes.map { it.random(random) }
         val offSpringConnections = when {
             parent1.isLessFitThan(parent2) -> {
-//                println("Parent 2 Is More Fit")
-//                println("Disjoint: $disjoint2")
-//                println("Excess: ${neat.excess.excess2}")
-//                println("Selected: $selectedRandomGenes")
                 (selectedRandomGenes + disjoint2 + excess.excess2).sortedBy { it.innovation }
             }
 //            parent1.neat.isMoreFitThan(parent2)
             else -> {
-//                println("Parent 1 Is More Fit")
-//                println("${parent1.model.nodes.map { it.node }}")
-//                println("Disjoint: $disjoint1")
-//                println("Excess: ${neat.excess.excess1}")
-//                println("Selected: $selectedRandomGenes")
                 (selectedRandomGenes + disjoint1 + excess.excess1).sortedBy { it.innovation }
             }
 //            else -> {

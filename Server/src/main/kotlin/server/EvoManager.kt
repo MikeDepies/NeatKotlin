@@ -26,11 +26,11 @@ class EvoManager(
     val adjustedFitness: AdjustedFitnessCalculation,
     val evaluationId: Int,
     val runFolder: File,
-    val knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>
+    val knnNoveltyArchive: KNNNoveltyArchiveWeighted
 ) {
     var evolutionInProgress = false
     var modelStatusMap: Map<String, ModelStatus> = mapOf()
-    var modelMap: MutableMap<String, NetworkDescription?> = mutableMapOf()
+    var modelMap: MutableMap<String, NetworkBlueprint?> = mutableMapOf()
     var population: List<NetworkWithId> = listOf()
     val windower: ModelWindower = ModelWindower(1)
     var bestModels = mutableListOf<ScoredModel>()
@@ -63,12 +63,13 @@ class EvoManager(
                 if (modelStatus.score != null) {
                     continue
                 }
-                val objectiveScore = 0f//modelEvaluationResult.score.totalDamageDone / 5f + modelEvaluationResult.score.kills.size * 10f
+
+                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
 //                log.info { "new score recieved" }
                 val behaviorScore = max(0f, scoreBehavior(
                     knnNoveltyArchive,
                     modelEvaluationResult
-                )  + if (modelEvaluationResult.score.playerDied) -10f else objectiveScore)
+                ) + /*objectiveScore  +*/ if (modelEvaluationResult.score.playerDied) -60f else 0f)
                 while (knnNoveltyArchive.behaviors.size > 1_000_000) {
                     knnNoveltyArchive.behaviors.removeAt(0)
                 }
@@ -88,6 +89,7 @@ class EvoManager(
                     }.toModelScores(adjustedFitness)
                     populationEvolver.sortPopulationByAdjustedScore(modelScores)
                     populationEvolver.updateScores(modelScores)
+
                     var newPopulation = evolveNewPopulation(populationEvolver, modelScores, populationSize)
                     log.info { "population finished evolving..." }
                     population = newPopulation.take(populationSize).map { NetworkWithId(it, "${UUID.randomUUID()}") }
@@ -115,7 +117,10 @@ class EvoManager(
         populationEvolver: PopulationEvolver, modelScores: List<ModelScore>, populationSize: Int
     ): List<NeatMutator> {
         var newPopulation = safeEvolvePopulation(populationEvolver, modelScores)
-
+        populationEvolver.speciationController.speciesSet.forEach { species ->
+            val mascot = populationEvolver.speciationController.getSpeciesPopulation(species).random()
+            populationEvolver.speciesLineage.updateMascot(species, mascot)
+        }
         log.info { "[$evaluationId]  Species Count: ${populationEvolver.speciesLineage.species.size}" }
         while (newPopulation.size < populationSize) {
             newPopulation = newPopulation + newPopulation.random().clone()
@@ -186,7 +191,7 @@ class EvoManager(
     }
 
     private fun captureBestModel(
-        m: NetworkDescription, behaviorScore: Float, populationEvolver: PopulationEvolver, it: ModelEvaluationResult
+        m: NetworkBlueprint, behaviorScore: Float, populationEvolver: PopulationEvolver, it: ModelEvaluationResult
     ) {
         if (m != null) {
             val average = bestModels.map { it.score }.average()
@@ -201,7 +206,7 @@ class EvoManager(
     }
 
     private fun scoreBehavior(
-        knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>, it: ModelEvaluationResult
+        knnNoveltyArchive: KNNNoveltyArchiveWeighted, it: ModelEvaluationResult
     ) = when {
         knnNoveltyArchive.size < 1 -> {
             knnNoveltyArchive.addBehavior(it.score)
@@ -212,11 +217,26 @@ class EvoManager(
 
     private suspend fun createTaskNetworks(
     ) {
+        val createNetwork = createNetwork()
+        val targetConnectionMapping =
+            createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
+        val calculationOrder = createNetwork.calculationOrder.map { it.id }
+        val connectionRelationships = createNetwork.connectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
         population.mapParallel {
             try {
-                it to createTaskNetwork(it.neatMutator.toNetwork(), it.id)
+
+                it to NetworkBlueprint(createNetwork.build(it.neatMutator.toNetwork(), 3f), it.id, createNetwork.planes,
+                    connectionRelationships,
+                    targetConnectionMapping,
+                    calculationOrder
+                )
             } catch (e: Exception) {
-                it to NetworkDescription(setOf(), setOf(), it.id, null, listOf())
+                it to NetworkBlueprint(
+                    listOf(), it.id, createNetwork.planes,
+                    connectionRelationships,
+                    targetConnectionMapping,
+                    calculationOrder
+                )
             }
         }.forEach { (networkWithId, network) ->
             val id = networkWithId.id

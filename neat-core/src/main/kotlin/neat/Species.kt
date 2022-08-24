@@ -209,8 +209,9 @@ fun offspringFunction(chance: Float, mutationEntries: List<MutationEntry>): Offs
         newOffspring(
             probabilityToMate,
             this,
-            modelScoreList
-        ).mutateModel(mutationEntries, this)
+            modelScoreList,
+            mutationEntries
+        )
     }
 }
 
@@ -226,7 +227,8 @@ fun SpeciationController.speciesReport(
 private fun newOffspring(
     probabilityToMate: MutationRoll,
     neatExperiment: NeatExperiment,
-    speciesPopulation: Collection<ModelScore>
+    speciesPopulation: Collection<ModelScore>,
+    mutationEntries: List<MutationEntry>
 ): NeatMutator {
     return when {
         probabilityToMate(neatExperiment) && speciesPopulation.size > 1 -> {
@@ -248,7 +250,7 @@ private fun newOffspring(
 //                    }
 //                }
         }
-        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone()//.also { println("clone") }
+        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone().mutateModel(mutationEntries, neatExperiment)//.also { println("clone") }
     }
 }
 

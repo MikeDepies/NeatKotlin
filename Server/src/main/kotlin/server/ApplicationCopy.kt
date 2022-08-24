@@ -255,30 +255,30 @@ private val log = KotlinLogging.logger { }
 data class ActiveModelRequest(val controllerId: Int)
 
 
-//data class Model(val )
-class ModelManager(
-    var controllerModelManagers: MutableMap<IOController, EvolutionGeneration>,
-    val channel: Channel<NetworkDescription> = Channel<NetworkDescription>(5)
-) {
-    operator fun set(ioController: IOController, evolutionGeneration: EvolutionGeneration) {
-        controllerModelManagers[ioController] = evolutionGeneration
-    }
+////data class Model(val )
+//class ModelManager(
+//    var controllerModelManagers: MutableMap<IOController, EvolutionGeneration>,
+//    val channel: Channel<NetworkDescription> = Channel<NetworkDescription>(5)
+//) {
+//    operator fun set(ioController: IOController, evolutionGeneration: EvolutionGeneration) {
+//        controllerModelManagers[ioController] = evolutionGeneration
+//    }
+//
+//    operator fun get(ioController: IOController): EvolutionGeneration {
+//        return controllerModelManagers.getValue(ioController)
+//    }
+//}
 
-    operator fun get(ioController: IOController): EvolutionGeneration {
-        return controllerModelManagers.getValue(ioController)
-    }
-}
-
-data class EvolutionGeneration(
-    val generation: Int,
-    var networkMap: Map<String, NetworkWithId>,
-    var networkList: List<NetworkWithId>,
-    var readiedNetworkMap: MutableMap<String, NetworkDescription>,
-    var buildingNetwork: MutableMap<String, Boolean>,
-    var requestedNetwork: MutableMap<String, Boolean>,
-    var activeId: String? = null
-)
-
+//data class EvolutionGeneration(
+//    val generation: Int,
+//    var networkMap: Map<String, NetworkWithId>,
+//    var networkList: List<NetworkWithId>,
+//    var readiedNetworkMap: MutableMap<String, NetworkDescription>,
+//    var buildingNetwork: MutableMap<String, Boolean>,
+//    var requestedNetwork: MutableMap<String, Boolean>,
+//    var activeId: String? = null
+//)
+//
 fun Int.squared() = this * this
 fun Float.squared() = this * this
 

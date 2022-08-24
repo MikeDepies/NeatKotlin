@@ -17,6 +17,7 @@ import mu.KotlinLogging
 import neat.ModelScore
 import neat.model.NeatMutator
 import neat.novelty.KNNNoveltyArchive
+import neat.novelty.NoveltyArchive
 import neat.novelty.levenshtein
 import org.koin.core.parameter.DefinitionParameters
 import org.koin.ktor.ext.Koin
@@ -31,13 +32,14 @@ import java.time.format.DateTimeFormatter
 import kotlin.collections.ArrayList
 import kotlin.math.min
 import kotlin.math.sqrt
+import kotlin.streams.toList
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 private val log = KotlinLogging.logger { }
 
-data class ScoredModel(val score: Float, val generation: Int, val model: NetworkDescription, val id: String)
+data class ScoredModel(val score: Float, val generation: Int, val model: NetworkBlueprint, val id: String)
 
 @KtorExperimentalAPI
 @Suppress("unused") // Referenced in application.conf
@@ -92,8 +94,8 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
-    val a = actionBehaviors("population/0_noveltyArchive.json")
-    val b = actionBehaviors("population/1_noveltyArchive.json")
+    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(5000)
+    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
     val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId)) })
     val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId2)) })
     fun IOController.simulationForController(populationSize: Int) = get<Simulation>(parameters = {
@@ -103,11 +105,17 @@ fun Application.module() {
     })
 
     val populationSize = 200
-    val knnNoveltyArchive = knnNoveltyArchive(80, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 3f, killMultiplier = 50f, recoveryMultiplier = 5f))
-    val knnNoveltyArchive2 = knnNoveltyArchive(30, behaviorMeasure(damageMultiplier = 3f, actionMultiplier = 1f, killMultiplier = 50f, recoveryMultiplier = 1f))
+    val knnNoveltyArchive = knnNoveltyArchive(
+        40,
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 5f, killMultiplier = 50f, recoveryMultiplier = 20f)
+    )
+    val knnNoveltyArchive2 = knnNoveltyArchive(
+        40,
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 5f, killMultiplier = 50f, recoveryMultiplier = 20f)
+    )
     knnNoveltyArchive.behaviors.addAll(a)
     knnNoveltyArchive2.behaviors.addAll(b)
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(populationSize )
+    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(populationSize)
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
 
@@ -227,7 +235,8 @@ private fun behaviorMeasure(
     val lhs = a.recovery.joinToString("$sequenceSeparator") { it.actionString() }
     val rhs = b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
 //    val minLen = lhs.length
-    val recoveryDistance = levenshtein(lhs, rhs
+    val recoveryDistance = levenshtein(
+        lhs, rhs
     )
     sqrt(
         allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
@@ -238,4 +247,40 @@ private fun behaviorMeasure(
 }
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehavior, ActionBehavior) -> Float) =
-    KNNNoveltyArchive<ActionBehavior>(k, 0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 0f, behaviorDistanceMeasureFunction = function)
+
+
+class KNNNoveltyArchiveWeighted(
+    var k: Int,
+    var noveltyThreshold: Float,
+    val behaviorFilter: (ActionBehavior, ActionBehavior) -> Boolean = { _, _ -> true },
+    val behaviorDistanceMeasureFunction: (ActionBehavior, ActionBehavior) -> Float
+) :
+    NoveltyArchive<ActionBehavior> {
+    override val behaviors = mutableListOf<ActionBehavior>()
+    override val size: Int
+        get() = behaviors.size
+    var maxBehavior = ActionBehavior(listOf(), listOf(), listOf(), listOf(), 0.1f, 0f, false)
+    override fun addBehavior(behavior: ActionBehavior): Float {
+        val distance = measure(behavior)
+        if (distance > noveltyThreshold || size == 0)
+            behaviors += behavior
+        return distance
+    }
+
+    override fun measure(behavior: ActionBehavior): Float {
+        val value = valueForBehavior(behavior)
+        if (value > valueForBehavior(maxBehavior))
+            maxBehavior = behavior
+
+        val n = k + value
+        log.info { "K = $n" }
+        val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
+            .map { behaviorDistanceMeasureFunction(behavior, it) }
+            .sorted().toList().take(n.toInt()).average()
+            .toFloat()
+        return if (distance.isNaN()) 0f else distance
+    }
+
+    private fun valueForBehavior(behavior: ActionBehavior) = behavior.totalDamageDone / 5 + (behavior.kills.size * 30) + (behavior.totalDistanceTowardOpponent /20)
+}
