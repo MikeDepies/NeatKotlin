@@ -2,6 +2,7 @@ package neat.mutation
 
 import neat.NeatExperiment
 import neat.model.NeatMutator
+import neat.randomWeight
 
 const val standardWeightPerturbationRange = .02f
 
@@ -41,6 +42,22 @@ fun getMutateConnections(chanceToReassignWeights: Float, perturbRange : Float = 
     neatMutator.connections.forEach { connectionGene ->
         getMutateConnectionWeight(chanceToReassignWeights, perturbRange, assignRange)(connectionGene)
     }
+}
+fun getMutateBiasConnections(chanceToReassignWeights: Float, perturbRange : Float = standardWeightPerturbationRange, assignRange : Float = 2f): Mutation = { neatMutator ->
+    (neatMutator.hiddenNodes + neatMutator.outputNodes).forEach {
+        val perturb = this.random.nextFloat() <= chanceToReassignWeights
+        if (perturb) {
+            val weightPerturbation = weightPerturbation(perturbRange)
+            it.bias += weightPerturbation
+        } else {
+            it.bias = randomWeight(random, assignRange)
+        }
+    }
+    /*val node = neatMutator.inputNodes[biasNode]
+    neatMutator.connectionsFrom(node).forEach { connectionGene ->
+        val weightPerturbation = weightPerturbation(range)
+        connectionGene.weight += weightPerturbation
+    }*/
 }
 
 val mutateAddConnection: Mutation = { mutateAddConnection(it) }

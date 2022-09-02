@@ -46,10 +46,10 @@ class PopulationEvolver(
         )*/
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
-            mateChance = .1f,
-            survivalThreshold = .30f,
+            mateChance = .5f,
+            survivalThreshold = .3f,
             speciesScoreKeeper = scoreKeeper,
-            stagnation = 15
+            stagnation = 400
         )
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation, generation)
     }
@@ -64,11 +64,11 @@ class PopulationEvolver(
 
 fun mutationDictionary(): List<MutationEntry> {
     return listOf(
-        .2f chanceToMutate getMutateConnections(.1f, .2f),
-        .4f chanceToMutate mutateAddNode,
-        .4f chanceToMutate mutateAddConnection,
-        .2f chanceToMutate mutatePerturbBiasConnections(.2f),
-        .1f chanceToMutate mutateToggleConnection,
-        .2f chanceToMutate mutateNodeActivationFunction(),
+        .9f chanceToMutate getMutateConnections(.1f, 2.5f, 2f),
+        .04f chanceToMutate mutateAddNode,
+        .08f chanceToMutate mutateAddConnection,
+        .9f chanceToMutate getMutateBiasConnections(.1f, 2.5f, 2f),
+        .08f chanceToMutate mutateToggleConnection,
+        .08f chanceToMutate mutateNodeActivationFunction(),
     )
 }

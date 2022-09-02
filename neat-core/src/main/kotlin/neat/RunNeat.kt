@@ -93,5 +93,9 @@ fun NeatExperiment.generateInitialPopulation(
 fun standardCompatibilityTest(
     sharingFunction: SharingFunction,
     df: DistanceFunction
-): CompatibilityTest = { neat1, neat2 -> sharingFunction(df(neat1, neat2)) == 1 }
+): CompatibilityTest = { neat1, neat2 ->
+    val distance = df(neat1, neat2)
+
+    CompatibilityResult(distance, sharingFunction(distance) == 1)
+}
 

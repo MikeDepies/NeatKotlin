@@ -328,6 +328,10 @@ def mario(render : bool):
     last_stage_part = 0
     
     while True:
+        if evaluated_child:
+            network = agent_network
+        else:
+            network = child_network
         if done or idle:
             state = env.reset()
             

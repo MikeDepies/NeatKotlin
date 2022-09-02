@@ -47,9 +47,9 @@ fun Collection<Float>.countOffspring(skim: Double, y1: Float = 1f): Offspring {
 }
 
 typealias ExpectedOffSpring = Pair<NeatMutator, Float>
-
+data class CompatibilityResult(val distance : Float, val compatible : Boolean)
 data class ModelScore(val neatMutator: NeatMutator, val fitness: Float, val adjustedFitness: Float)
-typealias CompatibilityTest = (NeatMutator, NeatMutator) -> Boolean
+typealias CompatibilityTest = (NeatMutator, NeatMutator) -> CompatibilityResult
 typealias SpeciesScoredMap = Map<Species, Collection<ModelScore>>
 typealias SpeciesMap = Map<Species, Collection<NeatMutator>>
 typealias SpeciesFitnessFunction = (Species) -> Float
@@ -81,7 +81,7 @@ fun SpeciationController.calculateSpeciesReport(
     var deadSpeciesOffspring = 0
     for (species in speciesSet) {
         val speciesPopulation = getSpeciesPopulation(species)
-        val champion = speciesPopulation.maxByOrNull { scoreMap.getValue(it) }
+        val champion = speciesPopulation.maxByOrNull { scoreMap[it] ?: 0f }
         val map = speciesPopulation.map { expectedOffspringMap.getValue(it) }
         val countOffspring = map.countOffspring(skim)
         skim = countOffspring.skim
@@ -209,8 +209,9 @@ fun offspringFunction(chance: Float, mutationEntries: List<MutationEntry>): Offs
         newOffspring(
             probabilityToMate,
             this,
-            modelScoreList
-        ).mutateModel(mutationEntries, this)
+            modelScoreList,
+            mutationEntries
+        )
     }
 }
 
@@ -226,7 +227,8 @@ fun SpeciationController.speciesReport(
 private fun newOffspring(
     probabilityToMate: MutationRoll,
     neatExperiment: NeatExperiment,
-    speciesPopulation: Collection<ModelScore>
+    speciesPopulation: Collection<ModelScore>,
+    mutationEntries: List<MutationEntry>
 ): NeatMutator {
     return when {
         probabilityToMate(neatExperiment) && speciesPopulation.size > 1 -> {
@@ -248,7 +250,7 @@ private fun newOffspring(
 //                    }
 //                }
         }
-        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone()//.also { println("clone") }
+        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone().mutateModel(mutationEntries, neatExperiment)//.also { println("clone") }
     }
 }
 

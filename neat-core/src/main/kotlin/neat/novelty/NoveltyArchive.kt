@@ -1,5 +1,7 @@
 package neat.novelty
 
+import kotlin.streams.toList
+
 interface NoveltyArchive<BEHAVIOR> {
     fun addBehavior(behavior: BEHAVIOR): Float
     fun measure(behavior: BEHAVIOR): Float
@@ -19,8 +21,9 @@ class KNNNoveltyArchive<B>(var k: Int, var noveltyThreshold : Float, val behavio
     }
 
     override fun measure(behavior: B): Float {
-        return behaviors.asSequence().filter { behaviorFilter(behavior, it) }.map { behaviorDistanceMeasureFunction(behavior, it) }
-            .sorted().take(k).average()
+
+        return behaviors.parallelStream().filter { behaviorFilter(behavior, it) }.map { behaviorDistanceMeasureFunction(behavior, it) }
+            .sorted().toList().take(k).average()
             .toFloat()
     }
 }

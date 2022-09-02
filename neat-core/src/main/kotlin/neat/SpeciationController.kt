@@ -17,7 +17,7 @@ class SpeciationController(
         population: List<NeatMutator>,
         speciesLineage: SpeciesLineage,
         generation: Int,
-        compatibilityTest: (NeatMutator, NeatMutator) -> Boolean
+        compatibilityTest: CompatibilityTest
     ): Map<Species, MutableList<NeatMutator>> {
         speciesMap.clear()
 
