@@ -2,7 +2,7 @@ import type { MarioInfo, Settings } from 'src/type/marioInfo'
 
 export const host = "http://localhost"
 export async function getBehaviors(numberOfBehaviors : number | null) {
-    const res = await fetch(host + ":8094/behaviors" + ((numberOfBehaviors) ? "?n=" + numberOfBehaviors : ""))
+    const res = await fetch(host + ":8095/behaviors" + ((numberOfBehaviors) ? "?n=" + numberOfBehaviors : ""))
     if (res.ok) {
         const behaviors = await res.json() as MarioInfo[]
         return behaviors.map((m) => {
@@ -16,7 +16,7 @@ export async function getBehaviors(numberOfBehaviors : number | null) {
 }
 
 export async function getSettings() {
-    const res = await fetch(host + ":8094/settings")
+    const res = await fetch(host + ":8095/settings")
     if (res.ok) {
         const settings = await res.json() as Settings
         console.log(settings);

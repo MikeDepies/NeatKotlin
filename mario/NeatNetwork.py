@@ -1,12 +1,14 @@
-from collections import defaultdict
-
+import enum
+from functools import reduce
 import json
 import math
-import enum
+from collections import defaultdict
+from dataclasses import dataclass
 from time import sleep
+from typing import Dict, List, Set, Tuple
+
 import networkx as nx
 import numpy as np
-from typing import Dict, List, Set, Tuple
 from networkx.algorithms.dag import descendants
 from numpy import ndarray, vectorize
 
@@ -18,7 +20,8 @@ def sigmoidal(x: float):
     elif x > 4:
         x = 4
 
-    return 1 / (1 + math.exp(-4.9*x))
+    return 1 / (1 + math.exp(-4.9 * x))
+
 
 def relu(x: float):
     # print(x)
@@ -30,27 +33,41 @@ def relu(x: float):
     return x
 
 
-class NodeLocation:
-    x: int
-    y: int
-    z: int
+@dataclass
+class LayerPlane:
+    height: int
+    width: int
+    id: str
 
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
 
-    def __str__(self):
-        return str((self.x, self.y, self.z))
+@dataclass
+class LayerShape3D:
+    layerPlane: LayerPlane
+    xOrigin: int
+    yOrigin: int
+    zOrigin: int
 
-    def __repr__(self) -> str:
-        return str((self.x, self.y, self.z))
 
-    def __hash__(self) -> int:
-        return ((self.x, self.y, self.z)).__hash__()
+@dataclass
+class ConnectionLocation:
+    x1: int
+    y1: int
+    z1: int
+    x2: int
+    y2: int
+    z2: int
+    weight: float
 
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+
+@dataclass
+class NetworkBlueprint:
+    id: str
+    connections: List[ConnectionLocation]
+    connection_planes: List[LayerShape3D]
+    connection_relationships: Dict[str, List[str]]
+    connection_relationships_inverse: dict[str, list[str]]
+    calculation_order: list[str]
+    output_layer : str
 
 
 class ConnectionLocation:
@@ -62,7 +79,8 @@ class ConnectionLocation:
     z2: int
     weight: float
 
-    def __init__(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, weight: float):
+    def __init__(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int,
+                 weight: float):
         self.x1 = x1
         self.y1 = y1
         self.z1 = z1
@@ -71,306 +89,93 @@ class ConnectionLocation:
         self.z2 = z2
         self.weight = weight
 
-def getConnectionIndex(source: NodeLocation, target: NodeLocation):
-        if source.z == 0 and target.z == 1:
-            return 0
-        if source.z == 1 and target.z == 2:
-            return 1
-        if source.z == 1 and target.z == 6:
-            return 2
-        if source.z == 2 and target.z == 6:
-            return 3
-        if source.z == 2 and target.z == 3:
-            return 4
-        if source.z == 3 and target.z == 4:
-            return 5
-        if source.z == 3 and target.z == 6:
-            return 6
-        if source.z == 4 and target.z == 5:
-            return 7
-        if source.z == 4 and target.z == 6:
-            return 8
-        if source.z == 5 and target.z == 6:
-            return 9
-        if source.z == 2 and target.z == 2:
-            return 10
-        if source.z == 3 and target.z == 3:
-            return 11
-        if source.z == 4 and target.z == 4:
-            return 12
-        if source.z == 5 and target.z == 5:
-            return 13
-        if source.z == 6 and target.z == 6:
-            return 14
-        if source.z == 6 and target.z == 5:
-            return 15
-        if source.z == 6 and target.z == 4:
-            return 16
-        if source.z == -2 and target.z == 1:
-            return 17
-        if source.z == -2 and target.z == 2:
-            return 18
-        if source.z == -2 and target.z == 3:
-            return 19
-        if source.z == -2 and target.z == 4:
-            return 20
-        if source.z == -2 and target.z == 5:
-            return 21
-        if source.z == -2 and target.z == 6:
-            return 22
-        else:
-            print("test???")
+
 # Identify input, hidden and output nodes
-def constructNetwork(nodes: List[NodeLocation], connections: List[ConnectionLocation], layerShapes: List[List[int]], bias: NodeLocation = None):
-    
-    # computationOrder: List[NodeLocation] = list()
-    # ndarray()
-    inputNodes = list(filter(lambda n: n.z == 0, nodes))
-    # if bias is not None:
-    #     inputNodes.append(bias)
-    outputNodes = list(filter(lambda n: n.z == 3, nodes))
-    print("Node values initializing...")
-    print("input nodes:")
-    print(len(inputNodes))
-    print("outputnodes")
-    print(len(outputNodes))
-    
-    # for node in nodes:
-    #     nodeValuePre[node] = 0
-    #     nodeValuePost[node] = 0
-    print("constructing graph representation")
-    # data = list(map(lambda c: (NodeLocation(c.x1, c.y1, c.z1),
-    #             NodeLocation(c.x2, c.y2, c.z2), c.weight), connections))
-    print("construct graph")
-    connection = [np.zeros(layerShapes[1] + layerShapes[0]),
-                np.zeros(layerShapes[2] + layerShapes[1]),
-                np.zeros(layerShapes[6] + layerShapes[1]),
-                np.zeros(layerShapes[6] + layerShapes[2]),
-                np.zeros(layerShapes[3] + layerShapes[2]),
-                np.zeros(layerShapes[4] + layerShapes[3]),
-                np.zeros(layerShapes[6] + layerShapes[3]),
-                np.zeros(layerShapes[5] + layerShapes[4]),
-                np.zeros(layerShapes[6] + layerShapes[4]),
-                np.zeros(layerShapes[6] + layerShapes[5]),
-                np.zeros(layerShapes[2] + layerShapes[2]),
-                np.zeros(layerShapes[3] + layerShapes[3]),
-                np.zeros(layerShapes[4] + layerShapes[4]),
-                np.zeros(layerShapes[5] + layerShapes[5]),
-                np.zeros(layerShapes[6] + layerShapes[6]),
-                np.zeros(layerShapes[5] + layerShapes[6]),
-                np.zeros(layerShapes[4] + layerShapes[6]),
-                np.zeros(layerShapes[1]),
-                np.zeros(layerShapes[2]),
-                np.zeros(layerShapes[3]),
-                np.zeros(layerShapes[4]),
-                np.zeros(layerShapes[5]),
-                np.zeros(layerShapes[6]),
-                ]
-    # print(connection[0])
-    values = [np.zeros([*layerShapes[0], 2]),
-            np.zeros([*layerShapes[1], 2]),
-            np.zeros([*layerShapes[2], 2]),
-            np.zeros([*layerShapes[3], 2]),
-            np.zeros([*layerShapes[4], 2]),
-            np.zeros([*layerShapes[5], 2]),
-            np.zeros([*layerShapes[6], 2])]
-    
+def constructNetwork(network_blueprint : NetworkBlueprint):
+    connections = network_blueprint.connections
+    connection_planes = network_blueprint.connection_planes
+    connection_relationships = network_blueprint.connection_relationships
+    connection_relationships_inverse = network_blueprint.connection_relationships_inverse
+    calculation_order = network_blueprint.calculation_order
+    output_layer = network_blueprint.output_layer
+    connection_plane_map = dict[str, LayerShape3D]()
+    connection_map = dict[str, ndarray]()
+    connection_z_map = dict[int, str]()
+    value_map = dict[str, ndarray]()
+    for p in connection_planes:
+        id = p.layerPlane.id
+        value_map[id] = np.zeros([p.layerPlane.height, p.layerPlane.width, 2])
+        connection_plane_map[id] = p
+    for p in connection_planes:
+        connection_z_map[p.zOrigin] = p.layerPlane.id
+        id = p.layerPlane.id
+        if p.layerPlane.id in connection_relationships:
+            for target_id in connection_relationships[p.layerPlane.id]:
+                t = connection_plane_map[target_id]
+                connection_map[id + ":" + target_id] = np.zeros([
+                    t.layerPlane.height, t.layerPlane.width,
+                    p.layerPlane.height, p.layerPlane.width,
+                ])
     for c in connections:
-        source = NodeLocation(c.x1, c.y1, c.z1)
-        target = NodeLocation(c.x2, c.y2, c.z2)
-        connectionIndex = getConnectionIndex(source, target)
-        
-        try:
-            if source.z == -2: # Bias only has target dimensions
-                connection[connectionIndex][target.y, target.x ] = c.weight
-            else:
-                connection[connectionIndex][target.y, target.x, source.y, source.x ] = c.weight
-        except:
-            print(str(source) + " to " + str(target) + " = " + str(connectionIndex))
-    print("Constructing topological order...")
-    print("Constructed Computable Network...")
-    # [15, 16]
-    
-    # print(computationOrder[0])
-    
-    
-                # if (array[source.y, source.x, target.y, target.x] != 0):
-                #     print(array[source.y, source.x, target.y, target.x])
-    # print("===0===")
-    # print(connection[0])
-    # print("===1===")
-    # print(connection[1])
-    # print("===2===")
-    # print(connection[2])
-    # print("===3s===")
-    # print(connection[3])
-    # sleep(10000)
-    # for v in t:
-    #     print(connection[0][v[0], v[1], v[2], v[3]])
-    # print(connection[2])
-    # print(NodeLocation(0,0,0) == NodeLocation(0,0,0))
-    # for n in inputNodes:
-    # print(graph.has_node(n))
-    # print(graph.has_node(outputNodes[0]))
-    # nx.has_path(graph,n, outputNodes[0])
-    return ComputableNetwork(connection, values)
+        source_id = connection_z_map[c.z1]
+        target_id = connection_z_map[c.z2]
+        if (source_id + ":" + target_id) in connection_map:
+            connection = connection_map[source_id + ":" + target_id]
+            connection[c.y2, c.x2, c.y1, c.x1] = c.weight
+    print("Constructed Computable Network... " + str(len(connections)))
+    output_z_index = connection_plane_map.get(output_layer).zOrigin
+    return ComputableNetwork(connection_plane_map,
+                             connection_relationships_inverse, connection_map,
+                             value_map, connection_z_map, calculation_order, output_z_index)
 
-
+vectorizedSigmoidal = np.vectorize(sigmoidal)
 class ComputableNetwork:
-    # nodeMap: Dict[NodeLocation, List[Tuple[NodeLocation, ConnectionLocation]]]
-    
     inputNdArray: ndarray
-    connection: List[ndarray]
-    values: List[ndarray]
+    controller_input: ndarray
+    connection_plane_map: dict[str, LayerShape3D]
+    connection_relationships_inverse: dict[str, list[str]]
+    connection_map: dict[str, ndarray]
+    value_map: dict[str, ndarray]
+    connection_z_map: dict[int, str]
+    calculation_order: list[str]
+    output_layer_index : int
+    
+    def __init__(self, connection_plane_map: dict[str, LayerShape3D],
+                 connection_relationships_inverse: dict[str, list[str]],
+                 connection_map: dict[str, ndarray], value_map: dict[str,
+                                                                     ndarray],
+                 connection_z_map: dict[int,
+                                        str], calculation_order: list[str], output_layer_index : int):
+        self.connection_map = connection_map
+        self.connection_plane_map = connection_plane_map
+        self.connection_relationships_inverse = connection_relationships_inverse
+        self.value_map = value_map
+        self.connection_z_map = connection_z_map
+        self.calculation_order = calculation_order
+        self.output_layer_index = output_layer_index
 
-    def __init__(self, 
-                connection: List[ndarray],
-                values: List[ndarray]):
-
-        # self.nodeMap = nodeMap
-        
-        self.connection = connection
-        self.values = values
-
-    def input(self, input: ndarray):
-        self.inputNdArray = input / 255.0
-        self.values[0][...,0] = self.inputNdArray
-        self.values[0][...,1] = self.inputNdArray
-        # print(self.inputNdArray)
-        # for x in range(0, xSize):
-        #     for y in range(0, ySize):
-        #         for z in range(0, zSize):
-        #             self.nodeValuePre[NodeLocation(
-        #                 x, y, z)] = input.item((x, y, z))
-
+    def input(self, input: ndarray, controller_input: ndarray):
+        self.inputNdArray = input
+        self.controller_input = controller_input 
+        self.value_map[self.connection_z_map[0]][..., 0] = self.inputNdArray
+        self.value_map[self.connection_z_map[0]][..., 1] = self.inputNdArray
+       
     def compute(self):
-
-
-        # connection = [np.zeros(layerShapes[1] + layerShapes[0]),
-        #               np.zeros(layerShapes[2] + layerShapes[1]),
-        #               np.zeros(layerShapes[6] + layerShapes[1]),
-        #               np.zeros(layerShapes[6] + layerShapes[2]),
-        #               np.zeros(layerShapes[3] + layerShapes[2]),
-        #               np.zeros(layerShapes[4] + layerShapes[3]),
-        #               np.zeros(layerShapes[6] + layerShapes[3]),
-        #               np.zeros(layerShapes[5] + layerShapes[4]),
-        #               np.zeros(layerShapes[6] + layerShapes[4]),
-        #               np.zeros(layerShapes[6] + layerShapes[5]),
-        #               np.zeros(layerShapes[2] + layerShapes[2]),
-        #               np.zeros(layerShapes[3] + layerShapes[3]),
-        #               np.zeros(layerShapes[4] + layerShapes[4]),
-        #               np.zeros(layerShapes[5] + layerShapes[5]),
-        #               ]
-        # # print(connection[0])
-        # values = [np.zeros([*layerShapes[0], 2]),
-        #           np.zeros([*layerShapes[1], 2]),
-        #           np.zeros([*layerShapes[2], 2]),
-        #           np.zeros([*layerShapes[3], 2]),
-        #           np.zeros([*layerShapes[4], 2]),
-        #           np.zeros([*layerShapes[5], 2]),
-        #           np.zeros([*layerShapes[6], 2])]
-        vectorizedSigmoidal = np.vectorize(sigmoidal)
-        vectorizedRelu = np.vectorize(relu)
-        # layer 1
-        v1: ndarray = (self.inputNdArray * self.connection[0]).sum((2, 3))
-        self.values[1][..., 0] = v1 + self.connection[17]
-        self.values[1][..., 1] = vectorizedSigmoidal(v1)
-
-        # layer 2
-        v2: ndarray = (self.values[1][..., 1] * self.connection[1]).sum((2, 3))
-        self.values[2][..., 0] = v2 + (self.values[2][..., 1] * self.connection[10]).sum((2, 3))  + self.connection[18]
-        self.values[2][..., 1] = vectorizedSigmoidal(self.values[2][..., 0])
-        
-        # layer 3
-        v3: ndarray = (self.values[2][..., 1] * self.connection[4]).sum((2, 3))
-        self.values[3][..., 0] = v3 + (self.values[3][..., 1] * self.connection[11]).sum((2, 3)) + self.connection[19]
-        self.values[3][..., 1] = vectorizedSigmoidal(self.values[3][..., 0])
-        
-        # layer 4
-        v4: ndarray = (self.values[3][..., 1] * self.connection[5]).sum((2, 3))
-        # print(self.values[5][..., 1].shape)
-        # print(self.connection[16].sum((2, 3)).shape)
-        # print((self.values[5][..., 1].shape))
-        # print(self.connection[9].sum((2, 3)).shape)
-        self.values[4][..., 0] = v4 + (self.values[4][..., 1] * self.connection[12]).sum((2, 3)) + (self.values[6][..., 1] * self.connection[16]).sum((2, 3))  + self.connection[20]
-        self.values[4][..., 1] = vectorizedSigmoidal(self.values[4][..., 0])
-        
-        # layer 5
-        v4: ndarray = (self.values[4][..., 1] * self.connection[7]).sum((2, 3))
-        self.values[5][..., 0] = v4 + (self.values[5][..., 1] * self.connection[13]).sum((2, 3)) + (self.values[6][..., 1] * self.connection[15]).sum((2, 3))  + self.connection[21]
-        self.values[5][..., 1] = vectorizedSigmoidal(self.values[5][..., 0])
-
-
-        v6: ndarray = (self.values[1][..., 1] * self.connection[2]).sum((2, 3))
-        v7: ndarray = (self.values[2][..., 1] * self.connection[3]).sum((2, 3))
-        v8: ndarray = (self.values[3][..., 1] * self.connection[6]).sum((2, 3))
-        v9: ndarray = (self.values[4][..., 1] * self.connection[8]).sum((2, 3))
-        v10: ndarray = (self.values[5][..., 1] * self.connection[9]).sum((2, 3))
-        vSelf: ndarray = (self.values[6][..., 1] * self.connection[14]).sum((2, 3))
-        sum = v10 + v6 + v7 + v8 + v9 + vSelf  + self.connection[22]
-        # print("=========")
-        # print(v3)
-        # print(self.connection[2])
-        # print(v4)
-        # print(self.connection[3])
-        # print("=========")
-        self.values[6][..., 0] = sum
-        self.values[6][..., 1] = vectorizedSigmoidal(sum)
-        # for v in self.values:
-        #     print(v[...,1])
-        # for computationSet in self.computationOrder:
-        #     # print("Processing Generation:")
-        #     # print(computationSet)
-        #     # print(v)
-        #     # print(vectorizedSigmoidal(v))
-        #     for source in computationSet:
-        #         if source.z > 0:
-        #             self.activateNode(source)
-        #             self.nodeValuePre[source] = 0
-        #         descendants = self.graph.neighbors(source)
-        #         # print("from: " + str(source) + ": Activated")
-        #         # print(self.nodePostValue(source))
-        #         # if source.z ==0:
-        #         #     print(str(source) + ": " + str(self.nodePostValue(source)))
-        #         # print("\t" + str(descendants))
-
-        #         for target in descendants:
-        #             # print(self.graph.has_edge(source, target))
-        #             weight = self.graph.get_edge_data(
-        #                 source, target)[0]["weight"]
-        #             # apply activation on every types aside from the inputs
-        #             # z 0-2 are input channels
-        #             # print(weight)
-
-        #             self.nodeValuePre[target] += self.nodePostValue(
-        #                 source) * weight
-        # for outputNode in self.outputNodes:
-        #     self.activateNode(outputNode)
-        # self.nodeValuePre[source] = 0
-
-    def nodePostValue(self, node: NodeLocation):
-        if (node.z == 0):
-            return self.inputNdArray.item((node.y, node.x))
-        else:
-            return self.nodeValuePost[node]
-
-    def nodePreValue(self, node: NodeLocation):
-        if (node.z == 0):
-            return self.inputNdArray.item((node.y, node.x))
-        else:
-            return self.nodeValuePre[node]
-
-    def activateNode(self, node: NodeLocation):
-        value = self.nodeValuePre[node]
-        if (node.z == 0):
-            value = self.inputNdArray.item((node.y, node.x))
-        self.nodeValuePost[node] = sigmoidal(value)
+        for c in self.calculation_order:
+            if c in self.connection_relationships_inverse:
+                sources = self.connection_relationships_inverse[c]
+                filtered = filter(lambda s: (s + ":" + c) in self.connection_map, sources)
+                filteredList = list(filtered)
+                if len(filteredList) > 0:
+                    signal = map(
+                        lambda s: (self.value_map[s][..., 1] * self.connection_map[
+                            s + ":" + c]).sum((2,3)), filteredList)
+                    
+                    reduced = reduce(lambda d, d2: d + d2, signal)
+                    self.value_map[c][..., 0] = reduced
+                    self.value_map[c][..., 1] = vectorizedSigmoidal(reduced)
 
     def output(self) -> ndarray:
-        return self.values[6][..., 1]
+        return self.value_map[self.connection_z_map[self.output_layer_index]][..., 1]
 
-    def draw(self):
-        nx.draw_spring(self.graph)
 
-    def write(self):
-        nx.write_edgelist(self.graph, "test.txt")

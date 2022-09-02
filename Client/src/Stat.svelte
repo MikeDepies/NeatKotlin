@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     export let title : string
     export let value : number | string
 </script>

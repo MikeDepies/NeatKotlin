@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import * as Pancake from '@sveltejs/pancake';
     export let populationSize : number
     export let highestPopulationScore : number
