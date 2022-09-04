@@ -24,6 +24,7 @@ import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import server.local.*
 import server.message.endpoints.Simulation
+import server.message.endpoints.toModel
 import server.server.WebSocketManager
 import java.io.File
 import java.time.Duration
@@ -124,7 +125,7 @@ fun Application.module() {
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
     launch { evoManager2.start(initialPopulation2) }
-
+    initialPopulation.first().toModel()
     routing(
         EvoControllerHandler(
             mapOf(

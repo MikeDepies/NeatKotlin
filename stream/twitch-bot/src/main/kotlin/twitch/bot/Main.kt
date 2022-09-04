@@ -43,8 +43,6 @@ fun main(args: Array<String>) {
                 twitchClient.chat.sendMessage("meleeNeat", "Active Pikachu Model: <ID>")
             }
         }
-
-
     }
     twitchClient.eventManager.onEvent(RewardRedeemedEvent::class.java) {
         it.redemption.status == "UNFULFILLED"
@@ -52,7 +50,7 @@ fun main(args: Array<String>) {
     }
     val customReward = CustomReward.builder()
         .broadcasterId(broadcasterId)
-        .cost(200)
+        .cost(1000)
         .title("${UUID.randomUUID()}")
         .prompt("2 Kills, 200 damage")
         .maxPerStreamSetting(CustomReward.MaxPerStreamSetting().toBuilder().maxPerStream(1).isEnabled(true).build())
@@ -60,6 +58,5 @@ fun main(args: Array<String>) {
 //    val createCustomReward = twitchClient.helix.createCustomReward(credential.accessToken, broadcasterId, customReward).execute()
 
 //    twitchClient.helix.createClip(credential.accessToken, broadcasterId, false).execute().data
-
 
 }
