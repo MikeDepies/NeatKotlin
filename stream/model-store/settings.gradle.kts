@@ -1,0 +1,1 @@
+rootProject.name = "melee.neat.model-store"
