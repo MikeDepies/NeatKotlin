@@ -1,9 +1,22 @@
 version: "3.7"
 
 services:
+  model-store:
+    container_name: model-store
+    image: model-store:0.0.1
+    ports:
+      - 8099:8099
+  twitch-bot:
+    container_name: twitch-bot
+    image: twitch-bot:0.0.1
+    ports:
+      - 8098:8098
+
   mongo:
     image: mongo
     restart: always
+    ports:
+      - 27017:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example

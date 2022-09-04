@@ -22,5 +22,5 @@ fun Application.module() {
         configureSockets()
         configureMonitoring()
         configureHTTP()
-        configureRouting()
+//        configureRouting()
 }

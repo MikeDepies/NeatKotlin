@@ -10,7 +10,7 @@ RUN chown -R $APPLICATION_USER /app
 
 USER $APPLICATION_USER
 
-COPY ./build/libs/model-store-$VERSION.jar /app/model-store-$VERSION.jar
+COPY ./build/libs/melee.neat.model-store-all.jar /app/model-store-$VERSION.jar
 WORKDIR /app
 
 ENTRYPOINT exec java -server $JAVA_OPTS -jar model-store-$ENV_VERSION.jar

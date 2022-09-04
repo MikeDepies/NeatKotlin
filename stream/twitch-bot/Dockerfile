@@ -10,7 +10,7 @@ RUN chown -R $APPLICATION_USER /app
 
 USER $APPLICATION_USER
 
-COPY ./build/libs/twitch-bot-$VERSION.jar /app/twitch-bot-$VERSION.jar
+COPY ./build/libs/twitch-bot-all.jar /app/twitch-bot-$VERSION.jar
 WORKDIR /app
 
 ENTRYPOINT exec java -server $JAVA_OPTS -jar twitch-bot-$ENV_VERSION.jar

@@ -12,7 +12,7 @@ plugins {
 group = ""
 version = "0.0.1"
 application {
-    mainClass.set(".ApplicationKt")
+    mainClass.set("server.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
@@ -36,3 +36,10 @@ dependencies {
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
+
+//
+//tasks.jar {
+//    archiveBaseName.set("model-store")
+//    manifest { attributes["Main-Class"] = "server.ApplicationKt" }
+//    from(configurations.compileClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+//}
