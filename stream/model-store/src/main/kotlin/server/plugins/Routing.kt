@@ -10,10 +10,9 @@ import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.eq
 import org.litote.kmongo.reactivestreams.KMongo
-import server.model.NeatModel
+import server.model.Model
 
-@Serializable
-data class Model(val id : String, val neatModel : NeatModel)
+
 class DatabaseHelper(private val database : CoroutineDatabase) {
     suspend fun writeModel(model : Model) {
         val collection = database.getCollection<Model>()

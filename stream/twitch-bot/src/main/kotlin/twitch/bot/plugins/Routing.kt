@@ -1,16 +1,18 @@
 package twitch.bot.plugins
 
 import io.ktor.server.routing.*
-import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.request.*
-
-fun Application.configureRouting() {
+import kotlinx.coroutines.channels.Channel
+import mu.KotlinLogging
+import twitch.bot.ModelAction
+import twitch.bot.model.Model
+private val logger = KotlinLogging.logger {  }
+fun Application.configureRouting(modelChannel : Channel<ModelAction>) {
 
     routing {
-        get("/") {
-            call.respondText("Hello World!")
+        post<Model>("/model") {
+            logger.info { "Received model ${it.id}" }
+            modelChannel.send(ModelAction.ModelReceived(it))
         }
     }
 }

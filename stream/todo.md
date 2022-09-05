@@ -26,6 +26,8 @@ The third use-case will be for users to be able to 'download' their captured mod
   - [ ] Document Database (Mongo)
   - [ ] Deploy locally in docker
 - [ ] Cluster support for building models (distribute work)
+- [ ] Consolidate model code into a separate project and include in all projects
+  - [ ] reduce the copy/pasted domain code
 
 
 

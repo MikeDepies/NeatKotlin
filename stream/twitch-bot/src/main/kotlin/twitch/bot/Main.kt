@@ -23,7 +23,6 @@ data class TwitchBotConfig(val accessToken : String, val broadcasterId : String)
 fun main(args: Array<String>) {
     // chat credential
     val config = Json { }.decodeFromStream<Config>(File("config.json").inputStream())
-    println(config.twitch)
     val credential = OAuth2Credential("twitch", config.twitch.accessToken)
     val twitchClient = TwitchClientBuilder.builder()
         .withEnableHelix(true)
@@ -48,15 +47,18 @@ fun main(args: Array<String>) {
         it.redemption.status == "UNFULFILLED"
 
     }
-    val customReward = CustomReward.builder()
-        .broadcasterId(broadcasterId)
-        .cost(1000)
-        .title("${UUID.randomUUID()}")
-        .prompt("2 Kills, 200 damage")
-        .maxPerStreamSetting(CustomReward.MaxPerStreamSetting().toBuilder().maxPerStream(1).isEnabled(true).build())
-        .build()
-//    val createCustomReward = twitchClient.helix.createCustomReward(credential.accessToken, broadcasterId, customReward).execute()
-
+//    repeat(5) {
+//        val customReward = CustomReward.builder()
+//            .broadcasterId(broadcasterId)
+//            .cost(1000)
+//            .title("${UUID.randomUUID()}")
+//            .prompt("2 Kills, 200 damage")
+//            .maxPerStreamSetting(CustomReward.MaxPerStreamSetting().toBuilder().maxPerStream(1).isEnabled(true).build())
+//            .build()
+//        val createCustomReward =
+//            twitchClient.helix.createCustomReward(credential.accessToken, broadcasterId, customReward).execute()
+//        println(createCustomReward)
+//    }
 //    twitchClient.helix.createClip(credential.accessToken, broadcasterId, false).execute().data
 
 }

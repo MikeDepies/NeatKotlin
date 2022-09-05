@@ -11,6 +11,8 @@ services:
     image: twitch-bot:0.0.1
     ports:
       - 8098:8098
+    volumes:
+      - ./twitch-bot/config.json:/app/config.json
 
   mongo:
     image: mongo

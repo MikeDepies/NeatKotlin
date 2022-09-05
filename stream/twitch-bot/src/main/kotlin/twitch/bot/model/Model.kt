@@ -1,4 +1,4 @@
-package server.model
+package twitch.bot.model
 
 import kotlinx.serialization.Serializable
 
@@ -12,13 +12,16 @@ enum class NodeTypeModel {
 data class NeatModel(val nodes: List<NodeGeneModel>, val connections: List<ConnectionGeneModel>)
 
 @Serializable
-data class NodeGeneModel(val node: Int, val bias: Float, val nodeType: NodeTypeModel, val activationFunction: String)
+data class NodeGeneModel(val node: Int, val bias : Float, val nodeType: NodeTypeModel, val activationFunction: String)
 
 @Serializable
 data class ConnectionGeneModel(
-    val inNode: Int, val outNode: Int, val weight: Float, val enabled: Boolean, val innovation: Int
+    val inNode: Int,
+    val outNode: Int,
+    val weight: Float,
+    val enabled: Boolean,
+    val innovation: Int
 )
-
 @Serializable
 enum class Character {
     Pikachu, Link, Bowser, CaptainFalcon, DonkeyKong, DoctorMario,
@@ -29,4 +32,4 @@ enum class Character {
 }
 
 @Serializable
-data class Model(val id: String, val neatModel: NeatModel, val character: Character, val score: Float)
+data class Model(val id : String, val neatModel : NeatModel, val character : Character, val score: Float)

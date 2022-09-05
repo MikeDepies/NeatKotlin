@@ -21,6 +21,7 @@ dependencies {
     implementation("com.github.twitch4j:twitch4j:1.11.0")
 //    implementation(group = "ch.qos.logback", name = "logback-classic", version = logback_version)
 //    testImplementation(kotlin("test"))
+    implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-websockets-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktor_version")
