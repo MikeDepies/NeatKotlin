@@ -41,5 +41,11 @@ class CustomRewardManager(
         } else null
     }
 
+    fun redeemModelSuccess(model: Model) {
+        val (twitchClient, credential, broadcasterId) = twitchRepo
+        val rewardId = modelRewardMap.getValue(model).id
+        twitchClient.helix.deleteCustomReward(credential.accessToken, broadcasterId, rewardId)
+    }
+
 
 }

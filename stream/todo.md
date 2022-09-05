@@ -11,6 +11,8 @@ The third use-case will be for users to be able to 'download' their captured mod
     - [ ] Models should be created after the model finishes its turn on stream?
     - [ ] Models should have a cost that is in association with its server score?
     - [ ] Users can name model with the accompanying message of the reward redemption
+  - [ ] Custom names for redeeming models
+    - [ ] Profanity filter
 - [ ] Svelte Dashboard project
 - [ ] Integration between Kotlin Project and smash server
 - [ ] Database layer
