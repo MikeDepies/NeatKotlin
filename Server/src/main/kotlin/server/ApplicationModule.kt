@@ -4,8 +4,6 @@ package server
 //import AuthServiceAuth0
 //import ClientRegistry
 
-import FrameOutput
-import FrameUpdate
 import PopulationEvolver
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -23,6 +21,7 @@ import org.koin.core.scope.Scope
 import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
+import server.service.TwitchBotService
 import java.io.File
 import kotlin.math.absoluteValue
 import kotlin.math.max
@@ -34,22 +33,22 @@ inline fun <reified T> Scope.getChannel(): Channel<T> =
 
 private var evaluationId = 0
 val applicationModule = module {
-    single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
-    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel(Channel.CONFLATED) }
-    factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
-    factory<Channel<FrameOutput>>(qualifier<ModelUpdate>()) { Channel() }
+//    single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
+//    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel(Channel.CONFLATED) }
+//    factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
+//    factory<Channel<FrameOutput>>(qualifier<ModelUpdate>()) { Channel() }
     single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
     single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
-    single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
+//    single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
     single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-    factory {
-        EvaluationChannels(
-            getChannel(),
-            getChannel(),
-            getChannel(),
-            getChannel()
-        )
-    }
+//    factory {
+//        EvaluationChannels(
+//            getChannel(),
+//            getChannel(),
+//            getChannel(),
+//            getChannel()
+//        )
+//    }
 
     single {
         HttpClient(CIO) {
@@ -59,25 +58,28 @@ val applicationModule = module {
 
         }
     }
-
-    factory { MeleeState(null) }
-    single { FrameClockFactory() }
-//    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel(), getChannel()) }
-    factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
-        println("New Evaluator?")
-        val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
-        ResourceEvaluator(
-            network,
-            agentId,
-            evaluationId,
-            generation,
-            controllerId,
-            meleeState,
-            10f,
-            get(),
-            12000f * 24
-        )
+    single {
+        TwitchBotService(get(), "http://:8099")
     }
+
+//    factory { MeleeState(null) }
+//    single { FrameClockFactory() }
+//    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel(), getChannel()) }
+//    factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
+//        println("New Evaluator?")
+//        val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
+//        ResourceEvaluator(
+//            network,
+//            agentId,
+//            evaluationId,
+//            generation,
+//            controllerId,
+//            meleeState,
+//            10f,
+//            get(),
+//            12000f * 24
+//        )
+//    }
     factory { (evaluationId: Int) ->
         val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
         val randomSeed: Int = 123 + evaluationId

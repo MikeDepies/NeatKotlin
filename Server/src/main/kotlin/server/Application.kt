@@ -101,7 +101,7 @@ fun Application.module() {
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
     launch { evoManager2.start(initialPopulation2) }
-    initialPopulation.first().toModel()
+
     routing(
         EvoControllerHandler(
             mapOf(
@@ -186,16 +186,6 @@ private fun Application.routing(
     }
 }
 
-private fun safeEvolvePopulation(
-    populationEvolver: PopulationEvolver, modelScores: List<ModelScore>
-): List<NeatMutator> {
-    return try {
-        populationEvolver.evolveNewPopulation(modelScores)
-    } catch (e: java.lang.Exception) {
-        e.printStackTrace()
-        throw e
-    }
-}
 
 suspend fun <T, R> Iterable<T>.mapParallel(transform: (T) -> R): List<R> = coroutineScope {
     map { async { transform(it) } }.map { it.await() }

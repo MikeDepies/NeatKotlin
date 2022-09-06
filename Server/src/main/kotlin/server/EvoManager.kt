@@ -262,3 +262,27 @@ class EvoManager(
 
     }
 }
+fun writeGenerationToDisk(
+    currentPopulation: List<NeatMutator>,
+    runFolder: File,
+    populationEvolver: PopulationEvolver,
+    prefix: String
+) {
+    val modelPopulationPersist = currentPopulation.toModel()
+    val savePopulationFile = runFolder.resolve("${prefix}population.json")
+    val json = Json { prettyPrint = true }
+    val encodedModel = json.encodeToString(modelPopulationPersist)
+    savePopulationFile.bufferedWriter().use {
+        it.write(encodedModel)
+        it.flush()
+    }
+    val manifestFile = runFolder.resolve("manifest.json")
+    val manifestData = Manifest(
+        populationEvolver.scoreKeeper.toModel(),
+        populationEvolver.speciesLineage.toModel()
+    )
+    manifestFile.bufferedWriter().use {
+        it.write(json.encodeToString(manifestData))
+        it.flush()
+    }
+}
