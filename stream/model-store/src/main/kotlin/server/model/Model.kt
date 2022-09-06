@@ -30,3 +30,7 @@ enum class Character {
 
 @Serializable
 data class Model(val id: String, val neatModel: NeatModel, val character: Character, val score: Float)
+@Serializable
+data class ModelOwner(val id : String, val userName : String)
+@Serializable
+data class ModelMeta(val owner: ModelOwner, val model: Model, val modelName : String)

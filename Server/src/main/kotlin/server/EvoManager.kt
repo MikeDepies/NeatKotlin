@@ -13,6 +13,7 @@ import neat.model.NeatMutator
 import neat.novelty.KNNNoveltyArchive
 import server.local.ModelEvaluationResult
 import server.local.ModelStatus
+import server.message.endpoints.toModel
 import java.io.File
 import java.lang.Exception
 import java.lang.Float.max
@@ -195,6 +196,7 @@ class EvoManager(
     ) {
         if (m != null) {
             val average = bestModels.map { it.score }.average()
+            val modelStatus = modelStatusMap.getValue(it.modelId)
             bestModels += ScoredModel(behaviorScore, populationEvolver.generation, m, it.modelId)
             bestModels.sortByDescending {
                 it.score - (populationEvolver.generation - it.generation) * (average / 2)

@@ -6,6 +6,8 @@ import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
 import twitch.bot.ModelAction
 import twitch.bot.model.Model
+import twitch.bot.model.ModelMeta
+
 private val logger = KotlinLogging.logger {  }
 fun Application.configureRouting(modelChannel : Channel<ModelAction>) {
 

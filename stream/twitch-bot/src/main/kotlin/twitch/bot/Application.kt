@@ -3,9 +3,11 @@ package twitch.bot
 import Config
 import com.github.philippheuer.credentialmanager.domain.OAuth2Credential
 import com.github.twitch4j.TwitchClientBuilder
+import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
 import com.github.twitch4j.pubsub.events.RewardRedeemedEvent
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.server.application.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -28,7 +30,9 @@ fun Application.module() {
     configureSockets()
     configureMonitoring()
     configureHTTP()
-    val client = HttpClient(CIO)
+    val client = HttpClient(CIO) {
+        install(ContentNegotiation)
+    }
     val config = Json { }.decodeFromStream<Config>(File("config.json").inputStream())
     val credential = OAuth2Credential("twitch", config.twitch.accessToken)
     val twitchClient = TwitchClientBuilder.builder()
@@ -52,9 +56,22 @@ fun Application.module() {
     configureRouting(modelChannel)
     twitchClient.pubSub.listenForChannelPointsRedemptionEvents(credential, broadcasterId)
     twitchClient.eventManager.onEvent(RewardRedeemedEvent::class.java) {
-        val modelRedeemed = ModelAction.ModelRedeemed(it.redemption.reward.id)
-        runBlocking {
+        val modelRedeemed = ModelAction.ModelRedeemed(it.redemption)
+        this@module.launch {
             modelChannel.send(modelRedeemed)
+        }
+    }
+    twitchClient.chat.eventManager.onEvent(ChannelMessageEvent::class.java) { event ->
+        when {
+            event.message.startsWith("#models") -> {
+                this@module.launch {
+                    val modelDescriptions = modelStoreApi.getModelIdsForOwner(event.user.id)
+                    val modelDescriptionMessage =
+                        modelDescriptions.joinToString("\n") { "${it.modelCharacter} - ${it.modelName} (${it.modelId})" }
+                    val message = "${event.user.name} Models:\n $modelDescriptionMessage"
+                    twitchClient.chat.sendMessage("meleeNeat", message)
+                }
+            }
         }
     }
 }

@@ -3,25 +3,17 @@ package server
 import FrameOutput
 import FrameUpdate
 import PopulationEvolver
-import io.ktor.application.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import neat.*
 import neat.model.NeatMutator
-import neat.novelty.NoveltyArchive
-import org.koin.core.parameter.DefinitionParameters
-import org.koin.ktor.ext.get
-import server.message.endpoints.*
+import server.message.endpoints.MeleeFrameData
+import server.message.endpoints.SimulationState
+import server.message.endpoints.toModel
 import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
 import kotlin.math.ceil
 
 private val logger = KotlinLogging.logger { }
@@ -47,25 +39,25 @@ typealias SimulationSnapshot = SimulationState
 
 @Serializable
 data class ModelUpdate(val controllerId: Int, val modelId: String)
-data class IOController(
-    val controllerId: Int, val frameUpdateChannel: Channel<FrameUpdate>,
-    val frameOutputChannel: Channel<FrameOutput>,
-    val modelChannel: Channel<ModelUpdate>
-)
-
-suspend fun IOController.quitMatch() {
-    pressStart()
-    delay(250)
-    frameOutputChannel.send(FrameOutput(controllerId, true, false, false, false, .5f, .5f, .5f, .5f, 1f, 1f, true))
-}
-
-private suspend fun IOController.pressStart() {
-    frameOutputChannel.send(FrameOutput(controllerId, false, false, false, false, .5f, .5f, .5f, .5f, 0f, 0f, true))
-}
+//data class IOController(
+//    val controllerId: Int, val frameUpdateChannel: Channel<FrameUpdate>,
+//    val frameOutputChannel: Channel<FrameOutput>,
+//    val modelChannel: Channel<ModelUpdate>
+//)
+//
+//suspend fun IOController.quitMatch() {
+//    pressStart()
+//    delay(250)
+//    frameOutputChannel.send(FrameOutput(controllerId, true, false, false, false, .5f, .5f, .5f, .5f, 1f, 1f, true))
+//}
+//
+//private suspend fun IOController.pressStart() {
+//    frameOutputChannel.send(FrameOutput(controllerId, false, false, false, false, .5f, .5f, .5f, .5f, 0f, 0f, true))
+//}
 
 object OneController
 object TwoController
-class Evaluation(val evaluationId: Int, val controllers: List<IOController>)
+//class Evaluation(val evaluationId: Int, val controllers: List<IOController>)
 data class EvaluationChannels(
     val scoreChannel: Channel<EvaluationScore>,
     val agentModelChannel: Channel<AgentModel>,
@@ -722,22 +714,22 @@ interface Evaluator<T> {
 //    scoreChannel.send(lastEvaluationScore)
 //    return lastEvaluationScore
 //}
-
-private fun controllerFrameUpdate(ioController: IOController, frameUpdate: FrameUpdate) =
-    when (ioController.controllerId) {
-        1 -> {
-            frameUpdate.copy(
-                player1 = frameUpdate.player2,
-                player2 = frameUpdate.player1,
-                action1 = frameUpdate.action2,
-                action2 = frameUpdate.action1
-            )
-
-        }
-        else -> {
-            frameUpdate
-        }
-    }
+//
+//private fun controllerFrameUpdate(ioController: IOController, frameUpdate: FrameUpdate) =
+//    when (ioController.controllerId) {
+//        1 -> {
+//            frameUpdate.copy(
+//                player1 = frameUpdate.player2,
+//                player2 = frameUpdate.player1,
+//                action1 = frameUpdate.action2,
+//                action2 = frameUpdate.action1
+//            )
+//
+//        }
+//        else -> {
+//            frameUpdate
+//        }
+//    }
 typealias PlayerNumber = Int
 //
 //class BaseEvaluationQuery(val simulationState: SimulationSnapshot) : EvaluationQuery {

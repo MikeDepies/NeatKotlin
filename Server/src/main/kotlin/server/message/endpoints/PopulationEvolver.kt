@@ -1,7 +1,8 @@
+import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
 import neat.mutation.*
-
+private val logger = KotlinLogging.logger {  }
 class PopulationEvolver(
     val speciationController: SpeciationController,
     val scoreKeeper: SpeciesScoreKeeper,

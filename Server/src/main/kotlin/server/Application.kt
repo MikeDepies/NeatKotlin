@@ -1,70 +1,60 @@
 package server
 
-import Auth0Config
 import PopulationEvolver
-import io.ktor.application.*
-import io.ktor.features.*
 import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.serialization.*
-import io.ktor.util.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import neat.ModelScore
+import neat.*
 import neat.model.NeatMutator
-import neat.novelty.KNNNoveltyArchive
 import neat.novelty.NoveltyArchive
 import neat.novelty.levenshtein
-import org.koin.core.parameter.DefinitionParameters
-import org.koin.ktor.ext.Koin
-import org.koin.ktor.ext.get
+import org.koin.ktor.ext.inject
+import org.koin.ktor.plugin.Koin
+import org.slf4j.event.Level
 import server.local.*
 import server.message.endpoints.Simulation
 import server.message.endpoints.toModel
-import server.server.WebSocketManager
+
 import java.io.File
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.collections.ArrayList
-import kotlin.math.min
 import kotlin.math.sqrt
+import kotlin.random.Random
 import kotlin.streams.toList
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
-private val log = KotlinLogging.logger { }
+private val logger = KotlinLogging.logger { }
 
 data class ScoredModel(val score: Float, val generation: Int, val model: NetworkBlueprint, val id: String)
 
-@KtorExperimentalAPI
+
 @Suppress("unused") // Referenced in application.conf
 fun Application.module() {
-    install(io.ktor.websocket.WebSockets) {
-        pingPeriod = Duration.ofSeconds(15)
-        timeout = Duration.ofSeconds(15)
-        maxFrameSize = Long.MAX_VALUE
-        masking = false
-    }
     install(CORS) {
-        method(HttpMethod.Options)
-        method(HttpMethod.Get)
-        method(HttpMethod.Put)
-        method(HttpMethod.Delete)
-        method(HttpMethod.Patch)
-        header(HttpHeaders.Authorization)
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Patch)
+        allowHeader(HttpHeaders.Authorization)
         allowCredentials = true
         allowSameOrigin = true
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
-//    install(CallLogging) {
-//        level = Level.INFO
-//    }
+    install(CallLogging) {
+        level = Level.INFO
+    }
     val application = this
     install(Koin) {
         modules(applicationModule, org.koin.dsl.module {
@@ -74,36 +64,22 @@ fun Application.module() {
                     encodeDefaults = true
                 }
             }
-            single {
-                with(environment.config) {
-                    Auth0Config(
-                        property("ktor.auth0.clientID").getString(),
-                        property("ktor.auth0.clientSecret").getString(),
-                        property("ktor.auth0.audience").getString(),
-                        property("ktor.auth0.grantType").getString()
-                    )
-                }
-            }
         })
     }
+    val jsonService by inject<Json>()
     install(ContentNegotiation) {
-        json(get())
+        json(jsonService)
     }
     val evaluationId = 0
     val evaluationId2 = 1
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
-    get<WebSocketManager>().attachWSRoute()
-    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(5000)
-    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
-    val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId)) })
-    val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId2)) })
-    fun IOController.simulationForController(populationSize: Int) = get<Simulation>(parameters = {
-        DefinitionParameters(
-            listOf(controllerId, populationSize)
-        )
-    })
+//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(5000)
+//    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
+
+    fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
+        simulationFor(controllerId, populationSize, false)
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
@@ -114,13 +90,13 @@ fun Application.module() {
         40,
         behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 5f, killMultiplier = 50f, recoveryMultiplier = 20f)
     )
-    knnNoveltyArchive.behaviors.addAll(a)
-    knnNoveltyArchive2.behaviors.addAll(b)
-    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(populationSize)
+//    knnNoveltyArchive.behaviors.addAll(a)
+//    knnNoveltyArchive2.behaviors.addAll(b)
+    val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize)
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
 
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = controller2.simulationForController(populationSize)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(1, populationSize)
     val evoManager2 =
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
@@ -254,6 +230,59 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehavior, ActionBehavior)
     KNNNoveltyArchiveWeighted(k, 0f, behaviorDistanceMeasureFunction = function)
 
 
+fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
+    val randomSeed: Int = 123 + controllerId
+    val random = Random(randomSeed)
+    val addConnectionAttempts = 5
+    val shFunction = shFunction(.44f)
+
+
+    val (simpleNeatExperiment, population) = if (loadModels) {
+        val populationModel = loadPopulation(File("population/${controllerId}_population.json"))
+        val models = populationModel.models
+        logger.info { "population loaded with size of: ${models.size}" }
+        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+        val simpleNeatExperiment = simpleNeatExperiment(
+            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
+            addConnectionAttempts
+        )
+        val population = models.map { it.toNeatMutator() }
+        simpleNeatExperiment to population
+    } else {
+        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
+        val population = simpleNeatExperiment.generateInitialPopulation2(
+            populationSize,
+            6,
+            2,
+            Activation.CPPN.functions
+        )
+        simpleNeatExperiment to population
+    }
+
+    val compatibilityDistanceFunction = compatibilityDistanceFunction(2f, 2f, 1f)
+    val standardCompatibilityTest = standardCompatibilityTest({
+        shFunction(it)
+    }, { a, b ->
+        cppnGeneRuler.measure(a, b)
+    })
+    return simulation(
+        standardCompatibilityTest,
+        controllerId,
+        distanceFunction = { a, b ->
+            cppnGeneRuler.measure(a, b)
+        },
+        sharingFunction = {
+            shFunction(it)
+        },
+        speciationController = SpeciationController(0),
+        simpleNeatExperiment = simpleNeatExperiment,
+        population = population,
+        generation = if (controllerId == 0) 11612 else 11547
+    )
+}
+
 class KNNNoveltyArchiveWeighted(
     var k: Int,
     var noveltyThreshold: Float,
@@ -278,7 +307,7 @@ class KNNNoveltyArchiveWeighted(
             maxBehavior = behavior
 
         val n = k + value
-        log.info { "K = $n" }
+        logger.info { "K = $n" }
         val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
             .map { behaviorDistanceMeasureFunction(behavior, it) }
             .sorted().toList().take(n.toInt()).average()
@@ -286,5 +315,6 @@ class KNNNoveltyArchiveWeighted(
         return if (distance.isNaN()) 0f else distance
     }
 
-    private fun valueForBehavior(behavior: ActionBehavior) = behavior.totalDamageDone / 5 + (behavior.kills.size * 30) + (behavior.totalDistanceTowardOpponent /20)
+    private fun valueForBehavior(behavior: ActionBehavior) =
+        behavior.totalDamageDone / 5 + (behavior.kills.size * 30) + (behavior.totalDistanceTowardOpponent / 20)
 }

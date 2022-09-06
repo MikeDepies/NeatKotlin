@@ -1,26 +1,16 @@
 package server
+//
+//import AuthService
+//import AuthServiceAuth0
+//import ClientRegistry
 
-import AuthService
-import AuthServiceAuth0
-import ClientRegistry
 import FrameOutput
 import FrameUpdate
-import MessageEndpointRegistry
-import MessageEndpointRegistryImpl
-import MessageWriter
-import MessageWriterImpl
 import PopulationEvolver
-import SessionScope
-import SessionScopeImpl
-import UserTokenResolver
-import UserTokenResolverImpl
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
-import io.ktor.client.features.logging.*
-import io.ktor.client.features.websocket.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -33,7 +23,6 @@ import org.koin.core.scope.Scope
 import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
-import server.server.WebSocketManager
 import java.io.File
 import kotlin.math.absoluteValue
 import kotlin.math.max
@@ -61,43 +50,19 @@ val applicationModule = module {
             getChannel()
         )
     }
-    single {
-        val inputChannel = get<Channel<FrameUpdate>>(qualifier("input"))
-        EvaluationMessageProcessor(get(), inputChannel, get())
-    }
-    single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
-    single<SessionScope> { SessionScopeImpl(this, get()) }
-    single { SimulationSessionScope(this, get()) }
-    single<MessageEndpointRegistry> {
-        val endpointProvider = get<EndpointProvider>()
-        val endpoints = endpointProvider.run {
-            simulationEndpoints()
-        }.toList()
-        MessageEndpointRegistryImpl(endpoints, get())
-    }
 
-    single { EndpointProvider(get(), get(), this) }
-    single<UserTokenResolver> { UserTokenResolverImpl(get()) }
-    single<AuthService> { AuthServiceAuth0(get(), get()) }
-    single { ClientRegistry(listOf()) }
-    single { WebSocketManager(get(), get(), get(), get()) }
     single {
         HttpClient(CIO) {
             install(HttpTimeout) {
             }
-            install(WebSockets)
-            install(JsonFeature) {
-                serializer = KotlinxSerializer()
-            }
-            install(Logging) {
-                level = LogLevel.NONE
-            }
+            install(ContentNegotiation)
+
         }
     }
 
     factory { MeleeState(null) }
     single { FrameClockFactory() }
-    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel(), getChannel()) }
+//    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel(), getChannel()) }
     factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
         println("New Evaluator?")
         val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
@@ -113,14 +78,21 @@ val applicationModule = module {
             12000f * 24
         )
     }
-    factory { (evaluationId: Int, populationSize: Int) ->
+    factory { (evaluationId: Int) ->
         val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
         val randomSeed: Int = 123 + evaluationId
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
         val shFunction = shFunction(.44f)
 
-////
+
+//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
+//        val population = simpleNeatExperiment.generateInitialPopulation2(
+//            populationSize,
+//            6,
+//            2,
+//            Activation.CPPN.functions
+//        )
         val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
         val models = populationModel.models
         log.info { "population loaded with size of: ${models.size}" }
@@ -137,13 +109,6 @@ val applicationModule = module {
         }, { a, b ->
             cppnGeneRuler.measure(a, b)
         })
-//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
-//        val population = simpleNeatExperiment.generateInitialPopulation2(
-//            populationSize,
-//            6,
-//            2,
-//            Activation.CPPN.functions
-//        )
         simulation(
             standardCompatibilityTest,
             evaluationId,

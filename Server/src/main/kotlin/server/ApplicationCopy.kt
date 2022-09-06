@@ -2,20 +2,15 @@ package server
 
 import FrameOutput
 import FrameUpdate
-import MessageWriter
+
 import UserRef
-import io.ktor.application.*
-import io.ktor.http.cio.websocket.*
+
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import server.database.DATABASE_TABLES
 import server.message.BroadcastMessage
 import server.message.TypedUserMessage
 import server.message.endpoints.SpeciesLineageModel
@@ -283,178 +278,161 @@ fun Int.squared() = this * this
 fun Float.squared() = this * this
 
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
-private fun Application.connectAndCreateDatabase() {
-    launch {
-        fun dbProp(propName: String) = environment.config.property("ktor.database.$propName")
-        fun dbPropString(propName: String) = dbProp(propName).getString()
 
-        Database.connect(
-            url = dbPropString("url"),
-            driver = dbPropString("driver"),
-            user = dbPropString("user"),
-            password = dbPropString("password")
-        )
-        newSuspendedTransaction {
-            SchemaUtils.createMissingTablesAndColumns(
-                *DATABASE_TABLES.toTypedArray()
-            )
-        }
-    }
-}
 
-fun evaluationContext(
-    controllers: List<IOController>,
-    evaluationId: Int
-) = EvaluationContext(evaluationId, controllers.map { it.controllerId })
+//fun evaluationContext(
+//    controllers: List<IOController>,
+//    evaluationId: Int
+//) = EvaluationContext(evaluationId, controllers.map { it.controllerId })
 
 @Serializable
 data class EvaluationContext(val evaluationId: Int, val controllers: List<Int>)
-data class Controllers(val controllerList: List<IOController>)
-
-private fun Application.generateFakeData(evaluationChannels: EvaluationChannels) {
-    launch {
-        while (true) {
-            val element = FrameOutput(
-                0,
-                Random.nextBoolean(),
-                Random.nextBoolean(),
-                Random.nextBoolean(),
-                Random.nextBoolean(),
-                Random.nextFloat(),
-                Random.nextFloat(),
-                Random.nextFloat(),
-                Random.nextFloat(),
-                Random.nextFloat(),
-                Random.nextFloat(),
-            )
-            log.info("$element")
-//            evaluationChannels.frameOutputChannel.send(
-//                element
+//data class Controllers(val controllerList: List<IOController>)
+//
+//private fun Application.generateFakeData(evaluationChannels: EvaluationChannels) {
+//    launch {
+//        while (true) {
+//            val element = FrameOutput(
+//                0,
+//                Random.nextBoolean(),
+//                Random.nextBoolean(),
+//                Random.nextBoolean(),
+//                Random.nextBoolean(),
+//                Random.nextFloat(),
+//                Random.nextFloat(),
+//                Random.nextFloat(),
+//                Random.nextFloat(),
+//                Random.nextFloat(),
+//                Random.nextFloat(),
 //            )
-//            evaluationChannels.scoreChannel.send(EvaluationScore(-1, Random.nextFloat() * 1000, listOf()))
-            delay(1000)
-        }
-    }
-}
-
-class EvaluationMessageProcessor(
-    val evaluationChannels: EvaluationChannels,
-    val inputChannel: ReceiveChannel<FrameUpdate>,
-    val messageWriter: MessageWriter
-) {
-    suspend fun processOutput(controller: IOController) {
-        for (frameOutput in controller.modelChannel) {
-            messageWriter.sendAllMessage(
-                BroadcastMessage("simulation.frame.output", frameOutput),
-                ModelUpdate.serializer()
-            )
-
-        }
-    }
-
-    suspend fun processEvaluationClocks() {
-        for (frame in evaluationChannels.clockChannel) {
-            messageWriter.sendPlayerMessage(
-                userMessage = TypedUserMessage(
-                    userRef = UserRef("dashboard"),
-                    topic = "simulation.event.clock.update",
-                    data = frame
-                ),
-                serializer = EvaluationClocksUpdate.serializer()
-            )
-        }
-    }
-
-    suspend fun processPopulation() {
-        for (frame in evaluationChannels.populationChannel) {
-            messageWriter.sendPlayerMessage(
-                userMessage = TypedUserMessage(
-                    userRef = UserRef("dashboard"),
-                    topic = "simulation.event.population.new",
-                    data = frame
-                ),
-                serializer = PopulationModels.serializer()
-            )
-
-        }
-    }
-
-    suspend fun processAgentModel() {
-        for (frame in evaluationChannels.agentModelChannel) {
-            messageWriter.sendPlayerMessage(
-                userMessage = TypedUserMessage(
-                    userRef = UserRef("dashboard"),
-                    topic = "simulation.event.agent.new",
-                    data = frame
-                ),
-                serializer = AgentModel.serializer()
-            )
-        }
-    }
-
-    suspend fun processScores() {
-        try {
-            for (frame in evaluationChannels.scoreChannel) {
-                messageWriter.sendPlayerMessage(
-                    userMessage = TypedUserMessage(
-                        userRef = UserRef("dashboard"),
-                        topic = "simulation.event.score.new",
-                        data = frame
-                    ),
-                    serializer = EvaluationScore.serializer()
-                )
-            }
-        } catch (e: Exception) {
-            log.error(e) { "Score processor crashed..." }
-        }
-    }
-
-    suspend fun processFrameData(frameUpdateChannels: List<IOController>) {
-        for (frame in inputChannel) {
-            //forward to evaluation and broadcast data to dashboard
-            frameUpdateChannels.forEach { it.frameUpdateChannel.send(frame) }
-//            evaluationChannels.player1.frameUpdateChannel.send(frame)
-//            evaluationChannels.player2.frameUpdateChannel.send(frame)
-            messageWriter.sendPlayerMessage(
-                userMessage = TypedUserMessage(
-                    userRef = UserRef("dashboard"),
-                    topic = "simulation.event.frame.update",
-                    data = frame
-                ),
-                serializer = FrameUpdate.serializer()
-            )
-
-        }
-    }
-}
-
-fun Application.networkEvaluatorOutputBridgeLoop(
-    evaluationMessageProcessor: EvaluationMessageProcessor,
-    controllers: List<IOController>
-) {
-
-    controllers.forEach {
-        launch { evaluationMessageProcessor.processOutput(it) }
-
-    }
-    launch { evaluationMessageProcessor.processFrameData(controllers) }
-//    launch { evaluationMessageProcessor.processEvaluationClocks() }
-    launch { evaluationMessageProcessor.processPopulation() }
-    launch { evaluationMessageProcessor.processAgentModel() }
-    launch { evaluationMessageProcessor.processScores() }
-}
-
-fun previewMessage(frame: Frame.Text): String {
-    val readText = frame.readText()
-    val frameLength = readText.length
-    return when {
-        frameLength < 101 -> readText
-        else -> {
-            val messagePreview = readText.take(100)
-            "$messagePreview...\n[[[rest of message has been trimmed]]]"
-        }
-    }
-}
+//            log.info("$element")
+////            evaluationChannels.frameOutputChannel.send(
+////                element
+////            )
+////            evaluationChannels.scoreChannel.send(EvaluationScore(-1, Random.nextFloat() * 1000, listOf()))
+//            delay(1000)
+//        }
+//    }
+//}
+//
+//class EvaluationMessageProcessor(
+//    val evaluationChannels: EvaluationChannels,
+//    val inputChannel: ReceiveChannel<FrameUpdate>,
+//    val messageWriter: MessageWriter
+//) {
+//    suspend fun processOutput(controller: IOController) {
+//        for (frameOutput in controller.modelChannel) {
+//            messageWriter.sendAllMessage(
+//                BroadcastMessage("simulation.frame.output", frameOutput),
+//                ModelUpdate.serializer()
+//            )
+//
+//        }
+//    }
+//
+//    suspend fun processEvaluationClocks() {
+//        for (frame in evaluationChannels.clockChannel) {
+//            messageWriter.sendPlayerMessage(
+//                userMessage = TypedUserMessage(
+//                    userRef = UserRef("dashboard"),
+//                    topic = "simulation.event.clock.update",
+//                    data = frame
+//                ),
+//                serializer = EvaluationClocksUpdate.serializer()
+//            )
+//        }
+//    }
+//
+//    suspend fun processPopulation() {
+//        for (frame in evaluationChannels.populationChannel) {
+//            messageWriter.sendPlayerMessage(
+//                userMessage = TypedUserMessage(
+//                    userRef = UserRef("dashboard"),
+//                    topic = "simulation.event.population.new",
+//                    data = frame
+//                ),
+//                serializer = PopulationModels.serializer()
+//            )
+//
+//        }
+//    }
+//
+//    suspend fun processAgentModel() {
+//        for (frame in evaluationChannels.agentModelChannel) {
+//            messageWriter.sendPlayerMessage(
+//                userMessage = TypedUserMessage(
+//                    userRef = UserRef("dashboard"),
+//                    topic = "simulation.event.agent.new",
+//                    data = frame
+//                ),
+//                serializer = AgentModel.serializer()
+//            )
+//        }
+//    }
+//
+//    suspend fun processScores() {
+//        try {
+//            for (frame in evaluationChannels.scoreChannel) {
+//                messageWriter.sendPlayerMessage(
+//                    userMessage = TypedUserMessage(
+//                        userRef = UserRef("dashboard"),
+//                        topic = "simulation.event.score.new",
+//                        data = frame
+//                    ),
+//                    serializer = EvaluationScore.serializer()
+//                )
+//            }
+//        } catch (e: Exception) {
+//            log.error(e) { "Score processor crashed..." }
+//        }
+//    }
+//
+//    suspend fun processFrameData(frameUpdateChannels: List<IOController>) {
+//        for (frame in inputChannel) {
+//            //forward to evaluation and broadcast data to dashboard
+//            frameUpdateChannels.forEach { it.frameUpdateChannel.send(frame) }
+////            evaluationChannels.player1.frameUpdateChannel.send(frame)
+////            evaluationChannels.player2.frameUpdateChannel.send(frame)
+//            messageWriter.sendPlayerMessage(
+//                userMessage = TypedUserMessage(
+//                    userRef = UserRef("dashboard"),
+//                    topic = "simulation.event.frame.update",
+//                    data = frame
+//                ),
+//                serializer = FrameUpdate.serializer()
+//            )
+//
+//        }
+//    }
+//}
+//
+//fun Application.networkEvaluatorOutputBridgeLoop(
+//    evaluationMessageProcessor: EvaluationMessageProcessor,
+//    controllers: List<IOController>
+//) {
+//
+//    controllers.forEach {
+//        launch { evaluationMessageProcessor.processOutput(it) }
+//
+//    }
+//    launch { evaluationMessageProcessor.processFrameData(controllers) }
+////    launch { evaluationMessageProcessor.processEvaluationClocks() }
+//    launch { evaluationMessageProcessor.processPopulation() }
+//    launch { evaluationMessageProcessor.processAgentModel() }
+//    launch { evaluationMessageProcessor.processScores() }
+//}
+//
+//fun previewMessage(frame: Frame.Text): String {
+//    val readText = frame.readText()
+//    val frameLength = readText.length
+//    return when {
+//        frameLength < 101 -> readText
+//        else -> {
+//            val messagePreview = readText.take(100)
+//            "$messagePreview...\n[[[rest of message has been trimmed]]]"
+//        }
+//    }
+//}
 
 @Serializable
 data class Manifest(val scoreKeeperModel: SpeciesScoreKeeperModel, val scoreLineageModel: SpeciesLineageModel)
