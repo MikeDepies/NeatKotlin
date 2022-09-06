@@ -1,9 +1,6 @@
 package server
 
 import kotlinx.serialization.Serializable
-import mu.KotlinLogging
-
-private val logger = KotlinLogging.logger { }
 
 @Serializable
 data class ActionBehavior(

@@ -37,10 +37,10 @@ val applicationModule = module {
 //    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel(Channel.CONFLATED) }
 //    factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
 //    factory<Channel<FrameOutput>>(qualifier<ModelUpdate>()) { Channel() }
-    single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
-    single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
+//    single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
+//    single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
 //    single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
-    single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
+//    single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
 //    factory {
 //        EvaluationChannels(
 //            getChannel(),

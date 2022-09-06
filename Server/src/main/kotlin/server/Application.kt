@@ -1,6 +1,5 @@
 package server
 
-import PopulationEvolver
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -9,27 +8,24 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
-import neat.model.NeatMutator
-import neat.novelty.NoveltyArchive
 import neat.novelty.levenshtein
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import org.slf4j.event.Level
 import server.local.*
 import server.message.endpoints.Simulation
-import server.message.endpoints.toModel
-
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.sqrt
 import kotlin.random.Random
-import kotlin.streams.toList
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -273,38 +269,9 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     )
 }
 
-class KNNNoveltyArchiveWeighted(
-    var k: Int,
-    var noveltyThreshold: Float,
-    val behaviorFilter: (ActionBehavior, ActionBehavior) -> Boolean = { _, _ -> true },
-    val behaviorDistanceMeasureFunction: (ActionBehavior, ActionBehavior) -> Float
-) :
-    NoveltyArchive<ActionBehavior> {
-    override val behaviors = mutableListOf<ActionBehavior>()
-    override val size: Int
-        get() = behaviors.size
-    var maxBehavior = ActionBehavior(listOf(), listOf(), listOf(), listOf(), 0.1f, 0f, false)
-    override fun addBehavior(behavior: ActionBehavior): Float {
-        val distance = measure(behavior)
-        if (distance > noveltyThreshold || size == 0)
-            behaviors += behavior
-        return distance
-    }
+fun Int.squared() = this * this
+fun Float.squared() = this * this
 
-    override fun measure(behavior: ActionBehavior): Float {
-        val value = valueForBehavior(behavior)
-        if (value > valueForBehavior(maxBehavior))
-            maxBehavior = behavior
+fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
 
-        val n = k + value
-        logger.info { "K = $n" }
-        val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
-            .map { behaviorDistanceMeasureFunction(behavior, it) }
-            .sorted().toList().take(n.toInt()).average()
-            .toFloat()
-        return if (distance.isNaN()) 0f else distance
-    }
 
-    private fun valueForBehavior(behavior: ActionBehavior) =
-        behavior.totalDamageDone / 5 + (behavior.kills.size * 30) + (behavior.totalDistanceTowardOpponent / 20)
-}
