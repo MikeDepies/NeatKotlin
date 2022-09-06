@@ -43,6 +43,16 @@ class ModelRoutes(val databaseHelper: DatabaseHelper) {
                 else
                     call.respond(HttpStatusCode.BadRequest, "Bad request for $id")
             }
+            get("/model/check/{id}") {
+                val id = call.parameters["id"] ?: throw IllegalArgumentException("no id provided")
+                val model = databaseHelper.getModel(id)
+                if (model != null)
+                    call.respond(ModelStatus(true))
+                else
+                    call.respond(ModelStatus(false))
+            }
         }
     }
 }
+@Serializable
+data class ModelStatus(val exists : Boolean)

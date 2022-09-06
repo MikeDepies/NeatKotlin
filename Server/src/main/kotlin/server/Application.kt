@@ -178,7 +178,10 @@ private fun Application.routing(
             }
             post<ModelsRequest>("/best") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
-                call.respond(ArrayList(evoManager.bestModels).random().model)
+
+                val model = ArrayList(evoManager.bestModels).random().model
+                model.id
+                call.respond(model)
             }
             post<ModelRequest>("/request") { modelRequest ->
                 val evoManager = evoHandler.evoManager(modelRequest.controllerId)

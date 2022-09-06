@@ -1,8 +1,9 @@
 package twitch.bot
 
+import mu.KotlinLogging
 import twitch.bot.model.CustomRewardManager
-
-class ModelActionHandler(val modelStoreApi: ModelStoreApi, val customRewardManager: CustomRewardManager) {
+private val logger = KotlinLogging.logger {  }
+class ModelActionHandler(private val modelStoreApi: ModelStoreApi, private val customRewardManager: CustomRewardManager) {
     suspend fun handle(
         modelAction: ModelAction
     ) {
