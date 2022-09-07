@@ -11,6 +11,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -21,6 +22,9 @@ import org.koin.ktor.plugin.Koin
 import org.slf4j.event.Level
 import server.local.*
 import server.message.endpoints.Simulation
+import server.message.endpoints.toModel
+import server.service.TwitchBotService
+import server.service.TwitchModel
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -122,6 +126,19 @@ class EvoControllerHandler(val map: Map<Int, EvoManager>) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
+    val twitchBotService by inject<TwitchBotService>()
+    var lastModel1 : TwitchModel? = null
+    var lastModel2 : TwitchModel? = null
+    fun modelFor(controllerId: Int) = when(controllerId) {
+        0 -> lastModel1
+        1 -> lastModel2
+        else -> throw Exception()
+    }
+    fun character(controllerId: Int) = when(controllerId) {
+        0 -> Character.Link
+        1 -> Character.Pikachu
+        else -> throw Exception()
+    }
     routing {
         post<ModelsRequest>("/models") {
             val evoManager = evoHandler.evoManager(it.controllerId)
@@ -152,7 +169,21 @@ private fun Application.routing(
                 val evoManager = evoHandler.evoManager(it.controllerId)
 
                 val model = ArrayList(evoManager.bestModels).random().model
-                model.id
+                val neatModel = evoManager.modelStatusMap.getValue(model.id)
+                val twitchModel = TwitchModel(
+                    model.id,
+                    neatModel.neatMutator!!.toModel(),
+                    character(it.controllerId),
+                    neatModel.score ?: 0f
+                )
+                val modelFor = modelFor(it.controllerId)
+                if (modelFor != null)
+                    twitchBotService.sendModel(modelFor)
+                if (it.controllerId == 0) {
+                    lastModel1 = twitchModel
+                } else {
+                    lastModel2 = twitchModel
+                }
                 call.respond(model)
             }
             post<ModelRequest>("/request") { modelRequest ->
@@ -275,3 +306,11 @@ fun Float.squared() = this * this
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
 
 
+@Serializable
+enum class Character {
+    Pikachu, Link, Bowser, CaptainFalcon, DonkeyKong, DoctorMario,
+    Falco, Fox, GameAndWatch, GannonDorf,
+    JigglyPuff, Kirby, Luigi, Mario, Marth, MewTwo, Nana,
+    Ness, Peach, Pichu, Popo,
+    Roy, Samus, Sheik, YoungLink, Yoshi, Zelda
+}

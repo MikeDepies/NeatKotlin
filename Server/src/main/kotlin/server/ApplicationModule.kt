@@ -12,6 +12,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
@@ -59,7 +60,12 @@ val applicationModule = module {
         }
     }
     single {
-        TwitchBotService(get(), "http://:8099")
+        val json by inject<Json>()
+        json.decodeFromStream<Config>(File("config.json").inputStream())
+    }
+    single {
+        val config by inject<Config>()
+        TwitchBotService(get(), config.url.twitchBot)
     }
 
 //    factory { MeleeState(null) }

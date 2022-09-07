@@ -3,6 +3,7 @@ package server.service
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import server.Character
 import server.message.endpoints.NeatModel
 
 
