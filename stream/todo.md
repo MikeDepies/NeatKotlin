@@ -13,6 +13,9 @@ The third use-case will be for users to be able to 'download' their captured mod
     - [ ] Users can name model with the accompanying message of the reward redemption
   - [ ] Custom names for redeeming models
     - [ ] Profanity filter
+  - [ ] Ability to impact evolution trajectory?
+    - [ ] submit stored models into the set? (maybe with MCC)
+  - [ ] Fix urls for dockerized runtime
 - [ ] Svelte Dashboard project
 - [ ] Integration between Kotlin Project and smash server
 - [ ] Database layer
@@ -30,7 +33,8 @@ The third use-case will be for users to be able to 'download' their captured mod
 - [ ] Cluster support for building models (distribute work)
 - [ ] Consolidate model code into a separate project and include in all projects
   - [ ] reduce the copy/pasted domain code
-
+- [ ] Implement python NEAT network execution
+- [ ] Implement python hyperNEAT network construction
 
 
 

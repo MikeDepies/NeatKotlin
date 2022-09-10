@@ -7,8 +7,10 @@ import mu.KotlinLogging
 import twitch.bot.ModelAction
 import twitch.bot.model.Model
 import twitch.bot.model.ModelMeta
+import twitch.bot.model.NeatModel
 
 private val logger = KotlinLogging.logger {  }
+
 fun Application.configureRouting(modelChannel : Channel<ModelAction>) {
 
     routing {

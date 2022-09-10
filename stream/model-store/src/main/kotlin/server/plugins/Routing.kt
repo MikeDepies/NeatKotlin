@@ -4,19 +4,13 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.litote.kmongo.coroutine.CoroutineDatabase
-import org.litote.kmongo.coroutine.CoroutineFindPublisher
-import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.div
 import org.litote.kmongo.eq
-import org.litote.kmongo.reactivestreams.KMongo
 import server.model.Character
-import server.model.Model
 import server.model.ModelMeta
 import server.model.ModelOwner
-import java.lang.Exception
 
 
 class DatabaseHelper(private val database : CoroutineDatabase) {
@@ -26,7 +20,7 @@ class DatabaseHelper(private val database : CoroutineDatabase) {
     }
     suspend fun getModel(id: String): ModelMeta? {
         val collection = database.getCollection<ModelMeta>()
-        return collection.findOne(ModelMeta::model / Model::id eq id)
+        return collection.findOne(ModelMeta::id eq id)
     }
 
     suspend fun getModelsForOwnerId(id : String): List<ModelMeta> {
@@ -61,7 +55,7 @@ class ModelRoutes(private val databaseHelper: DatabaseHelper) {
             get("/modeldescriptions/{ownerId}") {
                 val ownerId = call.parameters["ownerId"] ?: throw Exception("Missing ownerID query parameter")
                 val modelsForOwnerId = databaseHelper.getModelsForOwnerId(ownerId)
-                val modelDescriptions = modelsForOwnerId.map { ModelDescription(it.model.id, it.modelName, it.model.character) }
+                val modelDescriptions = modelsForOwnerId.map { ModelDescription(it.id, it.modelName, it.character) }
                 call.respond(modelDescriptions)
             }
         }
