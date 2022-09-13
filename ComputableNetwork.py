@@ -1,16 +1,12 @@
-import enum
-from functools import reduce
-import json
-import math
-from collections import defaultdict
 from dataclasses import dataclass
-from time import sleep
-from typing import Dict, List, Set, Tuple
-
-import networkx as nx
-import numpy as np
-from networkx.algorithms.dag import descendants
+from functools import reduce
+import math
+from typing import Dict, List
 from numpy import ndarray, vectorize
+import numpy as np
+
+from HyperNeatDomain import LayerShape3D
+
 
 
 def sigmoidal(x: float):
@@ -33,20 +29,6 @@ def relu(x: float):
     return x
 
 
-@dataclass
-class LayerPlane:
-    height: int
-    width: int
-    id: str
-
-
-@dataclass
-class LayerShape3D:
-    layerPlane: LayerPlane
-    xOrigin: int
-    yOrigin: int
-    zOrigin: int
-
 
 @dataclass
 class ConnectionLocation:
@@ -66,27 +48,6 @@ class NetworkBlueprint:
     connectionPlanes: List[LayerShape3D]
     connectionRelationships: Dict[str, List[str]]
 
-
-class ConnectionLocation:
-    x1: int
-    y1: int
-    z1: int
-    x2: int
-    y2: int
-    z2: int
-    weight: float
-
-    def __init__(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int,
-                 weight: float):
-        self.x1 = x1
-        self.y1 = y1
-        self.z1 = z1
-        self.x2 = x2
-        self.y2 = y2
-        self.z2 = z2
-        self.weight = weight
-
-
 # Identify input, hidden and output nodes
 def constructNetwork(connections: 'list[ConnectionLocation]',
                      connection_planes: 'list[LayerShape3D]',
@@ -101,18 +62,18 @@ def constructNetwork(connections: 'list[ConnectionLocation]',
     #     connection_map[p] = np.zeros([p.layerPlane.height, p.layerPlane.width, 2])
     value_map : 'dict[str, ndarray]' = dict()
     for p in connection_planes:
-        id = p.layerPlane.id
-        value_map[id] = np.zeros([p.layerPlane.height, p.layerPlane.width, 2])
+        id = p.layer_plane.id
+        value_map[id] = np.zeros([p.layer_plane.height, p.layer_plane.width, 2])
         connection_plane_map[id] = p
         # print(p)
     # print("connection Plane Map:")
     # print(connection_plane_map)
     # print("====")
     for p in connection_planes:
-        connection_z_map[p.zOrigin] = p.layerPlane.id
-        id = p.layerPlane.id
-        if p.layerPlane.id in connection_relationships:
-            for target_id in connection_relationships[p.layerPlane.id]:
+        connection_z_map[p.z_origin] = p.layer_plane.id
+        id = p.layer_plane.id
+        if p.layer_plane.id in connection_relationships:
+            for target_id in connection_relationships[p.layer_plane.id]:
                 t = connection_plane_map[target_id]
                 # if t.zOrigin == 1 and p.zOrigin == 0:
                 #     print("CREATING THE CONNECTION !")
@@ -125,8 +86,8 @@ def constructNetwork(connections: 'list[ConnectionLocation]',
                 #     print(id + ":" + target_id)
                 # if id + ":" + target_id in connection_map:
                 connection_map[id + ":" + target_id] = np.zeros([
-                    t.layerPlane.height, t.layerPlane.width,
-                    p.layerPlane.height, p.layerPlane.width,
+                    t.layer_plane.height, t.layer_plane.width,
+                    p.layer_plane.height, p.layer_plane.width,
                 ])
     # print(connection_map.keys())
     # print(connection_z_map)
@@ -171,22 +132,9 @@ class ComputableNetwork:
 
     def input(self, input: ndarray):
         self.inputNdArray = input
-        # self.controller_input = controller_input
-        
-        # print(self.connection_z_map)
-        
         self.value_map[self.connection_z_map[0]][..., 0] = self.inputNdArray
         self.value_map[self.connection_z_map[0]][..., 1] = self.inputNdArray
-        # self.value_map[self.connection_z_map[8]][..., 0] = self.controller_input
-        # self.value_map[self.connection_z_map[8]][..., 1] = self.controller_input
-
-        # print(self.inputNdArray)
-        # for x in range(0, xSize):
-        #     for y in range(0, ySize):
-        #         for z in range(0, zSize):
-        #             self.nodeValuePre[NodeLocation(
-        #                 x, y, z)] = input.item((x, y, z))
-
+        
     def compute(self):
         vectorizedSigmoidal = np.vectorize(sigmoidal)
         vectorizedRelu = np.vectorize(relu)
@@ -229,10 +177,3 @@ class ComputableNetwork:
         return self.value_map[self.connection_z_map[4]][..., 1]
     def outputUnActivated(self) -> ndarray:
         return self.value_map[self.connection_z_map[4]][..., 0]
-
-
-    def draw(self):
-        nx.draw_spring(self.graph)
-
-    def write(self):
-        nx.write_edgelist(self.graph, "test.txt")

@@ -2,14 +2,14 @@ from dataclasses import dataclass
 from typing import Any, List
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class NodeGeneModel:
     node : int
     bias: float
     node_type : str
     activation_function: str
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class ConnectionGeneModel:
     in_node: int
     out_node: int
@@ -36,7 +36,7 @@ def parse_nodes(data : List[Any]) -> List[NodeGeneModel]:
     return list(map(parse_node, data))
 
 def parse_connection(data: Any) -> ConnectionGeneModel:
-    return ConnectionGeneModel(data["inNode"], data["outNode"], data["weight"], data["enabeld"], data["innovation"])
+    return ConnectionGeneModel(data["inNode"], data["outNode"], data["weight"], data["enabled"], data["innovation"])
 
 def parse_connections(data: List[Any]) -> List[ConnectionGeneModel]:
     return list(map(parse_connection, data))

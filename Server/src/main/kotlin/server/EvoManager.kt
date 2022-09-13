@@ -230,14 +230,16 @@ class EvoManager(
                 it to NetworkBlueprint(createNetwork.build(it.neatMutator.toNetwork(), 3f), it.id, createNetwork.planes,
                     connectionRelationships,
                     targetConnectionMapping,
-                    calculationOrder
+                    calculationOrder,
+                    it.neatMutator.toModel()
                 )
             } catch (e: Exception) {
                 it to NetworkBlueprint(
                     listOf(), it.id, createNetwork.planes,
                     connectionRelationships,
                     targetConnectionMapping,
-                    calculationOrder
+                    calculationOrder,
+                    it.neatMutator.toModel()
                 )
             }
         }.forEach { (networkWithId, network) ->

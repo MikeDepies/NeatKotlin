@@ -13,6 +13,7 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import neat.ActivatableNetwork
+import server.message.endpoints.NeatModel
 import java.util.*
 
 private val log = KotlinLogging.logger { }
@@ -79,7 +80,8 @@ data class NetworkBlueprint(
     val connectionPlanes: List<LayerShape3D>,
     val connectionRelationships: Map<String, List<String>>,
     val targetConnectionMapping: Map<String, List<String>>,
-    val calculationOrder: List<String>
+    val calculationOrder: List<String>,
+    val neatModel: NeatModel
 )
 
 fun layerPlane(height: Int, width: Int, id: String = UUID.randomUUID().toString()): LayerPlane {
