@@ -113,7 +113,7 @@ fun createNetwork(): TaskNetworkBuilder {
 //        put(imagePlane1, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
 //        put(imagePlane2, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
 //        put(imagePlane3, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-        put(outputPlane, listOf(outputPlane))
+        put(outputPlane, listOf())
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         put(inputImagePlane, 0)
@@ -215,6 +215,7 @@ class NetworkConnectionBuilder(
                             ((yTarget / targetHeight.toFloat()) * totalHyperYDistance) + hyperDimensions.yMin
                         input[3] = hyperTargetX
                         input[4] = hyperTargetY
+                        log.info { input }
                         network.evaluate(input)
                         val weight = network.output()[0]
                         val expressValue = network.output()[1]

@@ -189,12 +189,12 @@ private fun Application.routing(
             post<ModelRequest>("/request") { modelRequest ->
                 val evoManager = evoHandler.evoManager(modelRequest.controllerId)
                 val id = evoManager.population.first().id
-                val networkDescription = evoManager.modelMap[id]
+                val networkDescription = evoManager.modelMap[modelRequest.modelId]
                 val neatModel = networkDescription!!.neatModel
                 val network = neatModel.toNeatMutator().toNetwork()
-                network.evaluate(listOf(0f,0f,0f,0f,0f,0f))
-                logger.info { neatModel }
-                logger.info { network.output() }
+//                network.evaluate(listOf(1f,1f,1f,1f,1f,1f))
+//                logger.info { neatModel }
+//                logger.info { network.output() }
                 if (networkDescription != null) {
                     call.respond(networkDescription)
                 } else {

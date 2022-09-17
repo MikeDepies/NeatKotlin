@@ -128,9 +128,9 @@ def create_layer_computation_instructions(neat_model : NeatModel) -> List[LayerC
 def compute_instructions(layer_computations : List[LayerComputationInstruction], output_nodes : List[NetworkNode], output: List[float]) -> List[float]:
     for layer_computation in layer_computations:
         for node in layer_computation.nodes:
-            print(node.value + node.bias)
+            # print(node.value + node.bias)
             activate(node)
-            print(node)
+            # print(node)
         for weight_computation in layer_computation.weightInstructions:
             weight_computation.output_node.value += weight_computation.input_node.activated_value * weight_computation.connection_weight
     index = 0
@@ -165,7 +165,7 @@ class NeatComputer:
             self.input_nodes[index].value = input[index]
             index +=1
         # print("before:")
-        print(input)
+        # print(input)
         # print(self.input_nodes)
         compute_instructions(self.layer_computations, self.output_nodes, self.output)
         # print("after:")
@@ -176,11 +176,12 @@ class HyperNeatBuilder:
     network_design : NetworkDesign
     network_computer : NeatComputer
 
-    def __init__(self, network_design : NetworkDesign, network_computer : NeatComputer, hyper_shape : HyperDimension3D, depth : int) -> None:
+    def __init__(self, network_design : NetworkDesign, network_computer : NeatComputer, hyper_shape : HyperDimension3D, depth : int, connection_magnitude : float) -> None:
         self.network_design = network_design
         self.network_computer = network_computer
         self.hyper_shape = hyper_shape
         self.depth = depth
+        self.connection_magnitude = connection_magnitude
 
     def compute_connections_between_layers(self, layer_source : LayerShape3D, layer_target : LayerShape3D):
         source_width = layer_source.layer_plane.width
@@ -221,12 +222,12 @@ class HyperNeatBuilder:
                         input[3] = target_hyper_x
                         input[4] = target_hyper_y
                         self.network_computer.compute(input)
-                        # print(input)
+                        print(input)
                         # print(self.network_computer.output)
                         weight = self.network_computer.output[0]
                         express_value = self.network_computer.output[1]
                         if (express_value > 0):
-                            connection_ndarray[target_y, target_x, source_y, source_x] = weight
+                            connection_ndarray[target_y, target_x, source_y, source_x] = weight * self.connection_magnitude
         return connection_ndarray
                         
 

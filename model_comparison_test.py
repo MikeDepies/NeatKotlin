@@ -79,20 +79,24 @@ def console_loop(port : int):
         hyper_shape = HyperDimension3D(-1, 1, -1, 1, -1, 1)
         depth = 1
         
-        hyper_neat_builder = HyperNeatBuilder(network_design, computer, hyper_shape, depth)
-        computer.compute([0,0,0,0,0,0])
-        print(computer.output)
-        print(neat_model.nodes)
-        print(neat_model.connections)
-        # python_network = hyper_neat_builder.create_ndarrays()
+        hyper_neat_builder = HyperNeatBuilder(network_design, computer, hyper_shape, depth, 3)
+        # computer.compute([.2,1,1,1,1,1])
+        # print(computer.output)
+        # computer.compute([.2,1,1,1,1,1])
+        # print(computer.output)
+        # computer.compute([.2,1,1,1,1,1])
+        # print(computer.output)
+        # print(neat_model.nodes)
+        # print(neat_model.connections)
+        python_network = hyper_neat_builder.create_ndarrays()
 
-        # server_network = constructNetwork(connections, connection_planes, connection_relationships, connection_relationships_inverse, calculation_order)
-        # for p in network_design.connection_planes:
-        #     id = p.layer_plane.id
-        #     if p.layer_plane.id in network_design.connection_relationships:
-        #         for target_id in network_design.connection_relationships[p.layer_plane.id]:
-        #             print(server_network.connection_map[id + ":" + target_id])
-        #             print(python_network.connection_map[id + ":" + target_id])
+        server_network = constructNetwork(connections, connection_planes, connection_relationships, connection_relationships_inverse, calculation_order)
+        for p in network_design.connection_planes:
+            id = p.layer_plane.id
+            if p.layer_plane.id in network_design.connection_relationships:
+                for target_id in network_design.connection_relationships[p.layer_plane.id]:
+                    print(server_network.connection_map[id + ":" + target_id])
+                    print(python_network.connection_map[id + ":" + target_id])
     
 
 if __name__ == '__main__':
