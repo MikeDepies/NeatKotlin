@@ -50,6 +50,7 @@ def console_loop(port : int):
     
     model_helper = ModelHelper(ai_controller_id, "localhost")
     model_list = model_helper.getModels()
+    print(model_list)
     for m in model_list:
         data = model_helper.getNetworkTest(0, m)
         id: str = data["id"]
@@ -66,22 +67,32 @@ def console_loop(port : int):
         connection_planes: list[LayerShape3D] = list(
             map(lambda c: mapC(c), data["connectionPlanes"]))
         neat_model_data = data["neatModel"]
+        
         neat_model = parse_neat_model(neat_model_data)
+        for n in neat_model.nodes:
+            if n.node_type == "Output":
+                n.bias = 0
         layer_computation_instructions = create_layer_computation_instructions(neat_model)
-        print(layer_computation_instructions)
+        # print(layer_computation_instructions)
         computer = NeatComputer(layer_computation_instructions)
         network_design = NetworkDesign(connection_planes, connection_relationships, connection_relationships_inverse, calculation_order)
         hyper_shape = HyperDimension3D(-1, 1, -1, 1, -1, 1)
-        depth = 4
+        depth = 1
+        
         hyper_neat_builder = HyperNeatBuilder(network_design, computer, hyper_shape, depth)
-        python_network = hyper_neat_builder.create_ndarrays()
+        computer.compute([0,0,0,0,0,0])
+        print(computer.output)
+        print(neat_model.nodes)
+        print(neat_model.connections)
+        # python_network = hyper_neat_builder.create_ndarrays()
 
-        server_network = constructNetwork(connections, connection_planes, connection_relationships, connection_relationships_inverse, calculation_order)
-        for p in network_design.connection_planes:
-            id = p.layer_plane.id
-            if p.layer_plane.id in network_design.connection_relationships:
-                for target_id in network_design.connection_relationships[p.layer_plane.id]:
-                    print(server_network.connection_map[id + ":" + target_id] == python_network.connection_map[id + ":" + target_id])
+        # server_network = constructNetwork(connections, connection_planes, connection_relationships, connection_relationships_inverse, calculation_order)
+        # for p in network_design.connection_planes:
+        #     id = p.layer_plane.id
+        #     if p.layer_plane.id in network_design.connection_relationships:
+        #         for target_id in network_design.connection_relationships[p.layer_plane.id]:
+        #             print(server_network.connection_map[id + ":" + target_id])
+        #             print(python_network.connection_map[id + ":" + target_id])
     
 
 if __name__ == '__main__':

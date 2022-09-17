@@ -8,8 +8,9 @@ from numpy import ndarray, vectorize
 import numpy as np
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class NetworkNode:
+    node: int
     value : float
     activated_value: float
     activation_function : str
@@ -84,14 +85,14 @@ def node_dict(nodes : List[NodeGeneModel]) -> Dict[int, NodeGeneModel]:
 def create_network_node_map(nodes : List[NodeGeneModel]) -> Dict[int, NetworkNode]:
     d = dict[int, NetworkNode]()
     for n in nodes:
-        d[n.node] = NetworkNode(0, 0, n.activation_function, n.bias)
+        d[n.node] = NetworkNode(n.node,0, 0, n.activation_function, n.bias)
     return d
 
 def next_nodes(connections : List[ConnectionGeneModel], node_map : Dict[int, NodeGeneModel]) -> List[NodeGeneModel]:
     return list(map(lambda c: node_map[c.out_node], connections))
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class WeightComputationInstruction:
     input_node : NetworkNode
     output_node: NetworkNode
@@ -120,20 +121,26 @@ def create_layer_computation_instructions(neat_model : NeatModel) -> List[LayerC
         active_set = list(filter(lambda n: n not in activation_set, next_nodes(connections, node_map)))
     output_network_nodes = list(map(lambda n: network_node_map[n.node], output_nodes_list))
     layer_computation_instructions.append(LayerComputationInstruction(output_network_nodes, list()))
-    
+    # print(network_node_map)
     return layer_computation_instructions
 
     
 def compute_instructions(layer_computations : List[LayerComputationInstruction], output_nodes : List[NetworkNode], output: List[float]) -> List[float]:
     for layer_computation in layer_computations:
         for node in layer_computation.nodes:
+            print(node.value + node.bias)
             activate(node)
+            print(node)
         for weight_computation in layer_computation.weightInstructions:
-            weight_computation.output_node.value = weight_computation.input_node.activated_value + weight_computation.connection_weight
+            weight_computation.output_node.value += weight_computation.input_node.activated_value * weight_computation.connection_weight
     index = 0
     for x in output_nodes:
         output[index] = x.activated_value
         index+=1
+    # print("----")
+    # for l in layer_computations:
+    #     print(l.nodes)
+    # print(output)
     return output
 
 
@@ -157,7 +164,13 @@ class NeatComputer:
         for n in self.input_nodes:
             self.input_nodes[index].value = input[index]
             index +=1
+        # print("before:")
+        print(input)
+        # print(self.input_nodes)
         compute_instructions(self.layer_computations, self.output_nodes, self.output)
+        # print("after:")
+        # print(self.input_nodes)
+        # print(":::::::::::::::")
 
 class HyperNeatBuilder:
     network_design : NetworkDesign
@@ -191,6 +204,10 @@ class HyperNeatBuilder:
             input.append(0)
         input[2] = source_hyper_z
         input[5] = target_hyper_z
+        # print(source_width)
+        # print(source_height)
+        # print(target_width)
+        # print(target_height)
         for source_x in range(0, source_width):
             for source_y in range(0, source_height):
                 source_hyper_x = ((source_x / source_width) * total_hyper_x_distance) + self.hyper_shape.x_min
@@ -204,6 +221,8 @@ class HyperNeatBuilder:
                         input[3] = target_hyper_x
                         input[4] = target_hyper_y
                         self.network_computer.compute(input)
+                        # print(input)
+                        # print(self.network_computer.output)
                         weight = self.network_computer.output[0]
                         express_value = self.network_computer.output[1]
                         if (express_value > 0):

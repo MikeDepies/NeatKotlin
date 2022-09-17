@@ -2,14 +2,14 @@ from dataclasses import dataclass
 from typing import Any, List
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class NodeGeneModel:
     node : int
     bias: float
     node_type : str
     activation_function: str
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class ConnectionGeneModel:
     in_node: int
     out_node: int
