@@ -227,11 +227,16 @@ class EvoManager(
         population.mapParallel {
             try {
 
-                it to NetworkBlueprint(createNetwork.build(it.neatMutator.toNetwork(), 3f), it.id, createNetwork.planes,
+                val connections = listOf<ConnectionLocation>()// createNetwork.build(it.neatMutator.toNetwork(), 3f)
+                it to NetworkBlueprint(
+                    connections,
+                    it.id,
+                    createNetwork.planes,
                     connectionRelationships,
                     targetConnectionMapping,
                     calculationOrder,
-                    it.neatMutator.toModel()
+                    it.neatMutator.toModel(),
+                    createNetwork.depth
                 )
             } catch (e: Exception) {
                 it to NetworkBlueprint(
@@ -239,7 +244,8 @@ class EvoManager(
                     connectionRelationships,
                     targetConnectionMapping,
                     calculationOrder,
-                    it.neatMutator.toModel()
+                    it.neatMutator.toModel(),
+                    createNetwork.depth
                 )
             }
         }.forEach { (networkWithId, network) ->

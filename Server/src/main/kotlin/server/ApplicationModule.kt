@@ -34,23 +34,6 @@ inline fun <reified T> Scope.getChannel(): Channel<T> =
 
 private var evaluationId = 0
 val applicationModule = module {
-//    single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
-//    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel(Channel.CONFLATED) }
-//    factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
-//    factory<Channel<FrameOutput>>(qualifier<ModelUpdate>()) { Channel() }
-//    single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
-//    single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
-//    single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
-//    single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-//    factory {
-//        EvaluationChannels(
-//            getChannel(),
-//            getChannel(),
-//            getChannel(),
-//            getChannel()
-//        )
-//    }
-
     single {
         HttpClient(CIO) {
             install(HttpTimeout) {
@@ -68,70 +51,6 @@ val applicationModule = module {
         TwitchBotService(get(), config.url.twitchBot)
     }
 
-//    factory { MeleeState(null) }
-//    single { FrameClockFactory() }
-//    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel(), getChannel()) }
-//    factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
-//        println("New Evaluator?")
-//        val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
-//        ResourceEvaluator(
-//            network,
-//            agentId,
-//            evaluationId,
-//            generation,
-//            controllerId,
-//            meleeState,
-//            10f,
-//            get(),
-//            12000f * 24
-//        )
-//    }
-    factory { (evaluationId: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
-        val randomSeed: Int = 123 + evaluationId
-        val random = Random(randomSeed)
-        val addConnectionAttempts = 5
-        val shFunction = shFunction(.44f)
-
-
-//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
-//        val population = simpleNeatExperiment.generateInitialPopulation2(
-//            populationSize,
-//            6,
-//            2,
-//            Activation.CPPN.functions
-//        )
-        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
-        val models = populationModel.models
-        log.info { "population loaded with size of: ${models.size}" }
-        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
-        val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
-            addConnectionAttempts
-        )
-        val population = models.map { it.toNeatMutator() }
-        val compatibilityDistanceFunction = compatibilityDistanceFunction(2f, 2f, 1f)
-        val standardCompatibilityTest = standardCompatibilityTest({
-            shFunction(it)
-        }, { a, b ->
-            cppnGeneRuler.measure(a, b)
-        })
-        simulation(
-            standardCompatibilityTest,
-            evaluationId,
-            distanceFunction = { a, b ->
-                cppnGeneRuler.measure(a, b)
-            },
-            sharingFunction = {
-                shFunction(it)
-            },
-            speciationController = SpeciationController(0),
-            simpleNeatExperiment = simpleNeatExperiment,
-            population = population,
-            generation = if (evaluationId == 0) 11612 else 11547
-        )
-    }
 }
 
 class CPPNGeneRuler(val weightCoefficient: Float = .5f, val disjointCoefficient: Float =1f, val normalize : Int = 1) {
@@ -230,6 +149,10 @@ fun NeatExperiment.generateInitialPopulation2(
 //    neatMutator.addConnection(addConnectionNode(xNode.node, 7))
 //    neatMutator.addConnection(addConnectionNode(yNode.node, 7))
 //    neatMutator.addConnection(addConnectionNode(zNode.node, 7))
+    repeat(500) {
+        mutateAddNode(neatMutator)
+
+    }
 
     return (0 until populationSize).map {
         val clone = neatMutator.clone()
@@ -237,6 +160,9 @@ fun NeatExperiment.generateInitialPopulation2(
             assignConnectionRandomWeight(connectionGene)
         }
 //        clone.outputNodes.forEach { println(it.node) }
+//        repeat(300) {
+//            mutateAddConnection(clone)
+//        }
         clone.outputNodes.forEach {
             it.activationFunction = activationFunctions.random(random)
         }

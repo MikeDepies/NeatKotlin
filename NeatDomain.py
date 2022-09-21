@@ -45,6 +45,8 @@ def parse_connections(data: List[Any]) -> List[ConnectionGeneModel]:
 def parse_neat_model(data : Any):
     nodes : List[Any] = data["nodes"]
     connections : List[Any] = data["connections"]
+    print(len(nodes))
+    print(len(connections))
     return NeatModel(parse_nodes(nodes), parse_connections(connections))
 
 def parse_model_meta(data: Any) -> ModelMeta:

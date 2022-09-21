@@ -81,7 +81,8 @@ data class NetworkBlueprint(
     val connectionRelationships: Map<String, List<String>>,
     val targetConnectionMapping: Map<String, List<String>>,
     val calculationOrder: List<String>,
-    val neatModel: NeatModel
+    val neatModel: NeatModel,
+    val depth: Int
 )
 
 fun layerPlane(height: Int, width: Int, id: String = UUID.randomUUID().toString()): LayerPlane {
@@ -98,33 +99,33 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
-    val inputImagePlane = layerPlane(1, 10)
-//    val imagePlane1 = layerPlane(4, 4)
-//    val imagePlane2 = layerPlane(4, 4)
-//    val imagePlane3 = layerPlane(4, 4)
+    val inputImagePlane = layerPlane(1, 143)
+    val imagePlane1 = layerPlane(4, 4)
+    val imagePlane2 = layerPlane(4, 4)
+    val imagePlane3 = layerPlane(4, 4)
     val outputPlane = layerPlane(1, 4)
-    val computationOrder = listOf(/*inputImagePlane, controllerPlane,*/ /*imagePlane1,
+    val computationOrder = listOf(/*inputImagePlane, controllerPlane,*/ imagePlane1,
         imagePlane2,
-        imagePlane3,*/
+        imagePlane3,
         outputPlane
     )
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
-        put(inputImagePlane, listOf(outputPlane))
-//        put(imagePlane1, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-//        put(imagePlane2, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-//        put(imagePlane3, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-        put(outputPlane, listOf())
+        put(inputImagePlane, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
+        put(imagePlane1, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
+        put(imagePlane2, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
+        put(imagePlane3, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
+        put(outputPlane, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         put(inputImagePlane, 0)
 
-        /*put(imagePlane1, 1)
+        put(imagePlane1, 1)
 
         put(imagePlane2, 2)
 
-        put(imagePlane3, 3)*/
+        put(imagePlane3, 3)
 
-        put(outputPlane, 1)
+        put(outputPlane, 4)
     }
     val targetConnectionMapping: Map<LayerPlane, List<LayerPlane>> = buildMap<LayerPlane, MutableList<LayerPlane>> {
         computationOrder.forEach {
@@ -158,7 +159,8 @@ class TaskNetworkBuilder(
 ) {
     private val idZMap = planeZMap.mapKeys { it.key.id }
     val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }
-        .map { LayerShape3D(it, 0, 0, idZMap.getValue(it.id)) }
+        .map { val zOrigin = idZMap.getValue(it.id)
+            LayerShape3D(it, 0, if (zOrigin == depth) 1 else 0, zOrigin) }
 
     fun build(network: ActivatableNetwork, connectionMagnitude: Float): List<ConnectionLocation> {
         val networkConnectionBuilder = NetworkConnectionBuilder(network, connectionMagnitude, networkShape, depth)

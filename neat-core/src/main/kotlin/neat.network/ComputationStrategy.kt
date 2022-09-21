@@ -7,7 +7,7 @@ typealias ComputationStrategy = () -> Unit
 
 fun Set<NodeGene>.activate(map: Map<NodeGene, NetworkNode>) = forEach {
     val value = map.getValue(it)
-    value.value += it.bias
+    value.value += value.bias
     value.activate()
 }
 

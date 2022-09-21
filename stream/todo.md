@@ -33,8 +33,10 @@ The third use-case will be for users to be able to 'download' their captured mod
 - [ ] Cluster support for building models (distribute work)
 - [ ] Consolidate model code into a separate project and include in all projects
   - [ ] reduce the copy/pasted domain code
-- [ ] Implement python NEAT network execution
-- [ ] Implement python hyperNEAT network construction
+- [x] Implement python NEAT network execution
+- [x] Implement python hyperNEAT network construction
+- [x] Resolve imbalance in query coordinates
+The query coordinates for the hyper space lean toward the "left" or negative. Due to exclusive ranges and using the width or height as the denominator. So we'll get for a width of 10, values from [-1, .8]
 
 
 
