@@ -50,16 +50,18 @@ def console_loop(port : int):
     for m in model_list:
         start = time.time()
         id, hyper_neat_builder = neat_service.getNetwork(ai_controller_id, m)
+        computable_network = hyper_neat_builder.create_ndarrays()
         print("---------")
         for n in hyper_neat_builder.network_computer.layer_computations:
             print(len(n.nodes))
-            print(len(build_input_nodes(n.weightInstructions)))
-            print(len(build_output_nodes(n.weightInstructions)))
+            print(len(n.weightInstructions))
+            # print(len(build_input_nodes(n.weightInstructions)))
+            # print(len(build_output_nodes(n.weightInstructions)))
             print("==")
         print("---------")
-        nd_computations = convert_computation_instructions_to_ndarray_instructions_2(hyper_neat_builder.network_computer.layer_computations)
-        nd_neat_builder = HyperNeatBuilder(hyper_neat_builder.network_design, NDNeatComputer(nd_computations), hyper_neat_builder.hyper_shape, hyper_neat_builder.depth, hyper_neat_builder.connection_magnitude)
-        computable_network = nd_neat_builder.create_ndarrays()
+        # nd_computations = convert_computation_instructions_to_ndarray_instructions_2(hyper_neat_builder.network_computer.layer_computations)
+        # nd_neat_builder = HyperNeatBuilder(hyper_neat_builder.network_design, NDNeatComputer(nd_computations), hyper_neat_builder.hyper_shape, hyper_neat_builder.depth, hyper_neat_builder.connection_magnitude)
+        # computable_network = nd_neat_builder.create_ndarrays()
         end = time.time()
         print("time: " + str(end - start))
         

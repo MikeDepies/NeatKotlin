@@ -17,6 +17,7 @@ import mu.KotlinLogging
 import neat.*
 import neat.model.*
 import neat.mutation.assignConnectionRandomWeight
+import neat.mutation.getMutateBiasConnections
 import org.koin.core.qualifier.qualifier
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
@@ -149,20 +150,26 @@ fun NeatExperiment.generateInitialPopulation2(
 //    neatMutator.addConnection(addConnectionNode(xNode.node, 7))
 //    neatMutator.addConnection(addConnectionNode(yNode.node, 7))
 //    neatMutator.addConnection(addConnectionNode(zNode.node, 7))
-    repeat(500) {
-        mutateAddNode(neatMutator)
-
-    }
-
+//    repeat(500) {
+//        mutateAddNode(neatMutator)
+//
+//    }
+    val mutateBias = getMutateBiasConnections(0f, 2.5f, 4f)
     return (0 until populationSize).map {
         val clone = neatMutator.clone()
         clone.connections.forEach { connectionGene ->
             assignConnectionRandomWeight(connectionGene)
         }
+        mutateBias(this, clone)
 //        clone.outputNodes.forEach { println(it.node) }
-//        repeat(300) {
-//            mutateAddConnection(clone)
-//        }
+        repeat(100) {
+            if (random.nextFloat() > .5f) {
+                mutateAddConnection(clone)
+            }
+            if (random.nextFloat() > .9f) {
+                mutateAddNode(clone)
+            }
+        }
         clone.outputNodes.forEach {
             it.activationFunction = activationFunctions.random(random)
         }

@@ -100,10 +100,10 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
     val inputImagePlane = layerPlane(1, 143)
-    val imagePlane1 = layerPlane(4, 4)
-    val imagePlane2 = layerPlane(4, 4)
-    val imagePlane3 = layerPlane(4, 4)
-    val outputPlane = layerPlane(1, 4)
+    val imagePlane1 = layerPlane(11, 11)
+    val imagePlane2 = layerPlane(8, 8)
+    val imagePlane3 = layerPlane(8, 8)
+    val outputPlane = layerPlane(1, 9)
     val computationOrder = listOf(/*inputImagePlane, controllerPlane,*/ imagePlane1,
         imagePlane2,
         imagePlane3,

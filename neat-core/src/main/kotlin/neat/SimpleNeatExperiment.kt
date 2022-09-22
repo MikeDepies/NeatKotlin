@@ -97,9 +97,10 @@ class SimpleNeatExperiment(
 
     override fun mutateAddNode(neatMutator: NeatMutator) {
         fun getRandomConnectionGeneWithValidNodes(): ConnectionGene {
-            var rConnection = neatMutator.connections.random(random)
-            while (!neatMutator.hasNode(rConnection.inNode) || !neatMutator.hasNode(rConnection.outNode)) {
-                rConnection = neatMutator.connections.random(random)
+            val connections = neatMutator.connections.filter { it.enabled }
+            var rConnection = connections.random(random)
+            while (!neatMutator.hasNode(rConnection.inNode) || !neatMutator.hasNode(rConnection.outNode) ) {
+                rConnection = connections.random(random)
             }
             return rConnection
         }

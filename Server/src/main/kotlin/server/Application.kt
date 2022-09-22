@@ -139,7 +139,9 @@ private fun Application.routing(
         1 -> Character.Pikachu
         else -> throw Exception()
     }
+
     routing {
+        this@routing.log.info("dsadsa")
         post<ModelsRequest>("/models") {
             val evoManager = evoHandler.evoManager(it.controllerId)
             if (evoManager.evolutionInProgress) {
