@@ -17,5 +17,5 @@ class ModelWindower(
             }
         }
     }
-    fun poll() = modelIdChannel.poll()
+    fun poll() = modelIdChannel.tryReceive().getOrNull()
 }

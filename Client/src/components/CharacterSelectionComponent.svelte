@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { characters, spriteX, spriteY } from "@app/api/Melee";
 
     import type { Character } from "@app/api/types/Melee";

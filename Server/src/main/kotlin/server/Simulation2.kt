@@ -1,6 +1,5 @@
 package server
 
-import PopulationEvolver
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.IntArraySerializer
@@ -13,8 +12,8 @@ import kotlinx.serialization.json.float
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
-import neat.*
-import neat.model.NeatMutator
+import neat.ActivatableNetwork
+import server.message.endpoints.NeatModel
 import java.util.*
 
 private val log = KotlinLogging.logger { }
@@ -29,7 +28,7 @@ object NodeLocationSerializer : KSerializer<NodeLocation> {
         return NodeLocation(x, y, z)
     }
 
-    val delegate = IntArraySerializer()
+    private val delegate = IntArraySerializer()
     override val descriptor: SerialDescriptor = delegate.descriptor
 
     override fun serialize(encoder: Encoder, value: NodeLocation) {
@@ -81,18 +80,10 @@ data class NetworkBlueprint(
     val connectionPlanes: List<LayerShape3D>,
     val connectionRelationships: Map<String, List<String>>,
     val targetConnectionMapping: Map<String, List<String>>,
-    val calculationOrder: List<String>
+    val calculationOrder: List<String>,
+    val neatModel: NeatModel,
+    val depth: Int
 )
-
-//@Serializable
-//data class NetworkDescription(
-//    val connections: Collection<ConnectionLocation>,
-//    val nodes: Collection<NodeLocation>,
-//    val id: String,
-//    val bias: NodeLocation? = null,
-//    val shapes: List<List<Int>>
-//)
-
 
 fun layerPlane(height: Int, width: Int, id: String = UUID.randomUUID().toString()): LayerPlane {
     return LayerPlane(height, width, id)
@@ -105,7 +96,7 @@ data class LayerPlane(val height: Int, val width: Int, val id: String)
 data class LayerShape3D(val layerPlane: LayerPlane, val xOrigin: Int, val yOrigin: Int, val zOrigin: Int)
 data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 
-@OptIn(ExperimentalStdlibApi::class)
+
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
     val inputImagePlane = layerPlane(1, 143)
@@ -124,7 +115,6 @@ fun createNetwork(): TaskNetworkBuilder {
         put(imagePlane2, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
         put(imagePlane3, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
         put(outputPlane, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         put(inputImagePlane, 0)
@@ -169,7 +159,8 @@ class TaskNetworkBuilder(
 ) {
     private val idZMap = planeZMap.mapKeys { it.key.id }
     val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }
-        .map { LayerShape3D(it, 0, 0, idZMap.getValue(it.id)) }
+        .map { val zOrigin = idZMap.getValue(it.id)
+            LayerShape3D(it, 0, if (zOrigin == depth) 1 else 0, zOrigin) }
 
     fun build(network: ActivatableNetwork, connectionMagnitude: Float): List<ConnectionLocation> {
         val networkConnectionBuilder = NetworkConnectionBuilder(network, connectionMagnitude, networkShape, depth)
@@ -226,6 +217,7 @@ class NetworkConnectionBuilder(
                             ((yTarget / targetHeight.toFloat()) * totalHyperYDistance) + hyperDimensions.yMin
                         input[3] = hyperTargetX
                         input[4] = hyperTargetY
+                        log.info { input }
                         network.evaluate(input)
                         val weight = network.output()[0]
                         val expressValue = network.output()[1]
@@ -256,88 +248,4 @@ class NetworkConnectionBuilder(
         )
     }
 
-}
-
-fun buildHyperTaskNetwork(
-    networkShape: NetworkShape, connectionMapping: Map<LayerPlane, List<LayerPlane>>, planeZMap: Map<LayerPlane, Int>
-) {
-
-}
-
-interface DimensionLocation {
-    val size: Int
-}
-
-data class DimensionDescription(
-    val dimensionLocation: DimensionLocation,
-)
-
-data class TaskNetworkDefinition(
-    val connectionThreshold: Float,
-    val connectionMagnitude: Float,
-    val dimensions: List<List<Int>>,
-    val normalizeFactors: List<Int>,
-    val centerX: Float = 0f,
-    val centerY: Float = 0f,
-    val dimensionMin: Float = -1f,
-    val dimensionMax: Float = 1f,
-)
-
-
-//
-//fun createSimulation(
-//    evaluationId: Int,
-//    population: List<NeatMutator>,
-//    distanceFunction: DistanceFunction,
-//    shFunction: SharingFunction,
-//    mateChance: Float,
-//    survivalThreshold: Float,
-//    stagnation: Int
-//): Simulation {
-//    val mutationEntries = createMutationDictionary()
-//    val speciesId = 0
-//    val speciationController = SpeciationController(speciesId)
-//    val adjustedFitnessCalculation = adjustedFitnessCalculation(speciationController, distanceFunction, shFunction)
-//    val speciesLineage = SpeciesLineage()
-//    val scoreKeeper = SpeciesScoreKeeper()
-//    val weightedReproduction = weightedReproduction(
-//        mutationEntries = mutationEntries,
-//        mateChance = mateChance,
-//        survivalThreshold = survivalThreshold,
-//        speciesScoreKeeper = scoreKeeper,
-//        stagnation = stagnation
-//    )
-//    val generation = 0
-//    val populationEvolver = PopulationEvolver(
-//        generation,
-//        speciationController,
-//        scoreKeeper,
-//        speciesLineage,
-//        weightedReproduction,
-//    )
-//    return simulation(evaluationId, population, populationEvolver, adjustedFitnessCalculation)
-//}
-
-//fun simulation(
-//    evaluationId: Int,
-//    population: List<NeatMutator>,
-//    populationEvolver: PopulationEvolver,
-//    adjustedFitnessCalculation: AdjustedFitnessCalculation,
-//
-//    ): Simulation {
-//
-//    return Simulation(population, populationEvolver, adjustedFitnessCalculation, evaluationId)
-//}
-//
-//data class Simulation(
-//    val initialPopulation: List<NeatMutator>,
-//    val populationEvolver: PopulationEvolver,
-//    val adjustedFitnessCalculation: AdjustedFitnessCalculation,
-//    val evaluationId: Int
-//)
-
-fun main() {
-    for (a in 0 until 10 step 1) {
-        print(a)
-    }
 }

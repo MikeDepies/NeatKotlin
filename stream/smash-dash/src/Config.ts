@@ -1,0 +1,1 @@
+export const httpServer = import.meta.env.VITE_HTTP_SERVER as string

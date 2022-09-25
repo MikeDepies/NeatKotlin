@@ -13,6 +13,7 @@ import neat.model.NeatMutator
 import neat.novelty.KNNNoveltyArchive
 import server.local.ModelEvaluationResult
 import server.local.ModelStatus
+import server.message.endpoints.toModel
 import java.io.File
 import java.lang.Exception
 import java.lang.Float.max
@@ -195,6 +196,7 @@ class EvoManager(
     ) {
         if (m != null) {
             val average = bestModels.map { it.score }.average()
+            val modelStatus = modelStatusMap.getValue(it.modelId)
             bestModels += ScoredModel(behaviorScore, populationEvolver.generation, m, it.modelId)
             bestModels.sortByDescending {
                 it.score - (populationEvolver.generation - it.generation) * (average / 2)
@@ -225,17 +227,25 @@ class EvoManager(
         population.mapParallel {
             try {
 
-                it to NetworkBlueprint(createNetwork.build(it.neatMutator.toNetwork(), 3f), it.id, createNetwork.planes,
+                val connections = listOf<ConnectionLocation>()// createNetwork.build(it.neatMutator.toNetwork(), 3f)
+                it to NetworkBlueprint(
+                    connections,
+                    it.id,
+                    createNetwork.planes,
                     connectionRelationships,
                     targetConnectionMapping,
-                    calculationOrder
+                    calculationOrder,
+                    it.neatMutator.toModel(),
+                    createNetwork.depth
                 )
             } catch (e: Exception) {
                 it to NetworkBlueprint(
                     listOf(), it.id, createNetwork.planes,
                     connectionRelationships,
                     targetConnectionMapping,
-                    calculationOrder
+                    calculationOrder,
+                    it.neatMutator.toModel(),
+                    createNetwork.depth
                 )
             }
         }.forEach { (networkWithId, network) ->
@@ -258,5 +268,29 @@ class EvoManager(
     ): List<NeatMutator> {
         return populationEvolver.evolveNewPopulation(modelScores)
 
+    }
+}
+fun writeGenerationToDisk(
+    currentPopulation: List<NeatMutator>,
+    runFolder: File,
+    populationEvolver: PopulationEvolver,
+    prefix: String
+) {
+    val modelPopulationPersist = currentPopulation.toModel()
+    val savePopulationFile = runFolder.resolve("${prefix}population.json")
+    val json = Json { prettyPrint = true }
+    val encodedModel = json.encodeToString(modelPopulationPersist)
+    savePopulationFile.bufferedWriter().use {
+        it.write(encodedModel)
+        it.flush()
+    }
+    val manifestFile = runFolder.resolve("manifest.json")
+    val manifestData = Manifest(
+        populationEvolver.scoreKeeper.toModel(),
+        populationEvolver.speciesLineage.toModel()
+    )
+    manifestFile.bufferedWriter().use {
+        it.write(json.encodeToString(manifestData))
+        it.flush()
     }
 }

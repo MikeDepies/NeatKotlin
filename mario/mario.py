@@ -1,4 +1,5 @@
-from typing import List
+from cmath import inf
+from typing import Any, Dict, List
 from gym.core import Env
 from nes_py.wrappers import JoypadSpace
 import gym_super_mario_bros
@@ -6,175 +7,542 @@ import asyncio
 import numpy as np
 import math
 import requests
-import NeatNetwork
+
+from NeatNetwork import ComputableNetwork, ConnectionLocation, LayerShape3D, LayerPlane, NetworkBlueprint, constructNetwork
 import time
+import multiprocessing as mp
 from skimage.transform import rescale, resize, downscale_local_mean
 import time
 # import cv2 as cv
 from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
-env = gym_super_mario_bros.make('SuperMarioBros-v1')
-env = JoypadSpace(env, COMPLEX_MOVEMENT)
-host = "192.168.0.139"
+from dataclasses import dataclass
+from dacite import from_dict
 
-def getNetwork():
+
+
+
+def mapC(c):
+    return LayerShape3D(
+        LayerPlane(c["layerPlane"]["height"],
+                                c["layerPlane"]["width"],
+                                c["layerPlane"]["id"]), c["xOrigin"],
+        c["yOrigin"], c["zOrigin"])
+
+
+def toNetworkBlueprint(data : Any):
+    id: str = data["id"]
+    calculation_order = data["calculationOrder"]
+    connections: list[ConnectionLocation] = list(
+        map(
+            lambda c: ConnectionLocation(
+                c[0], c[1], c[2], c[3], c[4], c[5], c[6]),
+            data["connections"]))
+    connection_relationships: dict[
+        str, list[str]] = data["connectionRelationships"]
+    connection_relationships_inverse: dict[
+        str, list[str]] = data["targetConnectionMapping"]
+    connection_planes: list[LayerShape3D] = list(
+        map(lambda c: mapC(c), data["connectionPlanes"]))
+    output_layer = data["outputLayer"]
+    return NetworkBlueprint( id, connections, connection_planes, connection_relationships, connection_relationships_inverse, calculation_order, output_layer)
+    
+
+def getNetwork(host: str):
     requestNetwork = True
-    network = None
     while requestNetwork:
-        res = requests.get("http://"+ host + ":8094/model")
+        res = requests.get("http://" + host + ":8095/model")
         if not res.ok:
             time.sleep(2)
             continue
         data = res.json()
-        id : str = data["id"]
-        connections: List[NeatNetwork.ConnectionLocation] = list(map(lambda c: NeatNetwork.ConnectionLocation(c[0], c[1], c[2], c[3], c[4], c[5], c[6]), data["connections"]))
-        nodes: List[NeatNetwork.ConnectionLocation] = list(map(lambda n: NeatNetwork.NodeLocation(n[0], n[1], n[2]), data["nodes"]))
-        print(len(connections))
-        print(len(nodes))
-        try:
-            network = NeatNetwork.constructNetwork(nodes, connections, [[60,64], [15,15], [11,11], [11,11], [9,9],[5,5], [1,12]])
-            requestNetwork = False
-        except Exception as e:
-            print(e)
-            # deadNetwork()
-        return (id, network)
+        child_blueprint = toNetworkBlueprint(data["child"])
+        agent_blueprint = toNetworkBlueprint(data["agent"])
+        
+        child_network = constructNetwork(child_blueprint)
+        agent_network = constructNetwork(agent_blueprint)
 
-def submitScore(info):
+        return (child_blueprint.id, child_network, agent_network)
+
+
+def getNetworkNovelty(host: str):
+    requestNetwork = True
+    while requestNetwork:
+        res = requests.get("http://" + host + ":8095/model")
+        if not res.ok:
+            time.sleep(2)
+            continue
+        data = res.json()
+        child_blueprint = toNetworkBlueprint(data)
+        
+        child_network = constructNetwork(child_blueprint)
+
+        return (child_blueprint.id, child_network)
+
+
+def submitScore(data, host: str):
     # print(info["stage"])
-    requests.post("http://"+ host + ":8094/score", json={
-        "coins": info["coins"],
-        "flag_get": bool(info["flag_get"]),
-        "life": int(info["life"]),
-        "score":info["score"],
-        "stage": int(info["stage"]),
-        "status": info["status"],
-        "time": info["time"],
-        "world": int(info["world"]),
-        "x_pos": int(info["x_pos"]),
-        "y_pos": int(info["y_pos"]),
-        "dstatus": int(info["dstatus"]),
-        "dworld": int(info["dworld"]),
-        "dstage": int(info["dstage"]),
-        "dx": int(info["dx"]),
-        "dy": int(info["dy"]),
-        "dtime": info["dtime"],
-        "dlife": int(info["dlife"]),
-        "dcoins": info["dcoins"],
-        "dscore": info["dscore"],
-        "id" : info["id"]
-    })
+    requests.post("http://" + host + ":8095/score", json=data)
 
-def deadNetwork():
-    requests.post("http://"+ host + ":8094/dead", json={
-        "id" : id
-    })
-    
+
+def deadNetwork(host: str):
+    requests.post("http://" + host + ":8095/dead", json={"id": id})
+
+
 def statusValue(status):
     if (status == "small"): return 0
     elif (status == "tall"): return 1
     else: return 4
 
-def rgb2gray(rgb):
-    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
-def mario(env: Env):
-    uri = "ws://"+ host + ":8090/ws"
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
+  
+
+class GameEventHelper:
+
+    def mushroom_found(self, info, prev_info):
+        return info["status"] == "tall" and prev_info["status"] == "small"
+
+    def fire_flower_found(self, info, prev_info):
+        return info["status"] == "fireball" and prev_info["status"] == "tall"
+
+    def coins_collected(self, info, prev_info):
+        return info["coins"] - prev_info["coins"]
+
+    def score_collected(self, info, prev_info):
+        return info["score"] - prev_info["score"]
+
+    def flag_reached(self, info, prev_info):
+        return not prev_info["flag_get"] and info["flag_get"]
+
+    def one_up_found(self, info, prev_info):
+        return prev_info["life"] < info["life"]
+
+    def stage_part_complete(self, info, stage_part_position: int):
+        return (info["x_pos"] / 256) > stage_part_position
+
+
+class GameEventCollector:
+    game_event_helper: GameEventHelper
+    prev_info: Any
+    mushrooms: int
+    fire_flowers: int
+    coins: int
+    score: int
+    lifes: int
+    flags: int
+    start_stage_part: int
+    stage_parts: int
+    time: int
+
+    def __init__(self, game_event_helper: GameEventHelper,
+                 start_stage_part: int) -> None:
+        self.game_event_helper = game_event_helper
+        self.start_stage_part = start_stage_part
+        self.coins = 0
+        self.mushrooms = 0
+        self.fire_flowers = 0
+        self.score = 0
+        self.lifes = 0
+        self.flags = 0
+        self.stage_parts = 0
+        self.time = 0
+        self.prev_info = None
+
+    def process_frame(self, info):
+        if self.prev_info:
+            if self.game_event_helper.mushroom_found(info, self.prev_info):
+                self.mushrooms += 1
+            if self.game_event_helper.fire_flower_found(info, self.prev_info):
+                self.fire_flowers += 1
+            if self.game_event_helper.coins_collected(info, self.prev_info):
+                self.coins += 1
+            self.score += self.game_event_helper.score_collected(
+                info, self.prev_info)
+            if self.game_event_helper.one_up_found(info, self.prev_info):
+                self.lifes += 1
+            if self.game_event_helper.stage_part_complete(
+                    info, self.start_stage_part):
+                self.start_stage_part += 1
+                self.stage_parts += 1
+            if self.game_event_helper.flag_reached(info, self.prev_info):
+                self.flags += 1
+                self.start_stage_part = 0
+            if not self.prev_info["time"] == info["time"]:
+                self.time += 1
+        self.prev_info = info
+
+
+def mario2(render : bool):
+    env = gym_super_mario_bros.make('SuperMarioBros-v1')
+    env = JoypadSpace(env, COMPLEX_MOVEMENT)
+    host = "localhost"
     done = False
-    id, network = getNetwork()
-    # network.write()
+    network : ComputableNetwork
+    id, child_network, agent_network = getNetwork(host)
+    evaluated_child = False
+    evaluated_agent = False
     state = None
-    action = 0 #no op
-    cumulativeReward = 0
-    state = env.reset()
-    idleCount = 0
-    i =0
-    maxX=0
-    prevX=0
-    framesSinceMaxXChange = 0
-    status = "small"
     score = 0
     stage = 0
+    action = 0  #no op
+    last_action = 0
+    state = env.reset()
+    prevX = 0
+    prevXReset = 0
+    framesSinceMaxXChange = 0
+    status = "small"
     startInfo = None
     idle = False
+    game_event_helper = GameEventHelper()
+    game_event_collector = GameEventCollector(game_event_helper, 0)
+    steps_left = 0
+    steps_right = 0
+    same_action_counter = 0
+    child_x = 0
+    agent_x = 0
     while True:
+        if evaluated_child:
+            network = agent_network
+        else:
+            network = child_network
         if done or idle:
             state = env.reset()
-            info["reward"] = cumulativeReward
-            info["id"] = id
-            info["dx"] = info["x_pos"] - startInfo["x_pos"]
-            info["dy"] = info["y_pos"] - startInfo["y_pos"]
-            info["dworld"] = info["world"] - startInfo["world"]
-            info["dstage"] = info["stage"] - startInfo["stage"]
-            info["dcoins"] = info["coins"] - startInfo["coins"]
-            info["dscore"] = info["score"] - startInfo["score"]
-            info["dtime"] = info["time"] - startInfo["time"]
-            info["dlife"] = info["life"] - startInfo["life"]
-            info["dstatus"] = statusValue(info["status"]) - statusValue(startInfo["status"])
-            if (info["flag_get"]):
-                info["dworld"] = 0
-                info["dstage"] = 1
-            submitScore(info)
-            id, network = getNetwork()
-            cumulativeReward = 0
-            startInfo = None
-            idleCount = 0
-            i=0
-            maxX=0
-            prevX=0
-            framesSinceMaxXChange = 0
-            
-            idle=False
-        
+            # death
+            if not evaluated_child:
+                if int(info["x_pos"]) > 256:
+                    child_x = int(info["x_pos"]) / 10_000 + int(info["stage"]) + int(info["world"]) * 10 
+                else:
+                    child_x = 0
+                evaluated_child = True
+                print("child: " + str(child_x))
+                done = False
+                idle = False
+                framesSinceMaxXChange = 0
+                same_action_counter = 0
+                prevX = 0
+                steps_left = 0
+                steps_right = 0
+            elif not evaluated_agent:
+                evaluated_agent = True
+                agent_x = int(info["x_pos"]) / 10_000 + int(info["stage"]) + int(info["world"]) * 10 
+                print("agent: " + str(agent_x))
+            if evaluated_agent and evaluated_child:
+                mc_satisfy = child_x > agent_x
+                submitScore(
+                    {
+                        "id": id,
+                        "satisfyMC": bool(mc_satisfy)
+                    }, host)
+                id, child_network, agent_network = getNetwork(host)
+                startInfo = None
+                prevX = 0
+                steps_left = 0
+                steps_right = 0
+                framesSinceMaxXChange = 0
+                game_event_collector = GameEventCollector(game_event_helper, 0)
+                idle = False
+                evaluated_child = False
+                evaluated_agent = False
+                child_x = 0
+                agent_x = 0
+                same_action_counter = 0
+
         state, reward, done, info = env.step(action)
+        game_event_collector.process_frame(info)
         if (startInfo == None):
             startInfo = info
         if (status != info["status"]):
-            idleCount=-60*2
             framesSinceMaxXChange = 0
         if (stage != info["stage"]):
-            maxX = 0
-            framesSinceMaxXChange =0
-            idleCount = 0
-        
+            framesSinceMaxXChange = 0
+
         status = info["status"]
         stage = info["stage"]
-        state = rescale(rgb2gray(state), 1/4,) # * np.random.binomial(1, .25,  state.size)
-        
         # print(state.shape)
-        cumulativeReward+= reward
-        network.input(state)
-        network.compute()
-        output =network.output()
-        if (score != info["score"]):
-            maxX = info["x_pos"]
-            framesSinceMaxXChange = 0
-            score = info["score"]
-            idleCount = 0
-        if (info["x_pos"] > maxX):
-            maxX = info["x_pos"]
-            framesSinceMaxXChange = 0
-        else:
-            if prevX != info["x_pos"]:
-                framesSinceMaxXChange -=2
-            else:
-                framesSinceMaxXChange +=1
-        prevX = info["x_pos"]
-        
-        if reward < -14 or framesSinceMaxXChange > 20* 10:
-            if reward < -14:
-                info["life"] = info["life"] - 1
-            idle=True
-        # print(output)
-        # print(output.argmax(1))
-        # print(output)
-        action = output.argmax(1)[0]
-        # if (output.item(action) < .5):
-        #     action = 0
-        # action = min(math.floor(output * len(COMPLEX_MOVEMENT)), len(COMPLEX_MOVEMENT)-1)
-        
-        i+= 1
-        # if (i % 2 == 0):
-        # env.render() 
-            # print(state)
+        state = rescale(
+            rgb2gray(state),
+            1 / 8,
+            #channel_axis=2
+        )  # * np.random.binomial(1, .25,  state.size)
 
-    env.close()
-mario(env)
+        network.input(state / 255.0, actionToNdArray(action))
+        network.compute()
+        output = network.output()
+        # if (score != info["score"]):
+        #     framesSinceMaxXChange = 0
+        #     score = info["score"]
+        if abs(prevX - info["x_pos"]) > 32:
+            if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
+                steps_left += 1
+                prevXReset = info["x_pos"]
+            else:
+                steps_right += 1
+            framesSinceMaxXChange = 0
+            prevX = info["x_pos"]
+
+        else:
+            framesSinceMaxXChange += 1
+        framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
+
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:
+            idle = True
+
+        action = 11 - output.argmax(1)[0]
+        # print(output.shape)
+        # print(action)
+        
+        if action != last_action or action == 0:
+            framesSinceMaxXChange += max(0, 5 - same_action_counter)
+            same_action_counter = max(0, same_action_counter - .1)
+        else:
+            same_action_counter += .2
+        last_action = action
+        if render:
+            env.render()
+
+
+def mario(render : bool):
+    env = gym_super_mario_bros.make('SuperMarioBros-v1')
+    env = JoypadSpace(env, COMPLEX_MOVEMENT)
+    host = "localhost"
+    done = False
+    network : ComputableNetwork
+    id, child_network, agent_network = getNetwork(host)
+    child_active = True
+    state = None
+    score = 0
+    stage = 0
+    action = 0  #no op
+    last_action = 0
+    state = env.reset()
+    prevX = 0
+    prevXReset = 0
+    framesSinceMaxXChange = 0
+    status = "small"
+    startInfo = None
+    idle = False
+    game_event_helper = GameEventHelper()
+    game_event_collector = GameEventCollector(game_event_helper, 1)
+    steps_left = 0
+    steps_right = 0
+    same_action_counter = 0
+    last_stage_part = 0
+    
+    while True:
+        if evaluated_child:
+            network = agent_network
+        else:
+            network = child_network
+        if done or idle:
+            state = env.reset()
+            
+            mc_satisfy = not child_active
+            submitScore(
+                {
+                    "id": id,
+                    "satisfyMC": bool(mc_satisfy)
+                }, host)
+            id, child_network, agent_network = getNetwork(host)
+            startInfo = None
+            prevX = 0
+            steps_left = 0
+            steps_right = 0
+            framesSinceMaxXChange = 0
+            game_event_collector = GameEventCollector(game_event_helper, 1)
+            idle = False
+            last_stage_part = 0
+            same_action_counter = 0
+            child_active = True
+
+        state, reward, done, info = env.step(action)
+        game_event_collector.process_frame(info)
+        if (startInfo == None):
+            startInfo = info
+        if (status != info["status"]):
+            framesSinceMaxXChange = 0
+        if (stage != info["stage"]):
+            framesSinceMaxXChange = 0
+
+        status = info["status"]
+        stage = info["stage"]
+        # print(state.shape)
+        state = rescale(
+            rgb2gray(state),
+            1 / 8,
+            #channel_axis=2
+        )  # * np.random.binomial(1, .25,  state.size)
+        if child_active:
+            network = child_network
+        else:
+            network = agent_network
+        network.input(state / 255.0, actionToNdArray(action))
+        network.compute()
+        output = network.output()
+        # if (score != info["score"]):
+        #     framesSinceMaxXChange = 0
+        #     score = info["score"]
+        if abs(prevX - info["x_pos"]) > 32:
+            if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
+                steps_left += 1
+                prevXReset = info["x_pos"]
+            else:
+                steps_right += 1
+            framesSinceMaxXChange = 0
+            prevX = info["x_pos"]
+        else:
+            framesSinceMaxXChange += 1
+        framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
+
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:
+            idle = True
+
+        action = 11 - output.argmax(1)[0]
+        # print(output.shape)
+        # print(action)
+        
+        if last_stage_part != game_event_collector.stage_parts:
+            print(game_event_collector.stage_parts)
+            child_active = not child_active
+            framesSinceMaxXChange = 0
+            if child_active:
+                print("Child is active")
+            else:
+                print("Agent is active")
+        last_stage_part = game_event_collector.stage_parts
+        if action != last_action or action == 0:
+            framesSinceMaxXChange += max(0, 5 - same_action_counter)
+            same_action_counter = max(0, same_action_counter - .1)
+        else:
+            same_action_counter += .2
+        last_action = action
+        if render:
+            env.render()
+
+
+def marioNovelty():
+    env = gym_super_mario_bros.make('SuperMarioBros-v1')
+    env = JoypadSpace(env, COMPLEX_MOVEMENT)
+    host = "localhost"
+    done = False
+    network : ComputableNetwork
+    id, child_network = getNetworkNovelty(host)
+    state = None
+    score = 0
+    stage = 0
+    action = 0  #no op
+    last_action = 0
+    state = env.reset()
+    prevX = 0
+    prevXReset = 0
+    framesSinceMaxXChange = 0
+    status = "small"
+    startInfo = None
+    idle = False
+    game_event_helper = GameEventHelper()
+    game_event_collector = GameEventCollector(game_event_helper, 1)
+    steps_left = 0
+    steps_right = 0
+    same_action_counter = 0
+    last_stage_part = 0
+    
+    while True:
+        if done or idle:
+            state = env.reset()
+            submitScore(
+                {
+                    "id": id,
+                    "life" : int(info["life"]),
+                    "time" : int(game_event_collector.time),
+                    "world" : int(info["world"]),
+                    "stage" : int(info["stage"]),
+                    "yPos" : int(info["y_pos"]),
+                    "xPos" : int(info["x_pos"]),
+                    "score" : int(game_event_collector.score),
+                    "coins" : int(game_event_collector.coins),
+                    "mushrooms" : int(game_event_collector.mushrooms),
+                    "fireFlowers" : int(game_event_collector.fire_flowers),
+                    "flags" : int(game_event_collector.flags),
+                    "lifes" : int(game_event_collector.lifes),
+                    "stageParts" : int(game_event_collector.stage_parts),
+                    "status" : str(info["status"]),
+                }, host)
+            id, child_network = getNetworkNovelty(host)
+            startInfo = None
+            prevX = 0
+            steps_left = 0
+            steps_right = 0
+            framesSinceMaxXChange = 0
+            game_event_collector = GameEventCollector(game_event_helper, 1)
+            idle = False
+            last_stage_part = 0
+            same_action_counter = 0
+            child_active = True
+
+        state, reward, done, info = env.step(action)
+        game_event_collector.process_frame(info)
+        if (startInfo == None):
+            startInfo = info
+        if (status != info["status"]):
+            framesSinceMaxXChange = 0
+        if (stage != info["stage"]):
+            framesSinceMaxXChange = 0
+
+        status = info["status"]
+        stage = info["stage"]
+        # print(state.shape)
+        state = rescale(
+            rgb2gray(state),
+            1 / 8,
+            #channel_axis=2
+        )  # * np.random.binomial(1, .25,  state.size)
+        network = child_network
+        network.input(state / 255.0, actionToNdArray(action))
+        network.compute()
+        output = network.output()
+        # if (score != info["score"]):
+        #     framesSinceMaxXChange = 0
+        #     score = info["score"]
+        if abs(prevX - info["x_pos"]) > 32:
+            if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
+                steps_left += 1
+                prevXReset = info["x_pos"]
+            else:
+                steps_right += 1
+            framesSinceMaxXChange = 0
+            prevX = info["x_pos"]
+        else:
+            framesSinceMaxXChange += 1
+        framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
+
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:
+            idle = True
+
+        action = 11 - output.argmax(1)[0]
+        # print(output.shape)
+        # print(action)
+        
+        if action != last_action or action == 0:
+            framesSinceMaxXChange += max(0, 5 - same_action_counter)
+            same_action_counter = max(0, same_action_counter - .1)
+        else:
+            same_action_counter += .2
+        last_action = action
+        # env.render()
+
+def actionToNdArray(value: int):
+    array = np.zeros([1, 12])
+    array[0, value] = 1
+    return array
+
+
+if __name__ == '__main__':
+    processes: List[mp.Process] = []
+    for i in range(2):
+        p = mp.Process(target=mario, daemon=True, args=(True,))
+        processes.append(p)
+        p.start()
+
+    for p in processes:
+        p.join()
+    # mario()

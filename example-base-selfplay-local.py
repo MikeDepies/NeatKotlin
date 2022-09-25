@@ -3,10 +3,6 @@ import multiprocessing as mp
 import argparse
 import json
 import math
-
-import pstats
-import cProfile
-import random
 import signal
 import sys
 import time
@@ -14,7 +10,6 @@ from typing import List
 
 import melee
 import numpy as np
-import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
 from ControllerHelper import ControllerHelper
 from Evaluator import Evaluator
@@ -139,37 +134,6 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class Session:
-    framesOnCharacterSelect : int
-    # ws: WebSocketClientProtocol or None = None
-    simulationRunning : bool
-    menuLoadFirstFrame : bool
-    gamestate: GameState or None
-    lastStockAi : int
-    lastStockOpponent : int
-    lastGamestate: GameState or None
-    cpu_level : int
-    cpu_character : melee.Character
-    ai_character : melee.Character
-    reassign_characters : bool
-    character_pool : List[melee.Character]
-    def __init__(self) -> None:
-        self.framesOnCharacterSelect = 0
-        # ws: WebSocketClientProtocol or None = None
-        self.simulationRunning = False
-        self.menuLoadFirstFrame = True
-        self.gamestate: GameState or None = None
-        self.lastStockAi = 4
-        self.lastStockOpponent = 4
-        self.lastGamestate: GameState or None = None
-        self.cpu_level = random.randint(1, 9)
-        self.cpu_character = melee.Character.FOX
-        self.ai_character = melee.Character.SAMUS
-        self.reassign_characters = True
-        self.character_pool = [melee.Character.FOX, melee.Character.SAMUS, melee.Character.FALCO, melee.Character.MARTH,
-                      melee.Character.CPTFALCON, melee.Character.PEACH, melee.Character.PIKACHU, melee.Character.ZELDA, melee.Character.GANONDORF, melee.Character.JIGGLYPUFF,
-                      melee.Character.MARIO, melee.Character.DK, melee.Character.KIRBY, melee.Character.BOWSER, melee.Character.LINK, melee.Character.NESS, melee.Character.PEACH, melee.Character.YOSHI, melee.Character.MEWTWO, melee.Character.LUIGI, melee.Character.YLINK, melee.Character.DOC, melee.Character.GAMEANDWATCH, melee.Character.ROY]
-
 
 def create_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
     positionNormalizer = 100.0
@@ -241,8 +205,6 @@ def console_loop(port : int):
     opponent_index = args.opponent
     # console.step()
     # print("START CONSOLE LOOP")
-    session = Session()
-    session.cpu_level = 3
     ai_controller_id = 0
     evaluator = Evaluator(player_index, opponent_index, 5, 10)
     model_helper = ModelHelper(ai_controller_id, "localhost")

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { tweened } from 'svelte/motion';
 import { reader } from './store/websocket/MessageRouter';
 import { message } from './store/WebsocketStore';

@@ -1,6 +1,6 @@
 export type MarioInfo = {
-    x_pos: number,
-    y_pos: number,
+    xPos: number,
+    yPos: number,
     score: number,
     coins: number,
     status: string,
@@ -9,7 +9,8 @@ export type MarioInfo = {
     stage: number,
     world: number,
     dstage: number,
-    dworld: number
+    dworld: number,
+    flags: number,
 };
 export type Settings = {
     noveltyThreshold : number

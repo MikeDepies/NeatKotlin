@@ -16,6 +16,7 @@
 <script lang="ts">
 	import type { MarioInfo } from 'src/type/marioInfo';
 	import { onMount } from 'svelte';
+	import { fly, fade } from 'svelte/transition';
 
 	let width: number;
 	let height: number;
@@ -40,7 +41,7 @@
 				offset: 0
 			},
 			{
-				width: 2560,
+				width: 2800,
 				height: 240,
 				image: 'mario-1-4-stage.png',
 				offset: 0
@@ -60,7 +61,7 @@
 				offset: 240
 			},
 			{
-				width: 2624,
+				width: 3792,
 				height: 240,
 				image: 'mario-2-3-stage.png',
 				offset: 0
@@ -231,7 +232,7 @@
 	];
 	let worldIndex = 0;
 	let stageIndex = 0;
-	let useAutoStageRotation = true;
+	let useAutoStageRotation = false;
 	$: {
 		if (stageIndex > 3) {
 			stageIndex = 0;
@@ -260,9 +261,9 @@
 	let map = new Map();
 	$: {
 		map = new Map();
-		const result : MarioInfo[] = [];
+		const result: MarioInfo[] = [];
 		for (const item of [...filteredMarios].reverse()) {
-			const key = marioInfoPositionString(item)
+			const key = marioInfoPositionString(item);
 			if (!map.has(key)) {
 				map.set(key, 1); // set any value to Map
 				result.push({
@@ -275,24 +276,40 @@
 		topMarios = result
 			.sort((a, b) => {
 				return (
-					a?.x_pos +
+					a?.xPos +
 					a.stage * 10000 +
 					a.world * 100_000 -
-					(b?.x_pos + b.stage * 10000 + b.world * 100_000)
+					(b?.xPos + b.stage * 10000 + b.world * 100_000)
 				);
 			})
 			.slice(-20)
 			.reverse();
 	}
-	function marioInfoPositionString(item : MarioInfo) : string {
-		return item.x_pos +" "+  item.y_pos + " " + item.stage + " " + item.world + " " + item.status
+	function marioInfoPositionString(item: MarioInfo): string {
+		return (
+			item.xPos +
+			' ' +
+			item.yPos +
+			' ' +
+			item.stage +
+			' ' +
+			item.world +
+			' ' +
+			item.status +
+			' ' +
+			item.coins +
+			' ' +
+			item.score
+		);
 	}
 	let filteredMarios = [];
-	$: filteredMarios = marios.filter((m) => m.stage - 1 == stageIndex && m.world - 1 == worldIndex);
+	$: filteredMarios = marios
+		.filter((m) => m.stage - 1 == stageIndex && m.world - 1 == worldIndex)
+		.slice(-1000);
 
 	let selectedMario: MarioInfo | null = null;
 	function mouseOverMario(mario: MarioInfo) {
-		console.log(mario.y_pos);
+		console.log(mario.yPos);
 		selectedMario = mario;
 	}
 	async function refresh() {
@@ -325,12 +342,12 @@
 		}, 2000);
 		setInterval(() => {
 			if (useAutoStageRotation) stageIndex++;
-		}, 10_000);
+		}, 6_000);
 	});
 	let useFilter = false;
 	let updateNumberFilter = 0;
 	function size(mario: MarioInfo) {
-		return (Math.floor(timeRatio(mario) * 16) + 12);
+		return Math.floor(mario.time / 10) + 12;
 	}
 	let maxScore = filteredMarios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
 	$: maxScore = filteredMarios.map((m) => m.score).reduce((a, b) => Math.max(a, b), 0.1);
@@ -372,67 +389,78 @@
 	bind:clientWidth={width}
 	class="w-full bg-contain bg-no-repeat relative"
 >
-	<img src={stage[worldIndex][stageIndex].image} alt="" />
+	<img class="w-full" src={stage[worldIndex][stageIndex].image} alt="" />
 	{#each filteredMarios as mario, index (mario)}
 		<div
+			in:fly={{ y: 200, duration: 2000 }}
+			out:fade
 			class="{mario.dstage != 0 || mario.dworld != 0 ? '' : ''} absolute {recentGroup(mario)
 				? ' border-2 border-black'
 				: 'border-white border'}"
 			style="background: {getRGB(mario, index)}; opacity: {!recentGroup(mario)
-				? Math.max(Math.min(index / filteredMarios.length / 10, 0.5), .2)
-				: 1}; width: {size(mario) * xRatio}px; height: {(size(mario) *
-				(mario.status == 'small' ? 1 : 2)) * yRatio}px;  margin-top: -{((size(mario) / 2) *
-				(mario.status == 'small' ? 1 : 2)) * yRatio}px; top: {mario.y_pos * yRatio +
-				stage[worldIndex][mario.stage - 1]?.offset * yRatio}px; left: {mario.x_pos * xRatio}px;"
+				? Math.max(Math.min(index / filteredMarios.length / 10, 0.5), 0.2)
+				: 1}; width: {size(mario) * xRatio}px; height: {size(mario) *
+				yRatio *
+				(mario.status == 'small' ? 1 : 2) *
+				yRatio}px;  margin-top: -{(size(mario) / 2) *
+				(mario.status == 'small' ? 1 : 2) *
+				yRatio}px; top: {(272 - mario.yPos) * yRatio +
+				stage[worldIndex][mario.stage - 1]?.offset * yRatio}px; left: {mario.xPos * xRatio}px;"
 			on:mousemove={() => mouseOverMario(mario)}
 		/>
 	{/each}
 </div>
 <div>
-	<div>
-		World: <input type="number" bind:value={worldIndex} />
-		Stage: <input type="number" bind:value={stageIndex} />
-	</div>
-	<div>
-		<label for="autoRotate"> Auto Rotate </label>
-		<input type="checkbox" bind:checked={useAutoStageRotation} id="autoRotate" />
-	</div>
-	<div>Threshold:</div>
-	<div><input type="number" bind:value={settings.noveltyThreshold} /></div>
-	<div><button on:click={updateSettings}>Update Settings</button></div>
-	<div>Marios: {marios.length}</div>
-	<div>Updates Performed: {updateNumber}</div>
-	<div><button on:click={() => refresh()}>Refresh</button></div>
-	<input type="checkbox" id="filterBySelection" bind:checked={useFilter} />
-	<label for="filterBySelection">Filter By Update Number</label>
-	<input type="number" bind:value={updateNumberFilter} />
 	<div class="flex">
 		<div>
-			{#if selectedMario !== null}
-				<div>x: {selectedMario.x_pos}</div>
-				<div>y: {selectedMario.y_pos}</div>
-				<div>stage: {selectedMario.stage}</div>
-				<div>world: {selectedMario.world}</div>
-				<div>score: {selectedMario.score}</div>
-				<div>status: {selectedMario.status}</div>
-				<div>time: {selectedMario.time}</div>
-				<div>coins: {selectedMario.coins}</div>
-				<div>id: {selectedMario.id}</div>
-				<div>updateNumber: {marioDict[selectedMario.id]}</div>
-			{/if}
+			<div>
+				World: <input type="number" bind:value={worldIndex} />
+				Stage: <input type="number" bind:value={stageIndex} />
+			</div>
+			<div>
+				<label for="autoRotate"> Auto Rotate </label>
+				<input type="checkbox" bind:checked={useAutoStageRotation} id="autoRotate" />
+			</div>
+			<div>Threshold:</div>
+			<div><input type="number" bind:value={settings.noveltyThreshold} /></div>
+			<div><button on:click={updateSettings}>Update Settings</button></div>
+			<div>Marios: {marios.length}</div>
+			<div>Updates Performed: {updateNumber}</div>
+			<div><button on:click={() => refresh()}>Refresh</button></div>
+			<input type="checkbox" id="filterBySelection" bind:checked={useFilter} />
+			<label for="filterBySelection">Filter By Update Number</label>
+			<input type="number" bind:value={updateNumberFilter} />
+			<div class="flex">
+				<div>
+					{#if selectedMario !== null}
+						<div>x: {selectedMario.xPos}</div>
+						<div>y: {selectedMario.yPos}</div>
+						<div>stage: {selectedMario.stage}</div>
+						<div>world: {selectedMario.world}</div>
+						<div>score: {selectedMario.score}</div>
+						<div>status: {selectedMario.status}</div>
+						<div>time: {selectedMario.time}</div>
+						<div>coins: {selectedMario.coins}</div>
+						<div>id: {selectedMario.id}</div>
+						<div>updateNumber: {marioDict[selectedMario.id]}</div>
+					{/if}
+				</div>
+				
+			</div>
 		</div>
 		<div>
 			<ul>
 				{#each topMarios as m}
 					<li class="flex gap-x-4 border p-2">
-						<div>x: {m.x_pos}</div>
-						<div>y: {m.y_pos}</div>
+						<div>x: {m.xPos}</div>
+						<div>y: {m.yPos}</div>
 						<div>stage: {m.stage}</div>
 						<div>world: {m.world}</div>
 						<div>score: {m.score}</div>
 						<div>status: {m.status}</div>
 						<div>time: {m.time}</div>
 						<div>coins: {m.coins}</div>
+						<div>flags: {m.flags}</div>
 						<div>count: {map.get(marioInfoPositionString(m))}</div>
 						<div>updateNumber: {marioDict[m.id]}</div>
 					</li>

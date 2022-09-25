@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import * as Pancake from '@sveltejs/pancake';
 import type { EvaluationClocksUpdate } from './api/types/Evaluation';
 import type { Series } from './api/types/Series';

@@ -1,4 +1,4 @@
-<script>
+<script  lang="ts">
     import CharacterSelectionComponent from "@components/CharacterSelectionComponent.svelte";
     import CpuLevelSelectComponent from "@components/CpuLevelSelectComponent.svelte";
     import { onMount } from "svelte";

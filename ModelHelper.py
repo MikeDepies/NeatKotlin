@@ -3,8 +3,9 @@ from typing import List
 import httpx
 import time
 from ActionBehavior import ActionBehavior
-import NeatNetwork
-import NeatNetwork2
+from ComputableNetwork import ComputableNetwork, ConnectionLocation, constructNetwork
+from HyperNeatDomain import LayerPlane, LayerShape3D
+
 class ModelTestResult:
     model_id : str
     model_scored: bool
@@ -71,7 +72,7 @@ class ModelHelper:
         #     raise Exception("No data for request")
         
 
-    def getNetwork(self, controllerId, modelId) -> NeatNetwork2.ComputableNetwork:
+    def getNetwork(self, controllerId, modelId) -> ComputableNetwork:
         requestNetwork = True
         network = None
         print("get network")
@@ -87,22 +88,22 @@ class ModelHelper:
         data = res.json()
         id: str = data["id"]
         calculation_order = data["calculationOrder"]
-        connections: list[NeatNetwork.ConnectionLocation] = list(
+        connections: list[ConnectionLocation] = list(
             map(
-                lambda c: NeatNetwork.ConnectionLocation(
+                lambda c: ConnectionLocation(
                     c[0], c[1], c[2], c[3], c[4], c[5], c[6]),
                 data["connections"]))
         connection_relationships: dict[
             str, list[str]] = data["connectionRelationships"]
         connection_relationships_inverse: dict[
             str, list[str]] = data["targetConnectionMapping"]
-        connection_planes: list[NeatNetwork2.LayerShape3D] = list(
+        connection_planes: list[LayerShape3D] = list(
             map(lambda c: mapC(c), data["connectionPlanes"]))
-        # nodes: List[NeatNetwork.ConnectionLocation] = list(
-        #     map(lambda n: NeatNetwork.NodeLocation(n[0], n[1], n[2]),
+        # nodes: List[ConnectionLocation] = list(
+        #     map(lambda n: NodeLocation(n[0], n[1], n[2]),
         #         data["nodes"]))
         
-        network = NeatNetwork2.constructNetwork(
+        network = constructNetwork(
             connections, connection_planes, connection_relationships,
             connection_relationships_inverse, calculation_order)
         # exit()
@@ -113,7 +114,7 @@ class ModelHelper:
         #     # time.sleep(1)
         #     return None
     
-    def randomBest(self) -> NeatNetwork2.ComputableNetwork:
+    def randomBest(self) -> ComputableNetwork:
         requestNetwork = True
         network = None
         print("getting a \"best\" network")
@@ -126,19 +127,19 @@ class ModelHelper:
             data = res.json()
             id: str = data["id"]
             calculation_order = data["calculationOrder"]
-            connections: list[NeatNetwork.ConnectionLocation] = list(
+            connections: list[ConnectionLocation] = list(
                 map(
-                    lambda c: NeatNetwork.ConnectionLocation(
+                    lambda c: ConnectionLocation(
                         c[0], c[1], c[2], c[3], c[4], c[5], c[6]),
                     data["connections"]))
             connection_relationships: dict[
                 str, list[str]] = data["connectionRelationships"]
             connection_relationships_inverse: dict[
                 str, list[str]] = data["targetConnectionMapping"]
-            connection_planes: list[NeatNetwork2.LayerShape3D] = list(
+            connection_planes: list[LayerShape3D] = list(
                 map(lambda c: mapC(c), data["connectionPlanes"]))
             
-            network = NeatNetwork2.constructNetwork(
+            network = constructNetwork(
                 connections, connection_planes, connection_relationships,
                 connection_relationships_inverse, calculation_order)
             # exit()
@@ -149,9 +150,21 @@ class ModelHelper:
             # time.sleep(1)
             return None
 
+    def getNetworkTest(self, controllerId, modelId) -> ComputableNetwork: 
+        res = httpx.post("http://" + self.host + ":8091/model/request", json={
+            "controllerId": controllerId,
+            "modelId": modelId,
+            
+        }, timeout=10)
+        if not res.is_success:
+            raise Exception("No data for request")
+        data = res.json()
+        
+        return data
+
 def mapC(c):
-    return NeatNetwork2.LayerShape3D(
-        NeatNetwork2.LayerPlane(c["layerPlane"]["height"],
+    return LayerShape3D(
+        LayerPlane(c["layerPlane"]["height"],
                                 c["layerPlane"]["width"],
                                 c["layerPlane"]["id"]), c["xOrigin"],
         c["yOrigin"], c["zOrigin"])

@@ -1,118 +1,54 @@
 package server
+//
+//import AuthService
+//import AuthServiceAuth0
+//import ClientRegistry
 
-import AuthService
-import AuthServiceAuth0
-import ClientRegistry
-import FrameOutput
-import FrameUpdate
-import MessageEndpointRegistry
-import MessageEndpointRegistryImpl
-import MessageWriter
-import MessageWriterImpl
 import PopulationEvolver
-import SessionScope
-import SessionScopeImpl
-import UserTokenResolver
-import UserTokenResolverImpl
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
-import io.ktor.client.features.logging.*
-import io.ktor.client.features.websocket.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import mu.KotlinLogging
 import neat.*
 import neat.model.*
 import neat.mutation.assignConnectionRandomWeight
+import neat.mutation.getMutateBiasConnections
 import org.koin.core.qualifier.qualifier
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
 import server.message.endpoints.*
 import server.message.endpoints.NodeTypeModel.*
-import server.server.WebSocketManager
+import server.service.TwitchBotService
 import java.io.File
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.random.Random
 
 private val log = KotlinLogging.logger { }
+
 inline fun <reified T> Scope.getChannel(): Channel<T> =
     get(qualifier<T>())
 
 private var evaluationId = 0
 val applicationModule = module {
-    single<Channel<FrameUpdate>>(qualifier("input")) { Channel() }
-    factory<Channel<FrameUpdate>>(qualifier<FrameUpdate>()) { Channel(Channel.CONFLATED) }
-    factory<Channel<FrameOutput>>(qualifier<FrameOutput>()) { Channel() }
-    factory<Channel<FrameOutput>>(qualifier<ModelUpdate>()) { Channel() }
-    single<Channel<EvaluationScore>>(qualifier<EvaluationScore>()) { Channel() }
-    single<Channel<PopulationModels>>(qualifier<PopulationModels>()) { Channel() }
-    single<Channel<EvaluationClocksUpdate>>(qualifier<EvaluationClocksUpdate>()) { Channel() }
-    single<Channel<AgentModel>>(qualifier<AgentModel>()) { Channel() }
-    factory {
-        EvaluationChannels(
-            getChannel(),
-            getChannel(),
-            getChannel(),
-            getChannel()
-        )
-    }
-    single {
-        val inputChannel = get<Channel<FrameUpdate>>(qualifier("input"))
-        EvaluationMessageProcessor(get(), inputChannel, get())
-    }
-    single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
-    single<SessionScope> { SessionScopeImpl(this, get()) }
-    single { SimulationSessionScope(this, get()) }
-    single<MessageEndpointRegistry> {
-        val endpointProvider = get<EndpointProvider>()
-        val endpoints = endpointProvider.run {
-            simulationEndpoints()
-        }.toList()
-        MessageEndpointRegistryImpl(endpoints, get())
-    }
-
-    single { EndpointProvider(get(), get(), this) }
-    single<UserTokenResolver> { UserTokenResolverImpl(get()) }
-    single<AuthService> { AuthServiceAuth0(get(), get()) }
-    single { ClientRegistry(listOf()) }
-    single { WebSocketManager(get(), get(), get(), get()) }
     single {
         HttpClient(CIO) {
             install(HttpTimeout) {
             }
-            install(WebSockets)
-            install(JsonFeature) {
-                serializer = KotlinxSerializer()
-            }
-            install(Logging) {
-                level = LogLevel.NONE
-            }
+            install(ContentNegotiation)
+
         }
     }
-
-    factory { MeleeState(null) }
-    single { FrameClockFactory() }
-    factory { (controllerId: Int) -> IOController(controllerId, getChannel(), getChannel(), getChannel()) }
-    factory<ResourceEvaluator> { (evaluationIdSet: EvaluatorIdSet, meleeState: MeleeState, network: ActivatableNetwork) ->
-        println("New Evaluator?")
-        val (agentId: Int, evaluationId: Int, generation: Int, controllerId: Int) = evaluationIdSet
-        ResourceEvaluator(
-            network,
-            agentId,
-            evaluationId,
-            generation,
-            controllerId,
-            meleeState,
-            10f,
-            get(),
-            12000f * 24
-        )
+    single {
+        val json by inject<Json>()
+        json.decodeFromStream<Config>(File("config.json").inputStream())
     }
+<<<<<<< HEAD
     factory { (evaluationId: Int, populationSize: Int) ->
         val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
         val randomSeed: Int = 123 + evaluationId
@@ -158,7 +94,13 @@ val applicationModule = module {
             population = population,
             generation = if (evaluationId == 0) 24389 else 24006
         )
+=======
+    single {
+        val config by inject<Config>()
+        TwitchBotService(get(), config.url.twitchBot)
+>>>>>>> ab4141b746179df110a19bd8ac819cddadb8840b
     }
+
 }
 
 class CPPNGeneRuler(val weightCoefficient: Float = .5f, val disjointCoefficient: Float =1f, val normalize : Int = 1) {
@@ -257,13 +199,26 @@ fun NeatExperiment.generateInitialPopulation2(
 //    neatMutator.addConnection(addConnectionNode(xNode.node, 7))
 //    neatMutator.addConnection(addConnectionNode(yNode.node, 7))
 //    neatMutator.addConnection(addConnectionNode(zNode.node, 7))
-
+//    repeat(500) {
+//        mutateAddNode(neatMutator)
+//
+//    }
+    val mutateBias = getMutateBiasConnections(0f, 2.5f, 4f)
     return (0 until populationSize).map {
         val clone = neatMutator.clone()
         clone.connections.forEach { connectionGene ->
             assignConnectionRandomWeight(connectionGene)
         }
+        mutateBias(this, clone)
 //        clone.outputNodes.forEach { println(it.node) }
+        repeat(100) {
+            if (random.nextFloat() > .5f) {
+                mutateAddConnection(clone)
+            }
+            if (random.nextFloat() > .9f) {
+                mutateAddNode(clone)
+            }
+        }
         clone.outputNodes.forEach {
             it.activationFunction = activationFunctions.random(random)
         }

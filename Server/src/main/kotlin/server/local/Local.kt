@@ -19,7 +19,7 @@ data class ModelRequest(val controllerId: Int, val modelId: String)
 @Serializable
 data class ModelsRequest(val controllerId: Int)
 
-
+//sealed class ModelStatus
 @Serializable
 data class ModelStatus(var available : Boolean, var score: Float?, var neatMutator : NeatMutator?)
 @Serializable

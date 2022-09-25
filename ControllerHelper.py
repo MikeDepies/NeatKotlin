@@ -6,7 +6,7 @@ from numpy import ndarray
 
 from melee.enums import Button
 
-from NeatNetwork import ComputableNetwork
+from ComputableNetwork import ComputableNetwork
 
 class ControllerHelper:
     def processMessage(self, message: Dict, controller: melee.Controller):
