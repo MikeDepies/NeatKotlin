@@ -75,8 +75,21 @@ fun Application.module() {
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
+<<<<<<< HEAD
+    get<WebSocketManager>().attachWSRoute()
+    val a = actionBehaviors("population/0_noveltyArchive.json")
+    val b = actionBehaviors("population/1_noveltyArchive.json")
+    val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId)) })
+    val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId2)) })
+    fun IOController.simulationForController(populationSize: Int) = get<Simulation>(parameters = {
+        DefinitionParameters(
+            listOf(controllerId, populationSize)
+        )
+    })
+=======
 //    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(5000)
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
+>>>>>>> ab4141b746179df110a19bd8ac819cddadb8840b
 
     fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
         simulationFor(controllerId, populationSize, false)
