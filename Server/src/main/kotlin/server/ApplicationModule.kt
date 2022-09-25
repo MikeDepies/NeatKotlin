@@ -156,7 +156,7 @@ val applicationModule = module {
             speciationController = SpeciationController(0),
             simpleNeatExperiment = simpleNeatExperiment,
             population = population,
-            generation = if (evaluationId == 0) 11612 else 11547
+            generation = if (evaluationId == 0) 24389 else 24006
         )
     }
 }

@@ -94,8 +94,8 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
-    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(5000)
-    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
+    val a = actionBehaviors("population/0_noveltyArchive.json")
+    val b = actionBehaviors("population/1_noveltyArchive.json")
     val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId)) })
     val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId2)) })
     fun IOController.simulationForController(populationSize: Int) = get<Simulation>(parameters = {
