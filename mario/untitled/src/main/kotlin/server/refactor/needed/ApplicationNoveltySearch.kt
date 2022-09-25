@@ -130,12 +130,12 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 100
+    val populationSize = 200
 
 
-    val mateChance = .5f
-    val survivalThreshold = .2f
-    val stagnation = 4000
+    val mateChance = .7f
+    val survivalThreshold = .4f
+    val stagnation = 40
 
     val randomSeed: Int = 7 + evaluationId
     val addConnectionAttempts = 5
@@ -196,7 +196,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(25, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(30, 0, settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }
@@ -266,15 +266,15 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 
 
                 val message = try {
-                    val connectionLocations = createNetwork.build(network.neatMutator.toNetwork(), 3f)
-                    if (connectionLocations.isEmpty()) {
-//                        log.error("no connections for network!")
-//                        log.error("" + network.neatMutator.hiddenNodes.map { it.activationFunction.name })
-//                        log.error(network.neatMutator.connections.toString())
-//                        log.error(network.neatMutator.nodes.toString())
-                    }
+//                    val connectionLocations = createNetwork.build(network.neatMutator.toNetwork(), 3f)
+//                    if (connectionLocations.isEmpty()) {
+////                        log.error("no connections for network!")
+////                        log.error("" + network.neatMutator.hiddenNodes.map { it.activationFunction.name })
+////                        log.error(network.neatMutator.connections.toString())
+////                        log.error(network.neatMutator.nodes.toString())
+//                    }
                     NetworkBlueprint(
-                        connectionLocations,
+                        listOf(),
                         network.id,
                         createNetwork.planes,
                         connectionRelationships,
@@ -282,7 +282,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                         calculationOrder,
                         populationEvolver.speciationController.species(network.neatMutator).id,
                         network.neatMutator.hiddenNodes.size,
-                        createNetwork.outputPlane.id
+                        createNetwork.outputPlane.id,
+                        network.neatMutator.toModel(),
+                        createNetwork.depth
                     )
                 } catch (e: Exception) {
                     log.error(e)
@@ -295,7 +297,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                         calculationOrder,
                         populationEvolver.speciationController.species(network.neatMutator).id,
                         network.neatMutator.hiddenNodes.size,
-                        createNetwork.outputPlane.id
+                        createNetwork.outputPlane.id,
+                        network.neatMutator.toModel(),
+                        createNetwork.depth
                     )
                 }
                 modelChannel.send(message)
@@ -304,7 +308,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     }
     val scoreChannel = Channel<MarioDiscovery>(Channel.UNLIMITED)
     routing {
-        get("/model") {
+        get("/model/request") {
             val model = modelChannel.receive()
 
             call.respond(model)

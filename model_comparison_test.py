@@ -44,7 +44,7 @@ def console_loop(port : int):
     ai_controller_id = 0
     
     model_helper = ModelHelper(ai_controller_id, "localhost")
-    neat_service = NeatService("localhost")
+    neat_service = NeatService("localhost", 8091)
     model_list = model_helper.getModels()
     print(model_list)
     for m in model_list:

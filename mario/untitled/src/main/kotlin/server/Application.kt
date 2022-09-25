@@ -19,6 +19,7 @@ import neat.*
 import neat.model.*
 import org.koin.ktor.ext.*
 import server.mcc.*
+import server.message.endpoints.toModel
 import server.server.*
 import java.io.*
 import java.time.*
@@ -257,7 +258,7 @@ class NetworkBlueprintBuilder(private val taskNetworkBuilder: TaskNetworkBuilder
     fun networkBlueprint(
         connections: List<ConnectionLocation>, pairedAgents: PairedAgents
     ) = NetworkBlueprint(
-        connections,
+        listOf(),
         pairedAgents.child.id,
         taskNetworkBuilder.planes,
         connectionRelationships,
@@ -265,7 +266,9 @@ class NetworkBlueprintBuilder(private val taskNetworkBuilder: TaskNetworkBuilder
         calculationOrder,
         0,
         0,
-        taskNetworkBuilder.outputPlane.id
+        taskNetworkBuilder.outputPlane.id,
+        pairedAgents.child.neatMutator.toModel(),
+        taskNetworkBuilder.depth
     )
 }
 

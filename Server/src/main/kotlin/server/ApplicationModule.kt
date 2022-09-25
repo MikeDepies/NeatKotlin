@@ -30,6 +30,7 @@ import kotlin.math.max
 import kotlin.random.Random
 
 private val log = KotlinLogging.logger { }
+
 inline fun <reified T> Scope.getChannel(): Channel<T> =
     get(qualifier<T>())
 

@@ -9,9 +9,11 @@ from NeatDomain import NeatModel, parse_neat_model
 
 class NeatService:
     host: str
+    port: int
 
-    def __init__(self, host : str) -> None:
+    def __init__(self, host : str, port : int) -> None:
         self.host = host
+        self.port = port
 
     def getBestModel(self, controller_id : int) -> NeatModel:
         response = post(self.host + "/stream/next_model", json={
@@ -21,7 +23,7 @@ class NeatService:
         return parse_neat_model(data)
     
     def getNetwork(self, controllerId, modelId) -> Tuple[str, HyperNeatBuilder]: 
-        res = post("http://" + self.host + ":8091/model/request", json={
+        res = post("http://" + self.host + ":" + str(self.port) + "/model/request", json={
             "controllerId": controllerId,
             "modelId": modelId,
             

@@ -16,6 +16,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
+import server.message.endpoints.NeatModel
 import java.util.*
 
 private val log = KotlinLogging.logger { }
@@ -91,7 +92,9 @@ data class NetworkBlueprint(
     val calculationOrder : List<String>,
     val species: Int,
     val hiddenNodes: Int,
-    val outputLayer: String
+    val outputLayer: String,
+    val neatModel: NeatModel,
+    val depth: Int
 )
 
 @Serializable
@@ -471,23 +474,18 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
     val inputImagePlane = layerPlane(30, 32)
-//    val imagePlane1 = layerPlane(5, 5)
-//    val imagePlane2 = layerPlane(5, 5)
-//    val imagePlane3 = layerPlane(5, 5)
-//    val imagePlane4 = layerPlane(5, 5)
-//    val imagePlane5 = layerPlane(5, 5)
-//    val imagePlane6 = layerPlane(5, 5)
-    val hiddenPlanes = (0..3).map {
-        layerPlane(10, 10)
+    val hiddenPlanes = (0..5).map {
+        layerPlane(10 - it, 10 - it)
     }
     val outputPlane = layerPlane(1, 12)
     val computationOrder = hiddenPlanes + outputPlane
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes + outputPlane
         put(inputImagePlane, listOf(planeList[0]))
-        hiddenPlanes.forEach {
-            put(it, planeList)
+        hiddenPlanes.forEachIndexed { index, layerPlane ->
+            put(layerPlane, planeList.drop(index).take(index + 2))
         }
+        put(outputPlane, listOf())
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         var zIndex =0
@@ -587,7 +585,9 @@ class TaskNetworkBuilder(
     val outputPlane: LayerPlane
 ) {
     private val idZMap = planeZMap.mapKeys { it.key.id }
-    val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }.map { LayerShape3D(it, 0, 0, idZMap.getValue(it.id)) }
+    val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }.map {
+        val zOrigin = idZMap.getValue(it.id)
+        LayerShape3D(it, 0, if (zOrigin == depth) 1 else 0, idZMap.getValue(it.id)) }
     fun build(network: ActivatableNetwork, connectionMagnitude: Float): List<ConnectionLocation> {
         val networkConnectionBuilder = NetworkConnectionBuilder(network, connectionMagnitude, networkShape, depth)
         val connections = connectionMapping.flatMap {  (source, targets) ->

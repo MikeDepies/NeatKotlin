@@ -316,15 +316,15 @@ def create_layer_computation_instructions(neat_model: NeatModel) -> List[LayerCo
         connections = list(connections_from(captured_set, neat_model))
         weight_computation_instruction_set = list(map(lambda c: WeightComputationInstruction(
             network_node_map[c.in_node], network_node_map[c.out_node], c.weight), connections))
-        print("-=-=-=-=")
-        print(len(captured_set))
-        print(list(map(lambda x: x.node, captured_set)))
-        print(len(build_input_nodes(weight_computation_instruction_set)))
-        print(list(map(lambda x: x.node, build_input_nodes(
-            weight_computation_instruction_set))))
-        print(list(map(lambda x: str(x.input_node.node) + " -> " +
-              str(x.output_node.node), weight_computation_instruction_set)))
-        print("")
+        # print("-=-=-=-=")
+        # print(len(captured_set))
+        # print(list(map(lambda x: x.node, captured_set)))
+        # print(len(build_input_nodes(weight_computation_instruction_set)))
+        # print(list(map(lambda x: x.node, build_input_nodes(
+        #     weight_computation_instruction_set))))
+        # print(list(map(lambda x: str(x.input_node.node) + " -> " +
+        #       str(x.output_node.node), weight_computation_instruction_set)))
+        # print("")
         layer_network_nodes = list(
             map(lambda n: network_node_map[n.node], captured_set))
         layer_computation_instructions.append(LayerComputationInstruction(
