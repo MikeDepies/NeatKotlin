@@ -1,4 +1,5 @@
 from cmath import inf
+from multiprocessing.managers import DictProxy, Namespace
 from typing import Any, Dict, List
 from gym.core import Env
 from nes_py.wrappers import JoypadSpace
@@ -123,8 +124,8 @@ def get_network_novelty(host: str, port : int):
         raise Exception("No data for request")
     data = res.json()
     id, builder = process_model_data(data)
-    network = builder.create_ndarrays()
-    return id, network
+    
+    return id, builder
 
 def marioNovelty(queue : mp.Queue):
     env = gym_super_mario_bros.make('SuperMarioBros-v1')
@@ -237,29 +238,41 @@ def marioNovelty(queue : mp.Queue):
         else:
             same_action_counter += .2
         last_action = action
-        env.render()
+        # env.render()
 
 def actionToNdArray(value: int):
     array = np.zeros([1, 12])
     array[0, value] = 1
     return array
 
-def queueNetworks(queue : mp.Queue):
+def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
     host = "localhost"
     port = 8095
+    ns.generation = 0
     while True:
         try:
-            queue.put(get_network_novelty(host, port))
+            id, builder = get_network_novelty(host, port)
+            if id not in mgr_dict:
+                mgr_dict[id] = True
+                network = builder.create_ndarrays()
+                ns.generation += 1
+                queue.put((id, network))
+            if ns.generation > 100_000:
+                mgr_dict.clear()
+                ns.generation = 0
+                
         except:
             print("failed to get network...")
     pass
 
 if __name__ == '__main__':
     mgr = mp.Manager()
+    mgr_dict = mgr.dict()
+    ns = mgr.Namespace()
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 2
+    process_num = 14
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     
@@ -267,9 +280,9 @@ if __name__ == '__main__':
         p = mp.Process(target=marioNovelty, daemon=True, args=(queue,))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,))
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         processes.append(p)
-        p.start()
+        p.start() 
 
     for p in processes:
         p.join()
