@@ -130,14 +130,14 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 200
+    val populationSize = 100
 
 
-    val mateChance = .7f
-    val survivalThreshold = .4f
+    val mateChance = .4f
+    val survivalThreshold = .2f
     val stagnation = 40
 
-    val randomSeed: Int = 7 + evaluationId
+    val randomSeed: Int = 213 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
@@ -196,7 +196,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(30, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(60, 0, settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }
