@@ -171,9 +171,9 @@ class ComputableNetwork:
                     #     print(self.value_map[c][..., 1])
 
     def output(self) -> ndarray:
-        return self.value_map[self.connection_z_map[7]][..., 1]
+        return self.value_map[self.connection_z_map[4]][..., 1]
     def outputUnActivated(self) -> ndarray:
-        return self.value_map[self.connection_z_map[7]][..., 0]
+        return self.value_map[self.connection_z_map[4]][..., 0]
 
 @dataclass
 class ComputableNetworkWithID:

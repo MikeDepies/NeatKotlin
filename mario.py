@@ -129,7 +129,7 @@ def get_network_novelty(host: str, port : int):
 def marioNovelty(queue : mp.Queue):
     env = gym_super_mario_bros.make('SuperMarioBros-v1')
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
-    host = "localhost"
+    host = "192.168.0.100"
     port = 8095
     done = False
     network : ComputableNetwork
@@ -231,13 +231,13 @@ def marioNovelty(queue : mp.Queue):
         # print(output.shape)
         # print(action)
         
-        if action != last_action or action == 0:
-            framesSinceMaxXChange += max(0, 5 - same_action_counter)
-            same_action_counter = max(0, same_action_counter - .1)
-        else:
-            same_action_counter += .2
-        last_action = action
-        env.render()
+        # if action != last_action or action == 0:
+        #     framesSinceMaxXChange += max(0, 5 - same_action_counter)
+        #     same_action_counter = max(0, same_action_counter - .1)
+        # else:
+        #     same_action_counter += .2
+        # last_action = action
+        # env.render()
 
 def actionToNdArray(value: int):
     array = np.zeros([1, 12])
@@ -245,7 +245,7 @@ def actionToNdArray(value: int):
     return array
 
 def queueNetworks(queue : mp.Queue):
-    host = "localhost"
+    host = "192.168.0.100"
     port = 8095
     while True:
         try:
@@ -259,7 +259,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 2
+    process_num = 14
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     
