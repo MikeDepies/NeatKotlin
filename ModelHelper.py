@@ -18,15 +18,14 @@ class ModelTestResult:
         self.model_available = model_available
         self.model_part_of_generation = model_part_of_generation
         self.model_scored = model_scored
-
+# , network_shape : List[List[int]] = [[1, 143], [11, 11], [5, 5], [5, 5], [5, 5], [5, 5], [1, 9]]
 class ModelHelper:
     host : str
     controller_id : str
     network_shape : List[List[int]]
-    def __init__(self, controller_id :str, host : str, network_shape : List[List[int]] = [[1, 143], [11, 11], [5, 5], [5, 5], [5, 5], [5, 5], [1, 9]]) -> None:
+    def __init__(self, controller_id :str, host : str) -> None:
         self.host = host
         self.controller_id = controller_id
-        self.network_shape = network_shape
   
 
     def send_evaluation_result(self, model_id : str, score : ActionBehavior):
@@ -82,21 +81,3 @@ class ModelHelper:
             # time.sleep(1)
             return None
 
-    def getNetworkTest(self, controllerId, modelId) -> ComputableNetwork: 
-        res = httpx.post("http://" + self.host + ":8091/model/request", json={
-            "controllerId": controllerId,
-            "modelId": modelId,
-            
-        }, timeout=10)
-        if not res.is_success:
-            raise Exception("No data for request")
-        data = res.json()
-        
-        return data
-
-def mapC(c):
-    return LayerShape3D(
-        LayerPlane(c["layerPlane"]["height"],
-                                c["layerPlane"]["width"],
-                                c["layerPlane"]["id"]), c["xOrigin"],
-        c["yOrigin"], c["zOrigin"])

@@ -348,8 +348,7 @@ def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
 
 def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, controller_index: int):
     host = "localhost"
-    port = 8099
-    model_helper = ModelHelper(host, port)
+    model_helper = ModelHelper(controller_index, host)
     ns.generation = 0
     while True:
         try:
