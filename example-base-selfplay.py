@@ -5,7 +5,7 @@ from asyncio.tasks import sleep
 # from asyncio.windows_events import NULL
 import json
 from multiprocessing.connection import Connection
-from multiprocessing.managers import Namespace
+from multiprocessing.managers import DictProxy, Namespace
 import signal
 import sys
 from typing import Dict
@@ -16,6 +16,7 @@ from melee.enums import Button
 from melee.gamestate import GameState, PlayerState, Projectile
 from melee.stages import randall_position
 import numpy as np
+from ModelHelper import ModelHelper
 import websockets
 import asyncio
 import threading
@@ -759,42 +760,6 @@ def console_loop(connection: Connection, ns : Namespace):
 
 
 loop = asyncio.get_event_loop()
-
-
-# def restartGame(resetCounter):
-#     if not Session.simulationRunning and gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-#         if resetCounter == 0:
-#             print("release all buttons")
-#             controller.release_all()
-#             resetCounter = 1
-#         elif resetCounter == 1:
-#             print("press start to pause")
-#             controller.press_button(Button.BUTTON_START)
-#             resetCounter = 2
-#         elif resetCounter == 2:
-#             print("release start")
-#             controller.release_all()
-#             resetCounter = 3
-#         elif resetCounter == 3:
-#             print("press buttons to exit match")
-#             controller.press_button(Button.BUTTON_START)
-#             controller.press_button(Button.BUTTON_L)
-#             controller.press_button(Button.BUTTON_R)
-#             controller.press_button(Button.BUTTON_A)
-#             resetCounter = 4
-#         controller.flush()
-#     # continue
-
-
-async def test1(value: str):
-    while True:
-        print(f'message: {value}')
-        await asyncio.sleep(.1)
-
-# console.step()
-#
-# console_loop()
-# asyncio.ensure_future(test1("test"))
 
 
 

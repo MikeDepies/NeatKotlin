@@ -3,6 +3,8 @@ import multiprocessing as mp
 import argparse
 import json
 import math
+from multiprocessing.dummy import Namespace
+from multiprocessing.managers import DictProxy
 import signal
 import sys
 import time
@@ -195,7 +197,7 @@ def create_state(gamestate: GameState, player_index: int, opponent_index: int) -
     return state
 
 
-def console_loop(port : int):
+def console_loop(port : int, queue : mp.Queue):
     # Main loop
     # if (Session.network0 != None and Session.network1 == None):
     # log = melee.Logger()
@@ -321,14 +323,49 @@ def console_loop(port : int):
             # if counter > 6 * 60:
             #     session.reassign_characters = True
 
+def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, controller_index: int):
+    host = "localhost"
+    port = 8099
+    model_helper = ModelHelper(host, port)
+    ns.generation = 0
+    while True:
+        try:
+            id, builder = model_helper.getNetwork(controller_index)
+            if id not in mgr_dict:
+                mgr_dict[id] = True
+                network = builder.create_ndarrays()
+                ns.generation += 1
+                
+                queue.put((id, network))
+            if ns.generation > 100_000:
+                mgr_dict.clear()
+                ns.generation = 0
+                
+        except:
+            print("failed to get network...")
+
 
 if __name__ == '__main__':
+    mgr = mp.Manager()
+    mgr_dict = mgr.dict()
+    ns = mgr.Namespace()
+    # ns = mgr.Namespace()
+    # host = "localhost"
+    # port = 8095
+    process_num = 10
+    queue = mgr.Queue(process_num * 2)
+    queue2 = mgr.Queue(process_num * 2)
     processes : List[mp.Process]= []
-    for i in range(15):
-        p = mp.Process(target=console_loop, args=(i + 51460,), daemon=True)
+    for i in range(process_num):
+        p = mp.Process(target=console_loop, args=(i + 51460, queue), daemon=True)
         processes.append(p)
         p.start()
-
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns, 0))
+        processes.append(p)
+        p.start()
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue2,mgr_dict, ns, 1))
+        processes.append(p)
+        p.start()
     for p in processes:
         p.join()
 

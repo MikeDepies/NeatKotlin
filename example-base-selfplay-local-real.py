@@ -3,6 +3,7 @@ import multiprocessing as mp
 import argparse
 import json
 import math
+from multiprocessing.managers import DictProxy, Namespace
 
 import pstats
 import cProfile
@@ -277,47 +278,16 @@ class ModelHandler:
     def postEvaluate(self, game_state : melee.GameState):
         if self.network is None or self.evaluator.is_finished(game_state):
             if self.network is not None:
-                if len(self.model_list) > 0:
-                    model_id = self.model_list[self.model_list_index-1]
-                    behavior = self.evaluator.score(game_state)
-                    print(behavior.actions)
-                    self.model_helper.send_evaluation_result(model_id, behavior)
-                self.network = None
                 
-            if self.model_list_index < len(self.model_list):
-                print("model index: " + str(self.model_list_index))
-                model_id = self.model_list[self.model_list_index]
-                self.model_list_index += 1
-                result = self.model_helper.testModelId(model_id)
-                if result.model_scored:
-                    print("model scored already")
-                    self.network = None
-                elif result.model_available:
-                    print("getting network for " + model_id)
-                    self.network = self.model_helper.getNetwork(
-                        self.ai_controller_id, model_id)
-                    print("creating new evaluator")
-                    self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
-                    # break
-                elif not result.model_part_of_generation:
-                    self.network = None
-                    print("model was not part of generation " + model_id)
-                    self.model_list = self.model_helper.getModels()
-                    self.model_list_index = 0
-            else:
-                if time.time() - self.t > 2:
-                    self.t = time.time()
-                    self.network = None
-                    try:
-                        self.model_list = self.model_helper.getModels()
-                        self.model_list_index = 0
-                    except ReadTimeout:
-                        self.model_list = []
-                        self.model_list_index = 0
-                if self.network is None and len(self.model_list) == 0:
-                    self.network = self.model_helper.randomBest()
-                    print("creating new evaluator")
-                    self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
+                model_id = self.model_list[self.model_list_index-1]
+                behavior = self.evaluator.score(game_state)
+                print(behavior.actions)
+                self.model_helper.send_evaluation_result(model_id, behavior)
+                self.network = None
+            
+                self.network = self.queue.get()
+                print("creating new evaluator")
+                self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
 
 
 def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
@@ -375,6 +345,28 @@ def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
                                             autostart=True,
                                             swag=False,
                                             cpu_level=0)
+
+def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, controller_index: int):
+    host = "localhost"
+    port = 8099
+    model_helper = ModelHelper(host, port)
+    ns.generation = 0
+    while True:
+        try:
+            id, builder = model_helper.getNetwork(controller_index)
+            if id not in mgr_dict:
+                mgr_dict[id] = True
+                network = builder.create_ndarrays()
+                ns.generation += 1
+                
+                queue.put((id, network))
+            if ns.generation > 100_000:
+                mgr_dict.clear()
+                ns.generation = 0
+                
+        except:
+            print("failed to get network...")
+
 
 
 if __name__ == '__main__':

@@ -27,31 +27,7 @@ class ModelHelper:
         self.host = host
         self.controller_id = controller_id
         self.network_shape = network_shape
-    def getModels(self) -> List[str]:
-        res = httpx.post("http://" + self.host + ":8091/models", json={
-                "controllerId": self.controller_id,
-            }, timeout=.5)
-        # if not res.ok:
-        #     raise Exception("No data for request")
-        
-        data = res.json()
-        if data["ready"]:
-            print("Model ID LIST ACQUIRED: " + str(len(data["modelIds"])))
-            return data["modelIds"]
-        else:
-            # print("sleeping 1 second")
-            # time.sleep(1)
-            return []
-
-
-    def testModelId(self, model_id : str) -> ModelTestResult:
-        res = httpx.post("http://" + self.host + ":8091/model/check", json={
-                "controllerId": self.controller_id,
-                "modelId": model_id,
-            }, timeout=30)
-        
-        data = res.json()
-        return ModelTestResult(model_id, data["available"], data["scored"], data["valid"])
+  
 
     def send_evaluation_result(self, model_id : str, score : ActionBehavior):
         
@@ -73,17 +49,10 @@ class ModelHelper:
         #     raise Exception("No data for request")
         
 
-    def getNetwork(self, controllerId, modelId) -> ComputableNetwork:
-        requestNetwork = True
-        network = None
-        print("get network")
-        # try:
-        
-        res = httpx.post("http://" + self.host + ":8091/model/request", json={
+    def getNetwork(self, controllerId):
+        res = httpx.post("http://" + self.host + ":8091/model/next", json={
             "controllerId": controllerId,
-            "modelId": modelId,
-            
-        }, timeout=10)
+        }, timeout=30)
         if not res.is_success:
             raise Exception("No data for request")
         data = res.json()
