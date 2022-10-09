@@ -131,7 +131,7 @@ def get_network_novelty(host: str, port : int):
 def marioNovelty(queue : mp.Queue, render : Boolean):
     env = gym_super_mario_bros.make('SuperMarioBros-v1')
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
-    host = "localhost"
+    host = "192.168.0.100"
     port = 8095
     done = False
     network : ComputableNetwork
@@ -232,7 +232,7 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # print(output)
         # print(output.shape)
         # print(action)
-        
+
         if action != last_action or action == 0:
             framesSinceMaxXChange += max(0, 5 - same_action_counter)
             same_action_counter = max(0, same_action_counter - .1)
@@ -242,13 +242,14 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         if render:
             env.render()
 
+
 def actionToNdArray(value: int):
     array = np.zeros([1, 12])
     array[0, value] = 1
     return array
 
-def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
-    host = "localhost"
+def queueNetworks(queue : mp.Queue):
+    host = "192.168.0.100"
     port = 8095
     ns.generation = 0
     while True:
