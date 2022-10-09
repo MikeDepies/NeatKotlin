@@ -17,12 +17,13 @@ import melee
 import numpy as np
 import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
+from ComputableNetwork import ComputableNetwork
 from ControllerHelper import ControllerHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
 from InputEmbederPacked import InputEmbederPacked
 from ModelHelper import ModelHelper
-from NeatNetwork import ComputableNetwork
+
 
 
 def check_port(value):
@@ -249,9 +250,9 @@ class ModelHandler:
     opponent_index: int
     controller: melee.Controller
     controller_helper : ControllerHelper
-    t: float
+    queue : mp.Queue
     
-    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper) -> None:
+    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue) -> None:
         self.network = None
         self.evaluator = Evaluator(model_index, opponent_index, 5, 10)
         self.ai_controller_id = ai_controller_id
@@ -262,7 +263,7 @@ class ModelHandler:
         self.controller_helper = controller_helper
         self.model_list =[]
         self.model_list_index = 0
-        self.t = time.time()
+        self.queue = queue
 
     def evaluate(self, game_state : melee.GameState):
         player0: PlayerState = game_state.players[self.model_index]
@@ -319,7 +320,7 @@ class ModelHandler:
                     self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
 
 
-def console_loop(port : int):
+def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
     console, controller, controller_opponent, args, log = startConsole(port)
     player_index = args.port
     opponent_index = args.opponent
@@ -329,8 +330,8 @@ def console_loop(port : int):
     
     
     controller_helper = ControllerHelper()
-    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper)
-    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper)
+    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1)
+    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
     while True:
         game_state = console.step()
         if game_state is None:
@@ -378,8 +379,11 @@ def console_loop(port : int):
 
 if __name__ == '__main__':
     processes : List[mp.Process]= []
-    for i in range(5):
-        p = mp.Process(target=console_loop, args=(i + 51460,), daemon=True)
+    num_process = 15
+    queue_1 = mp.Queue(num_process * 2)
+    queue_2 = mp.Queue(num_process * 2)
+    for i in range(num_process):
+        p = mp.Process(target=console_loop, args=(i + 51460,queue_1, queue_2), daemon=True)
         processes.append(p)
         p.start()
 

@@ -15,8 +15,6 @@ val exposedVersion: String by project
 
 repositories {
     mavenCentral()
-    jcenter()
-
 }
 
 

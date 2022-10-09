@@ -1,6 +1,7 @@
 package server
 
 import PopulationEvolver
+import io.ktor.util.date.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -30,12 +31,14 @@ class EvoManager(
     val knnNoveltyArchive: KNNNoveltyArchiveWeighted
 ) {
     var evolutionInProgress = false
-    var modelStatusMap: Map<String, ModelStatus> = mapOf()
-    var modelMap: MutableMap<String, NetworkBlueprint?> = mutableMapOf()
     var population: List<NetworkWithId> = listOf()
-    val windower: ModelWindower = ModelWindower(1)
+    val modelChannel = Channel<NetworkWithId>(40)
     var bestModels = mutableListOf<ScoredModel>()
     val scoreChannel = Channel<ModelEvaluationResult>(Channel.UNLIMITED)
+    var mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
+    var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
+    var scores = mutableListOf<FitnessModel<NeatMutator>>()
+    var seq = population.iterator()
     suspend fun start(
         initialPopulation: List<NeatMutator>,
     ) = withContext(Dispatchers.Default) {
@@ -44,167 +47,127 @@ class EvoManager(
         population = initialPopulation.mapIndexed { index, neatMutator ->
             NetworkWithId(neatMutator, UUID.randomUUID().toString())
         }.shuffled()
-
-        modelStatusMap = population.map {
-            it.id to ModelStatus(false, null, null)
-        }.toMap()
-
-        modelMap = population.map {
-            it.id to null
-        }.toMap().toMutableMap()
-
+        mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
+        finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
+        scores = mutableListOf<FitnessModel<NeatMutator>>()
+        seq = population.iterator()
         launch(Dispatchers.Default) {
-            createTaskNetworks()
-        }
-        windower.fill(population)
-        launch(Dispatchers.Default) {
-            for (modelEvaluationResult in scoreChannel) {
-                val m = modelMap.get(modelEvaluationResult.modelId) ?: continue
-                val modelStatus = modelStatusMap[modelEvaluationResult.modelId] ?: continue
-                if (modelStatus.score != null) {
-                    continue
-                }
-
-                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
+            for (it in scoreChannel) {
+//                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
 //                log.info { "new score recieved" }
-                val behaviorScore = max(0f, scoreBehavior(
-                    knnNoveltyArchive,
-                    modelEvaluationResult
-                ) + /*objectiveScore  +*/ if (modelEvaluationResult.score.playerDied) -60f else 0f)
+                val behaviorScore = max(
+                    0f, scoreBehavior(
+                        knnNoveltyArchive, it
+                    ) + /*objectiveScore  +*/ if (it.score.playerDied) -60f else 0f
+                )
                 while (knnNoveltyArchive.behaviors.size > 1_000_000) {
                     knnNoveltyArchive.behaviors.removeAt(0)
                 }
-                captureBestModel(m, behaviorScore, populationEvolver, modelEvaluationResult)
-                updateModelStatusScore(
-                    modelStatus, behaviorScore, populationEvolver, modelStatusMap, modelEvaluationResult
-                )
-                //Check if all models have been contributed
-                val allScored = modelStatusMap.all { (id, status) -> status.score != null }
-                if (allScored) {
-                    log.info { "[$evaluationId] Scores: ${bestModels.map { "${it.generation} - ${it.id} - ${it.score}" }}" }
-                    evolutionInProgress = true
-                    val modelScores = modelStatusMap.mapNotNull { (id, status) ->
-                        if (status.score != null) {
-                            FitnessModel(status.neatMutator!!, status.score!!)
-                        } else null
-                    }.toModelScores(adjustedFitness)
-                    populationEvolver.sortPopulationByAdjustedScore(modelScores)
-                    populationEvolver.updateScores(modelScores)
-
-                    var newPopulation = evolveNewPopulation(populationEvolver, modelScores, populationSize)
-                    log.info { "population finished evolving..." }
-                    population = newPopulation.take(populationSize).map { NetworkWithId(it, "${UUID.randomUUID()}") }
-                    modelStatusMap = population.map {
-                        it.id to ModelStatus(false, null, null)
-                    }.toMap()
-                    modelMap = population.map {
-                        it.id to null
-                    }.toMap().toMutableMap()
-                    windower.fill(population)
-                    writeData(population, populationEvolver)
-
-
-                    launch(Dispatchers.Default) {
-                        createTaskNetworks()
-                        evolutionInProgress = false
-                    }
-
+                val networkWithId = mapIndexed[it.modelId]
+                val model = networkWithId?.neatMutator
+                if (finishedScores[it.modelId] != true && model != null) {
+                    scores += FitnessModel(model, behaviorScore)
+                    finishedScores[it.modelId] = true
+                    val species = if (populationEvolver.speciationController.hasSpeciesFor(model)) "${
+                        populationEvolver.speciationController.species((model))
+                    }" else "No Species"
+                    log.info { "[G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $behaviorScore " }
+                    log.info { "$it" }
+                    captureBestModel(model, behaviorScore, populationEvolver, it)
+                }
+                if (scores.size == populationSize) {
+                    processPopulation(populationEvolver)
+                }
+            }
+        }
+        launch {
+            var lastRefill = getTimeMillis()
+            while (true) {
+                if (seq.hasNext()) {
+                    modelChannel.send(seq.next())
+                } else if (modelChannel.isEmpty && !seq.hasNext() && getTimeMillis() - lastRefill > 30_000) {
+                    val networkWithIds = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }
+                    log.info { "Refilling model channel ${networkWithIds.size}" }
+                    seq = networkWithIds.iterator()
+                    lastRefill = getTimeMillis()
                 }
             }
         }
     }
 
-    private fun evolveNewPopulation(
-        populationEvolver: PopulationEvolver, modelScores: List<ModelScore>, populationSize: Int
-    ): List<NeatMutator> {
-        var newPopulation = safeEvolvePopulation(populationEvolver, modelScores)
-        populationEvolver.speciationController.speciesSet.forEach { species ->
-            val mascot = populationEvolver.speciationController.getSpeciesPopulation(species).random()
-            populationEvolver.speciesLineage.updateMascot(species, mascot)
+    fun processPopulation(populationEvolver: PopulationEvolver) {
+
+
+        log.info { "New generation ${populationEvolver.generation}" }
+        val toModelScores = scores.toModelScores(adjustedFitness)
+        population = evolve(
+            populationEvolver, toModelScores, population.size
+        ).mapIndexed { index, neatMutator ->
+            NetworkWithId(neatMutator, UUID.randomUUID().toString())
+        }.shuffled()
+        mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
+        finishedScores =
+            population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
+
+        seq = population.iterator()
+
+        scores = mutableListOf()
+        writeGenerationToDisk(population.map { it.neatMutator }, runFolder, populationEvolver, "")
+        val json = Json { prettyPrint = true }
+        runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
+            val json = Json { prettyPrint = true }
+            it.write(json.encodeToString(knnNoveltyArchive.behaviors))
+            it.flush()
         }
-        log.info { "[$evaluationId]  Species Count: ${populationEvolver.speciesLineage.species.size}" }
+
+    }
+
+
+    fun evolve(
+        populationEvolver: PopulationEvolver, modelScores: List<ModelScore>,
+
+        populationSize: Int
+    ): List<NeatMutator> {
+        populationEvolver.sortPopulationByAdjustedScore(modelScores)
+        populationEvolver.updateScores(modelScores)
+        var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
+//    populationEvolver.speciationController.speciesSet.forEach { species ->
+//        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+//        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
+//    }
+
         while (newPopulation.size < populationSize) {
-            newPopulation = newPopulation + newPopulation.random().clone()
+            newPopulation = newPopulation + newPopulation.random(populationEvolver.neatExperiment.random).clone()
         }
         populationEvolver.speciate(newPopulation)
         if (newPopulation.size > populationSize) {
-            val diff = newPopulation.size - populationSize
-            val dropList = newPopulation.drop(diff)
+            val dropList = newPopulation.drop(populationSize)
             val speciationController = populationEvolver.speciationController
-            log.info {
-                "Dropping ${dropList.size} models from ${
-                    dropList.map { speciationController.species(it) }.distinct()
-                }"
-            }
+
             speciationController.speciesSet.forEach { species ->
                 val speciesPopulation = speciationController.getSpeciesPopulation(species)
                 speciesPopulation.filter { it in dropList }.forEach { neatMutator ->
-                    //                    logger.info { "Removing model from $species since it has been dropped." }
+
                     speciesPopulation.remove(neatMutator)
                 }
-
             }
         }
-        return newPopulation
-    }
-
-    private fun updateModelStatusScore(
-        modelStatus: ModelStatus,
-        behaviorScore: Float,
-        populationEvolver: PopulationEvolver,
-        modelStatusMap: Map<String, ModelStatus>,
-        it: ModelEvaluationResult
-    ) {
-        if (modelStatus != null && modelStatus.score == null) {
-            modelStatus.score = behaviorScore
-            val neatMutator = modelStatus.neatMutator
-            if (neatMutator != null) {
-                val species = populationEvolver.speciationController.species(neatMutator)
-                log.info {
-                    "[$evaluationId]  [$species | ${
-                        modelStatusMap.count { (id, status) ->
-                            status.score != null
-                        }
-                    } | ${populationEvolver.generation}] Score: $behaviorScore Recoveries: ${it.score.recovery}"
-                }
-            }
-        }
-    }
-
-    private fun writeData(
-        population: List<NetworkWithId>,
-        populationEvolver: PopulationEvolver,
-
-        ) {
-        writeGenerationToDisk(
-            population.map { it.neatMutator }, runFolder, populationEvolver, "${evaluationId}_"
-        )
-
-        runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
-            val json = Json { prettyPrint = true }
-            it.write(
-                json.encodeToString(
-                    knnNoveltyArchive.behaviors
-                )
-            )
-            it.flush()
-        }
+        return newPopulation.take(populationSize)
     }
 
     private fun captureBestModel(
-        m: NetworkBlueprint, behaviorScore: Float, populationEvolver: PopulationEvolver, it: ModelEvaluationResult
+        m: NeatMutator, behaviorScore: Float, populationEvolver: PopulationEvolver, it: ModelEvaluationResult
     ) {
-        if (m != null) {
-            val average = bestModels.map { it.score }.average()
-            val modelStatus = modelStatusMap.getValue(it.modelId)
-            bestModels += ScoredModel(behaviorScore, populationEvolver.generation, m, it.modelId)
-            bestModels.sortByDescending {
-                it.score - (populationEvolver.generation - it.generation) * (average / 2)
-            }
-            if (bestModels.size > 10) {
-                bestModels.removeAt(10)
-            }
+
+        val average = bestModels.map { it.score }.average()
+        bestModels += ScoredModel(behaviorScore, populationEvolver.generation, m, it.modelId)
+        bestModels.sortByDescending {
+            it.score - (populationEvolver.generation - it.generation) * (average / 2)
         }
+        if (bestModels.size > 10) {
+            bestModels.removeAt(10)
+        }
+
     }
 
     private fun scoreBehavior(
@@ -214,67 +177,14 @@ class EvoManager(
             knnNoveltyArchive.addBehavior(it.score)
             it.score.allActions.size.toFloat()
         }
+
         else -> knnNoveltyArchive.addBehavior(it.score)
     }
 
-    private suspend fun createTaskNetworks(
-    ) {
-        val createNetwork = createNetwork()
-        val targetConnectionMapping =
-            createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
-        val calculationOrder = createNetwork.calculationOrder.map { it.id }
-        val connectionRelationships = createNetwork.connectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
-        population.mapParallel {
-            try {
-
-                val connections = listOf<ConnectionLocation>()// createNetwork.build(it.neatMutator.toNetwork(), 3f)
-                it to NetworkBlueprint(
-                    connections,
-                    it.id,
-                    createNetwork.planes,
-                    connectionRelationships,
-                    targetConnectionMapping,
-                    calculationOrder,
-                    it.neatMutator.toModel(),
-                    createNetwork.depth
-                )
-            } catch (e: Exception) {
-                it to NetworkBlueprint(
-                    listOf(), it.id, createNetwork.planes,
-                    connectionRelationships,
-                    targetConnectionMapping,
-                    calculationOrder,
-                    it.neatMutator.toModel(),
-                    createNetwork.depth
-                )
-            }
-        }.forEach { (networkWithId, network) ->
-            val id = networkWithId.id
-            val modelStatus = modelStatusMap[id]
-            if (modelStatus != null) {
-//                log.info { "Creating task network $id" }
-                modelMap[id] = network
-                modelStatus.available = true
-                modelStatus.neatMutator = networkWithId.neatMutator
-            } else {
-                log.error { "Failed to put $id in model map..." }
-            }
-        }
-        println("finished new population")
-    }
-
-    private fun safeEvolvePopulation(
-        populationEvolver: PopulationEvolver, modelScores: List<ModelScore>
-    ): List<NeatMutator> {
-        return populationEvolver.evolveNewPopulation(modelScores)
-
-    }
 }
+
 fun writeGenerationToDisk(
-    currentPopulation: List<NeatMutator>,
-    runFolder: File,
-    populationEvolver: PopulationEvolver,
-    prefix: String
+    currentPopulation: List<NeatMutator>, runFolder: File, populationEvolver: PopulationEvolver, prefix: String
 ) {
     val modelPopulationPersist = currentPopulation.toModel()
     val savePopulationFile = runFolder.resolve("${prefix}population.json")
@@ -286,8 +196,7 @@ fun writeGenerationToDisk(
     }
     val manifestFile = runFolder.resolve("manifest.json")
     val manifestData = Manifest(
-        populationEvolver.scoreKeeper.toModel(),
-        populationEvolver.speciesLineage.toModel()
+        populationEvolver.scoreKeeper.toModel(), populationEvolver.speciesLineage.toModel()
     )
     manifestFile.bufferedWriter().use {
         it.write(json.encodeToString(manifestData))

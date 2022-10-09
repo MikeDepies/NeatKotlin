@@ -38,13 +38,7 @@ class PopulationEvolver(
     }
 
     fun evolveNewPopulation(scoredPopulation: List<ModelScore>): List<NeatMutator> {
-        val mutationEntries = mutationDictionary()/*uniformMutationRate(
-            .7f, listOf(
-                mutateConnections, mutateAddNode, mutateAddConnection, mutatePerturbBiasConnections(),
-                mutateToggleConnection,
-                mutateNodeActivationFunction(),
-            )
-        )*/
+        val mutationEntries = mutationDictionary()
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
             mateChance = .5f,

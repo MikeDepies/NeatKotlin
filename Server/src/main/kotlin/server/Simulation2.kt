@@ -75,12 +75,14 @@ data class ConnectionLocation(
 
 @Serializable
 data class NetworkBlueprint(
-    val connections: List<ConnectionLocation>,
-    val id: String,
-    val connectionPlanes: List<LayerShape3D>,
-    val connectionRelationships: Map<String, List<String>>,
-    val targetConnectionMapping: Map<String, List<String>>,
-    val calculationOrder: List<String>,
+    val id : String,
+    val connectionPlanes : List<LayerShape3D>,
+    val connectionRelationships : Map<String, List<String>>,
+    val targetConnectionMapping : Map<String, List<String>>,
+    val calculationOrder : List<String>,
+    val species: Int,
+    val hiddenNodes: Int,
+    val outputLayer: String,
     val neatModel: NeatModel,
     val depth: Int
 )
@@ -145,7 +147,8 @@ fun createNetwork(): TaskNetworkBuilder {
         targetConnectionMapping,
         planeZMap,
         planeZMap.values.maxOrNull()!!,
-        computationOrder
+        computationOrder,
+        outputPlane
     )
 }
 
@@ -155,25 +158,14 @@ class TaskNetworkBuilder(
     val targetConnectionMapping: Map<LayerPlane, List<LayerPlane>>,
     val planeZMap: Map<LayerPlane, Int>,
     val depth: Int,
-    val calculationOrder: List<LayerPlane>
+    val calculationOrder: List<LayerPlane>,
+    val outputPlane: LayerPlane
 ) {
     private val idZMap = planeZMap.mapKeys { it.key.id }
     val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }
         .map { val zOrigin = idZMap.getValue(it.id)
             LayerShape3D(it, 0, if (zOrigin == depth) 1 else 0, zOrigin) }
 
-    fun build(network: ActivatableNetwork, connectionMagnitude: Float): List<ConnectionLocation> {
-        val networkConnectionBuilder = NetworkConnectionBuilder(network, connectionMagnitude, networkShape, depth)
-        val connections = connectionMapping.flatMap { (source, targets) ->
-            targets.flatMap { target ->
-                networkConnectionBuilder.connectLayerPlanes(
-                    LayerShape3D(source, 0, 0, idZMap.getValue(source.id)),
-                    LayerShape3D(target, 0, 0, idZMap.getValue(target.id))
-                )
-            }
-        }
-        return connections
-    }
 }
 
 data class HyperDimension3D(

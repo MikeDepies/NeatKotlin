@@ -5,6 +5,7 @@ import time
 from ActionBehavior import ActionBehavior
 from ComputableNetwork import ComputableNetwork, ConnectionLocation, constructNetwork
 from HyperNeatDomain import LayerPlane, LayerShape3D
+from NeatService import process_model_data
 
 class ModelTestResult:
     model_id : str
@@ -86,35 +87,12 @@ class ModelHelper:
         if not res.is_success:
             raise Exception("No data for request")
         data = res.json()
-        id: str = data["id"]
-        calculation_order = data["calculationOrder"]
-        connections: list[ConnectionLocation] = list(
-            map(
-                lambda c: ConnectionLocation(
-                    c[0], c[1], c[2], c[3], c[4], c[5], c[6]),
-                data["connections"]))
-        connection_relationships: dict[
-            str, list[str]] = data["connectionRelationships"]
-        connection_relationships_inverse: dict[
-            str, list[str]] = data["targetConnectionMapping"]
-        connection_planes: list[LayerShape3D] = list(
-            map(lambda c: mapC(c), data["connectionPlanes"]))
-        # nodes: List[ConnectionLocation] = list(
-        #     map(lambda n: NodeLocation(n[0], n[1], n[2]),
-        #         data["nodes"]))
+        id, builder = process_model_data(data)
         
-        network = constructNetwork(
-            connections, connection_planes, connection_relationships,
-            connection_relationships_inverse, calculation_order)
         # exit()
-        return network
-        # except Exception as e:
-        #     print(e)
-        #     print("timeout: failed to get " + str(modelId) + " for " + str(controllerId))
-        #     # time.sleep(1)
-        #     return None
+        return (id, builder)
     
-    def randomBest(self) -> ComputableNetwork:
+    def randomBest(self):
         requestNetwork = True
         network = None
         print("getting a \"best\" network")
@@ -125,25 +103,10 @@ class ModelHelper:
             if not res.is_success:
                 raise Exception("No data for request")
             data = res.json()
-            id: str = data["id"]
-            calculation_order = data["calculationOrder"]
-            connections: list[ConnectionLocation] = list(
-                map(
-                    lambda c: ConnectionLocation(
-                        c[0], c[1], c[2], c[3], c[4], c[5], c[6]),
-                    data["connections"]))
-            connection_relationships: dict[
-                str, list[str]] = data["connectionRelationships"]
-            connection_relationships_inverse: dict[
-                str, list[str]] = data["targetConnectionMapping"]
-            connection_planes: list[LayerShape3D] = list(
-                map(lambda c: mapC(c), data["connectionPlanes"]))
+            id, builder = process_model_data(data)
             
-            network = constructNetwork(
-                connections, connection_planes, connection_relationships,
-                connection_relationships_inverse, calculation_order)
             # exit()
-            return network
+            return (id, builder)
         except Exception as e:
             print(e)
             # print("timeout: failed to get " + str(modelId) + " for " + str(controllerId))

@@ -40,7 +40,8 @@ class NeatBuilder(mutationEntries: List<MutationEntry>, speciesScoreKeeper: Spec
         mutationEntries,
         .4f,
         .6f,
-        15
+        15,
+        1
     )
     var evaluationFunction: PopulationEvaluator = { error("need to provide a evaluator function") }
 }
@@ -55,7 +56,8 @@ fun weightedReproduction(
     mutationEntries: List<MutationEntry>,
     mateChance: Float,
     survivalThreshold: Float,
-    stagnation: Int
+    stagnation: Int,
+    championThreshold : Int
 ): NeatExperiment.(SpeciationController, List<ModelScore>, Int) -> List<NeatMutator> {
     return { speciationController, modelScoreList, generation ->
         populateNextGeneration(
@@ -63,7 +65,8 @@ fun weightedReproduction(
             speciationController, speciesScoreKeeper, modelScoreList, mutationEntries, this,
             mateChance,
             survivalThreshold,
-            stagnation
+            stagnation,
+            championThreshold
         )
     }
 }

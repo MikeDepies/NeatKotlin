@@ -84,7 +84,6 @@ data class ConnectionLocation(
 
 @Serializable
 data class NetworkBlueprint(
-    val connections: List<ConnectionLocation>,
     val id : String,
     val connectionPlanes : List<LayerShape3D>,
     val connectionRelationships : Map<String, List<String>>,
@@ -481,12 +480,13 @@ fun createNetwork(): TaskNetworkBuilder {
     val computationOrder = hiddenPlanes + outputPlane
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes + outputPlane
-        put(inputImagePlane, listOf(planeList[0]))
+        put(inputImagePlane, planeList.take(1))
         hiddenPlanes.forEachIndexed { index, layerPlane ->
-            put(layerPlane, planeList.take(index + 1))
+            put(layerPlane, planeList/*.drop(index + 1).take(1)*/)
         }
         put(outputPlane, planeList)
     }
+//    println(connectionMapping)
     val planeZMap = buildMap<LayerPlane, Int> {
         var zIndex =0
         put(inputImagePlane, zIndex++)
@@ -507,7 +507,15 @@ fun createNetwork(): TaskNetworkBuilder {
     }
 
 
-    return TaskNetworkBuilder(networkShape, connectionMapping, targetConnectionMapping, planeZMap, planeZMap.values.maxOrNull()!!, computationOrder, outputPlane)
+    return TaskNetworkBuilder(
+        networkShape,
+        connectionMapping,
+        targetConnectionMapping,
+        planeZMap,
+        planeZMap.values.maxOrNull()!!,
+        computationOrder,
+        outputPlane
+    )
 }
 
 
@@ -741,7 +749,8 @@ fun createSimulation(
         mateChance = mateChance,
         survivalThreshold = survivalThreshold,
         speciesScoreKeeper = scoreKeeper,
-        stagnation = stagnation
+        stagnation = stagnation,
+        championThreshold = 5
     )
     val generation = 0
     val populationEvolver = PopulationEvolver(

@@ -14,7 +14,7 @@ suspend fun runNodeCountExample() {
     val generationRules = GenerationRules(
         speciationController = speciationController,
         adjustedFitness = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction),
-        reproductionStrategy = weightedReproduction(speciesScoreKeeper, mutationDictionary(), .41f, .7f, 15),
+        reproductionStrategy = weightedReproduction(speciesScoreKeeper, mutationDictionary(), .41f, .7f, 15, 1),
         populationEvaluator = { population ->
             population.map { FitnessModel(it, 32f - (32 - it.nodes.size).absoluteValue) }
         }

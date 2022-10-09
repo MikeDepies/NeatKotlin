@@ -48,57 +48,11 @@ val applicationModule = module {
         val json by inject<Json>()
         json.decodeFromStream<Config>(File("config.json").inputStream())
     }
-<<<<<<< HEAD
-    factory { (evaluationId: Int, populationSize: Int) ->
-        val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
-        val randomSeed: Int = 123 + evaluationId
-        val random = Random(randomSeed)
-        val addConnectionAttempts = 5
-        val shFunction = shFunction(.44f)
 
-////
-        val populationModel = loadPopulation(File("population/${evaluationId}_population.json"))
-        val models = populationModel.models
-        log.info { "population loaded with size of: ${models.size}" }
-        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
-        val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
-            addConnectionAttempts
-        )
-        val population = models.map { it.toNeatMutator() }
-        val compatibilityDistanceFunction = compatibilityDistanceFunction(2f, 2f, 1f)
-        val standardCompatibilityTest = standardCompatibilityTest({
-            shFunction(it)
-        }, { a, b ->
-            cppnGeneRuler.measure(a, b)
-        })
-//        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
-//        val population = simpleNeatExperiment.generateInitialPopulation2(
-//            populationSize,
-//            6,
-//            2,
-//            Activation.CPPN.functions
-//        )
-        simulation(
-            standardCompatibilityTest,
-            evaluationId,
-            distanceFunction = { a, b ->
-                cppnGeneRuler.measure(a, b)
-            },
-            sharingFunction = {
-                shFunction(it)
-            },
-            speciationController = SpeciationController(0),
-            simpleNeatExperiment = simpleNeatExperiment,
-            population = population,
-            generation = if (evaluationId == 0) 24389 else 24006
-        )
-=======
     single {
         val config by inject<Config>()
         TwitchBotService(get(), config.url.twitchBot)
->>>>>>> ab4141b746179df110a19bd8ac819cddadb8840b
+
     }
 
 }

@@ -47,7 +47,8 @@ fun Collection<Float>.countOffspring(skim: Double, y1: Float = 1f): Offspring {
 }
 
 typealias ExpectedOffSpring = Pair<NeatMutator, Float>
-data class CompatibilityResult(val distance : Float, val compatible : Boolean)
+
+data class CompatibilityResult(val distance: Float, val compatible: Boolean)
 data class ModelScore(val neatMutator: NeatMutator, val fitness: Float, val adjustedFitness: Float)
 typealias CompatibilityTest = (NeatMutator, NeatMutator) -> CompatibilityResult
 typealias SpeciesScoredMap = Map<Species, Collection<ModelScore>>
@@ -86,7 +87,8 @@ fun SpeciationController.calculateSpeciesReport(
         val countOffspring = map.countOffspring(skim)
         skim = countOffspring.skim
         totalOffspring += countOffspring.offspring
-        val isSpeciesStagnated = (generation - (speciesScoreKeeper.getModelScore(species)?.generationLastImproved ?: 0)) > stagnation
+        val isSpeciesStagnated =
+            (generation - (speciesScoreKeeper.getModelScore(species)?.generationLastImproved ?: 0)) > stagnation
         if (isSpeciesStagnated) {
             deadSpeciesOffspring += countOffspring.offspring
         } else if (champion != null) {
@@ -125,9 +127,9 @@ private fun SpeciationController.speciesMap(modelScoreMap: Map<NeatMutator, Mode
             modelScoreMap.getValue(neatMutator)
         }
     }
-
+    sortSpeciesByFitness { modelScoreMap.getValue(it).adjustedFitness }
     return speciesSet.map { species ->
-        species to speciesPopulation(species)
+        species to speciesPopulation(species).sortedByDescending { it.adjustedFitness }
     }.toMap()
 }
 
@@ -174,13 +176,16 @@ fun populateNextGeneration(
     simpleNeatExperiment: NeatExperiment,
     mateChance: Float,
     survivalThreshold: Float,
-    stagnation: Int
+    stagnation: Int,
+    championThreshold: Int
 ): List<NeatMutator> {
+    val speciesReport = speciationController.speciesReport(generation, speciesScoreKeeper, modelScoreList, stagnation)
     return speciationController.reproduce(
         simpleNeatExperiment,
-        speciationController.speciesReport(generation, speciesScoreKeeper, modelScoreList, stagnation),
+        speciesReport,
         offspringFunction(mateChance, mutationEntries),
-        survivalThreshold
+        survivalThreshold,
+        championThreshold
     ).values.flatten()
 }
 
@@ -189,18 +194,23 @@ fun SpeciationController.reproduce(
     neatExperiment: NeatExperiment,
     speciesReport: SpeciesReport,
     offspringFunction: OffspringFunction,
-    survivalThreshold: Float
+    survivalThreshold: Float,
+    championThreshold: Int
 ): SpeciesMap {
-    return speciesReport.speciesOffspringMap.keys.map { species ->
-        val speciesPopulation = speciesReport.speciesMap.getValue(species).let { it.take(max(1, (it.size * survivalThreshold).toInt()) ) }
+    val keys = speciesReport.speciesOffspringMap.keys
+
+    return keys.sortedBy { it.id }.associateWith { species ->
+        val speciesPopulation = speciesReport.speciesMap.getValue(species)
+            .let { it.take(max(championThreshold, (it.size * survivalThreshold).toInt())) }
         val offspring = speciesReport.speciesOffspringMap.getValue(species)
 
-        val champions = if (offspring >= 5) listOf(speciesReport.championMap.getValue(species)) else emptyList()
+        val champions =
+            if (offspring >= championThreshold) listOf(speciesReport.championMap.getValue(species)) else emptyList()
         val newGenerationPopulation = champions + (champions.size until offspring).map {
             offspringFunction(neatExperiment, speciesPopulation)
         }
-        species to newGenerationPopulation
-    }.toMap()
+        newGenerationPopulation
+    }
 }
 
 fun offspringFunction(chance: Float, mutationEntries: List<MutationEntry>): OffspringFunction {
@@ -250,7 +260,9 @@ private fun newOffspring(
 //                    }
 //                }
         }
-        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone().mutateModel(mutationEntries, neatExperiment)//.also { println("clone") }
+
+        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone()
+            .mutateModel(mutationEntries, neatExperiment)//.also { println("clone") }
     }
 }
 

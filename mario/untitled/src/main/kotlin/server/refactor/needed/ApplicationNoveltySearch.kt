@@ -19,6 +19,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
+import neat.novelty.KNNNoveltyArchive
 import neat.novelty.euclidean
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
@@ -130,14 +131,14 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 100
+    val populationSize = 500
 
 
     val mateChance = .4f
     val survivalThreshold = .2f
     val stagnation = 40
 
-    val randomSeed: Int = 213 + evaluationId
+    val randomSeed: Int = 29 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
@@ -196,7 +197,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(60, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(60,  settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }
@@ -263,18 +264,8 @@ fun Application.moduleNovelty(testing: Boolean = false) {
             val populationEvolver = simulation.populationEvolver
             while (true) {
                 val network = neatMutatorChannel.receive()
-
-
                 val message = try {
-//                    val connectionLocations = createNetwork.build(network.neatMutator.toNetwork(), 3f)
-//                    if (connectionLocations.isEmpty()) {
-////                        log.error("no connections for network!")
-////                        log.error("" + network.neatMutator.hiddenNodes.map { it.activationFunction.name })
-////                        log.error(network.neatMutator.connections.toString())
-////                        log.error(network.neatMutator.nodes.toString())
-//                    }
                     NetworkBlueprint(
-                        listOf(),
                         network.id,
                         createNetwork.planes,
                         connectionRelationships,
@@ -289,7 +280,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                 } catch (e: Exception) {
                     log.error(e)
                     NetworkBlueprint(
-                        listOf(),
+
                         network.id,
                         createNetwork.planes,
                         connectionRelationships,

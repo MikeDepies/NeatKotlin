@@ -16,6 +16,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
+import neat.model.NeatMutator
 import neat.novelty.levenshtein
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
@@ -36,7 +37,7 @@ fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 private val logger = KotlinLogging.logger { }
 
-data class ScoredModel(val score: Float, val generation: Int, val model: NetworkBlueprint, val id: String)
+data class ScoredModel(val score: Float, val generation: Int, val model: NeatMutator, val id: String)
 
 
 @Suppress("unused") // Referenced in application.conf
@@ -75,33 +76,21 @@ fun Application.module() {
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
-<<<<<<< HEAD
-    get<WebSocketManager>().attachWSRoute()
-    val a = actionBehaviors("population/0_noveltyArchive.json")
-    val b = actionBehaviors("population/1_noveltyArchive.json")
-    val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId)) })
-    val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(evaluationId2)) })
-    fun IOController.simulationForController(populationSize: Int) = get<Simulation>(parameters = {
-        DefinitionParameters(
-            listOf(controllerId, populationSize)
-        )
-    })
-=======
+
 //    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(5000)
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
->>>>>>> ab4141b746179df110a19bd8ac819cddadb8840b
 
     fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
         simulationFor(controllerId, populationSize, false)
 
-    val populationSize = 20
+    val populationSize = 5
     val knnNoveltyArchive = knnNoveltyArchive(
         40,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 5f, killMultiplier = 50f, recoveryMultiplier = 20f)
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         40,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 5f, killMultiplier = 50f, recoveryMultiplier = 20f)
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
 //    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
@@ -140,39 +129,44 @@ private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
     val twitchBotService by inject<TwitchBotService>()
-    var lastModel1 : TwitchModel? = null
-    var lastModel2 : TwitchModel? = null
-    fun modelFor(controllerId: Int) = when(controllerId) {
+    var lastModel1: TwitchModel? = null
+    var lastModel2: TwitchModel? = null
+    fun modelFor(controllerId: Int) = when (controllerId) {
         0 -> lastModel1
         1 -> lastModel2
         else -> throw Exception()
     }
-    fun character(controllerId: Int) = when(controllerId) {
+
+    fun character(controllerId: Int) = when (controllerId) {
         0 -> Character.Link
         1 -> Character.Pikachu
         else -> throw Exception()
     }
 
     routing {
-        this@routing.log.info("dsadsa")
-        post<ModelsRequest>("/models") {
-            val evoManager = evoHandler.evoManager(it.controllerId)
-            if (evoManager.evolutionInProgress) {
-//                server.log.info { "Evo in progress" }
-                call.respond(ModelsStatusResponse(false, listOf()))
-            } else {
-                val modelIds = evoManager.windower.poll()
-                if (modelIds == null) {
-                    evoManager.windower.fill(evoManager.population.filter { evoManager.modelStatusMap.getValue(it.id).score == null })
-                    call.respond(ModelsStatusResponse(false, listOf()))
-                } else {
-//                    server.log.info { "Models Ready ${modelIds}" }
-                    val modelsStatusResponse = ModelsStatusResponse(
-                        true, modelIds
-                    )
-                    call.respond(modelsStatusResponse)
-                }
-            }
+        val createNetwork = createNetwork()
+        val connectionRelationships =
+            createNetwork.connectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
+        val targetConnectionMapping =
+            createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
+        val calculationOrder = createNetwork.calculationOrder.map { it.id }
+        suspend fun createBlueprint(evoManager: EvoManager): NetworkBlueprint {
+            val populationEvolver = evoManager.populationEvolver
+            val networkWithId = evoManager.modelChannel.receive()
+            val neatMutator = networkWithId.neatMutator
+            val networkBlueprint = NetworkBlueprint(
+                networkWithId.id,
+                createNetwork.planes,
+                connectionRelationships,
+                targetConnectionMapping,
+                calculationOrder,
+                populationEvolver.speciationController.species(neatMutator).id,
+                neatMutator.hiddenNodes.size,
+                createNetwork.outputPlane.id,
+                neatMutator.toModel(),
+                createNetwork.depth
+            )
+            return networkBlueprint
         }
         route("/model") {
             post<ModelsRequest>("/generation") {
@@ -182,49 +176,32 @@ private fun Application.routing(
             }
             post<ModelsRequest>("/best") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
-
                 val model = ArrayList(evoManager.bestModels).random().model
-                val neatModel = evoManager.modelStatusMap.getValue(model.id)
-                val twitchModel = TwitchModel(
-                    model.id,
-                    neatModel.neatMutator!!.toModel(),
-                    character(it.controllerId),
-                    neatModel.score ?: 0f
-                )
-                val modelFor = modelFor(it.controllerId)
-                if (modelFor != null)
-                    twitchBotService.sendModel(modelFor)
-                if (it.controllerId == 0) {
-                    lastModel1 = twitchModel
-                } else {
-                    lastModel2 = twitchModel
-                }
+//                val neatModel = evoManager.modelStatusMap.getValue(model.id)
+//                val twitchModel = TwitchModel(
+//                    model.id,
+//                    neatModel.neatMutator!!.toModel(),
+//                    character(it.controllerId),
+//                    neatModel.score ?: 0f
+//                )
+//                val modelFor = modelFor(it.controllerId)
+//                if (modelFor != null)
+//                    twitchBotService.sendModel(modelFor)
+//                if (it.controllerId == 0) {
+//                    lastModel1 = twitchModel
+//                } else {
+//                    lastModel2 = twitchModel
+//                }
                 call.respond(model)
             }
-            post<ModelRequest>("/request") { modelRequest ->
-                val evoManager = evoHandler.evoManager(modelRequest.controllerId)
-                val id = evoManager.population.first().id
-                val networkDescription = evoManager.modelMap[modelRequest.modelId]
-                val neatModel = networkDescription!!.neatModel
-                val network = neatModel.toNeatMutator().toNetwork()
-//                network.evaluate(listOf(1f,1f,1f,1f,1f,1f))
-//                logger.info { neatModel }
-//                logger.info { network.output() }
-                if (networkDescription != null) {
-                    call.respond(networkDescription)
-                } else {
-                    call.respond(HttpStatusCode.RequestTimeout, "Model not ready")
-                }
+
+
+            post<ModelsRequest>("/next") {
+                val evoManager = evoHandler.evoManager(it.controllerId)
+                val networkBlueprint = createBlueprint(evoManager)
+                call.respond(networkBlueprint)
             }
-            post<ModelRequest>("/check") { modelRequest ->
-                val evoManager = evoHandler.evoManager(modelRequest.controllerId)
-                val modelStatus = evoManager.modelStatusMap[modelRequest.modelId]
-                if (modelStatus != null) {
-                    call.respond(ModelTestResult(modelStatus.available, modelStatus.score != null, true))
-                } else {
-                    call.respond(ModelTestResult(available = false, scored = false, valid = false))
-                }
-            }
+
             post<ModelEvaluationResult>("/score") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
                 evoManager.scoreChannel.send(it)

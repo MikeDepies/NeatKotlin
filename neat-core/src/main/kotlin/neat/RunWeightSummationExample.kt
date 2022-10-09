@@ -14,7 +14,7 @@ suspend fun runWeightSummationExample() {
     val generationRules = GenerationRules(
         speciationController = speciationController,
         adjustedFitness = adjustedFitnessCalculation(speciationController, dataFunction, sharingFunction),
-        reproductionStrategy = weightedReproduction(speciesScoreKeeper, mutationDictionary(), .41f, .7f, 15),
+        reproductionStrategy = weightedReproduction(speciesScoreKeeper, mutationDictionary(), .41f, .7f, 15, 1),
         populationEvaluator = { population ->
             population.map { FitnessModel(it, 100f - (100 - it.connections.map { c -> c.weight }.sum()).absoluteValue) }
         }

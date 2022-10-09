@@ -1,6 +1,7 @@
 from cmath import inf
 from multiprocessing.managers import DictProxy, Namespace
 from typing import Any, Dict, List
+from xmlrpc.client import Boolean
 from gym.core import Env
 from nes_py.wrappers import JoypadSpace
 import gym_super_mario_bros
@@ -65,7 +66,7 @@ class GameEventHelper:
         return prev_info["life"] < info["life"]
 
     def stage_part_complete(self, info, stage_part_position: int):
-        return (info["x_pos"] / 32) > stage_part_position
+        return (info["x_pos"] / 256) > stage_part_position
 
 
 class GameEventCollector:
@@ -127,7 +128,7 @@ def get_network_novelty(host: str, port : int):
     
     return id, builder
 
-def marioNovelty(queue : mp.Queue):
+def marioNovelty(queue : mp.Queue, render : Boolean):
     env = gym_super_mario_bros.make('SuperMarioBros-v1')
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "localhost"
@@ -224,7 +225,7 @@ def marioNovelty(queue : mp.Queue):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 30 * 20 or reward < -14:
+        if framesSinceMaxXChange > 15 * 20 or reward < -14:
             idle = True
 
         action = 11 - output.argmax(1)[0]
@@ -238,7 +239,8 @@ def marioNovelty(queue : mp.Queue):
         else:
             same_action_counter += .2
         last_action = action
-        # env.render()
+        if render:
+            env.render()
 
 def actionToNdArray(value: int):
     array = np.zeros([1, 12])
@@ -263,7 +265,6 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
                 
         except:
             print("failed to get network...")
-    pass
 
 if __name__ == '__main__':
     mgr = mp.Manager()
@@ -272,12 +273,12 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 14
+    process_num = 6
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     
     for i in range(process_num):
-        p = mp.Process(target=marioNovelty, daemon=True, args=(queue,))
+        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 2))
         processes.append(p)
         p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))

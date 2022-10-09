@@ -25,13 +25,13 @@ import kotlin.math.min
 import kotlin.streams.toList
 
 private val logger = KotlinLogging.logger {  }
-val minSpeices = 15
-val maxSpecies = 40
-val speciesThresholdDelta = .3f
+val minSpeices = 10
+val maxSpecies = 25
+val speciesThresholdDelta = .2f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = 1.5f
+var speciesSharingDistance = .5f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -63,7 +63,7 @@ class KNNNoveltyArchiveWeighted(
     override fun measure(behavior: MarioDiscovery): Float {
         if (maxDiscovery.stageParts < behavior.stageParts) maxDiscovery = behavior
         val expRatio = ((behavior.stageParts).toFloat()) / (maxDiscovery.stageParts)
-        val newK = k + (behavior.stageParts * 1).toInt()
+        val newK = k + (behavior.stageParts * 4).toInt()
         val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
             .map { behaviorDistanceMeasureFunction(behavior, it) }.sorted().toList()
             .take(newK).average()
@@ -81,12 +81,12 @@ fun MarioDiscovery.toVector() = listOf(
     flags.toFloat() * 30f,
     lifes.toFloat() * 10f,
 //    xPos.toFloat() /16,
-    stage.toFloat() * 30,
-    world.toFloat() * 30,
-//    (yPos.toFloat()),
-    xPos.toFloat(),
+//    stage.toFloat() * 30,
+//    world.toFloat() * 30,
+//    (yPos.toFloat()) / 32,
+//    xPos.toFloat(),
 //    stageParts.toFloat(),
-//    time.toFloat()
+    time.toFloat()
 //    (min(10f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
@@ -102,9 +102,10 @@ fun evolve(
     populationEvolver.sortPopulationByAdjustedScore(modelScores)
     populationEvolver.updateScores(modelScores)
     var newPopulation = populationEvolver.evolveNewPopulation(modelScores, neatExperiment)
-    populationEvolver.speciationController.speciesSet.forEach { species ->
-        populationEvolver.speciesLineage.updateMascot(species, populationEvolver.speciationController.getSpeciesPopulation(species).random(neatExperiment.random))
-    }
+//    populationEvolver.speciationController.speciesSet.forEach { species ->
+//        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+//        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
+//    }
     while (newPopulation.size < populationSize) {
         newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone()
     }

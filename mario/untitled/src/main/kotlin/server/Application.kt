@@ -258,7 +258,7 @@ class NetworkBlueprintBuilder(private val taskNetworkBuilder: TaskNetworkBuilder
     fun networkBlueprint(
         connections: List<ConnectionLocation>, pairedAgents: PairedAgents
     ) = NetworkBlueprint(
-        listOf(),
+
         pairedAgents.child.id,
         taskNetworkBuilder.planes,
         connectionRelationships,

@@ -15,10 +15,10 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
 
     fun compatibleSpecies(neatMutator: NeatMutator, compatible: CompatibilityTest): Species? {
 
-        return map.keys.map {
+        return map.keys.sortedBy { it.id }.map {
             val avatarForSpecies = map[it]!!.mascot
             compatible(neatMutator, avatarForSpecies) to it
-        }.sortedBy { it.first.distance }.firstOrNull { it.first.compatible }?.second
+        }/*.sortedBy { it.first.distance }*/.firstOrNull { it.first.compatible }?.second
     }
 
     fun updateMascot(species: Species, mascot: NeatMutator) {
@@ -54,7 +54,7 @@ class SpeciesScoreKeeper {
 }
 
 fun <T, K> List<T>.toMap(key: (T) -> K): Map<K, T> {
-    return map { key(it) to it }.toMap()
+    return associate { key(it) to it }
 }
 
 data class SpeciesGene(val species: Species, val generationBorn: Int, val mascot: NeatMutator)

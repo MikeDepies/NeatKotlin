@@ -61,18 +61,3 @@ class SpeciationController(
     }
 
 }
-
-fun evaluatePopulation(
-    population: List<NeatMutator>,
-    inputOutput: List<EnvironmentEntryElement>
-): List<FitnessModel<NeatMutator>> {
-    return population.map { neatMutator ->
-        val network = neatMutator.toNetwork()
-        val score = inputOutput.map {
-            network.evaluate(it.first)
-            network.output().zip(it.second).map { 1f - (it.first - it.second).absoluteValue }.sum()
-//            if (network.output().map { it.roundToInt().toFloat() } == it.second) 1f else 0f
-        }.sum()
-        FitnessModel(neatMutator, score)
-    }
-}
