@@ -54,7 +54,7 @@ class EvoManager(
         launch(Dispatchers.Default) {
             for (it in scoreChannel) {
 //                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
-//                log.info { "new score recieved" }
+                log.info { "new score recieved" }
                 val behaviorScore = max(
                     0f, scoreBehavior(
                         knnNoveltyArchive, it
@@ -84,6 +84,7 @@ class EvoManager(
             var lastRefill = getTimeMillis()
             while (true) {
                 if (seq.hasNext()) {
+                    log.info { "Put model into channel" }
                     modelChannel.send(seq.next())
                 } else if (modelChannel.isEmpty && !seq.hasNext() && getTimeMillis() - lastRefill > 30_000) {
                     val networkWithIds = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }

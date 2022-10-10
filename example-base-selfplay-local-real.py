@@ -285,9 +285,9 @@ class ModelHandler:
                 self.model_helper.send_evaluation_result(model_id, behavior)
                 self.network = None
             
-                self.network = self.queue.get()
-                print("creating new evaluator")
-                self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
+            self.network = self.queue.get()
+            print("creating new evaluator")
+            self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
 
 
 def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
@@ -351,32 +351,44 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, contro
     model_helper = ModelHelper(controller_index, host)
     ns.generation = 0
     while True:
-        try:
-            id, builder = model_helper.getNetwork(controller_index)
-            if id not in mgr_dict:
-                mgr_dict[id] = True
-                network = builder.create_ndarrays()
-                ns.generation += 1
+        # try:
+        id, builder = model_helper.getNetwork(controller_index)
+        if id not in mgr_dict:
+            mgr_dict[id] = True
+            network = builder.create_ndarrays()
+            ns.generation += 1
+            
+            queue.put((id, network))
+        if ns.generation > 100_000:
+            mgr_dict.clear()
+            ns.generation = 0
                 
-                queue.put((id, network))
-            if ns.generation > 100_000:
-                mgr_dict.clear()
-                ns.generation = 0
-                
-        except:
-            print("failed to get network...")
+        # except:
+        #     print("failed to get network...")
 
 
 
 if __name__ == '__main__':
-    processes : List[mp.Process]= []
-    num_process = 15
-    queue_1 = mp.Queue(num_process * 2)
-    queue_2 = mp.Queue(num_process * 2)
-    for i in range(num_process):
-        p = mp.Process(target=console_loop, args=(i + 51460,queue_1, queue_2), daemon=True)
+    mgr = mp.Manager()
+    mgr_dict = mgr.dict()
+    ns = mgr.Namespace()
+    # ns = mgr.Namespace()
+    # host = "localhost"
+    # port = 8095
+    process_num = 6
+    
+    processes: List[mp.Process] = []
+    queue_1 = mgr.Queue(process_num * 2)
+    queue_2 = mgr.Queue(process_num * 2)
+    for i in range(process_num):
+        # p = mp.Process(target=console_loop, args=(i + 51460,queue_1, queue_2), daemon=True)
+        # processes.append(p)
+        # p.start()
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))
         processes.append(p)
         p.start()
-
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
+        processes.append(p)
+        p.start()
     for p in processes:
         p.join()

@@ -164,15 +164,7 @@ fun NeatExperiment.generateInitialPopulation2(
             assignConnectionRandomWeight(connectionGene)
         }
         mutateBias(this, clone)
-//        clone.outputNodes.forEach { println(it.node) }
-        repeat(100) {
-            if (random.nextFloat() > .5f) {
-                mutateAddConnection(clone)
-            }
-            if (random.nextFloat() > .9f) {
-                mutateAddNode(clone)
-            }
-        }
+
         clone.outputNodes.forEach {
             it.activationFunction = activationFunctions.random(random)
         }

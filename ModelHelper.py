@@ -22,7 +22,7 @@ class ModelTestResult:
 class ModelHelper:
     host : str
     controller_id : str
-    network_shape : List[List[int]]
+    
     def __init__(self, controller_id :str, host : str) -> None:
         self.host = host
         self.controller_id = controller_id

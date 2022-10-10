@@ -199,10 +199,21 @@ private fun Application.routing(
             post<ModelsRequest>("/next") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
                 val networkBlueprint = createBlueprint(evoManager)
+
+                logger.info { "Created blueprint ${networkBlueprint.id}" }
+                call.respond(networkBlueprint)
+            }
+
+            get("/next") {
+                val evoManager = evoHandler.evoManager(0)
+                val networkBlueprint = createBlueprint(evoManager)
+
+                logger.info { "Created blueprint ${networkBlueprint.id}" }
                 call.respond(networkBlueprint)
             }
 
             post<ModelEvaluationResult>("/score") {
+                logger.info { "GOT SCORE $it" }
                 val evoManager = evoHandler.evoManager(it.controllerId)
                 evoManager.scoreChannel.send(it)
                 call.respond("success")
@@ -294,7 +305,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         speciationController = SpeciationController(0),
         simpleNeatExperiment = simpleNeatExperiment,
         population = population,
-        generation = if (controllerId == 0) 11612 else 11547
+        generation = 0//if (controllerId == 0) 11612 else 11547
     )
 }
 
