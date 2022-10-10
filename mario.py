@@ -248,7 +248,7 @@ def actionToNdArray(value: int):
     array[0, value] = 1
     return array
 
-def queueNetworks(queue : mp.Queue):
+def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
     host = "192.168.0.100"
     port = 8095
     ns.generation = 0

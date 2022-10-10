@@ -3,7 +3,7 @@ import type { RequestHandler } from "@sveltejs/kit";
 
 export const get: RequestHandler = async (event) => {
     const controllerId = +(event.url.searchParams.get("cid")) as ControllerNumber;
-    const res = await fetch("http://192.168.0.139:8091/model/generation", {
+    const res = await fetch("http://localhost:8091/model/generation", {
         method: "POST",
         headers: {
             "content-type": "application/json"
@@ -17,11 +17,7 @@ export const get: RequestHandler = async (event) => {
     
     const model = controllerManager[controllerId]
     model.generation = await res.json() 
-    if (controllerId == 0) {
-        model.generation += 6100
-    } else {
-        model.generation += 6100
-    }
+    
     return {
         headers: {},
         status: 200,

@@ -64,20 +64,16 @@ class ModelHelper:
         requestNetwork = True
         network = None
         print("getting a \"best\" network")
-        try:
-            res = httpx.post("http://" + self.host + ":8091/model/best",json={
-                    "controllerId": self.controller_id,
-                }, timeout=30)
-            if not res.is_success:
-                raise Exception("No data for request")
-            data = res.json()
-            id, builder = process_model_data(data)
-            
-            # exit()
-            return (id, builder)
-        except Exception as e:
-            print(e)
-            # print("timeout: failed to get " + str(modelId) + " for " + str(controllerId))
-            # time.sleep(1)
-            return None
+        
+        res = httpx.post("http://" + self.host + ":8091/model/best",json={
+                "controllerId": self.controller_id,
+            }, timeout=30)
+        if not res.is_success:
+            raise Exception("No data for request")
+        data = res.json()
+        id, builder = process_model_data(data)
+        
+        # exit()
+        return (id, builder)
+        
 

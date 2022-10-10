@@ -53,9 +53,9 @@ fun Application.module() {
         allowSameOrigin = true
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
-    install(CallLogging) {
-        level = Level.INFO
-    }
+//    install(CallLogging) {
+////        level = Level.INFO
+//    }
     val application = this
     install(Koin) {
         modules(applicationModule, org.koin.dsl.module {
@@ -124,6 +124,11 @@ class EvoControllerHandler(val map: Map<Int, EvoManager>) {
         return map.getValue(controllerId)
     }
 }
+fun character(controllerId: Int) = when (controllerId) {
+    0 -> Character.Link
+    1 -> Character.Pikachu
+    else -> throw Exception()
+}
 
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
@@ -137,11 +142,6 @@ private fun Application.routing(
         else -> throw Exception()
     }
 
-    fun character(controllerId: Int) = when (controllerId) {
-        0 -> Character.Link
-        1 -> Character.Pikachu
-        else -> throw Exception()
-    }
 
     routing {
         val createNetwork = createNetwork()
@@ -151,8 +151,7 @@ private fun Application.routing(
             createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
         val calculationOrder = createNetwork.calculationOrder.map { it.id }
         suspend fun createBlueprint(evoManager: EvoManager): NetworkBlueprint {
-            val populationEvolver = evoManager.populationEvolver
-            val networkWithId = evoManager.modelChannel.receive()
+            val networkWithId = evoManager.modelChannel.tryReceive().getOrNull() ?: ArrayList(evoManager.bestModels).random().let { model -> NetworkWithId(model.model, model.id) }
             val neatMutator = networkWithId.neatMutator
             val networkBlueprint = NetworkBlueprint(
                 networkWithId.id,
@@ -160,7 +159,7 @@ private fun Application.routing(
                 connectionRelationships,
                 targetConnectionMapping,
                 calculationOrder,
-                populationEvolver.speciationController.species(neatMutator).id,
+                0,
                 neatMutator.hiddenNodes.size,
                 createNetwork.outputPlane.id,
                 neatMutator.toModel(),
@@ -176,7 +175,9 @@ private fun Application.routing(
             }
             post<ModelsRequest>("/best") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
-                val model = ArrayList(evoManager.bestModels).random().model
+                val model = ArrayList(evoManager.bestModels).random()
+                val networkWithId = NetworkWithId(model.model, model.id)
+                val neatMutator = networkWithId.neatMutator
 //                val neatModel = evoManager.modelStatusMap.getValue(model.id)
 //                val twitchModel = TwitchModel(
 //                    model.id,
@@ -192,7 +193,19 @@ private fun Application.routing(
 //                } else {
 //                    lastModel2 = twitchModel
 //                }
-                call.respond(model)
+                val networkBlueprint = NetworkBlueprint(
+                    networkWithId.id,
+                    createNetwork.planes,
+                    connectionRelationships,
+                    targetConnectionMapping,
+                    calculationOrder,
+                    0,
+                    neatMutator.hiddenNodes.size,
+                    createNetwork.outputPlane.id,
+                    neatMutator.toModel(),
+                    createNetwork.depth
+                )
+                call.respond(networkBlueprint)
             }
 
 
@@ -200,20 +213,14 @@ private fun Application.routing(
                 val evoManager = evoHandler.evoManager(it.controllerId)
                 val networkBlueprint = createBlueprint(evoManager)
 
-                logger.info { "Created blueprint ${networkBlueprint.id}" }
+//                logger.info { "Created blueprint ${networkBlueprint.id}" }
                 call.respond(networkBlueprint)
             }
 
-            get("/next") {
-                val evoManager = evoHandler.evoManager(0)
-                val networkBlueprint = createBlueprint(evoManager)
 
-                logger.info { "Created blueprint ${networkBlueprint.id}" }
-                call.respond(networkBlueprint)
-            }
 
             post<ModelEvaluationResult>("/score") {
-                logger.info { "GOT SCORE $it" }
+//                logger.info { "GOT SCORE $it" }
                 val evoManager = evoHandler.evoManager(it.controllerId)
                 evoManager.scoreChannel.send(it)
                 call.respond("success")

@@ -55,8 +55,8 @@ def process_model_data(data : Any) -> Tuple[str, HyperNeatBuilder]:
     neat_model_data = data["neatModel"]
     
     neat_model = parse_neat_model(neat_model_data)
-    print(neat_model.nodes[6])
-    print(neat_model.nodes[7])
+    # print(neat_model.nodes[6])
+    # print(neat_model.nodes[7])
     input, output, layer_computation_instructions = create_layer_computation_instructions_2(neat_model)
     # print(len(layer_computation_instructions))
     # for instruct in layer_computation_instructions:

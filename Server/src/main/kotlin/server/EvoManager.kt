@@ -54,7 +54,7 @@ class EvoManager(
         launch(Dispatchers.Default) {
             for (it in scoreChannel) {
 //                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
-                log.info { "new score recieved" }
+//                log.info { "new score recieved" }
                 val behaviorScore = max(
                     0f, scoreBehavior(
                         knnNoveltyArchive, it
@@ -71,7 +71,7 @@ class EvoManager(
                     val species = if (populationEvolver.speciationController.hasSpeciesFor(model)) "${
                         populationEvolver.speciationController.species((model))
                     }" else "No Species"
-                    log.info { "[G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $behaviorScore " }
+                    log.info { "${character(evaluationId)} - [G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $behaviorScore " }
                     log.info { "$it" }
                     captureBestModel(model, behaviorScore, populationEvolver, it)
                 }
@@ -84,7 +84,6 @@ class EvoManager(
             var lastRefill = getTimeMillis()
             while (true) {
                 if (seq.hasNext()) {
-                    log.info { "Put model into channel" }
                     modelChannel.send(seq.next())
                 } else if (modelChannel.isEmpty && !seq.hasNext() && getTimeMillis() - lastRefill > 30_000) {
                     val networkWithIds = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }
@@ -113,7 +112,7 @@ class EvoManager(
         seq = population.iterator()
 
         scores = mutableListOf()
-        writeGenerationToDisk(population.map { it.neatMutator }, runFolder, populationEvolver, "")
+        writeGenerationToDisk(population.map { it.neatMutator }, runFolder, populationEvolver, "${evaluationId}_")
         val json = Json { prettyPrint = true }
         runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
             val json = Json { prettyPrint = true }

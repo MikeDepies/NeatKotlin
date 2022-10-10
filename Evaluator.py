@@ -45,7 +45,7 @@ class Evaluator:
     logger: melee.Logger
     player_died: bool
     frame_data = melee.framedata.FrameData()
-    def __init__(self, player: int, opponent: int, attack_timer: int = 5, max_timer: int = 60, action_limit: int = 5, logger: melee.Logger = None) -> None:
+    def __init__(self, player: int, opponent: int, attack_timer: int , max_timer: int, action_limit: int, logger: melee.Logger = None) -> None:
         self.player_index = player
         self.opponent_index = opponent
         self.attack_timer = attack_timer
@@ -136,6 +136,12 @@ class Evaluator:
         attack_timer_elapsed = self.frames_without_damage / \
             60 > self.attack_timer and (not self.knocked and player_on_stage and opponent_on_stage)
         max_timer_elapsed = self.total_frames / 60 > self.max_timer
+        if max_timer_elapsed:
+            print("max_timer_elapsed: " + str(self.total_frames) + " / 60 -> " + str(self.max_timer) )
+        if attack_timer_elapsed:
+            print("attack_timer_elapsed: " + str(self.frames_without_damage) + " / 60 -> " + str(self.attack_timer) )
+        if self.player_died:
+            print("player " + str(self.player_index) + " died.")
         return attack_timer_elapsed or max_timer_elapsed or self.player_died
 
     def storeFrameData(self, game_state: GameState) -> None:
@@ -254,13 +260,13 @@ class Evaluator:
                 self.damage_actions.append(player.action.value)
                 self.last_damage_action = player.action
             
-            if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
-                self.frames_without_damage += 4
+            # if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
+            #     self.frames_without_damage += 4
             
-            if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
-                self.actions_without_damage += 3
+            # if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
+                # self.actions_without_damage += 3
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
-                self.frames_without_damage += 10
+                # self.frames_without_damage += 10
                 if self.capture_action(player) and on_stage:
                     # print("prev actions:")
                     # print(self.player_previous_actions)
@@ -282,7 +288,7 @@ class Evaluator:
                     self.kill_actions.append(self.last_damage_action.value)
                 self.frames_without_damage = -60 * 4
                 self.actions_without_damage = 0
-
+            print(self.frames_without_damage)
             # update data to compare for next frame
             self.storeFrameData(game_state)
 
