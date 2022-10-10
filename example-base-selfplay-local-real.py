@@ -245,8 +245,7 @@ class ModelHandler:
     evaluator : Evaluator
     ai_controller_id: int
     model_helper: ModelHelper
-    model_list_index : int
-    model_list : List[str]
+    
     model_index: int
     opponent_index: int
     controller: melee.Controller
@@ -259,11 +258,10 @@ class ModelHandler:
         self.ai_controller_id = ai_controller_id
         self.model_index = model_index
         self.opponent_index = opponent_index
-        self.model_helper = ModelHelper(ai_controller_id, "localhost")
+        self.model_helper = ModelHelper(ai_controller_id, "192.168.0.100")
         self.controller = controller
         self.controller_helper = controller_helper
-        self.model_list =[]
-        self.model_list_index = 0
+        self.model_id = ""    
         self.queue = queue
 
     def evaluate(self, game_state : melee.GameState):
@@ -279,13 +277,13 @@ class ModelHandler:
         if self.network is None or self.evaluator.is_finished(game_state):
             if self.network is not None:
                 
-                model_id = self.model_list[self.model_list_index-1]
+                
                 behavior = self.evaluator.score(game_state)
                 print(behavior.actions)
-                self.model_helper.send_evaluation_result(model_id, behavior)
+                self.model_helper.send_evaluation_result(self.model_id, behavior)
                 self.network = None
             
-            self.network = self.queue.get()
+            self.model_id, self.network = self.queue.get()
             print("creating new evaluator")
             self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
 
@@ -347,21 +345,15 @@ def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
                                             cpu_level=0)
 
 def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, controller_index: int):
-    host = "localhost"
+    host = "192.168.0.100"
     model_helper = ModelHelper(controller_index, host)
     ns.generation = 0
     while True:
         # try:
         id, builder = model_helper.getNetwork(controller_index)
-        if id not in mgr_dict:
-            mgr_dict[id] = True
-            network = builder.create_ndarrays()
-            ns.generation += 1
-            
-            queue.put((id, network))
-        if ns.generation > 100_000:
-            mgr_dict.clear()
-            ns.generation = 0
+        network = builder.create_ndarrays()
+        queue.put((id, network))
+        
                 
         # except:
         #     print("failed to get network...")
@@ -375,15 +367,15 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 6
+    process_num = 12
     
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num * 2)
     queue_2 = mgr.Queue(process_num * 2)
     for i in range(process_num):
-        # p = mp.Process(target=console_loop, args=(i + 51460,queue_1, queue_2), daemon=True)
-        # processes.append(p)
-        # p.start()
+        p = mp.Process(target=console_loop, args=(i + 51460,queue_1, queue_2), daemon=True)
+        processes.append(p)
+        p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))
         processes.append(p)
         p.start()
