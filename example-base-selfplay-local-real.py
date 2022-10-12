@@ -299,7 +299,7 @@ def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
     
     controller_helper = ControllerHelper()
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1)
-    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
+    # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
     while True:
         game_state = console.step()
         if game_state is None:
@@ -311,9 +311,9 @@ def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
-            model_handler2.evaluate(game_state)
+            # model_handler2.evaluate(game_state)
             model_handler.postEvaluate(game_state)
-            model_handler2.postEvaluate(game_state)
+            # model_handler2.postEvaluate(game_state)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 print("no stocks! game over")
                 controller_opponent.release_all()
