@@ -7,7 +7,7 @@
 		return {
 			status: 200,
 			props: {
-                models: [model1, model2]
+                models: [model1]
             }
 		};
 	};
@@ -24,9 +24,9 @@
 		timeout = setInterval(async () => {
 			const r = await fetch('/api/model?cid=0');
 			const model1 = (await r.json()) as ModelController;
-			const r2 = await fetch('/api/model?cid=1');
-			const model2 = (await r2.json()) as ModelController;
-			models = [model1, model2];
+			// const r2 = await fetch('/api/model?cid=1');
+			// const model2 = (await r2.json()) as ModelController;
+			models = [model1];
 		}, 500);
 		
 	});

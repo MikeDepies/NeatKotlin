@@ -84,7 +84,8 @@ data class NetworkBlueprint(
     val hiddenNodes: Int,
     val outputLayer: String,
     val neatModel: NeatModel,
-    val depth: Int
+    val depth: Int,
+    val bestModel : Boolean
 )
 
 fun layerPlane(height: Int, width: Int, id: String = UUID.randomUUID().toString()): LayerPlane {

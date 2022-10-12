@@ -28,17 +28,17 @@ class EvoManager(
     val adjustedFitness: AdjustedFitnessCalculation,
     val evaluationId: Int,
     val runFolder: File,
-    val knnNoveltyArchive: KNNNoveltyArchiveWeighted
+    val knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>
 ) {
     var evolutionInProgress = false
     var population: List<NetworkWithId> = listOf()
-    val modelChannel = Channel<NetworkWithId>(40)
+    val modelChannel = Channel<NetworkWithId>(Channel.UNLIMITED)
     var bestModels = mutableListOf<ScoredModel>()
     val scoreChannel = Channel<ModelEvaluationResult>(Channel.UNLIMITED)
     var mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
-    var seq = population.iterator()
+//    var seq = population.iterator()
     suspend fun start(
         initialPopulation: List<NeatMutator>,
     ) = withContext(Dispatchers.Default) {
@@ -50,7 +50,12 @@ class EvoManager(
         mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
         finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
         scores = mutableListOf<FitnessModel<NeatMutator>>()
-        seq = population.iterator()
+
+        launch {
+            population.forEach {
+                modelChannel.send(it)
+            }
+        }
         launch(Dispatchers.Default) {
             for (it in scoreChannel) {
 //                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
@@ -58,7 +63,7 @@ class EvoManager(
                 val behaviorScore = max(
                     0f, scoreBehavior(
                         knnNoveltyArchive, it
-                    ) + /*objectiveScore  +*/ if (it.score.playerDied) -60f else 0f
+                    ) + /*objectiveScore  +*/ if (it.score.playerDied) 0f else 0f
                 )
                 while (knnNoveltyArchive.behaviors.size > 1_000_000) {
                     knnNoveltyArchive.behaviors.removeAt(0)
@@ -76,23 +81,30 @@ class EvoManager(
                     captureBestModel(model, behaviorScore, populationEvolver, it)
                 }
                 if (scores.size == populationSize) {
+                    evolutionInProgress = true
                     processPopulation(populationEvolver)
+                    log.info { "Finished Evolution" }
+                    launch { population.forEach {
+                        modelChannel.send(it)
+                    } }
+                    evolutionInProgress = false
                 }
             }
         }
-        launch {
+        /*launch {
             var lastRefill = getTimeMillis()
             while (true) {
-                if (seq.hasNext()) {
+
+                *//*if (seq.hasNext()) {
                     modelChannel.send(seq.next())
-                } else if (modelChannel.isEmpty && !seq.hasNext() && getTimeMillis() - lastRefill > 30_000) {
+                } *//**//*else if (!evolutionInProgress && modelChannel.isEmpty && !seq.hasNext() && getTimeMillis() - lastRefill > 30_000) {
                     val networkWithIds = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }
                     log.info { "Refilling model channel ${networkWithIds.size}" }
                     seq = networkWithIds.iterator()
                     lastRefill = getTimeMillis()
-                }
+                }*//*
             }
-        }
+        }*/
     }
 
     fun processPopulation(populationEvolver: PopulationEvolver) {
@@ -105,11 +117,13 @@ class EvoManager(
         ).mapIndexed { index, neatMutator ->
             NetworkWithId(neatMutator, UUID.randomUUID().toString())
         }.shuffled()
+        log.info { "mapping to ids" }
         mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
         finishedScores =
             population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
+        log.info { "setting new population" }
+//        seq = population.iterator()
 
-        seq = population.iterator()
 
         scores = mutableListOf()
         writeGenerationToDisk(population.map { it.neatMutator }, runFolder, populationEvolver, "${evaluationId}_")
@@ -171,7 +185,7 @@ class EvoManager(
     }
 
     private fun scoreBehavior(
-        knnNoveltyArchive: KNNNoveltyArchiveWeighted, it: ModelEvaluationResult
+        knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>, it: ModelEvaluationResult
     ) = when {
         knnNoveltyArchive.size < 1 -> {
             knnNoveltyArchive.addBehavior(it.score)

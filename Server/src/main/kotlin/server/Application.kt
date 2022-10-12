@@ -17,6 +17,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
+import neat.novelty.KNNNoveltyArchive
 import neat.novelty.levenshtein
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
@@ -29,6 +30,7 @@ import server.service.TwitchModel
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.log
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -77,38 +79,38 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
 
-//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(5000)
+    val a = actionBehaviors("population/0_noveltyArchive.json")//.takeLast(5000)
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
     fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
-        simulationFor(controllerId, populationSize, false)
+        simulationFor(controllerId, populationSize, true)
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        40,
+        10,
         behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         40,
         behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
-//    knnNoveltyArchive.behaviors.addAll(a)
+    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize)
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
 
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(1, populationSize)
-    val evoManager2 =
-        EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
+//    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(1, populationSize)
+//    val evoManager2 =
+//        EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
-    launch { evoManager2.start(initialPopulation2) }
+//    launch { evoManager2.start(initialPopulation2) }
 
     routing(
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
-                evaluationId2 to evoManager2
+//                evaluationId2 to evoManager2
             )
         )
     )
@@ -124,6 +126,7 @@ class EvoControllerHandler(val map: Map<Int, EvoManager>) {
         return map.getValue(controllerId)
     }
 }
+
 fun character(controllerId: Int) = when (controllerId) {
     0 -> Character.Link
     1 -> Character.Pikachu
@@ -151,7 +154,11 @@ private fun Application.routing(
             createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
         val calculationOrder = createNetwork.calculationOrder.map { it.id }
         suspend fun createBlueprint(evoManager: EvoManager): NetworkBlueprint {
-            val networkWithId = evoManager.modelChannel.tryReceive().getOrNull() ?: ArrayList(evoManager.bestModels).random().let { model -> NetworkWithId(model.model, model.id) }
+            val orNull = evoManager.modelChannel.tryReceive().getOrNull()
+//            if (orNull == null)
+//                logger.info { "modelChannel is null? ${evoManager.modelChannel.isEmpty}" }
+            val networkWithId = orNull ?: ArrayList(evoManager.bestModels).random()
+                .let { model -> NetworkWithId(model.model, model.id) }
             val neatMutator = networkWithId.neatMutator
             val networkBlueprint = NetworkBlueprint(
                 networkWithId.id,
@@ -163,7 +170,8 @@ private fun Application.routing(
                 neatMutator.hiddenNodes.size,
                 createNetwork.outputPlane.id,
                 neatMutator.toModel(),
-                createNetwork.depth
+                createNetwork.depth,
+                orNull == null
             )
             return networkBlueprint
         }
@@ -203,7 +211,8 @@ private fun Application.routing(
                     neatMutator.hiddenNodes.size,
                     createNetwork.outputPlane.id,
                     neatMutator.toModel(),
-                    createNetwork.depth
+                    createNetwork.depth,
+                    true
                 )
                 call.respond(networkBlueprint)
             }
@@ -224,6 +233,18 @@ private fun Application.routing(
                 val evoManager = evoHandler.evoManager(it.controllerId)
                 evoManager.scoreChannel.send(it)
                 call.respond("success")
+            }
+
+            post<ModelsRequest>("/refill") { request ->
+                val evoManager = evoHandler.evoManager(request.controllerId)
+                val networkWithIdList =
+                    evoManager.finishedScores.filter { !it.value }.mapNotNull { evoManager.mapIndexed[it.key] }
+                launch {
+                    networkWithIdList.forEach {
+                        evoManager.modelChannel.send(it)
+                    }
+                }
+                call.respond("success (${networkWithIdList.size}")
             }
         }
     }
@@ -260,7 +281,7 @@ private fun behaviorMeasure(
 }
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehavior, ActionBehavior) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchive(k, 0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
@@ -312,7 +333,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         speciationController = SpeciationController(0),
         simpleNeatExperiment = simpleNeatExperiment,
         population = population,
-        generation = 0//if (controllerId == 0) 11612 else 11547
+        generation = 1368//if (controllerId == 0) 11612 else 11547
     )
 }
 

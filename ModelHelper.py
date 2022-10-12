@@ -56,9 +56,9 @@ class ModelHelper:
             raise Exception("No data for request")
         data = res.json()
         id, builder = process_model_data(data)
-        
+        best : bool = data["bestModel"]
         # exit()
-        return (id, builder)
+        return (id, builder, best)
     
     def randomBest(self):
         requestNetwork = True

@@ -285,7 +285,7 @@ class ModelHandler:
             
             self.model_id, self.network = self.queue.get()
             print("creating new evaluator")
-            self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, action_limit= 7)
+            self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, 12, None)
 
 
 def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
@@ -323,7 +323,7 @@ def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
         else:
             melee.MenuHelper.menu_helper_simple(game_state,
                                                     controller,
-                                                    melee.Character.LINK,
+                                                    melee.Character.MARIO,
                                                     melee.Stage.FINAL_DESTINATION,
                                                     args.connect_code,
                                                     costume=0,
@@ -333,16 +333,16 @@ def console_loop(port : int, queue_1 : mp.Queue, queue_2 : mp.Queue):
             # if game_state.players and game_state.players[player_index].character == melee.Character.MARIO:
             if game_state.players:
                 player : melee.PlayerState = game_state.players[player_index]
-                if player and player.cpu_level == 0 and player.character == melee.Character.LINK:
+                if player and player.cpu_level == 0 and player.character == melee.Character.MARIO:
                     melee.MenuHelper.menu_helper_simple(game_state,
                                             controller_opponent,
-                                            melee.Character.PIKACHU,
+                                            melee.Character.FOX,
                                             melee.Stage.FINAL_DESTINATION,
                                             args.connect_code,
                                             costume=0,
                                             autostart=True,
                                             swag=False,
-                                            cpu_level=0)
+                                            cpu_level=5)
 
 def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, controller_index: int):
     host = "192.168.0.100"
@@ -350,9 +350,13 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, contro
     ns.generation = 0
     while True:
         # try:
-        id, builder = model_helper.getNetwork(controller_index)
+        id, builder, best = model_helper.getNetwork(controller_index)
         network = builder.create_ndarrays()
-        queue.put((id, network))
+        if queue.qsize() == 0 and best:
+            queue.put((id, network))
+            time.sleep(1.0)
+        elif not best:
+            queue.put((id, network))
         
                 
         # except:
@@ -379,8 +383,8 @@ if __name__ == '__main__':
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
-        processes.append(p)
-        p.start()
+        # p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
+        # processes.append(p)
+        # p.start()
     for p in processes:
         p.join()
