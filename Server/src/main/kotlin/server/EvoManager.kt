@@ -50,12 +50,10 @@ class EvoManager(
         mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
         finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
         scores = mutableListOf<FitnessModel<NeatMutator>>()
-
-        launch {
-            population.forEach {
-                modelChannel.send(it)
-            }
+        population.forEach {
+            modelChannel.send(it)
         }
+
         launch(Dispatchers.Default) {
             for (it in scoreChannel) {
 //                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
@@ -71,22 +69,23 @@ class EvoManager(
                 val networkWithId = mapIndexed[it.modelId]
                 val model = networkWithId?.neatMutator
                 if (finishedScores[it.modelId] != true && model != null) {
+                    log.info { "$it" }
                     scores += FitnessModel(model, behaviorScore)
                     finishedScores[it.modelId] = true
                     val species = if (populationEvolver.speciationController.hasSpeciesFor(model)) "${
                         populationEvolver.speciationController.species((model))
                     }" else "No Species"
                     log.info { "${character(evaluationId)} - [G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $behaviorScore " }
-                    log.info { "$it" }
+
                     captureBestModel(model, behaviorScore, populationEvolver, it)
                 }
                 if (scores.size == populationSize) {
                     evolutionInProgress = true
                     processPopulation(populationEvolver)
                     log.info { "Finished Evolution" }
-                    launch { population.forEach {
+                    population.forEach {
                         modelChannel.send(it)
-                    } }
+                    }
                     evolutionInProgress = false
                 }
             }

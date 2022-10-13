@@ -2,8 +2,8 @@
 	export const load: Load = async ({ fetch }) => {
 		const r = await fetch('/api/model?cid=0');
 		const model1 = (await r.json()) as ModelController;
-		const r2 = await fetch('/api/model?cid=1');
-		const model2 = (await r2.json()) as ModelController;
+		// const r2 = await fetch('/api/model?cid=1');
+		// const model2 = (await r2.json()) as ModelController;
 		return {
 			status: 200,
 			props: {
@@ -27,7 +27,7 @@
 			// const r2 = await fetch('/api/model?cid=1');
 			// const model2 = (await r2.json()) as ModelController;
 			models = [model1];
-		}, 500);
+		}, 2000);
 		
 	});
     onDestroy(() => {

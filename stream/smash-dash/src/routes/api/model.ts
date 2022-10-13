@@ -14,7 +14,6 @@ export const get: RequestHandler = async (event) => {
     })
     
     
-    
     const model = controllerManager[controllerId]
     model.generation = await res.json() 
     

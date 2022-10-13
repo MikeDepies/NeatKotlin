@@ -55,9 +55,9 @@ fun Application.module() {
         allowSameOrigin = true
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
-//    install(CallLogging) {
-////        level = Level.INFO
-//    }
+    install(CallLogging) {
+        level = Level.INFO
+    }
     val application = this
     install(Koin) {
         modules(applicationModule, org.koin.dsl.module {
@@ -73,22 +73,23 @@ fun Application.module() {
     install(ContentNegotiation) {
         json(jsonService)
     }
+
     val evaluationId = 0
     val evaluationId2 = 1
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
 
-    val a = actionBehaviors("population/0_noveltyArchive.json")//.takeLast(5000)
+    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(50000)
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
     fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
-        simulationFor(controllerId, populationSize, true)
+        simulationFor(controllerId, populationSize, false)
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         10,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         40,
@@ -136,6 +137,13 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
+    val evaluatorSettings = EvaluatorSettings(10, 120, 12)
+    val pythonConfiguration = PythonConfiguration(
+        evaluatorSettings,
+        ControllerConfiguration(Character.Mario, 0),
+        ControllerConfiguration(Character.Fox, 5),
+        MeleeStage.FinalDestination
+    )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
     var lastModel2: TwitchModel? = null
@@ -154,7 +162,7 @@ private fun Application.routing(
             createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
         val calculationOrder = createNetwork.calculationOrder.map { it.id }
         suspend fun createBlueprint(evoManager: EvoManager): NetworkBlueprint {
-            val orNull = evoManager.modelChannel.tryReceive().getOrNull()
+            val orNull = if (evoManager.evolutionInProgress) null else evoManager.modelChannel.tryReceive().getOrNull()
 //            if (orNull == null)
 //                logger.info { "modelChannel is null? ${evoManager.modelChannel.isEmpty}" }
             val networkWithId = orNull ?: ArrayList(evoManager.bestModels).random()
@@ -246,6 +254,11 @@ private fun Application.routing(
                 }
                 call.respond("success (${networkWithIdList.size}")
             }
+
+
+        }
+        get("configuration") {
+            call.respond(pythonConfiguration)
         }
     }
 }
@@ -296,8 +309,8 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         val populationModel = loadPopulation(File("population/${controllerId}_population.json"))
         val models = populationModel.models
         logger.info { "population loaded with size of: ${models.size}" }
-        val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-        val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+        val maxInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+        val maxNodeInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
         val simpleNeatExperiment = simpleNeatExperiment(
             random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
             addConnectionAttempts
@@ -333,7 +346,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         speciationController = SpeciationController(0),
         simpleNeatExperiment = simpleNeatExperiment,
         population = population,
-        generation = 1368//if (controllerId == 0) 11612 else 11547
+        generation = 0//if (controllerId == 0) 11612 else 11547
     )
 }
 

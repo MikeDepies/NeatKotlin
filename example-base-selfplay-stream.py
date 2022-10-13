@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from dataclasses import dataclass
 import multiprocessing as mp
 import argparse
 import json
@@ -12,21 +11,21 @@ import random
 import signal
 import sys
 import time
-from typing import Any, List
-from urllib import response
-from httpx import ReadTimeout, get
+from typing import List
+from httpx import ReadTimeout
 
 import melee
 import numpy as np
 import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
 from ComputableNetwork import ComputableNetwork
-from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
 from ControllerHelper import ControllerHelper
+from DashHelper import DashHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
 from InputEmbederPacked import InputEmbederPacked
 from ModelHelper import ModelHelper
+
 
 
 def check_port(value):
@@ -41,7 +40,7 @@ def check_port(value):
 fd = melee.framedata.FrameData()
 
 
-def startConsole(port: int):
+def startConsole():
 
     # This example program demonstrates how to use the Melee API to run a console,
     #   setup controllers, and send button presses over to a console
@@ -58,7 +57,7 @@ def startConsole(port: int):
     parser.add_argument('--address', '-a', default="127.0.0.1",
                         help='IP address of Slippi/Wii')
     parser.add_argument('--dolphin_port', '-b', default=51441, type=int,
-                        help='IP address of Slippi/Wii')
+                        help='IP address of Slippi/Wii')                        
     parser.add_argument('--dolphin_executable_path', '-e', default=None,
                         help='The directory where dolphin is')
     parser.add_argument('--connect_code', '-t', default="",
@@ -76,10 +75,9 @@ def startConsole(port: int):
     controller_opponent = None
     console = melee.Console(path=args.dolphin_executable_path,
                             logger=log,
-                            slippi_port=port,
-                            blocking_input=True,
-                            polling_mode=False,
-                            setup_gecko_codes=True, gfx_backend="Null", use_exi_inputs=True, enable_ffw=True, save_replays=False)
+                            slippi_port=args.dolphin_port,
+                            blocking_input=False,
+                            polling_mode=False)
     controller = melee.Controller(console=console,
                                   port=args.port,
                                   type=melee.ControllerType.STANDARD)
@@ -147,20 +145,19 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 class Session:
-    framesOnCharacterSelect: int
+    framesOnCharacterSelect : int
     # ws: WebSocketClientProtocol or None = None
-    simulationRunning: bool
-    menuLoadFirstFrame: bool
+    simulationRunning : bool
+    menuLoadFirstFrame : bool
     gamestate: GameState or None
-    lastStockAi: int
-    lastStockOpponent: int
+    lastStockAi : int
+    lastStockOpponent : int
     lastGamestate: GameState or None
-    cpu_level: int
-    cpu_character: melee.Character
-    ai_character: melee.Character
-    reassign_characters: bool
-    character_pool: List[melee.Character]
-
+    cpu_level : int
+    cpu_character : melee.Character
+    ai_character : melee.Character
+    reassign_characters : bool
+    character_pool : List[melee.Character]
     def __init__(self) -> None:
         self.framesOnCharacterSelect = 0
         # ws: WebSocketClientProtocol or None = None
@@ -175,15 +172,14 @@ class Session:
         self.ai_character = melee.Character.SAMUS
         self.reassign_characters = True
         self.character_pool = [melee.Character.FOX, melee.Character.SAMUS, melee.Character.FALCO, melee.Character.MARTH,
-                               melee.Character.CPTFALCON, melee.Character.PEACH, melee.Character.PIKACHU, melee.Character.ZELDA, melee.Character.GANONDORF, melee.Character.JIGGLYPUFF,
-                               melee.Character.MARIO, melee.Character.DK, melee.Character.KIRBY, melee.Character.BOWSER, melee.Character.LINK, melee.Character.NESS, melee.Character.PEACH, melee.Character.YOSHI, melee.Character.MEWTWO, melee.Character.LUIGI, melee.Character.YLINK, melee.Character.DOC, melee.Character.GAMEANDWATCH, melee.Character.ROY]
-
+                      melee.Character.CPTFALCON, melee.Character.PEACH, melee.Character.PIKACHU, melee.Character.ZELDA, melee.Character.GANONDORF, melee.Character.JIGGLYPUFF,
+                      melee.Character.MARIO, melee.Character.DK, melee.Character.KIRBY, melee.Character.BOWSER, melee.Character.LINK, melee.Character.NESS, melee.Character.PEACH, melee.Character.YOSHI, melee.Character.MEWTWO, melee.Character.LUIGI, melee.Character.YLINK, melee.Character.DOC, melee.Character.GAMEANDWATCH, melee.Character.ROY]
 
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
     positionNormalizer = 100.0
     actionNormalizer = 60.0
     return InputEmbederPacked(player_index, opponent_index,
-                              positionNormalizer, actionNormalizer).embed_input(gamestate)
+                           positionNormalizer, actionNormalizer).embed_input(gamestate)
 
 # def create_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
 #     positionNormalizer = 100.0
@@ -244,80 +240,85 @@ def create_packed_state(gamestate: GameState, player_index: int, opponent_index:
 #         statePosition += 11
 #     return state
 
-
 class ModelHandler:
-    network: ComputableNetwork
-    evaluator: Evaluator
+    network : ComputableNetwork
+    evaluator : Evaluator
     ai_controller_id: int
     model_helper: ModelHelper
-
+    
     model_index: int
     opponent_index: int
     controller: melee.Controller
-    controller_helper: ControllerHelper
-    queue: mp.Queue
-    evaluator_configuration: EvaluatorConfiguration
-
-    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper: ControllerHelper, queue: mp.Queue, evaluator_configuration: EvaluatorConfiguration) -> None:
+    controller_helper : ControllerHelper
+    queue : mp.Queue
+    
+    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue) -> None:
         self.network = None
-        self.evaluator = Evaluator(model_index, opponent_index, self.evaluator_configuration.attack_time,
-                                   self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+        self.evaluator = Evaluator(model_index, opponent_index, 5, 10, 7 , None)
         self.ai_controller_id = ai_controller_id
         self.model_index = model_index
         self.opponent_index = opponent_index
-        self.model_helper = ModelHelper(ai_controller_id, "192.168.0.100")
+        self.model_helper = ModelHelper(ai_controller_id, "localhost")
         self.controller = controller
         self.controller_helper = controller_helper
-        self.model_id = ""
+        self.model_id = ""    
         self.queue = queue
-        self.evaluator_configuration = evaluator_configuration
+        self.dash_helper = DashHelper(ai_controller_id)
 
-    def evaluate(self, game_state: melee.GameState):
+    def evaluate(self, game_state : melee.GameState):
         player0: PlayerState = game_state.players[self.model_index]
         player1: PlayerState = game_state.players[self.opponent_index]
-        if self.network is not None and self.evaluator is not None:
-            state = create_packed_state(
-                game_state, self.model_index, self.opponent_index)
-            create_packed_state(
-                game_state, self.model_index, self.opponent_index)
-            self.controller_helper.process(
-                self.network, self.controller, state)
+        
+        if self.evaluator.previous_frame:
+            if self.evaluator.player_lost_stock(game_state):
+                mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
+            if self.evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
+                mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
+            
+        if self.network is not None and self.evaluator is not None:    
+            state = create_packed_state(game_state, self.model_index, self.opponent_index)
+            create_packed_state(game_state, self.model_index, self.opponent_index)
+            self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
+        if player0 and player0.stock == 0 or player1 and player1.stock == 0:
+                    print("no stocks! game over")
+                    if player0.stock == 0:
+                        mp.Process(target=self.dash_helper.updateLoss, daemon=True).start()
+                    elif player1.stock == 0:
+                        mp.Process(target=self.dash_helper.updateWin, daemon=True).start()
 
-    def postEvaluate(self, game_state: melee.GameState):
+    def postEvaluate(self, game_state : melee.GameState):
         if self.network is None or self.evaluator.is_finished(game_state):
             if self.network is not None:
-
                 behavior = self.evaluator.score(game_state)
                 print(behavior.actions)
-                self.model_helper.send_evaluation_result(
-                    self.model_id, behavior)
+                # self.model_helper.send_evaluation_result(self.model_id, behavior)
                 self.network = None
-
+            
             self.model_id, self.network = self.queue.get()
+            mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
             print("creating new evaluator")
-            self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
-                                       self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+            self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, 12, None)
 
 
-def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration: Configuration):
-    console, controller, controller_opponent, args, log = startConsole(port)
+def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue):
+    console, controller, controller_opponent, args, log = startConsole()
     player_index = args.port
     opponent_index = args.opponent
-
+    
     ai_controller_id = 0
     ai_controller_id2 = 1
-
+    
+    
     controller_helper = ControllerHelper()
-    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index,
-                                 controller, controller_helper, queue_1, configuration.evaluator)
+    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1)
     # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
     while True:
         game_state = console.step()
         if game_state is None:
             print("We hit this None BS")
             continue
-
+        
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
 
             player0: PlayerState = game_state.players[player_index]
@@ -334,45 +335,43 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
                 controller.flush()
         else:
             melee.MenuHelper.menu_helper_simple(game_state,
-                                                controller,
-                                                configuration.player_1.character,
-                                                configuration.stage,
-                                                args.connect_code,
-                                                costume=0,
-                                                autostart=False,
-                                                swag=False,
-                                                cpu_level=configuration.player_1.cpu_level)
+                                                    controller,
+                                                    melee.Character.MARIO,
+                                                    melee.Stage.FINAL_DESTINATION,
+                                                    args.connect_code,
+                                                    costume=0,
+                                                    autostart=False,
+                                                    swag=False,
+                                                    cpu_level=0)            
             # if game_state.players and game_state.players[player_index].character == melee.Character.MARIO:
             if game_state.players:
-                player: melee.PlayerState = game_state.players[player_index]
-                if player and player.cpu_level == configuration.player_1.cpu_level and player.character == configuration.player_1.character:
+                player : melee.PlayerState = game_state.players[player_index]
+                if player and player.cpu_level == 0 and player.character == melee.Character.MARIO:
                     melee.MenuHelper.menu_helper_simple(game_state,
-                                                        controller_opponent,
-                                                        configuration.player_2.character,
-                                                        configuration.stage,
-                                                        args.connect_code,
-                                                        costume=0,
-                                                        autostart=True,
-                                                        swag=False,
-                                                        cpu_level=configuration.player_2.cpu_level)
+                                            controller_opponent,
+                                            melee.Character.FOX,
+                                            melee.Stage.FINAL_DESTINATION,
+                                            args.connect_code,
+                                            costume=0,
+                                            autostart=True,
+                                            swag=False,
+                                            cpu_level=5)
 
-
-def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace, controller_index: int):
-    host = "192.168.0.100"
+def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, controller_index: int):
+    host = "localhost"
     model_helper = ModelHelper(controller_index, host)
     ns.generation = 0
     while True:
         # try:
-        id, builder, best = model_helper.getNetwork(controller_index)
+        id, builder = model_helper.randomBest()
         network = builder.create_ndarrays()
-        if queue.qsize() == 0 and best:
-            queue.put((id, network))
-            time.sleep(1.0)
-        elif not best:
-            queue.put((id, network))
-
+        
+        queue.put((id, network))
+        
+                
         # except:
         #     print("failed to get network...")
+
 
 
 if __name__ == '__main__':
@@ -382,21 +381,16 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 12
-    r = get("http://localhost:8091/configuration")
-    data = r.json()
-    configuration = processConfiguration(data)
-
+    process_num = 1
+    
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num * 2)
     queue_2 = mgr.Queue(process_num * 2)
     for i in range(process_num):
-        p = mp.Process(target=console_loop, args=(
-            i + 51460, queue_1, queue_2, configuration), daemon=True)
+        p = mp.Process(target=console_loop, args=(queue_1, queue_2))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworks, daemon=True,
-                       args=(queue_1, mgr_dict, ns, 0))
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
