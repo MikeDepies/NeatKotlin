@@ -46,3 +46,20 @@ Where do we store models?
 What information do we present on the CustomReward?
 How do viewers/users use their Models?
 What causes a model to be offered as a CustomReward?
+
+
+10/13
+- [x] Centralize the evaluator configuration on server and distribute to python client
+- Create network visualizer for new dashboard
+- Rework python to contribute stream stats to neatServer instead of old sveltekit dash
+- Collect stats about training
+  - Scores for current generation
+    - Maybe have for multiple generations?
+  - Species
+  - Best models should be a list that is queryable
+  - time to complete a generation
+- Collect stats for stream runtime
+  - Basic overtime stats
+    - Wins, Losses, kills, deaths per evaluation
+  - Ability to query for the network of the onstream model
+    - Current model id on stream

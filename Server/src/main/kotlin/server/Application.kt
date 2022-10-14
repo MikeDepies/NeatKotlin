@@ -23,6 +23,7 @@ import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import org.slf4j.event.Level
 import server.local.*
+import server.message.endpoints.NeatModel
 import server.message.endpoints.Simulation
 import server.message.endpoints.toModel
 import server.service.TwitchBotService
@@ -40,6 +41,8 @@ fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 private val logger = KotlinLogging.logger { }
 
 data class ScoredModel(val score: Float, val generation: Int, val model: NeatMutator, val id: String)
+@Serializable
+data class ScoredModelSerializable(val score : Float, val generation : Int, val model : NeatModel, val id: String)
 
 
 @Suppress("unused") // Referenced in application.conf
@@ -55,9 +58,9 @@ fun Application.module() {
         allowSameOrigin = true
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
-    install(CallLogging) {
-        level = Level.INFO
-    }
+//    install(CallLogging) {
+//        level = Level.INFO
+//    }
     val application = this
     install(Koin) {
         modules(applicationModule, org.koin.dsl.module {
@@ -80,7 +83,7 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
 
-    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(50000)
+//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(50000)
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
     fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
@@ -89,13 +92,13 @@ fun Application.module() {
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         10,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .1f, killMultiplier = 15f, recoveryMultiplier = 1f)
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         40,
         behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
-    knnNoveltyArchive.behaviors.addAll(a)
+//    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize)
     val evoManager =
@@ -183,6 +186,7 @@ private fun Application.routing(
             )
             return networkBlueprint
         }
+
         route("/model") {
             post<ModelsRequest>("/generation") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
@@ -225,6 +229,13 @@ private fun Application.routing(
                 call.respond(networkBlueprint)
             }
 
+            post<ModelsRequest>("/bestList") {
+                val evoManager = evoHandler.evoManager(it.controllerId)
+                val bestModels = evoManager.bestModels.map {
+                    ScoredModelSerializable(it.score, it.generation, it.model.toModel(), it.id)
+                }
+                call.respond(bestModels)
+            }
 
             post<ModelsRequest>("/next") {
                 val evoManager = evoHandler.evoManager(it.controllerId)

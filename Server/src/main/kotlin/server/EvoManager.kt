@@ -63,7 +63,7 @@ class EvoManager(
                         knnNoveltyArchive, it
                     ) + /*objectiveScore  +*/ if (it.score.playerDied) 0f else 0f
                 )
-                while (knnNoveltyArchive.behaviors.size > 1_000_000) {
+                while (knnNoveltyArchive.behaviors.size > 100_000) {
                     knnNoveltyArchive.behaviors.removeAt(0)
                 }
                 val networkWithId = mapIndexed[it.modelId]

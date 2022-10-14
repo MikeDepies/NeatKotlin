@@ -260,8 +260,8 @@ class ModelHandler:
 
     def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper: ControllerHelper, queue: mp.Queue, evaluator_configuration: EvaluatorConfiguration) -> None:
         self.network = None
-        self.evaluator = Evaluator(model_index, opponent_index, self.evaluator_configuration.attack_time,
-                                   self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+        self.evaluator = Evaluator(model_index, opponent_index, evaluator_configuration.attack_time,
+                                   evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
         self.ai_controller_id = ai_controller_id
         self.model_index = model_index
         self.opponent_index = opponent_index
@@ -383,7 +383,7 @@ if __name__ == '__main__':
     # host = "localhost"
     # port = 8095
     process_num = 12
-    r = get("http://localhost:8091/configuration")
+    r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
 
