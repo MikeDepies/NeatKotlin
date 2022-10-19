@@ -1,8 +1,10 @@
 package neat
 
 import neat.model.*
+import java.util.*
+import kotlin.NoSuchElementException
 import kotlin.jvm.JvmName
-import kotlin.random.*
+import kotlin.random.Random
 
 fun simpleNeatExperiment(
     random: Random,
@@ -128,7 +130,7 @@ class SimpleNeatExperiment(
         return this.nodeInnovation++
     }
 
-    override fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>): NeatMutator {
+    override fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>, uuid: UUID): NeatMutator {
         val (disjoint1, disjoint2) = disjoint(parent1.model, parent2.model)
         val excess = excess(parent1.model, parent2.model)
         val matchingGenes = matchingGenes(parent1.model, parent2.model)
@@ -150,7 +152,7 @@ class SimpleNeatExperiment(
 //            }
         }.map { it.copy() }
         val nodes = (if (parent1.isLessFitThan(parent2)) parent2.model.nodes else parent1.model.nodes).map { it.copy() }
-        return simpleNeatMutator(nodes, offSpringConnections)
+        return simpleNeatMutator(nodes, offSpringConnections, uuid)
     }
 
 
@@ -173,7 +175,7 @@ fun List<NodeGene>.condensedString(): String {
     return "[${joinToString(", ") { "${it.node}" }}]"
 }
 
-fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>, random: Random): NeatMutator {
+fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>, random: Random, uuid: UUID): NeatMutator {
     val (disjoint1, disjoint2) = disjoint(parent1.model, parent2.model)
     val excess = excess(parent1.model, parent2.model)
     val matchingGenes = matchingGenes(parent1.model, parent2.model)
@@ -187,5 +189,5 @@ fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMuta
         }
     }.map { it.copy() }
     val nodes = (if (parent1.isLessFitThan(parent2)) parent2.model.nodes else parent1.model.nodes).map { it.copy() }
-    return simpleNeatMutator(nodes, offSpringConnections)
+    return simpleNeatMutator(nodes, offSpringConnections, uuid)
 }

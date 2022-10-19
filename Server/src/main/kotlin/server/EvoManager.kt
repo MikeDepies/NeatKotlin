@@ -31,22 +31,22 @@ class EvoManager(
     val knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>
 ) {
     var evolutionInProgress = false
-    var population: List<NetworkWithId> = listOf()
-    val modelChannel = Channel<NetworkWithId>(Channel.UNLIMITED)
+    var population: List<NeatMutator> = listOf()
+    val modelChannel = Channel<NeatMutator>(Channel.UNLIMITED)
     var bestModels = mutableListOf<ScoredModel>()
     val scoreChannel = Channel<ModelEvaluationResult>(Channel.UNLIMITED)
     var mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
-//    var seq = population.iterator()
+    var populationScoresChannel = Channel<PopulationScoreEntry>(Channel.UNLIMITED)
+
+    //    var seq = population.iterator()
     suspend fun start(
         initialPopulation: List<NeatMutator>,
     ) = withContext(Dispatchers.Default) {
 
         evolutionInProgress = false
-        population = initialPopulation.mapIndexed { index, neatMutator ->
-            NetworkWithId(neatMutator, UUID.randomUUID().toString())
-        }.shuffled()
+        population = initialPopulation.shuffled()
         mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
         finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
         scores = mutableListOf<FitnessModel<NeatMutator>>()
@@ -66,12 +66,13 @@ class EvoManager(
                 while (knnNoveltyArchive.behaviors.size > 100_000) {
                     knnNoveltyArchive.behaviors.removeAt(0)
                 }
-                val networkWithId = mapIndexed[it.modelId]
-                val model = networkWithId?.neatMutator
-                if (finishedScores[it.modelId] != true && model != null) {
+                val uuid = UUID.fromString(it.modelId)
+                val networkWithId = mapIndexed[uuid]
+                val model = networkWithId
+                if (finishedScores[uuid] != true && model != null) {
                     log.info { "$it" }
                     scores += FitnessModel(model, behaviorScore)
-                    finishedScores[it.modelId] = true
+                    finishedScores[uuid] = true
                     val species = if (populationEvolver.speciationController.hasSpeciesFor(model)) "${
                         populationEvolver.speciationController.species((model))
                     }" else "No Species"
@@ -81,6 +82,18 @@ class EvoManager(
                 }
                 if (scores.size == populationSize) {
                     evolutionInProgress = true
+//                    scores.map {
+//                        FullModel(it.model.toModel(), it.)
+//                    }
+//                    populationScoresChannel.send(PopulationScoreEntry(scores.map {
+//                        FullModel(
+//                            it.model.toModel(),
+//                            it.model.id.toString(),
+//                            populationEvolver.speciationController.species(it.model).id,
+//                            it.score,
+//                            populationEvolver.generation
+//                        )
+//                    }, populationEvolver.generation))
                     processPopulation(populationEvolver)
                     log.info { "Finished Evolution" }
                     population.forEach {
@@ -90,20 +103,6 @@ class EvoManager(
                 }
             }
         }
-        /*launch {
-            var lastRefill = getTimeMillis()
-            while (true) {
-
-                *//*if (seq.hasNext()) {
-                    modelChannel.send(seq.next())
-                } *//**//*else if (!evolutionInProgress && modelChannel.isEmpty && !seq.hasNext() && getTimeMillis() - lastRefill > 30_000) {
-                    val networkWithIds = finishedScores.filter { !it.value }.mapNotNull { mapIndexed[it.key] }
-                    log.info { "Refilling model channel ${networkWithIds.size}" }
-                    seq = networkWithIds.iterator()
-                    lastRefill = getTimeMillis()
-                }*//*
-            }
-        }*/
     }
 
     fun processPopulation(populationEvolver: PopulationEvolver) {
@@ -113,9 +112,7 @@ class EvoManager(
         val toModelScores = scores.toModelScores(adjustedFitness)
         population = evolve(
             populationEvolver, toModelScores, population.size
-        ).mapIndexed { index, neatMutator ->
-            NetworkWithId(neatMutator, UUID.randomUUID().toString())
-        }.shuffled()
+        ).shuffled()
         log.info { "mapping to ids" }
         mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
         finishedScores =
@@ -125,7 +122,7 @@ class EvoManager(
 
 
         scores = mutableListOf()
-        writeGenerationToDisk(population.map { it.neatMutator }, runFolder, populationEvolver, "${evaluationId}_")
+        writeGenerationToDisk(population.map { it }, runFolder, populationEvolver, "${evaluationId}_")
         val json = Json { prettyPrint = true }
         runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
             val json = Json { prettyPrint = true }
@@ -150,7 +147,8 @@ class EvoManager(
 //    }
 
         while (newPopulation.size < populationSize) {
-            newPopulation = newPopulation + newPopulation.random(populationEvolver.neatExperiment.random).clone()
+            newPopulation =
+                newPopulation + newPopulation.random(populationEvolver.neatExperiment.random).clone(UUID.randomUUID())
         }
         populationEvolver.speciate(newPopulation)
         if (newPopulation.size > populationSize) {
@@ -173,10 +171,17 @@ class EvoManager(
     ) {
 
         val average = bestModels.map { it.score }.average()
-        bestModels += ScoredModel(behaviorScore, populationEvolver.generation, m, it.modelId)
+        bestModels += ScoredModel(
+            behaviorScore,
+            populationEvolver.generation,
+            m,
+            it.modelId,
+            populationEvolver.speciationController.species(m).id
+        )
         bestModels.sortByDescending {
-            it.score - (populationEvolver.generation - it.generation) * (average / 2)
+            it.score - (populationEvolver.generation - it.generation) * (average / 10)
         }
+        bestModels = bestModels.distinctBy { it.id }.toMutableList()
         if (bestModels.size > 10) {
             bestModels.removeAt(10)
         }
@@ -209,6 +214,7 @@ fun writeGenerationToDisk(
     }
     val manifestFile = runFolder.resolve("manifest.json")
     val manifestData = Manifest(
+        populationEvolver.generation,
         populationEvolver.scoreKeeper.toModel(), populationEvolver.speciesLineage.toModel()
     )
     manifestFile.bufferedWriter().use {

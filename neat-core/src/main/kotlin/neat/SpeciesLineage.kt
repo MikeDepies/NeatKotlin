@@ -27,7 +27,7 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
 
     fun speciesGene(species: Species) = map.getValue(species)
 
-    val speciesLineageMap = map.toMap()
+    val speciesLineageMap get() = map.toMap()
 }
 data class SpeciesScore(val species: Species, val modelScore: ModelScore, val generationLastImproved : Int)
 class SpeciesScoreKeeper {
@@ -50,7 +50,7 @@ class SpeciesScoreKeeper {
         return scoreMap.maxByOrNull { it.value.modelScore.fitness }?.key
     }
 
-    val speciesScoreMap = scoreMap.toMap()
+    val speciesScoreMap get() = scoreMap.toMap()
 }
 
 fun <T, K> List<T>.toMap(key: (T) -> K): Map<K, T> {

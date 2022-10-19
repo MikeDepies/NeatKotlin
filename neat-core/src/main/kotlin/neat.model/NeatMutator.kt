@@ -1,9 +1,11 @@
 package neat.model
 
 import neat.*
+import java.util.UUID
 import kotlin.random.Random
 
 interface NeatMutator {
+    val id : UUID
     val nodes: List<NodeGene>
     val connections: List<ConnectionGene>
     val hiddenNodes: List<NodeGene>
@@ -16,7 +18,7 @@ interface NeatMutator {
     fun addNode(node: NodeGene)
     fun connectionsTo(first: NodeGene): List<ConnectionGene>
     fun connectionsFrom(first: NodeGene): List<ConnectionGene>
-    fun clone() : NeatMutator
+    fun clone(uuid : UUID) : NeatMutator
 
     fun node(node : Int) : NodeGene
     fun hasNode(node : Int) : Boolean
@@ -29,9 +31,10 @@ fun neatMutator(
     inputNumber: Int,
     outputNumber: Int,
     random: Random = Random,
-    function: ActivationGene = Activation.identity
+    function: ActivationGene = Activation.identity,
+    uuid: UUID
 ): NeatMutator {
-    val simpleNeatMutator = simpleNeatMutator(listOf(), listOf())
+    val simpleNeatMutator = simpleNeatMutator(listOf(), listOf(), uuid)
     var nodeNumber = 0
     var innovation = 0
     repeat(inputNumber) {

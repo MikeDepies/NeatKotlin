@@ -1,6 +1,7 @@
 package neat
 
 import neat.model.NeatMutator
+import java.util.*
 import kotlin.math.max
 
 data class Species(val id: Int)
@@ -248,7 +249,8 @@ private fun newOffspring(
 //            neat.validateNeatModel(randomParent2.neat.model.neatMutator)
             neatExperiment.crossover(
                 FitnessModel(randomParent1.neatMutator, randomParent1.adjustedFitness),
-                FitnessModel(randomParent2.neatMutator, randomParent2.adjustedFitness)
+                FitnessModel(randomParent2.neatMutator, randomParent2.adjustedFitness),
+                UUID.randomUUID()
             )
 //                .also {
 //                    try {
@@ -261,7 +263,7 @@ private fun newOffspring(
 //                }
         }
 
-        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone()
+        else -> speciesPopulation.random(neatExperiment.random).neatMutator.clone(UUID.randomUUID())
             .mutateModel(mutationEntries, neatExperiment)//.also { println("clone") }
     }
 }

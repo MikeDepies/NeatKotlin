@@ -23,6 +23,7 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*SNAPSHOT.jar"))))
     testImplementation(kotlin("test-junit5"))
     implementation("io.ktor:ktor-server-cio:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")

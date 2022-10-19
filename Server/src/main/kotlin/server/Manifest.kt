@@ -5,4 +5,4 @@ import server.message.endpoints.SpeciesLineageModel
 import server.message.endpoints.SpeciesScoreKeeperModel
 
 @Serializable
-data class Manifest(val scoreKeeperModel: SpeciesScoreKeeperModel, val scoreLineageModel: SpeciesLineageModel)
+data class Manifest(val generation: Int, val scoreKeeperModel: SpeciesScoreKeeperModel, val scoreLineageModel: SpeciesLineageModel)

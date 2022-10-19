@@ -26,7 +26,8 @@ def parseCharacter(character_string : str):
     
     character_table = {
         "mario" : melee.Character.MARIO,
-        "fox" : melee.Character.FOX
+        "fox" : melee.Character.FOX,
+        "captainfalcon" : melee.Character.CPTFALCON
     }
     return character_table[character_string.lower()]
     

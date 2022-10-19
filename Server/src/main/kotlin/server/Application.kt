@@ -3,7 +3,6 @@ package server
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
@@ -14,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
@@ -21,28 +21,27 @@ import neat.novelty.KNNNoveltyArchive
 import neat.novelty.levenshtein
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
-import org.slf4j.event.Level
 import server.local.*
-import server.message.endpoints.NeatModel
-import server.message.endpoints.Simulation
-import server.message.endpoints.toModel
+import server.message.endpoints.*
 import server.service.TwitchBotService
 import server.service.TwitchModel
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.math.log
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.sqrt
 import kotlin.random.Random
 
 
-fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
+fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 private val logger = KotlinLogging.logger { }
 
-data class ScoredModel(val score: Float, val generation: Int, val model: NeatMutator, val id: String)
+data class ScoredModel(val score: Float, val generation: Int, val model: NeatMutator, val id: String, val species: Int)
+
 @Serializable
-data class ScoredModelSerializable(val score : Float, val generation : Int, val model : NeatModel, val id: String)
+data class ScoredModelSerializable(val score: Float, val generation: Int, val species: Int, val id: String)
 
 
 @Suppress("unused") // Referenced in application.conf
@@ -83,39 +82,48 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
 
-//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(50000)
+    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(0)
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
     fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
-        simulationFor(controllerId, populationSize, false)
+        simulationFor(controllerId, populationSize, true)
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         10,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 15f, recoveryMultiplier = 1f)
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 50f, recoveryMultiplier = 5f)
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        40,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
+        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
-//    knnNoveltyArchive.behaviors.addAll(a)
+    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize)
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
-
+    logger.info { initialPopulation.distinctBy { it.id }.size }
 //    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(1, populationSize)
 //    val evoManager2 =
 //        EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
 //    launch { evoManager2.start(initialPopulation2) }
-
+    val dashboardManager = DashboardManager(evaluationId, StreamStats(0, 0, 0, 0))
+    launch {
+        for (scoreList in evoManager.populationScoresChannel) {
+            dashboardManager.scores.add(scoreList)
+            if (evoManager.scores.size > 100) {
+                dashboardManager.scores.removeAt(0)
+            }
+            dashboardManager.scoreMap =
+                dashboardManager.scores.flatMap { it.scoreList }.associateBy { it.id }
+        }
+    }
     routing(
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
 //                evaluationId2 to evoManager2
-            )
+            ), mapOf(evaluationId to dashboardManager)
         )
     )
 }
@@ -125,9 +133,13 @@ private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromStr
     File(noveltyArchiveJson).bufferedReader().lineSequence().joinToString("")
 )
 
-class EvoControllerHandler(val map: Map<Int, EvoManager>) {
+class EvoControllerHandler(val map: Map<Int, EvoManager>, val dashboardManagerMap: Map<Int, DashboardManager>) {
     fun evoManager(controllerId: Int): EvoManager {
         return map.getValue(controllerId)
+    }
+
+    fun dashboardManager(controllerId: Int): DashboardManager {
+        return dashboardManagerMap.getValue(controllerId)
     }
 }
 
@@ -168,11 +180,10 @@ private fun Application.routing(
             val orNull = if (evoManager.evolutionInProgress) null else evoManager.modelChannel.tryReceive().getOrNull()
 //            if (orNull == null)
 //                logger.info { "modelChannel is null? ${evoManager.modelChannel.isEmpty}" }
-            val networkWithId = orNull ?: ArrayList(evoManager.bestModels).random()
-                .let { model -> NetworkWithId(model.model, model.id) }
-            val neatMutator = networkWithId.neatMutator
+            val networkWithId = orNull ?: ArrayList(evoManager.bestModels).random().let { it.model }
+            val neatMutator = networkWithId
             val networkBlueprint = NetworkBlueprint(
-                networkWithId.id,
+                networkWithId.id.toString(),
                 createNetwork.planes,
                 connectionRelationships,
                 targetConnectionMapping,
@@ -195,9 +206,9 @@ private fun Application.routing(
             }
             post<ModelsRequest>("/best") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
-                val model = ArrayList(evoManager.bestModels).random()
-                val networkWithId = NetworkWithId(model.model, model.id)
-                val neatMutator = networkWithId.neatMutator
+                val model = ArrayList(evoManager.bestModels).random().model
+
+
 //                val neatModel = evoManager.modelStatusMap.getValue(model.id)
 //                val twitchModel = TwitchModel(
 //                    model.id,
@@ -214,28 +225,22 @@ private fun Application.routing(
 //                    lastModel2 = twitchModel
 //                }
                 val networkBlueprint = NetworkBlueprint(
-                    networkWithId.id,
+                    model.id.toString(),
                     createNetwork.planes,
                     connectionRelationships,
                     targetConnectionMapping,
                     calculationOrder,
                     0,
-                    neatMutator.hiddenNodes.size,
+                    model.hiddenNodes.size,
                     createNetwork.outputPlane.id,
-                    neatMutator.toModel(),
+                    model.toModel(),
                     createNetwork.depth,
                     true
                 )
                 call.respond(networkBlueprint)
             }
 
-            post<ModelsRequest>("/bestList") {
-                val evoManager = evoHandler.evoManager(it.controllerId)
-                val bestModels = evoManager.bestModels.map {
-                    ScoredModelSerializable(it.score, it.generation, it.model.toModel(), it.id)
-                }
-                call.respond(bestModels)
-            }
+
 
             post<ModelsRequest>("/next") {
                 val evoManager = evoHandler.evoManager(it.controllerId)
@@ -268,11 +273,134 @@ private fun Application.routing(
 
 
         }
-        get("configuration") {
+        get("/configuration") {
             call.respond(pythonConfiguration)
+        }
+
+        route("/dashboard") {
+            route("/stream") {
+                post<ModelsRequest>("/addWin") {
+                    val dashboardManager = evoHandler.dashboardManager(it.controllerId)
+                    dashboardManager.wins += 1
+                }
+                post<ModelsRequest>("/addLoss") {
+                    val dashboardManager = evoHandler.dashboardManager(it.controllerId)
+                    dashboardManager.losses += 1
+                }
+                post<ModelsRequest>("/addKill") {
+                    val dashboardManager = evoHandler.dashboardManager(it.controllerId)
+                    dashboardManager.kills += 1
+                }
+                post<ModelsRequest>("/addDeath") {
+                    val dashboardManager = evoHandler.dashboardManager(it.controllerId)
+                    dashboardManager.deaths += 1
+                }
+                post<ModelRequest>("/updateModelId") {
+                    val dashboardManager = evoHandler.dashboardManager(it.controllerId)
+                    dashboardManager.modelId = it.modelId
+                }
+                post<ModelsRequest>("/stats") {
+                    val dashboardManager = evoHandler.dashboardManager(it.controllerId)
+                    call.respond(dashboardManager.statsFrame())
+                }
+                post<ModelsRequest>("/activeModel") {
+                    val dashboardManager = evoHandler.dashboardManager(it.controllerId)
+                    call.respond(ActiveModelId(dashboardManager.modelId))
+                }
+            }
+            post<ModelsRequest>("/bestList") { modelsRequest ->
+                val evoManager = evoHandler.evoManager(modelsRequest.controllerId)
+                val bestModels = evoManager.bestModels.map { scoredModel ->
+                    ScoredModelSerializable(
+                        scoredModel.score, scoredModel.generation, scoredModel.species, scoredModel.id
+                    )
+                }
+                call.respond(bestModels)
+            }
+            post<ModelRequest>("/model") { modelsRequest ->
+                val evoManager = evoHandler.evoManager(modelsRequest.controllerId)
+                val dashboard = evoHandler.dashboardManager(modelsRequest.controllerId)
+                val scoredModel = evoManager.bestModels.find { it.id == modelsRequest.modelId }
+                if (scoredModel == null) {
+                    evoManager.scores.find { it.model.id.toString() == modelsRequest.modelId }
+//                    evoManager.population.find { it.id.toString() == modelsRequest.modelId }
+                }
+                if (scoredModel == null) {
+                    dashboard.scoreMap.get(modelsRequest.modelId)
+                }
+                if (scoredModel != null) {
+                    call.respond(
+                        FullModel(
+                            scoredModel.model.toModel(),
+                            modelsRequest.modelId,
+                            scoredModel.species,
+                            scoredModel.score,
+                            scoredModel.generation
+                        )
+                    )
+                } else {
+                    call.respond(NoData)
+                }
+            }
+
+            post<ModelsRequestFromGeneration>("/populationSpecies") { modelsRequest ->
+                val evoManager = evoHandler.evoManager(modelsRequest.controllerId)
+                val dashboard = evoHandler.dashboardManager(modelsRequest.controllerId)
+                val species =
+                    evoManager.population.map { evoManager.populationEvolver.speciationController.species(it) }
+                        .groupBy { it.id }.mapValues { it.value.size }
+
+                val speciesForPopulationList =
+                    mutableListOf(SpeciesForPopulation(species, evoManager.populationEvolver.generation))
+                if (modelsRequest.generation < evoManager.populationEvolver.generation) {
+                    val historicalSpeciesPopulations = dashboard.scores.filter { it.generation >= modelsRequest.generation }.map {
+                        SpeciesForPopulation(
+                            it.scoreList.groupBy(keySelector = { it.species }).mapValues { it.value.size },
+                            it.generation
+                        )
+                    }
+                    speciesForPopulationList.addAll(historicalSpeciesPopulations)
+                }
+                call.respond(speciesForPopulationList)
+            }
+
         }
     }
 }
+
+sealed class StatOperation {
+    object AddWin : StatOperation()
+    object AddLoss : StatOperation()
+    object AddKill : StatOperation()
+    object AddDeath : StatOperation()
+}
+
+@Serializable
+data class SpeciesForPopulation(val map: Map<Int, Int>, val generation: Int)
+
+data class PopulationScoreEntry(val scoreList: List<FullModel>, val generation: Int)
+
+@Serializable
+data class StreamStats(val wins: Int, val losses: Int, val kills: Int, val deaths: Int)
+class DashboardManager(val controllerId: Int, stats: StreamStats = StreamStats(0, 0, 0, 0)) {
+    var wins: Int = stats.wins
+    var losses: Int = stats.losses
+    var kills: Int = stats.kills
+    var deaths: Int = stats.deaths
+    var modelId: String = ""
+    val scores = mutableListOf<PopulationScoreEntry>()
+    var scoreMap = mapOf<String, FullModel>()
+    fun statsFrame() = StreamStats(wins, losses, kills, deaths)
+}
+
+@Serializable
+data class ActiveModelId(val id: String)
+
+@Serializable
+object NoData
+
+@Serializable
+data class FullModel(val neatModel: NeatModel, val id: String, val species: Int, val score: Float, val generation: Int)
 
 
 suspend fun <T, R> Iterable<T>.mapParallel(transform: (T) -> R): List<R> = coroutineScope {
@@ -316,27 +444,29 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val shFunction = shFunction(.34f)
 
 
-    val (simpleNeatExperiment, population) = if (loadModels) {
-        val populationModel = loadPopulation(File("population/${controllerId}_population.json"))
+    val (simpleNeatExperiment, population, manifest) = if (loadModels) {
+        val json = Json {}
+        val manifest = json.decodeFromStream<Manifest>(File("population/manifest.json").inputStream())
+        val populationModel = loadPopulation(File("population/${controllerId}_population.json"), json)
         val models = populationModel.models
         logger.info { "population loaded with size of: ${models.size}" }
         val maxInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
         val maxNodeInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
         val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions,
-            addConnectionAttempts
+            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions, addConnectionAttempts
         )
         val population = models.map { it.toNeatMutator() }
-        simpleNeatExperiment to population
+        SimulationStart(simpleNeatExperiment, population, manifest)
     } else {
         val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts)
         val population = simpleNeatExperiment.generateInitialPopulation2(
-            populationSize,
-            6,
-            2,
-            Activation.CPPN.functions
+            populationSize, 6, 2, Activation.CPPN.functions
         )
-        simpleNeatExperiment to population
+        SimulationStart(
+            simpleNeatExperiment,
+            population,
+            Manifest(0, SpeciesScoreKeeperModel(mapOf()), SpeciesLineageModel(mapOf()))
+        )
     }
 
     val compatibilityDistanceFunction = compatibilityDistanceFunction(2f, 2f, 1f)
@@ -345,6 +475,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     }, { a, b ->
         cppnGeneRuler.measure(a, b)
     })
+    val speciesId = (manifest.scoreLineageModel.speciesMap.keys.maxOrNull() ?: -1) + 1
     return simulation(
         standardCompatibilityTest,
         controllerId,
@@ -354,10 +485,11 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         sharingFunction = {
             shFunction(it)
         },
-        speciationController = SpeciationController(0),
+        speciationController = SpeciationController(speciesId),
         simpleNeatExperiment = simpleNeatExperiment,
-        population = population,
-        generation = 0//if (controllerId == 0) 11612 else 11547
+        population = population.map { it.clone(UUID.randomUUID()) },
+        generation = manifest.generation,
+        manifest = manifest
     )
 }
 
@@ -366,12 +498,11 @@ fun Float.squared() = this * this
 
 fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
 
+data class SimulationStart(
+    val neatExperiment: NeatExperiment, val population: List<NeatMutator>, val manifest: Manifest
+)
 
 @Serializable
 enum class Character {
-    Pikachu, Link, Bowser, CaptainFalcon, DonkeyKong, DoctorMario,
-    Falco, Fox, GameAndWatch, GannonDorf,
-    JigglyPuff, Kirby, Luigi, Mario, Marth, MewTwo, Nana,
-    Ness, Peach, Pichu, Popo,
-    Roy, Samus, Sheik, YoungLink, Yoshi, Zelda
+    Pikachu, Link, Bowser, CaptainFalcon, DonkeyKong, DoctorMario, Falco, Fox, GameAndWatch, GannonDorf, JigglyPuff, Kirby, Luigi, Mario, Marth, MewTwo, Nana, Ness, Peach, Pichu, Popo, Roy, Samus, Sheik, YoungLink, Yoshi, Zelda
 }

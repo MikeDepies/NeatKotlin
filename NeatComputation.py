@@ -343,7 +343,7 @@ def create_layer_computation_instructions(neat_model: NeatModel) -> List[LayerCo
 def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List[NetworkNode], List[NetworkNode], List[LayerComputationInstruction]]:
     output_nodes_list = output_nodes(neat_model)
     node_map = node_dict(neat_model.nodes)
-    activation_set : 'List[NodeGeneModel]'= list()
+    # activation_set : 'List[NodeGeneModel]'= list()
     input_nodes_list = input_nodes(neat_model)
     active_set = output_nodes_list
     network_node_map = create_network_node_map(neat_model.nodes)
@@ -373,9 +373,9 @@ def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List
             map(lambda n: network_node_map[n.node], captured_set))
         layer_computation_instructions.append(LayerComputationInstruction(
             layer_network_nodes, weight_computation_instruction_set))
-        activation_set.extend(active_set)
+        # activation_set.extend(active_set)
         active_set = list(
-            filter(lambda n: True, next_nodes_to(connections, node_map)))
+            next_nodes_to(connections, node_map))
     input_network_nodes = list(
         map(lambda n: network_node_map[n.node], input_nodes_list))
     output_network_nodes = list(

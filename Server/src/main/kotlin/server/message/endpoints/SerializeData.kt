@@ -8,6 +8,7 @@ import neat.model.NodeGene
 import neat.model.NodeType
 import neat.model.NodeType.*
 import server.toNeatMutator
+import java.util.UUID
 
 @Serializable
 enum class NodeTypeModel {
@@ -15,7 +16,7 @@ enum class NodeTypeModel {
 }
 
 @Serializable
-data class NeatModel(val nodes: List<NodeGeneModel>, val connections: List<ConnectionGeneModel>)
+data class NeatModel(val uuid : String, val nodes: List<NodeGeneModel>, val connections: List<ConnectionGeneModel>)
 
 @Serializable
 data class NodeGeneModel(val node: Int, val bias : Float, val nodeType: NodeTypeModel, val activationFunction: String)
@@ -33,7 +34,7 @@ data class ConnectionGeneModel(
 data class PopulationModel(val models: List<NeatModel>)
 
 fun List<NeatMutator>.toModel() = map { it.toModel() }
-fun NeatMutator.toModel() = NeatModel(nodes.map { it.toModel() }, connections.map { it.toModel() })
+fun NeatMutator.toModel() = NeatModel(this.id.toString(), nodes.map { it.toModel() }, connections.map { it.toModel() })
 fun ConnectionGene.toModel() = ConnectionGeneModel(inNode, outNode, weight, enabled, innovation)
 fun NodeGene.toModel() = NodeGeneModel(node, bias, nodeType.toModel(), activationFunction.name)
 fun NodeType.toModel() = when (this) {

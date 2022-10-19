@@ -1,6 +1,7 @@
 package neat
 
 import neat.model.*
+import java.util.*
 import kotlin.random.Random
 
 /**
@@ -13,7 +14,7 @@ interface NeatExperiment {
     fun mutateAddConnection(neatMutator: NeatMutator)
     fun mutateAddNode(neatMutator: NeatMutator)
     fun nextInnovation(): Int
-    fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>): NeatMutator
+    fun crossover(parent1: FitnessModel<NeatMutator>, parent2: FitnessModel<NeatMutator>, uuid: UUID): NeatMutator
     fun nextNode(): Int
 }
 
@@ -22,9 +23,10 @@ fun NeatExperiment.createNeatMutator(
     inputNumber: Int,
     outputNumber: Int,
     random: Random = Random,
-    function: ActivationGene = Activation.identity
+    function: ActivationGene = Activation.identity,
+    uuid: UUID
 ): NeatMutator {
-    val simpleNeatMutator = simpleNeatMutator(listOf(), listOf())
+    val simpleNeatMutator = simpleNeatMutator(listOf(), listOf(), uuid)
     createNodes(inputNumber, 0f, NodeType.Input, Activation.identity, simpleNeatMutator)
     createNodes(outputNumber, randomWeight(random), NodeType.Output, function, simpleNeatMutator)
     connectNodes(simpleNeatMutator)

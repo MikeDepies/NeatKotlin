@@ -2,17 +2,16 @@ package setup
 
 import neat.*
 import neat.model.NeatMutator
-import neat.model.NodeGene
-import neat.model.NodeType
 import neat.model.neatMutator
-import kotlin.random.*
+import java.util.*
+import kotlin.random.Random
 
 fun initializeCyclicConnectionsNeatModel(
     random: Random,
     outputActivation: ActivationGene = Activation.identity,
     hiddenActivation: ActivationGene = Activation.identity
 ): NeatMutator {
-    return neatMutator(1, 1, random, function = outputActivation).apply {
+    return neatMutator(1, 1, random, function = outputActivation, UUID.randomUUID()).apply {
 //        val nodeGene = NodeGene(2, NodeType.Hidden, hiddenActivation)
 //        addNode(nodeGene)
 //        addConnection(
@@ -34,7 +33,7 @@ fun initializeCyclicConnectionsNeatModel(
 }
 
 fun initializeNeatModel(random: Random): NeatMutator {
-    return neatMutator(1, 1, random).apply {
+    return neatMutator(1, 1, random, uuid = UUID.randomUUID()).apply {
 //        val node = NodeGene(2, NodeType.Hidden, Activation.identity)
 //        val node2 = NodeGene(3, NodeType.Hidden, Activation.identity)
 //        addNode(node)

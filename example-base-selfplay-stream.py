@@ -12,13 +12,14 @@ import signal
 import sys
 import time
 from typing import List
-from httpx import ReadTimeout
+from httpx import ReadTimeout, get
 
 import melee
 import numpy as np
 import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
 from ComputableNetwork import ComputableNetwork
+from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
 from ControllerHelper import ControllerHelper
 from DashHelper import DashHelper
 from Evaluator import Evaluator
@@ -251,10 +252,12 @@ class ModelHandler:
     controller: melee.Controller
     controller_helper : ControllerHelper
     queue : mp.Queue
+    evaluator_configuration: EvaluatorConfiguration
     
-    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue) -> None:
+    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue, evaluator_configuration: EvaluatorConfiguration) -> None:
         self.network = None
-        self.evaluator = Evaluator(model_index, opponent_index, 5, 10, 7 , None)
+        self.evaluator = Evaluator(model_index, opponent_index, evaluator_configuration.attack_time,
+                                   evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
         self.ai_controller_id = ai_controller_id
         self.model_index = model_index
         self.opponent_index = opponent_index
@@ -264,6 +267,7 @@ class ModelHandler:
         self.model_id = ""    
         self.queue = queue
         self.dash_helper = DashHelper(ai_controller_id)
+        self.evaluator_configuration = evaluator_configuration
 
     def evaluate(self, game_state : melee.GameState):
         player0: PlayerState = game_state.players[self.model_index]
@@ -298,20 +302,21 @@ class ModelHandler:
             self.model_id, self.network = self.queue.get()
             mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
             print("creating new evaluator")
-            self.evaluator = Evaluator(self.model_index, self.opponent_index, 10, 120, 12, None)
+            self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
+                                       self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
 
 
-def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue):
+def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configuration):
     console, controller, controller_opponent, args, log = startConsole()
     player_index = args.port
     opponent_index = args.opponent
     
     ai_controller_id = 0
     ai_controller_id2 = 1
-    
+    hand_counter = 0
     
     controller_helper = ControllerHelper()
-    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1)
+    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator)
     # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
     while True:
         game_state = console.step()
@@ -320,7 +325,7 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue):
             continue
         
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-
+            hand_counter = 0
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
@@ -334,28 +339,36 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue):
                 controller.release_all()
                 controller.flush()
         else:
-            melee.MenuHelper.menu_helper_simple(game_state,
+            hand_counter +=1
+            if hand_counter < 200:
+                melee.MenuHelper.menu_helper_simple(game_state,
                                                     controller,
-                                                    melee.Character.MARIO,
-                                                    melee.Stage.FINAL_DESTINATION,
+                                                    configuration.player_1.character,
+                                                    configuration.stage,
                                                     args.connect_code,
                                                     costume=0,
                                                     autostart=False,
                                                     swag=False,
-                                                    cpu_level=0)            
-            # if game_state.players and game_state.players[player_index].character == melee.Character.MARIO:
-            if game_state.players:
-                player : melee.PlayerState = game_state.players[player_index]
-                if player and player.cpu_level == 0 and player.character == melee.Character.MARIO:
-                    melee.MenuHelper.menu_helper_simple(game_state,
-                                            controller_opponent,
-                                            melee.Character.FOX,
-                                            melee.Stage.FINAL_DESTINATION,
-                                            args.connect_code,
-                                            costume=0,
-                                            autostart=True,
-                                            swag=False,
-                                            cpu_level=5)
+                                                    cpu_level=configuration.player_1.cpu_level)
+                # if game_state.players and game_state.players[player_index].character == melee.Character.MARIO:
+                if game_state.players:
+                    player: melee.PlayerState = game_state.players[player_index]
+                    if player and player.cpu_level == configuration.player_1.cpu_level and player.character == configuration.player_1.character:
+                        melee.MenuHelper.menu_helper_simple(game_state,
+                                                            controller_opponent,
+                                                            configuration.player_2.character,
+                                                            configuration.stage,
+                                                            args.connect_code,
+                                                            costume=0,
+                                                            autostart=True,
+                                                            swag=False,
+                                                            cpu_level=configuration.player_2.cpu_level)
+            elif hand_counter < 400:
+                controller_opponent.tilt_analog(melee.Button.BUTTON_MAIN, 0, 0)
+            else:
+                hand_counter = 0
+
+                
 
 def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, controller_index: int):
     host = "localhost"
@@ -382,12 +395,14 @@ if __name__ == '__main__':
     # host = "localhost"
     # port = 8095
     process_num = 1
-    
+    r = get("http://localhost:8091/configuration")
+    data = r.json()
+    configuration = processConfiguration(data)
     processes: List[mp.Process] = []
-    queue_1 = mgr.Queue(process_num * 2)
+    queue_1 = mgr.Queue(process_num)
     queue_2 = mgr.Queue(process_num * 2)
     for i in range(process_num):
-        p = mp.Process(target=console_loop, args=(queue_1, queue_2))
+        p = mp.Process(target=console_loop, args=(queue_1, queue_2, configuration))
         processes.append(p)
         p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))

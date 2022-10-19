@@ -16,9 +16,13 @@ data class ModelEvaluationResult(val controllerId: Int, val modelId: String, val
 data class ModelRequest(val controllerId: Int, val modelId: String)
 
 
+
 @Serializable
 data class ModelsRequest(val controllerId: Int)
 
+
+@Serializable
+data class ModelsRequestFromGeneration(val controllerId: Int, val generation : Int)
 //sealed class ModelStatus
 @Serializable
 data class ModelStatus(var available : Boolean, var score: Float?, var neatMutator : NeatMutator?)

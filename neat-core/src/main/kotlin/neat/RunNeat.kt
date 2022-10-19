@@ -2,6 +2,7 @@ package neat
 
 import neat.model.NeatMutator
 import neat.mutation.*
+import java.util.*
 
 fun mutationDictionary(): List<MutationEntry> {
     return listOf(
@@ -85,9 +86,9 @@ fun adjustedFitnessCalculation(
 fun NeatExperiment.generateInitialPopulation(
     populationSize: Int, numberOfInputNodes: Int, numberOfOutputNodes: Int, function: ActivationGene
 ): List<NeatMutator> {
-    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, function)
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, function, UUID.randomUUID())
     return (0 until populationSize).map {
-        val clone = neatMutator.clone()
+        val clone = neatMutator.clone(UUID.randomUUID())
         getMutateConnections(1f)(this, clone)
         clone
     }

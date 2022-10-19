@@ -3,9 +3,9 @@ package setup
 import io.mockk.*
 import neat.Activation
 import neat.model.neatMutator
-import neat.SigmoidalTransferFunction
 import neat.toNetwork
-import kotlin.random.*
+import java.util.*
+import kotlin.random.Random
 import kotlin.test.*
 
 class EvaluationTest {
@@ -35,7 +35,7 @@ class EvaluationTest {
         val expected = listOf(1f)
         val random = mockk<Random>()
         every { random.nextFloat() } returnsMany listOf(1f, 1f)
-        val network = neatMutator(1, 1, random).toNetwork()
+        val network = neatMutator(1, 1, random, uuid = UUID.randomUUID()).toNetwork()
         val input = listOf(1f)
         network.evaluate(input)
         val result = network.output()
@@ -48,7 +48,7 @@ class EvaluationTest {
         val expected = listOf(.1f)
         val random = mockk<Random>()
         every { random.nextFloat() } returnsMany listOf(.1f)
-        val network = neatMutator(1, 1, random).toNetwork()
+        val network = neatMutator(1, 1, random, uuid = UUID.randomUUID()).toNetwork()
         val input = listOf(1f)
         network.evaluate(input)
         val result = network.output()
@@ -61,7 +61,7 @@ class EvaluationTest {
         val expected = listOf(.5f)
         val random = mockk<Random>()
         every { random.nextFloat() } returnsMany listOf(.1f)
-        val network = neatMutator(1, 1, random, Activation.sigmoidal).toNetwork()
+        val network = neatMutator(1, 1, random, Activation.sigmoidal, UUID.randomUUID()).toNetwork()
         val input = listOf(0f)
         network.evaluate(input)
         val result = network.output()
@@ -77,7 +77,7 @@ class EvaluationTest {
 //        b.nextFloat()
 
 //        every { neat.random.nextFloat() } returnsMany listOf(.3f, .6f)
-        val network = neatMutator(1, 1, b).toNetwork()
+        val network = neatMutator(1, 1, b, uuid = UUID.randomUUID()).toNetwork()
         val input = listOf(2f)
         network.evaluate(input)
         val result = network.output()

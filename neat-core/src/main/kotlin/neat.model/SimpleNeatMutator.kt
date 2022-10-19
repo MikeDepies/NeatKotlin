@@ -1,19 +1,22 @@
 package neat.model
 
 import neat.toMap
+import java.util.*
 
-fun simpleNeatMutator(nodes: List<NodeGene>, connections: List<ConnectionGene>): NeatMutator {
+fun simpleNeatMutator(nodes: List<NodeGene>, connections: List<ConnectionGene>, uuid: UUID): NeatMutator {
 //    return neat.model.SimpleNeatMutator(nodes.toMutableList(), connections.toMutableList())
     return SimpleNeatMutator2(
         nodes.toMap { it.node }.toMutableMap(),
-        connections.toMap { it.innovation }.toMutableMap()
+        connections.toMap { it.innovation }.toMutableMap(),
+        uuid
     )
 }
 
 
 data class SimpleNeatMutator2(
     val nodeMap: MutableMap<Int, NodeGene>,
-    val connectionMap: MutableMap<Int, ConnectionGene>
+    val connectionMap: MutableMap<Int, ConnectionGene>,
+    override val id : UUID
 ) : NeatMutator {
     override val connections: List<ConnectionGene>
         get() = connectionMap.values.toList()
@@ -25,12 +28,11 @@ data class SimpleNeatMutator2(
         connectionMap.clear()
         connectionMap.putAll(newConnectionMap)
     }
-    override fun clone(): NeatMutator {
+    override fun clone(uuid: UUID): NeatMutator {
         return copy(
             nodeMap = nodeMap.values.map { it.copy() }.toMap { it.node }.toMutableMap(),
-            connectionMap = connectionMap.values.map { it.copy() }.toMap { it.innovation }.toMutableMap()
-//            nodes = nodes.map { it.copy() }.toMutableList(),
-//            connections = connections.map { it.copy() }.toMutableList()
+            connectionMap = connectionMap.values.map { it.copy() }.toMap { it.innovation }.toMutableMap(),
+            id = uuid
         )
     }
 
