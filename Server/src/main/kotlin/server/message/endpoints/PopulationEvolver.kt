@@ -44,7 +44,7 @@ class PopulationEvolver(
             mateChance = .7f,
             survivalThreshold = .3f,
             speciesScoreKeeper = scoreKeeper,
-            stagnation = 400,
+            stagnation = 40,
             championThreshold = 5
         )
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation, generation)

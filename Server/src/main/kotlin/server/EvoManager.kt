@@ -56,16 +56,16 @@ class EvoManager(
 
         launch(Dispatchers.Default) {
             for (it in scoreChannel) {
-//                val objectiveScore = modelEvaluationResult.score.totalDamageDone + modelEvaluationResult.score.kills.size * 40
+                val objectiveScore = it.score.totalDamageDone / 1000 + it.score.kills.size * .5
 //                log.info { "new score recieved" }
-                val behaviorScore = max(
+                val behaviorScore = objectiveScore.toFloat()/*max(
                     0f, scoreBehavior(
                         knnNoveltyArchive, it
-                    ) + /*objectiveScore  +*/ if (it.score.playerDied) 0f else 0f
+                    ) + *//*objectiveScore  +*//* if (it.score.playerDied) 0f else 0f
                 )
                 while (knnNoveltyArchive.behaviors.size > 100_000) {
                     knnNoveltyArchive.behaviors.removeAt(0)
-                }
+                }*/
                 val uuid = UUID.fromString(it.modelId)
                 val networkWithId = mapIndexed[uuid]
                 val model = networkWithId

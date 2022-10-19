@@ -82,11 +82,11 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
 
-    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(0)
+//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(0)
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
     fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
-        simulationFor(controllerId, populationSize, true)
+        simulationFor(controllerId, populationSize, false)
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
@@ -96,7 +96,7 @@ fun Application.module() {
     val knnNoveltyArchive2 = knnNoveltyArchive(
         40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
-    knnNoveltyArchive.behaviors.addAll(a)
+//    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize)
     val evoManager =
@@ -152,10 +152,10 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(4, 60, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Mario, 0),
+        ControllerConfiguration(Character.CaptainFalcon, 0),
         ControllerConfiguration(Character.Fox, 5),
         MeleeStage.FinalDestination
     )

@@ -203,7 +203,7 @@ fun simulation(
         )
 
 
-    val speciate = speciationController.speciate(population, speciesLineage, 0, standardCompatibilityTest)
+    val speciate = speciationController.speciate(population, speciesLineage, generation, standardCompatibilityTest)
 
     return Simulation(
         population,
