@@ -143,7 +143,7 @@ class Evaluator:
         # if self.player_died:
         #     print("player " + str(self.player_index) + " died.")
         
-        return player.stock == 0 #attack_timer_elapsed or max_timer_elapsed or self.player_died
+        return self.player_died #player.stock == 0 #attack_timer_elapsed or max_timer_elapsed or self.player_died
 
     def storeFrameData(self, game_state: GameState) -> None:
         player: PlayerState = game_state.players[self.player_index]
@@ -219,8 +219,7 @@ class Evaluator:
                 self.frames_without_damage = 0
                 self.knocked_off_stage = False
                 self.damage_since_recovery = False
-                if (len(self.recovery_actions) > 0):
-                    self.recovery_actions_set.append(self.recovery_actions)
+                self.recovery_actions_set.append(self.recovery_actions)
                 self.recovery_actions = []
             opponent_knockback_combined_speed = abs(
                 opponent.speed_x_attack) + abs(opponent.speed_y_attack)

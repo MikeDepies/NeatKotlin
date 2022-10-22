@@ -82,11 +82,11 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
 
-//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(0)
+    val a = actionBehaviors("population/0_noveltyArchive.json")
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
-    fun simulationForController(controllerId: Int, populationSize: Int): Simulation =
-        simulationFor(controllerId, populationSize, false)
+    fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
+        simulationFor(controllerId, populationSize, load)
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
@@ -96,9 +96,9 @@ fun Application.module() {
     val knnNoveltyArchive2 = knnNoveltyArchive(
         40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
-//    knnNoveltyArchive.behaviors.addAll(a)
+    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
-    val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize)
+    val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize, true)
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
     logger.info { initialPopulation.distinctBy { it.id }.size }
@@ -156,7 +156,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.Fox, 5),
+        ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -353,12 +353,13 @@ private fun Application.routing(
                 val speciesForPopulationList =
                     mutableListOf(SpeciesForPopulation(species, evoManager.populationEvolver.generation))
                 if (modelsRequest.generation < evoManager.populationEvolver.generation) {
-                    val historicalSpeciesPopulations = dashboard.scores.filter { it.generation >= modelsRequest.generation }.map {
-                        SpeciesForPopulation(
-                            it.scoreList.groupBy(keySelector = { it.species }).mapValues { it.value.size },
-                            it.generation
-                        )
-                    }
+                    val historicalSpeciesPopulations =
+                        dashboard.scores.filter { it.generation >= modelsRequest.generation }.map {
+                            SpeciesForPopulation(
+                                it.scoreList.groupBy(keySelector = { it.species }).mapValues { it.value.size },
+                                it.generation
+                            )
+                        }
                     speciesForPopulationList.addAll(historicalSpeciesPopulations)
                 }
                 call.respond(speciesForPopulationList)
@@ -411,12 +412,12 @@ suspend fun <T, R> Iterable<T>.mapParallel(transform: (T) -> R): List<R> = corou
 private fun behaviorMeasure(
     sequenceSeparator: Char = 2000.toChar(),
     actionMultiplier: Float = 1f,
-    killMultiplier: Float = 10f,
+    killMultiplier: Float = 50f,
     damageMultiplier: Float = 2f,
     recoveryMultiplier: Float = 5f
 ) = { a: ActionBehavior, b: ActionBehavior ->
-    val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
-    val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
+//    val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
+//    val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
     val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
     val lhs = a.recovery.joinToString("$sequenceSeparator") { it.actionString() }
     val rhs = b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
@@ -425,10 +426,33 @@ private fun behaviorMeasure(
         lhs, rhs
     )
     sqrt(
-        allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
-            .squared() + damageDistance.times(
+        /*allActionDistance.times(actionMultiplier).squared()*/ killsDistance.times(killMultiplier)
+            .squared() + /*damageDistance.times(
             damageMultiplier
-        ).squared() + recoveryDistance.times(recoveryMultiplier).squared().toFloat()
+        ).squared()*/ +recoveryDistance.times(recoveryMultiplier).squared()
+            .toFloat() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(20)
+            .squared() + (a.totalDamageDone - b.totalDamageDone).div(10)
+            .squared() + (a.allActions.size - b.allActions.size).squared()
+    )
+}
+
+
+private fun behaviorMeasure2(
+    sequenceSeparator: Char = 2000.toChar(),
+    actionMultiplier: Float = 1f,
+    killMultiplier: Float = 50f,
+    damageMultiplier: Float = 2f,
+    recoveryMultiplier: Float = 5f
+) = { a: ActionSumBehavior, b: ActionSumBehavior ->
+//    val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
+//    val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
+    val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
+
+    sqrt(
+        killsDistance.times(killMultiplier)
+            .squared() + (a.recoveryCount - b.recoveryCount).times(recoveryMultiplier).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(20)
+        .squared() + (a.totalDamageDone - b.totalDamageDone).div(10)
+        .squared() + (a.allActionsCount - b.allActionsCount).squared()
     )
 }
 
@@ -441,7 +465,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 123 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.34f)
+    val shFunction = shFunction(.24f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

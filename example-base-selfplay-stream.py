@@ -276,6 +276,7 @@ class ModelHandler:
         if self.evaluator.previous_frame:
             if self.evaluator.player_lost_stock(game_state):
                 mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
+                self.network = None
             if self.evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
                 mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
             

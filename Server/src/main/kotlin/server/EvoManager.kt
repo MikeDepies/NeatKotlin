@@ -56,16 +56,16 @@ class EvoManager(
 
         launch(Dispatchers.Default) {
             for (it in scoreChannel) {
-                val objectiveScore = it.score.totalDamageDone / 1000 + it.score.kills.size * .5
+//                val objectiveScore = it.score.totalDamageDone / 1000 + it.score.kills.size * .5
 //                log.info { "new score recieved" }
-                val behaviorScore = objectiveScore.toFloat()/*max(
+                val behaviorScore = max(
                     0f, scoreBehavior(
                         knnNoveltyArchive, it
-                    ) + *//*objectiveScore  +*//* if (it.score.playerDied) 0f else 0f
+                    )
                 )
                 while (knnNoveltyArchive.behaviors.size > 100_000) {
                     knnNoveltyArchive.behaviors.removeAt(0)
-                }*/
+                }
                 val uuid = UUID.fromString(it.modelId)
                 val networkWithId = mapIndexed[uuid]
                 val model = networkWithId
@@ -197,6 +197,21 @@ class EvoManager(
         }
 
         else -> knnNoveltyArchive.addBehavior(it.score)
+    }
+
+    private fun scoreAllBehavior(
+        knnNoveltyArchive: KNNNoveltyArchive<ActionSumBehavior>, it: ModelEvaluationResult
+    ): Float {
+
+        val behavior = it.score.let { ActionSumBehavior(it.allActions.size, it.recovery.size, it.kills, it.totalDamageDone, it.totalDistanceTowardOpponent, it.playerDied) }
+        return when {
+            knnNoveltyArchive.size < 1 -> {
+                knnNoveltyArchive.addBehavior(behavior)
+                behavior.allActionsCount.toFloat()
+            }
+
+            else -> knnNoveltyArchive.addBehavior(behavior)
+        }
     }
 
 }

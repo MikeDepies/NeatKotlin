@@ -1,6 +1,7 @@
 package neat
 
 import neat.model.NeatMutator
+import java.util.UUID
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -9,10 +10,10 @@ import kotlin.math.roundToInt
 class SpeciationController(
     private var speciesId: Int
 ) {
-    private val neatMutatorToSpeciesMap = mutableMapOf<NeatMutator, Species>()
+    private val neatMutatorToSpeciesMap = mutableMapOf<UUID, Species>()
     private val speciesMap = mutableMapOf<Species, MutableList<NeatMutator>>()
     private fun nextSpecies(): Species = Species(speciesId++)
-    fun hasSpeciesFor(neatMutator: NeatMutator) = neatMutatorToSpeciesMap.containsKey(neatMutator)
+    fun hasSpeciesFor(neatMutator: NeatMutator) = neatMutatorToSpeciesMap.containsKey(neatMutator.id)
     fun speciate(
         population: List<NeatMutator>,
         speciesLineage: SpeciesLineage,
@@ -43,7 +44,7 @@ class SpeciationController(
     ): Species {
         val speciesSet = speciesMap.getValue(species)
         speciesSet += neatMutator
-        neatMutatorToSpeciesMap[neatMutator] = species
+        neatMutatorToSpeciesMap[neatMutator.id] = species
         return species
     }
 
@@ -55,7 +56,7 @@ class SpeciationController(
         }
     }
 
-    fun species(neatMutator: NeatMutator) = neatMutatorToSpeciesMap.getValue(neatMutator)
+    fun species(neatMutator: NeatMutator) = neatMutatorToSpeciesMap.getValue(neatMutator.id)
     fun population(): List<NeatMutator> {
         return speciesMap.values.flatten()
     }
