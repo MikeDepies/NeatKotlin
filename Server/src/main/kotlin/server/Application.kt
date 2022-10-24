@@ -91,10 +91,10 @@ fun Application.module() {
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         10,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 50f, recoveryMultiplier = 5f)
+        behaviorMeasure2(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 15f, recoveryMultiplier = 5f)
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
+        40, behaviorMeasure2(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
     knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
@@ -128,8 +128,8 @@ fun Application.module() {
     )
 }
 
-private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromString<List<ActionBehavior>>(
-    ListSerializer(ActionBehavior.serializer()),
+private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromString<List<ActionSumBehavior>>(
+    ListSerializer(ActionSumBehavior.serializer()),
     File(noveltyArchiveJson).bufferedReader().lineSequence().joinToString("")
 )
 
@@ -152,10 +152,10 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(4, 60, 12)
+    val evaluatorSettings = EvaluatorSettings(4, 60, 7)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.CaptainFalcon, 0),
+        ControllerConfiguration(Character.Marth, 0),
         ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination
     )
@@ -450,13 +450,13 @@ private fun behaviorMeasure2(
 
     sqrt(
         killsDistance.times(killMultiplier)
-            .squared() + (a.recoveryCount - b.recoveryCount).times(recoveryMultiplier).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(20)
+            .squared() + (a.recoveryCount - b.recoveryCount).times(recoveryMultiplier).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent)
         .squared() + (a.totalDamageDone - b.totalDamageDone).div(10)
         .squared() + (a.allActionsCount - b.allActionsCount).squared()
     )
 }
 
-private fun knnNoveltyArchive(k: Int, function: (ActionBehavior, ActionBehavior) -> Float) =
+private fun knnNoveltyArchive(k: Int, function: (ActionSumBehavior, ActionSumBehavior) -> Float) =
     KNNNoveltyArchive(k, 0f, behaviorDistanceMeasureFunction = function)
 
 
@@ -465,7 +465,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 123 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.24f)
+    val shFunction = shFunction(.34f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

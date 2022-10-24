@@ -343,15 +343,12 @@ def create_layer_computation_instructions(neat_model: NeatModel) -> List[LayerCo
 def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List[NetworkNode], List[NetworkNode], List[LayerComputationInstruction]]:
     output_nodes_list = output_nodes(neat_model)
     node_map = node_dict(neat_model.nodes)
-    # activation_set : 'List[NodeGeneModel]'= list()
     input_nodes_list = input_nodes(neat_model)
     active_set = output_nodes_list
     network_node_map = create_network_node_map(neat_model.nodes)
     layer_computation_instructions : 'List[LayerComputationInstruction]' = list()
     connections_processed : 'Set[int]'= set()
-    # print("=====")
-    # print(len(list(filter(lambda x: x.enabled, neat_model.connections))))
-    # print(list(map(lambda x: str(x.in_node) + " -> " + str(x.out_node), filter(lambda x: x.enabled, neat_model.connections))))
+    
     while len(active_set) > 0:
         captured_set = active_set
         connections = list(filter(
@@ -360,29 +357,19 @@ def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List
             connections_processed.add(c.innovation)
         weight_computation_instruction_set = list(map(lambda c: WeightComputationInstruction(
             network_node_map[c.in_node], network_node_map[c.out_node], c.weight), connections))
-        # print("-=-=-=-=")
-        # print(len(captured_set))
-        # print(list(map(lambda x: x.node, captured_set)))
-        # print(len(build_output_nodes(weight_computation_instruction_set)))
-        # print(list(map(lambda x: x.node, build_output_nodes(weight_computation_instruction_set))))
-        # print(list(map(lambda x: str(x.input_node.node) + " -> " +
-        #       str(x.output_node.node), weight_computation_instruction_set)))
-        # print(len(weight_computation_instruction_set))
-        # print("")
+        
         layer_network_nodes = list(
             map(lambda n: network_node_map[n.node], captured_set))
         layer_computation_instructions.append(LayerComputationInstruction(
             layer_network_nodes, weight_computation_instruction_set))
-        # activation_set.extend(active_set)
+        
         active_set = list(
             next_nodes_to(connections, node_map))
     input_network_nodes = list(
         map(lambda n: network_node_map[n.node], input_nodes_list))
     output_network_nodes = list(
         map(lambda n: network_node_map[n.node], output_nodes_list))
-    # layer_computation_instructions.append(LayerComputationInstruction(input_network_nodes, list()))
-    # print("connections in computation path: " + str(len(connections_processed)))
-    # print("nodes in computation path: " + str(len(activation_set)))
+    
     nodes_visited : 'Set[int]'= set()
     for lci in layer_computation_instructions:
         nodes_to_remove : 'List[NodeGeneModel]'= list()
@@ -433,6 +420,7 @@ class NeatComputer:
         index = 0
         for n in self.input_nodes:
             self.input_nodes[index].value = input[index]
+            self.input_nodes[index].activated_value = input[index]
             index += 1
 
         compute_instructions(self.layer_computations,
