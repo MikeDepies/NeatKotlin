@@ -304,40 +304,6 @@ def compute_nd_instructions(nd_layer_computations: List[NDLayerComputationInstru
                 nd_layer.nd_nodes[0, index, 0] = 0
 
 
-def create_layer_computation_instructions(neat_model: NeatModel) -> List[LayerComputationInstruction]:
-    output_nodes_list = output_nodes(neat_model)
-    node_map = node_dict(neat_model.nodes)
-    activation_set : 'List[NodeGeneModel]'= list()
-    active_set : 'List[NodeGeneModel]'= list(input_nodes(neat_model))
-    network_node_map = create_network_node_map(neat_model.nodes)
-    layer_computation_instructions  : 'List[LayerComputationInstruction]'= list()
-    while (len(activation_set) + len(output_nodes_list)) < len(neat_model.nodes) and len(active_set) > 0:
-        captured_set = active_set
-        connections = list(connections_from(captured_set, neat_model))
-        weight_computation_instruction_set = list(map(lambda c: WeightComputationInstruction(
-            network_node_map[c.in_node], network_node_map[c.out_node], c.weight), connections))
-        # print("-=-=-=-=")
-        # print(len(captured_set))
-        # print(list(map(lambda x: x.node, captured_set)))
-        # print(len(build_input_nodes(weight_computation_instruction_set)))
-        # print(list(map(lambda x: x.node, build_input_nodes(
-        #     weight_computation_instruction_set))))
-        # print(list(map(lambda x: str(x.input_node.node) + " -> " +
-        #       str(x.output_node.node), weight_computation_instruction_set)))
-        # print("")
-        layer_network_nodes = list(
-            map(lambda n: network_node_map[n.node], captured_set))
-        layer_computation_instructions.append(LayerComputationInstruction(
-            layer_network_nodes, weight_computation_instruction_set))
-        activation_set.extend(active_set)
-        active_set = list(
-            filter(lambda n: n not in activation_set, next_nodes(connections, node_map)))
-    output_network_nodes = list(
-        map(lambda n: network_node_map[n.node], output_nodes_list))
-    layer_computation_instructions.append(
-        LayerComputationInstruction(output_network_nodes, list()))
-    # print(network_node_map)
-    return layer_computation_instructions
 
 
 def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List[NetworkNode], List[NetworkNode], List[LayerComputationInstruction]]:
@@ -456,12 +422,13 @@ class HyperNeatBuilder:
     network_design: NetworkDesign
     network_computer: NeatComputer
 
-    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float) -> None:
+    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float, output_layer : str) -> None:
         self.network_design = network_design
         self.network_computer = network_computer
         self.hyper_shape = hyper_shape
         self.depth = depth
         self.connection_magnitude = connection_magnitude
+        self.output_layer = output_layer
 
     def compute_connections_between_layers(self, layer_source: LayerShape3D, layer_target: LayerShape3D):
         source_width = layer_source.layer_plane.width
@@ -548,6 +515,7 @@ class HyperNeatBuilder:
                     #     p.layer_plane.height, p.layer_plane.width,
                     # ])
         # print("number of connections in hyper_network: " + str(connection_count))
+        output_index = network_design.calculation_order.index(self.output_layer)
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map,
-                                 ndarray_map, connection_zindex_map, network_design.calculation_order)
+                                 ndarray_map, connection_zindex_map, network_design.calculation_order, output_index)

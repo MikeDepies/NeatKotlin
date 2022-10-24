@@ -28,7 +28,7 @@ class EvoManager(
     val adjustedFitness: AdjustedFitnessCalculation,
     val evaluationId: Int,
     val runFolder: File,
-    val knnNoveltyArchive: KNNNoveltyArchive<ActionSumBehavior>
+    val knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>
 ) {
     var evolutionInProgress = false
     var population: List<NeatMutator> = listOf()
@@ -59,7 +59,7 @@ class EvoManager(
 //                val objectiveScore = it.score.totalDamageDone / 1000 + it.score.kills.size * .5
 //                log.info { "new score recieved" }
                 val behaviorScore = max(
-                    0f, scoreAllBehavior(
+                    0f, scoreBehavior(
                         knnNoveltyArchive, it
                     )
                 )

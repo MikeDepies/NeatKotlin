@@ -33,7 +33,9 @@ import server.message.endpoints.NodeTypeModel.*
 import server.refactor.needed.EvaluationMessageProcessor
 import server.server.*
 import java.io.*
+import java.util.*
 import kotlin.random.*
+import kotlin.random.Random
 
 private val log = KotlinLogging.logger { }
 inline fun <reified T> Scope.getChannel(): Channel<T> =
@@ -126,7 +128,7 @@ fun NeatExperiment.createNeatMutator2(
     random: Random = Random,
     function: ActivationGene = Activation.identity
 ): NeatMutator {
-    val simpleNeatMutator = simpleNeatMutator(listOf(), listOf())
+    val simpleNeatMutator = simpleNeatMutator(listOf(), listOf(), UUID.randomUUID())
     createNodes(inputNumber, 0f, NodeType.Input, Activation.identity, simpleNeatMutator)
     createNodes(outputNumber, randomWeight(random), NodeType.Output, function, simpleNeatMutator)
     connectNodes2(simpleNeatMutator)
@@ -181,7 +183,7 @@ fun NeatExperiment.generateInitialPopulation2(
 //    neatMutator.addConnection(addConnectionNode(zNode.node, 6))
     val mutateBias = getMutateBiasConnections(1f, 5f, 2.5f)
     return (0 until populationSize).map {
-        val clone = neatMutator.clone()
+        val clone = neatMutator.clone(UUID.randomUUID())
         clone.connections.forEach { connectionGene ->
             assignConnectionRandomWeight(connectionGene)
         }
@@ -201,10 +203,10 @@ fun NeatExperiment.generateInitialPopulation(
     numberOfOutputNodes: Int,
     activationFunctions: List<ActivationGene>
 ): List<NeatMutator> {
-    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, activationFunctions.first())
+    val neatMutator = createNeatMutator(numberOfInputNodes, numberOfOutputNodes, random, activationFunctions.first(), UUID.randomUUID())
     val assignConnectionRandomWeight = assignConnectionRandomWeight()
     return (0 until populationSize).map {
-        val clone = neatMutator.clone()
+        val clone = neatMutator.clone(UUID.randomUUID())
         clone.connections.forEach { connectionGene ->
             assignConnectionRandomWeight(connectionGene)
         }
@@ -235,7 +237,7 @@ fun PopulationModel.neatMutatorList(): List<NeatMutator> {
     return this.models.map { it.toNeatMutator() }
 }
 
-fun NeatModel.toNeatMutator() = simpleNeatMutator(nodes.map { it.nodeGene() }, connections.map { it.connectionGene() })
+fun NeatModel.toNeatMutator() = simpleNeatMutator(nodes.map { it.nodeGene() }, connections.map { it.connectionGene() }, UUID.fromString(uuid))
 
 fun ConnectionGeneModel.connectionGene(): ConnectionGene {
     return ConnectionGene(inNode, outNode, weight, enabled, innovation)

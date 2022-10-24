@@ -122,13 +122,14 @@ class ComputableNetwork:
     def __init__(self, connection_plane_map: 'dict[str, LayerShape3D]',
                  connection_relationships_inverse: 'dict[str, list[str]]',
                  connection_map: 'dict[str, ndarray]', value_map: 'dict[str,ndarray]',
-                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]'):
+                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : int):
         self.connection_map = connection_map
         self.connection_plane_map = connection_plane_map
         self.connection_relationships_inverse = connection_relationships_inverse
         self.value_map = value_map
         self.connection_z_map = connection_z_map
         self.calculation_order = calculation_order
+        self.output_index = output_index
 
     def input(self, input: ndarray):
         self.inputNdArray = input
@@ -171,9 +172,9 @@ class ComputableNetwork:
                     #     print(self.value_map[c][..., 1])
 
     def output(self) -> ndarray:
-        return self.value_map[self.connection_z_map[4]][..., 1]
+        return self.value_map[self.connection_z_map[self.output_index+1]][..., 1]
     def outputUnActivated(self) -> ndarray:
-        return self.value_map[self.connection_z_map[4]][..., 0]
+        return self.value_map[self.connection_z_map[self.output_index+1]][..., 0]
 
 @dataclass
 class ComputableNetworkWithID:

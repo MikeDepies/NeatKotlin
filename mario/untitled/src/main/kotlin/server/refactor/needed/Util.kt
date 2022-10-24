@@ -20,13 +20,14 @@ import server.*
 import server.message.BroadcastMessage
 import server.message.TypedUserMessage
 import server.message.endpoints.*
+import java.util.*
 
 import kotlin.math.min
 import kotlin.streams.toList
 
 private val logger = KotlinLogging.logger {  }
-val minSpeices = 10
-val maxSpecies = 25
+val minSpeices = 5
+val maxSpecies = 15
 val speciesThresholdDelta = .2f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f, normalize = 1)
@@ -85,9 +86,9 @@ fun MarioDiscovery.toVector() = listOf(
 //    world.toFloat() * 30,
 //    (yPos.toFloat()) / 32,
 //    xPos.toFloat(),
-//    stageParts.toFloat(),
-    time.toFloat()
-//    (min(10f, time.toFloat() / stageParts) * stageParts),
+    stageParts.toFloat(),
+//    time.toFloat()
+    (min(10f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
 //    stage.toFloat() * 100f
@@ -107,7 +108,7 @@ fun evolve(
 //        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
 //    }
     while (newPopulation.size < populationSize) {
-        newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone()
+        newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone(UUID.randomUUID())
     }
     if (populationEvolver.speciationController.speciesSet.size < minSpeices) {
         if (speciesSharingDistance > speciesThresholdDelta) {

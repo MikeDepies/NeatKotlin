@@ -130,20 +130,20 @@ class Evaluator:
         player: PlayerState = game_state.players[self.player_index]
         opponent: PlayerState = game_state.players[self.opponent_index]
 
-        # player_on_stage = self.is_on_stage(game_state, player)
-        # opponent_on_stage = self.is_on_stage(
-        #     game_state, opponent) or opponent.action == melee.Action.EDGE_HANGING
-        # attack_timer_elapsed = self.frames_without_damage / \
-        #     60 > self.attack_timer and (not self.knocked and player_on_stage and opponent_on_stage)
-        # max_timer_elapsed = self.total_frames / 60 > self.max_timer
-        # if max_timer_elapsed:
-        #     print("max_timer_elapsed: " + str(self.total_frames) + " / 60 -> " + str(self.max_timer) )
-        # if attack_timer_elapsed:
-        #     print("attack_timer_elapsed: " + str(self.frames_without_damage) + " / 60 -> " + str(self.attack_timer) )
-        # if self.player_died:
-        #     print("player " + str(self.player_index) + " died.")
-        
-        return player.stock == 0 #attack_timer_elapsed or max_timer_elapsed or self.player_died
+        player_on_stage = self.is_on_stage(game_state, player)
+        opponent_on_stage = self.is_on_stage(
+            game_state, opponent) or opponent.action == melee.Action.EDGE_HANGING
+        attack_timer_elapsed = self.frames_without_damage / \
+            60 > self.attack_timer and (not self.knocked and player_on_stage and opponent_on_stage)
+        max_timer_elapsed = self.total_frames / 60 > self.max_timer
+        if max_timer_elapsed:
+            print("max_timer_elapsed: " + str(self.total_frames) + " / 60 -> " + str(self.max_timer) )
+        if attack_timer_elapsed:
+            print("attack_timer_elapsed: " + str(self.frames_without_damage) + " / 60 -> " + str(self.attack_timer) )
+        if self.player_died:
+            print("player " + str(self.player_index) + " died.")
+        #player.stock == 0 #
+        return attack_timer_elapsed or max_timer_elapsed or self.player_died
 
     def storeFrameData(self, game_state: GameState) -> None:
         player: PlayerState = game_state.players[self.player_index]

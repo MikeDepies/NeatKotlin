@@ -66,7 +66,7 @@ class GameEventHelper:
         return prev_info["life"] < info["life"]
 
     def stage_part_complete(self, info, stage_part_position: int):
-        return (info["x_pos"] / 256) > stage_part_position
+        return (info["x_pos"] / 32) > stage_part_position
 
 
 class GameEventCollector:
@@ -233,11 +233,11 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # print(output.shape)
         # print(action)
 
-        if action != last_action or action == 0:
-            framesSinceMaxXChange += max(0, 5 - same_action_counter)
-            same_action_counter = max(0, same_action_counter - .1)
-        else:
-            same_action_counter += .2
+        # if action != last_action or action == 0:
+        #     framesSinceMaxXChange += max(0, 5 - same_action_counter)
+        #     same_action_counter = max(0, same_action_counter - .1)
+        # else:
+        #     same_action_counter += .2
         last_action = action
         if render:
             env.render()
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 6
+    process_num = 5
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     

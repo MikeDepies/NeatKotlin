@@ -82,7 +82,7 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
 
-    val a = actionBehaviors("population/0_noveltyArchive.json")
+//    val a = actionBehaviors("population/0_noveltyArchive.json")
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
@@ -91,14 +91,14 @@ fun Application.module() {
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         10,
-        behaviorMeasure2(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 15f, recoveryMultiplier = 5f)
+        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 15f, recoveryMultiplier = 5f)
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        40, behaviorMeasure2(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
+        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
     )
-    knnNoveltyArchive.behaviors.addAll(a)
+//    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
-    val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize, true)
+    val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize, false)
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
     logger.info { initialPopulation.distinctBy { it.id }.size }
@@ -456,7 +456,7 @@ private fun behaviorMeasure2(
     )
 }
 
-private fun knnNoveltyArchive(k: Int, function: (ActionSumBehavior, ActionSumBehavior) -> Float) =
+private fun knnNoveltyArchive(k: Int, function: (ActionBehavior, ActionBehavior) -> Float) =
     KNNNoveltyArchive(k, 0f, behaviorDistanceMeasureFunction = function)
 
 

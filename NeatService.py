@@ -3,7 +3,7 @@ from httpx import post, get
 from dataclasses import dataclass
 from ComputableNetwork import ComputableNetworkWithID
 from HyperNeatDomain import HyperDimension3D, LayerPlane, LayerShape3D, NetworkDesign
-from NeatComputation import HyperNeatBuilder, NeatComputer, create_layer_computation_instructions, create_layer_computation_instructions_2
+from NeatComputation import HyperNeatBuilder, NeatComputer, create_layer_computation_instructions_2
 from NeatDomain import NeatModel, parse_neat_model
 
 
@@ -53,6 +53,7 @@ def process_model_data(data : Any) -> Tuple[str, HyperNeatBuilder]:
     connection_planes: list[LayerShape3D] = list(
         map(lambda c: mapC(c), data["connectionPlanes"]))
     neat_model_data = data["neatModel"]
+    output_layer_str = data["outputLayer"]
     
     neat_model = parse_neat_model(neat_model_data)
     # print(neat_model.nodes[6])
@@ -69,6 +70,6 @@ def process_model_data(data : Any) -> Tuple[str, HyperNeatBuilder]:
     hyper_shape = HyperDimension3D(-1, 1, -1, 1, -1, 1)
     depth = int(data["depth"])
     
-    hyper_neat_builder = HyperNeatBuilder(network_design, computer, hyper_shape, depth, 3)
+    hyper_neat_builder = HyperNeatBuilder(network_design, computer, hyper_shape, depth, 3, output_layer_str)
     
     return (id, hyper_neat_builder)
