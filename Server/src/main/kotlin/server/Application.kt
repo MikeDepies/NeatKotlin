@@ -100,7 +100,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10,
+        20,
         behaviorMeasurePreStringed(
             damageMultiplier = .1f,
             actionMultiplier = 1f,
@@ -116,7 +116,7 @@ fun Application.module() {
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = true
+        load = false
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
