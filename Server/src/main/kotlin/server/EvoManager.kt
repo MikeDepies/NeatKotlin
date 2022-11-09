@@ -30,7 +30,7 @@ class EvoManager(
     val adjustedFitness: AdjustedFitnessCalculation,
     val evaluationId: Int,
     val runFolder: File,
-    val knnNoveltyArchive: KNNNoveltyArchive<ActionStringedBehavior>
+    val knnNoveltyArchive: KNNNoveltyArchive<ActionBehaviorInt>
 ) {
     var evolutionInProgress = false
     var population: List<NeatMutator> = listOf()
@@ -205,15 +205,27 @@ class EvoManager(
         )
     }
 
+    fun intifyActionBehavior(it: ActionBehavior): ActionBehaviorInt {
+        return ActionBehaviorInt(
+            it.allActions,
+            it.recovery.flatten(),
+            it.kills,
+            it.damage,
+            it.totalDamageDone,
+            it.totalDistanceTowardOpponent,
+            it.playerDied
+        )
+    }
+
     private fun scoreBehavior(
-        knnNoveltyArchive: KNNNoveltyArchive<ActionStringedBehavior>, it: ModelEvaluationResult
+        knnNoveltyArchive: KNNNoveltyArchive<ActionBehaviorInt>, it: ModelEvaluationResult
     ) = when {
         knnNoveltyArchive.size < 1 -> {
-            knnNoveltyArchive.addBehavior(stringifyActionBehavior(it.score))
+            knnNoveltyArchive.addBehavior(intifyActionBehavior(it.score))
             it.score.allActions.size.toFloat()
         }
 
-        else -> sqrt(knnNoveltyArchive.addBehavior(stringifyActionBehavior(it.score)))
+        else -> sqrt(knnNoveltyArchive.addBehavior(intifyActionBehavior(it.score)))
     }
 
     private fun scoreAllBehavior(

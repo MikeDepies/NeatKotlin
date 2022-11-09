@@ -33,3 +33,14 @@ data class ActionSumBehavior(
     val totalDistanceTowardOpponent: Float,
     val playerDied: Boolean
 )
+
+@Serializable
+data class ActionBehaviorInt(
+    val allActions: List<Int>,
+    val recovery: List<Int>,
+    val kills: List<Int>,
+    val damage: List<Int>,
+    val totalDamageDone: Float,
+    val totalDistanceTowardOpponent: Float,
+    val playerDied: Boolean
+)

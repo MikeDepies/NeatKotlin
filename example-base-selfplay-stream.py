@@ -25,6 +25,7 @@ from DashHelper import DashHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
 from InputEmbederPacked import InputEmbederPacked
+from InputEmbederPacked2 import InputEmbederPacked2
 from ModelHelper import ModelHelper
 
 
@@ -179,7 +180,7 @@ class Session:
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
     positionNormalizer = 100.0
     actionNormalizer = 60.0
-    return InputEmbederPacked(player_index, opponent_index,
+    return InputEmbederPacked2(player_index, opponent_index,
                            positionNormalizer, actionNormalizer).embed_input(gamestate)
 
 # def create_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
@@ -282,7 +283,7 @@ class ModelHandler:
             
         if self.network is not None and self.evaluator is not None:    
             state = create_packed_state(game_state, self.model_index, self.opponent_index)
-            create_packed_state(game_state, self.model_index, self.opponent_index)
+            
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
         if player0 and player0.stock == 0 or player1 and player1.stock == 0:
