@@ -9,7 +9,7 @@ interface NoveltyArchive<BEHAVIOR> {
     val behaviors : List<BEHAVIOR>
 }
 
-class KNNNoveltyArchive<B>(var k: Int, var noveltyThreshold : Float, val behaviorFilter : (B, B) -> Boolean = {_,_ -> true}, val behaviorDistanceMeasureFunction: (B, B) -> Float) : NoveltyArchive<B> {
+class KNNNoveltyArchive<B>(var k: Int, var noveltyThreshold : Float, val behaviorFilter : (B, B) -> Boolean = {_,_ -> true}, inline val behaviorDistanceMeasureFunction: (B, B) -> Float) : NoveltyArchive<B> {
     override val behaviors = mutableListOf<B>()
     override val size: Int
         get() = behaviors.size
@@ -21,8 +21,8 @@ class KNNNoveltyArchive<B>(var k: Int, var noveltyThreshold : Float, val behavio
     }
 
     override fun measure(behavior: B): Float {
-
-        return behaviors.parallelStream().filter { behaviorFilter(behavior, it) }.map { behaviorDistanceMeasureFunction(behavior, it) }
+        
+        return behaviors.parallelStream().map { behaviorDistanceMeasureFunction(behavior, it) }
             .sorted().toList().take(k).average()
             .toFloat()
     }

@@ -19,6 +19,8 @@ import java.io.File
 import java.lang.Exception
 import java.lang.Float.max
 import java.util.*
+import kotlin.math.min
+import kotlin.math.sqrt
 
 private val log = KotlinLogging.logger { }
 
@@ -28,7 +30,7 @@ class EvoManager(
     val adjustedFitness: AdjustedFitnessCalculation,
     val evaluationId: Int,
     val runFolder: File,
-    val knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>
+    val knnNoveltyArchive: KNNNoveltyArchive<ActionStringedBehavior>
 ) {
     var evolutionInProgress = false
     var population: List<NeatMutator> = listOf()
@@ -58,18 +60,20 @@ class EvoManager(
             for (it in scoreChannel) {
 //                val objectiveScore = it.score.totalDamageDone / 1000 + it.score.kills.size * .5
 //                log.info { "new score recieved" }
-                val behaviorScore = max(
-                    0f, scoreBehavior(
-                        knnNoveltyArchive, it
-                    )
-                )
-                while (knnNoveltyArchive.behaviors.size > 100_000) {
-                    knnNoveltyArchive.behaviors.removeAt(0)
-                }
+
                 val uuid = UUID.fromString(it.modelId)
                 val networkWithId = mapIndexed[uuid]
                 val model = networkWithId
                 if (finishedScores[uuid] != true && model != null) {
+                    val scoredBehavior = scoreBehavior(
+                        knnNoveltyArchive, it
+                    )
+                    val behaviorScore = max(
+                        0f, scoredBehavior
+                    ) + if (!it.score.playerDied) min(scoredBehavior/ 2, 200f) else 0f
+                    while (knnNoveltyArchive.behaviors.size > 100_000) {
+                        knnNoveltyArchive.behaviors.removeAt(0)
+                    }
                     log.info { "$it" }
                     scores += FitnessModel(model, behaviorScore)
                     finishedScores[uuid] = true
@@ -85,15 +89,15 @@ class EvoManager(
 //                    scores.map {
 //                        FullModel(it.model.toModel(), it.)
 //                    }
-//                    populationScoresChannel.send(PopulationScoreEntry(scores.map {
-//                        FullModel(
-//                            it.model.toModel(),
-//                            it.model.id.toString(),
-//                            populationEvolver.speciationController.species(it.model).id,
-//                            it.score,
-//                            populationEvolver.generation
-//                        )
-//                    }, populationEvolver.generation))
+                    populationScoresChannel.send(PopulationScoreEntry(scores.map {
+                        FullModel(
+                            it.model.toModel(),
+                            it.model.id.toString(),
+                            populationEvolver.speciationController.species(it.model).id,
+                            it.score,
+                            populationEvolver.generation
+                        )
+                    }, populationEvolver.generation))
                     processPopulation(populationEvolver)
                     log.info { "Finished Evolution" }
                     population.forEach {
@@ -141,10 +145,10 @@ class EvoManager(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-//    populationEvolver.speciationController.speciesSet.forEach { species ->
-//        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-//        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
-//    }
+        populationEvolver.speciationController.speciesSet.forEach { species ->
+            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+            populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
+        }
 
         while (newPopulation.size < populationSize) {
             newPopulation =
@@ -188,22 +192,44 @@ class EvoManager(
 
     }
 
+    val sequenceSeparator = 2000.toChar()
+    fun stringifyActionBehavior(it: ActionBehavior): ActionStringedBehavior {
+        return ActionStringedBehavior(
+            it.allActions.actionString(),
+            it.recovery.joinToString("$sequenceSeparator") { it.actionString() },
+            it.kills.actionString(),
+            it.damage.actionString(),
+            it.totalDamageDone,
+            it.totalDistanceTowardOpponent,
+            it.playerDied
+        )
+    }
+
     private fun scoreBehavior(
-        knnNoveltyArchive: KNNNoveltyArchive<ActionBehavior>, it: ModelEvaluationResult
+        knnNoveltyArchive: KNNNoveltyArchive<ActionStringedBehavior>, it: ModelEvaluationResult
     ) = when {
         knnNoveltyArchive.size < 1 -> {
-            knnNoveltyArchive.addBehavior(it.score)
+            knnNoveltyArchive.addBehavior(stringifyActionBehavior(it.score))
             it.score.allActions.size.toFloat()
         }
 
-        else -> knnNoveltyArchive.addBehavior(it.score)
+        else -> sqrt(knnNoveltyArchive.addBehavior(stringifyActionBehavior(it.score)))
     }
 
     private fun scoreAllBehavior(
         knnNoveltyArchive: KNNNoveltyArchive<ActionSumBehavior>, it: ModelEvaluationResult
     ): Float {
 
-        val behavior = it.score.let { ActionSumBehavior(it.allActions.size, it.recovery.size, it.kills, it.totalDamageDone, it.totalDistanceTowardOpponent, it.playerDied) }
+        val behavior = it.score.let {
+            ActionSumBehavior(
+                it.allActions.size,
+                it.recovery.size,
+                it.kills,
+                it.totalDamageDone,
+                it.totalDistanceTowardOpponent,
+                it.playerDied
+            )
+        }
         return when {
             knnNoveltyArchive.size < 1 -> {
                 knnNoveltyArchive.addBehavior(behavior)

@@ -102,33 +102,41 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
-    val inputImagePlane = layerPlane(1, 143)
-    val imagePlane1 = layerPlane(11, 11)
-    val imagePlane2 = layerPlane(8, 8)
-    val imagePlane3 = layerPlane(8, 8)
+    val inputPlane = layerPlane(4, 30)
+    val plane1 = layerPlane(15, 15)
+    val plane2 = layerPlane(12, 12)
+    val plane3 = layerPlane(10, 10)
+    val plane4 = layerPlane(10, 10)
+    val plane5 = layerPlane(8, 8)
     val outputPlane = layerPlane(1, 9)
-    val computationOrder = listOf(/*inputImagePlane, controllerPlane,*/ imagePlane1,
-        imagePlane2,
-        imagePlane3,
+    val computationOrder = listOf(/*inputImagePlane, controllerPlane,*/ plane1,
+        plane2,
+        plane3,
+        plane4,
+        plane5,
         outputPlane
     )
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
-        put(inputImagePlane, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-        put(imagePlane1, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-        put(imagePlane2, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-        put(imagePlane3, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
-        put(outputPlane, listOf(imagePlane1,imagePlane2,imagePlane3,outputPlane))
+        put(inputPlane, computationOrder)
+        put(plane1, computationOrder.drop(1))
+        put(plane2, computationOrder.drop(2))
+        put(plane3, computationOrder.drop(3))
+        put(plane4, computationOrder.drop(4))
+        put(plane5, computationOrder.drop(5))
+//        put(outputPlane, computationOrder)
     }
     val planeZMap = buildMap<LayerPlane, Int> {
-        put(inputImagePlane, 0)
+        put(inputPlane, 0)
 
-        put(imagePlane1, 1)
+        put(plane1, 1)
 
-        put(imagePlane2, 2)
+        put(plane2, 2)
 
-        put(imagePlane3, 3)
+        put(plane3, 3)
 
-        put(outputPlane, 4)
+        put(plane4, 4)
+        put(plane5, 5)
+        put(outputPlane, 6)
     }
     val targetConnectionMapping: Map<LayerPlane, List<LayerPlane>> = buildMap<LayerPlane, MutableList<LayerPlane>> {
         computationOrder.forEach {

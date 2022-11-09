@@ -20,7 +20,7 @@ import melee
 import numpy as np
 import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
-from ComputableNetwork import ComputableNetwork
+from ComputableNetwork import ComputableNetwork, sigmoidal
 from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
 from ControllerHelper import ControllerHelper
 from Evaluator import Evaluator
@@ -304,7 +304,7 @@ def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace, controlle
     while True:
         # try:
         id, builder, best = model_helper.getNetwork(controller_index)
-        network = builder.create_ndarrays()
+        network = builder.create_ndarrays(sigmoidal)
         if queue.qsize() == 0 and best:
             queue.put((id, network))
             time.sleep(1.0)

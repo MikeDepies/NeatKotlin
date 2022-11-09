@@ -44,7 +44,7 @@ dependencies {
 
     implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
 
-
+    implementation("edu.gatech.gtri.bk-tree:bk-tree:1.0")
 
 }
 tasks.withType<KotlinCompile>() {

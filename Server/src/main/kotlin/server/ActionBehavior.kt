@@ -14,6 +14,17 @@ data class ActionBehavior(
 )
 
 @Serializable
+data class ActionStringedBehavior(
+    val allActions: String,
+    val recovery: String,
+    val kills: String,
+    val damage: String,
+    val totalDamageDone: Float,
+    val totalDistanceTowardOpponent: Float,
+    val playerDied: Boolean
+)
+
+@Serializable
 data class ActionSumBehavior(
     val allActionsCount: Int,
     val recoveryCount: Int,

@@ -122,7 +122,7 @@ class ComputableNetwork:
     def __init__(self, connection_plane_map: 'dict[str, LayerShape3D]',
                  connection_relationships_inverse: 'dict[str, list[str]]',
                  connection_map: 'dict[str, ndarray]', value_map: 'dict[str,ndarray]',
-                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : int):
+                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : int, activation_function):
         self.connection_map = connection_map
         self.connection_plane_map = connection_plane_map
         self.connection_relationships_inverse = connection_relationships_inverse
@@ -130,6 +130,7 @@ class ComputableNetwork:
         self.connection_z_map = connection_z_map
         self.calculation_order = calculation_order
         self.output_index = output_index
+        self.activation_function = activation_function
 
     def input(self, input: ndarray):
         self.inputNdArray = input
@@ -137,9 +138,11 @@ class ComputableNetwork:
         self.value_map[self.connection_z_map[0]][..., 1] = self.inputNdArray
         
     def compute(self):
-        vectorizedSigmoidal = np.vectorize(sigmoidal)
+        vectorized_activation_function = np.vectorize(self.activation_function)
         vectorizedRelu = np.vectorize(relu)
+        vectorized_sigmoial = np.vectorize(sigmoidal)
         # print(self.connection_map.keys())
+        index = 0
         for c in self.calculation_order:
             # if self.connection_plane_map[c].zOrigin == 4:
             #     for s in sources:
@@ -166,10 +169,14 @@ class ComputableNetwork:
                     #     self.value_map[c][..., 1] = vectorizedRelu(
                     #         reduced)
                     # else:
-                    self.value_map[c][..., 1] = vectorizedSigmoidal(reduced)
+                    if index == len(self.calculation_order) -1:
+                        self.value_map[c][..., 1] = vectorized_sigmoial(reduced)
+                    else:
+                        self.value_map[c][..., 1] = vectorized_activation_function(reduced)
                     # print(" ===================>\tplane activated")
                     # if self.connection_plane_map[c].zOrigin == 4:
                     #     print(self.value_map[c][..., 1])
+            index +=1
 
     def output(self) -> ndarray:
         return self.value_map[self.connection_z_map[self.output_index+1]][..., 1]

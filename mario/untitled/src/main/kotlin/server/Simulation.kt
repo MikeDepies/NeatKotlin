@@ -472,17 +472,17 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 @OptIn(ExperimentalStdlibApi::class)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
-    val inputImagePlane = layerPlane(30, 32)
-    val hiddenPlanes = (0..5).map {
-        layerPlane(10 - it, 10 - it)
+    val inputImagePlane = layerPlane(15, 16)
+    val hiddenPlanes = (0..2).map {
+        layerPlane(8 - it, 8 - it)
     }
     val outputPlane = layerPlane(1, 12)
     val computationOrder = hiddenPlanes + outputPlane
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes + outputPlane
-        put(inputImagePlane, planeList.take(1))
+        put(inputImagePlane, planeList)
         hiddenPlanes.forEachIndexed { index, layerPlane ->
-            put(layerPlane, planeList/*.drop(index + 1).take(1)*/)
+            put(layerPlane, planeList.drop(index + 1)/*.take(1)*/)
         }
         put(outputPlane, planeList)
     }

@@ -28,9 +28,9 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .2f
+val speciesThresholdDelta = .0f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
 var speciesSharingDistance = .5f
 var shFunction = shFunction(speciesSharingDistance)
@@ -81,12 +81,12 @@ fun MarioDiscovery.toVector() = listOf(
     score.toFloat() / 100,
     flags.toFloat() * 30f,
     lifes.toFloat() * 10f,
-//    xPos.toFloat() /16,
+    xPos.toFloat() /16,
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
 //    (yPos.toFloat()) / 32,
 //    xPos.toFloat(),
-    stageParts.toFloat(),
+//    stageParts.toFloat(),
 //    time.toFloat()
     (min(10f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
@@ -103,10 +103,10 @@ fun evolve(
     populationEvolver.sortPopulationByAdjustedScore(modelScores)
     populationEvolver.updateScores(modelScores)
     var newPopulation = populationEvolver.evolveNewPopulation(modelScores, neatExperiment)
-//    populationEvolver.speciationController.speciesSet.forEach { species ->
-//        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-//        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
-//    }
+    populationEvolver.speciationController.speciesSet.forEach { species ->
+        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
+    }
     while (newPopulation.size < populationSize) {
         newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone(UUID.randomUUID())
     }

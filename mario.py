@@ -8,8 +8,8 @@ import gym_super_mario_bros
 import asyncio
 import numpy as np
 import math
-import requests
-from httpx import get
+
+from httpx import get, post
 
 
 import time
@@ -21,18 +21,18 @@ from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 from dataclasses import dataclass
 from dacite import from_dict
 
-from ComputableNetwork import ComputableNetwork
+from ComputableNetwork import ComputableNetwork, relu, sigmoidal
 from NeatService import process_model_data
 
 
 
 def submitScore(data, host: str):
     # print(info["stage"])
-    requests.post("http://" + host + ":8095/score", json=data)
+    post("http://" + host + ":8095/score", json=data)
 
 
 def deadNetwork(host: str):
-    requests.post("http://" + host + ":8095/dead", json={"id": id})
+    post("http://" + host + ":8095/dead", json={"id": id})
 
 
 def statusValue(status):
@@ -203,7 +203,7 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # print(state.shape)
         state = rescale(
             rgb2gray(state),
-            1 / 8,
+            1 / 16,
             #channel_axis=2
         )  # * np.random.binomial(1, .25,  state.size)
         network = child_network
@@ -233,11 +233,11 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # print(output.shape)
         # print(action)
 
-        # if action != last_action or action == 0:
-        #     framesSinceMaxXChange += max(0, 5 - same_action_counter)
-        #     same_action_counter = max(0, same_action_counter - .1)
-        # else:
-        #     same_action_counter += .2
+        if action != last_action or action == 0:
+            framesSinceMaxXChange += max(0, 5 - same_action_counter)
+            same_action_counter = max(0, same_action_counter - .1)
+        else:
+            same_action_counter += .2
         last_action = action
         if render:
             env.render()
@@ -253,19 +253,19 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
     port = 8095
     ns.generation = 0
     while True:
-        try:
-            id, builder = get_network_novelty(host, port)
-            if id not in mgr_dict:
-                mgr_dict[id] = True
-                network = builder.create_ndarrays()
-                ns.generation += 1
-                queue.put((id, network))
-            if ns.generation > 100_000:
-                mgr_dict.clear()
-                ns.generation = 0
+        # try:
+        id, builder = get_network_novelty(host, port)
+        if id not in mgr_dict:
+            mgr_dict[id] = True
+            network = builder.create_ndarrays(sigmoidal)
+            ns.generation += 1
+            queue.put((id, network))
+        if ns.generation > 100_000:
+            mgr_dict.clear()
+            ns.generation = 0
                 
-        except:
-            print("failed to get network...")
+        # except:
+        #     print("failed to get network...")
 
 if __name__ == '__main__':
     mgr = mp.Manager()
@@ -274,12 +274,12 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 5
+    process_num = 2
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     
     for i in range(process_num):
-        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 2))
+        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 0))
         processes.append(p)
         p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))

@@ -81,8 +81,18 @@ fun Application.module() {
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
-
-//    val a = actionBehaviors("population/0_noveltyArchive.json")
+    val sequenceSeparator: Char = 2000.toChar()
+//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(100_000)
+    /*.map {
+        ActionStringedBehavior(
+            it.allActions.actionString(),
+            it.recovery.joinToString("$sequenceSeparator") { it.actionString() },
+            it.kills.actionString(),
+            it.damage.actionString(),
+            it.totalDamageDone,
+            it.totalDistanceTowardOpponent,
+            it.playerDied
+        ) }*/
 //    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
 
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
@@ -91,14 +101,23 @@ fun Application.module() {
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         10,
-        behaviorMeasure(damageMultiplier = 1f, actionMultiplier = .5f, killMultiplier = 15f, recoveryMultiplier = 5f)
+        behaviorMeasurePreStringed(
+            damageMultiplier = .1f,
+            actionMultiplier = 1f,
+            killMultiplier = 100f,
+            recoveryMultiplier = 10f
+        )
     )
-    val knnNoveltyArchive2 = knnNoveltyArchive(
-        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
-    )
+//    val knnNoveltyArchive2 = knnNoveltyArchive(
+//        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
+//    )
 //    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
-    val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(0, populationSize, false)
+    val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
+        controllerId = 0,
+        populationSize = populationSize,
+        load = true
+    )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
     logger.info { initialPopulation.distinctBy { it.id }.size }
@@ -107,11 +126,18 @@ fun Application.module() {
 //        EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
 //    launch { evoManager2.start(initialPopulation2) }
-    val dashboardManager = DashboardManager(evaluationId, StreamStats(0, 0, 0, 0))
+    val dashboardManager = DashboardManager(
+        evaluationId, StreamStats(
+            0,
+            0,
+            0,
+            0
+        )
+    )
     launch {
         for (scoreList in evoManager.populationScoresChannel) {
             dashboardManager.scores.add(scoreList)
-            if (evoManager.scores.size > 100) {
+            if (dashboardManager.scores.size > 100) {
                 dashboardManager.scores.removeAt(0)
             }
             dashboardManager.scoreMap =
@@ -128,8 +154,8 @@ fun Application.module() {
     )
 }
 
-private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromString<List<ActionSumBehavior>>(
-    ListSerializer(ActionSumBehavior.serializer()),
+private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromString(
+    ListSerializer(ActionStringedBehavior.serializer()),
     File(noveltyArchiveJson).bufferedReader().lineSequence().joinToString("")
 )
 
@@ -152,11 +178,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(4, 60, 7)
+    val evaluatorSettings = EvaluatorSettings(25, 70, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Marth, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.Mario, 0),
+        ControllerConfiguration(Character.Fox, 4),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -320,23 +346,33 @@ private fun Application.routing(
             post<ModelRequest>("/model") { modelsRequest ->
                 val evoManager = evoHandler.evoManager(modelsRequest.controllerId)
                 val dashboard = evoHandler.dashboardManager(modelsRequest.controllerId)
-                val scoredModel = evoManager.bestModels.find { it.id == modelsRequest.modelId }
+                var scoredModel = evoManager.bestModels.find { it.id == modelsRequest.modelId }?.let {
+                    FullModel(
+                        it.model.toModel(),
+                        modelsRequest.modelId,
+                        it.species,
+                        it.score,
+                        it.generation
+                    )
+                }
                 if (scoredModel == null) {
-                    evoManager.scores.find { it.model.id.toString() == modelsRequest.modelId }
+                    scoredModel = evoManager.scores.find { it.model.id.toString() == modelsRequest.modelId }?.let {
+                        FullModel(
+                            it.model.toModel(),
+                            modelsRequest.modelId,
+                            evoManager.populationEvolver.speciationController.species(it.model).id,
+                            it.score,
+                            evoManager.populationEvolver.generation
+                        )
+                    }
 //                    evoManager.population.find { it.id.toString() == modelsRequest.modelId }
                 }
                 if (scoredModel == null) {
-                    dashboard.scoreMap.get(modelsRequest.modelId)
+                    scoredModel = dashboard.scoreMap.get(modelsRequest.modelId)
                 }
                 if (scoredModel != null) {
                     call.respond(
-                        FullModel(
-                            scoredModel.model.toModel(),
-                            modelsRequest.modelId,
-                            scoredModel.species,
-                            scoredModel.score,
-                            scoredModel.generation
-                        )
+                        scoredModel
                     )
                 } else {
                     call.respond(NoData)
@@ -416,8 +452,8 @@ private fun behaviorMeasure(
     damageMultiplier: Float = 2f,
     recoveryMultiplier: Float = 5f
 ) = { a: ActionBehavior, b: ActionBehavior ->
-//    val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
-//    val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
+    val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
+    val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
     val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
     val lhs = a.recovery.joinToString("$sequenceSeparator") { it.actionString() }
     val rhs = b.recovery.joinToString("$sequenceSeparator") { it.actionString() }
@@ -426,46 +462,68 @@ private fun behaviorMeasure(
         lhs, rhs
     )
     sqrt(
-        /*allActionDistance.times(actionMultiplier).squared()*/ killsDistance.times(killMultiplier)
-            .squared() + /*damageDistance.times(
+        allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
+            .squared() + damageDistance.times(
             damageMultiplier
-        ).squared()*/ +recoveryDistance.times(recoveryMultiplier).squared()
-            .toFloat() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(20)
-            .squared() + (a.totalDamageDone - b.totalDamageDone).div(10)
-            .squared() + (a.allActions.size - b.allActions.size).squared()
+        ).squared() + recoveryDistance.times(recoveryMultiplier).squared()
+            .toFloat() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(20).squared()
     )
 }
 
 
-private fun behaviorMeasure2(
+private fun behaviorMeasurePreStringed(
     sequenceSeparator: Char = 2000.toChar(),
     actionMultiplier: Float = 1f,
     killMultiplier: Float = 50f,
     damageMultiplier: Float = 2f,
     recoveryMultiplier: Float = 5f
-) = { a: ActionSumBehavior, b: ActionSumBehavior ->
-//    val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
-//    val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
-    val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
-
-    sqrt(
-        killsDistance.times(killMultiplier)
-            .squared() + (a.recoveryCount - b.recoveryCount).times(recoveryMultiplier).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent)
-        .squared() + (a.totalDamageDone - b.totalDamageDone).div(10)
-        .squared() + (a.allActionsCount - b.allActionsCount).squared()
+) = { a: ActionStringedBehavior, b: ActionStringedBehavior ->
+    val allActionDistance = levenshtein(a.allActions, b.allActions)
+    val damageDistance = levenshtein(a.damage, b.damage)
+    val killsDistance = levenshtein(a.kills, b.kills)
+    val lhs = a.recovery
+    val rhs = b.recovery
+//    val minLen = lhs.length
+    val recoveryDistance = levenshtein(
+        lhs, rhs
     )
-}
 
-private fun knnNoveltyArchive(k: Int, function: (ActionBehavior, ActionBehavior) -> Float) =
+    allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
+        .squared() + damageDistance.times(
+        damageMultiplier
+    ).squared() + recoveryDistance.times(recoveryMultiplier).squared()
+}
+//
+//
+//private fun behaviorMeasure2(
+//    sequenceSeparator: Char = 2000.toChar(),
+//    actionMultiplier: Float = 1f,
+//    killMultiplier: Float = 50f,
+//    damageMultiplier: Float = 2f,
+//    recoveryMultiplier: Float = 5f
+//) = { a: ActionSumBehavior, b: ActionSumBehavior ->
+////    val allActionDistance = levenshtein(a.allActions.actionString(), b.allActions.actionString())
+////    val damageDistance = levenshtein(a.damage.actionString(), b.damage.actionString())
+//    val killsDistance = levenshtein(a.kills.actionString(), b.kills.actionString())
+//
+//    sqrt(
+//        killsDistance.times(killMultiplier)
+//            .squared() + (a.recoveryCount - b.recoveryCount).times(recoveryMultiplier).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent)
+//        .squared() + (a.totalDamageDone - b.totalDamageDone).div(10)
+//        .squared() + (a.allActionsCount - b.allActionsCount).squared()
+//    )
+//}
+
+private fun knnNoveltyArchive(k: Int, function: (ActionStringedBehavior, ActionStringedBehavior) -> Float) =
     KNNNoveltyArchive(k, 0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
     val randomSeed: Int = 123 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.34f)
+    val shFunction = shFunction(.90f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
@@ -479,6 +537,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         val simpleNeatExperiment = simpleNeatExperiment(
             random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions, addConnectionAttempts
         )
+
         val population = models.map { it.toNeatMutator() }
         SimulationStart(simpleNeatExperiment, population, manifest)
     } else {

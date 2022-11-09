@@ -488,7 +488,7 @@ class HyperNeatBuilder:
                                                source_x] = weight * self.connection_magnitude
         return connection_ndarray
 
-    def create_ndarrays(self) -> ComputableNetwork:
+    def create_ndarrays(self, activation_function) -> ComputableNetwork:
         network_design = self.network_design
         connection_plane_map : 'Dict[str, LayerShape3D]'= dict()
         ndarray_map : 'Dict[str, ndarray]'= dict()
@@ -518,4 +518,4 @@ class HyperNeatBuilder:
         output_index = network_design.calculation_order.index(self.output_layer)
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map,
-                                 ndarray_map, connection_zindex_map, network_design.calculation_order, output_index)
+                                 ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, activation_function)

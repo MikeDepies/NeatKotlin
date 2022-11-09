@@ -18,7 +18,7 @@ import melee
 import numpy as np
 import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
-from ComputableNetwork import ComputableNetwork
+from ComputableNetwork import ComputableNetwork, sigmoidal
 from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
 from ControllerHelper import ControllerHelper
 from DashHelper import DashHelper
@@ -78,7 +78,7 @@ def startConsole():
                             logger=log,
                             slippi_port=args.dolphin_port,
                             blocking_input=False,
-                            polling_mode=False)
+                            polling_mode=False,)
     controller = melee.Controller(console=console,
                                   port=args.port,
                                   type=melee.ControllerType.STANDARD)
@@ -276,7 +276,7 @@ class ModelHandler:
         if self.evaluator.previous_frame:
             if self.evaluator.player_lost_stock(game_state):
                 mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
-                self.network = None
+                
             if self.evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
                 mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
             
@@ -378,7 +378,7 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, contro
     while True:
         # try:
         id, builder = model_helper.randomBest()
-        network = builder.create_ndarrays()
+        network = builder.create_ndarrays(sigmoidal)
         
         queue.put((id, network))
         
