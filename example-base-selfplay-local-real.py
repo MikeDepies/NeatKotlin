@@ -267,6 +267,8 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
             model_handler.postEvaluate(game_state)
             # model_handler2.postEvaluate(game_state)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
+                if model_handler.network is None:
+                    model_handler.reset()
                 print("no stocks! game over")
                 controller_opponent.release_all()
                 controller_opponent.flush()

@@ -183,65 +183,6 @@ def create_packed_state(gamestate: GameState, player_index: int, opponent_index:
     return InputEmbederPacked2(player_index, opponent_index,
                            positionNormalizer, actionNormalizer).embed_input(gamestate)
 
-# def create_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
-#     positionNormalizer = 100.0
-#     actionNormalizer = 60.0
-#     state: np.ndarray = np.zeros((1, 1105))
-#     player0: PlayerState = gamestate.players[player_index]
-#     embeder = InputEmbeder(player_index, opponent_index,
-#                            positionNormalizer, actionNormalizer)
-#     statePosition = embeder.applyPlayerState(player0, state, 0)
-
-#     player1: PlayerState = gamestate.players[opponent_index]
-#     statePosition = embeder.applyPlayerState(player1, state, statePosition)
-#     embeder.embedCategory(state, statePosition, gamestate.stage.value, 26)
-#     statePosition = statePosition + 26
-#     edge = melee.stages.EDGE_GROUND_POSITION[gamestate.stage]
-#     leftPlatform = melee.stages.left_platform_position(gamestate.stage)
-#     topPlatform = melee.stages.top_platform_position(gamestate.stage)
-#     rightPlatform = melee.stages.right_platform_position(gamestate.stage)
-#     state[0, statePosition] = edge / positionNormalizer
-#     state[0, statePosition + 1] = (edge * -1) / positionNormalizer
-#     blastzones: tuple[float, float, float,
-#                       float] = melee.stages.BLASTZONES[gamestate.stage]
-#     state[0, statePosition +
-#           2] = (blastzones[0]) / positionNormalizer
-#     state[0, statePosition +
-#           3] = (blastzones[1]) / positionNormalizer
-#     state[0, statePosition +
-#           4] = (blastzones[2]) / positionNormalizer
-#     state[0, statePosition +
-#           5] = (blastzones[3]) / positionNormalizer
-#     statePosition += 6
-#     statePosition = embeder.applyPlatform(
-#         leftPlatform, state, statePosition)
-#     statePosition = embeder.applyPlatform(
-#         topPlatform, state, statePosition)
-#     statePosition = embeder.applyPlatform(
-#         rightPlatform, state, statePosition)
-#     state[0, statePosition] = (gamestate.distance) / positionNormalizer
-#     statePosition += 1
-#     # # state[0, 63] = (gamestate.projectiles) / positionNormalizer
-#     for projectile in gamestate.projectiles[:10]:
-#         projectile: Projectile
-#         embeder.embedCategory(state, statePosition, projectile.owner, 4)
-#         statePosition += 4
-#         state[0, statePosition] = float(
-#             projectile.position.x) / positionNormalizer
-#         statePosition += 1
-#         state[0, statePosition] = float(
-#             projectile.position.y) / positionNormalizer
-#         statePosition += 1
-#         state[0, statePosition] = float(
-#             projectile.speed.x) / positionNormalizer
-#         statePosition += 1
-#         state[0, statePosition] = float(
-#             projectile.speed.y) / positionNormalizer
-#         statePosition += 1
-#         embeder.embedCategory(state, statePosition, projectile.subtype, 11)
-#         statePosition += 11
-#     return state
-
 class ModelHandler:
     network : ComputableNetwork
     evaluator : Evaluator
@@ -286,26 +227,38 @@ class ModelHandler:
             
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
+        elif self.network is None:
+            self.controller.release_button(melee.Button.BUTTON_A)
+            self.controller.release_button(melee.Button.BUTTON_B)
+            self.controller.release_button(melee.Button.BUTTON_Y)
+            self.controller.release_button(melee.Button.BUTTON_Z)
+            self.controller.release_button(melee.Button.BUTTON_L)
+            self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
+            self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
         if player0 and player0.stock == 0 or player1 and player1.stock == 0:
-                    print("no stocks! game over")
-                    if player0.stock == 0:
-                        mp.Process(target=self.dash_helper.updateLoss, daemon=True).start()
-                    elif player1.stock == 0:
-                        mp.Process(target=self.dash_helper.updateWin, daemon=True).start()
+            print("no stocks! game over")
+            
+            if player0.stock == 0:
+                mp.Process(target=self.dash_helper.updateLoss, daemon=True).start()
+            elif player1.stock == 0:
+                mp.Process(target=self.dash_helper.updateWin, daemon=True).start()
 
     def postEvaluate(self, game_state : melee.GameState):
-        if self.network is None or self.evaluator.is_finished(game_state):
+        if self.network is None or self.evaluator is not None and self.evaluator.is_finished(game_state):
             if self.network is not None:
                 behavior = self.evaluator.score(game_state)
                 print(behavior.actions)
                 # self.model_helper.send_evaluation_result(self.model_id, behavior)
                 self.network = None
+                self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
+                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
             
-            self.model_id, self.network = self.queue.get()
-            mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
-            print("creating new evaluator")
-            self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
-                                       self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+    def reset(self):
+        self.model_id, self.network = self.queue.get()
+        mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
+        print("creating new evaluator")
+        self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
+                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
 
 
 def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configuration):
@@ -319,6 +272,7 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     
     controller_helper = ControllerHelper()
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator)
+    model_handler.reset()
     # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
     while True:
         game_state = console.step()
@@ -336,6 +290,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
             # model_handler2.postEvaluate(game_state)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 print("no stocks! game over")
+                if model_handler.network is None:
+                    model_handler.reset()
                 controller_opponent.release_all()
                 controller_opponent.flush()
                 controller.release_all()

@@ -99,12 +99,12 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
             damageMultiplier = .1f,
-            actionMultiplier = 1f,
+            actionMultiplier = 2f,
             killMultiplier = 100f,
             recoveryMultiplier = 10f
         )
@@ -156,7 +156,7 @@ fun Application.module() {
 }
 
 private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromString(
-    ListSerializer(ActionStringedBehavior.serializer()),
+    ListSerializer(ActionBehaviorInt.serializer()),
     File(noveltyArchiveJson).bufferedReader().lineSequence().joinToString("")
 )
 
@@ -179,7 +179,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(25, 70, 6)
+    val evaluatorSettings = EvaluatorSettings(5, 30, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Pikachu, 0),
@@ -545,10 +545,10 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 123 + controllerId
+    val randomSeed: Int = 15 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.70f)
+    val shFunction = shFunction(.8f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
