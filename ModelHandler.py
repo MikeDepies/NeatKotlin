@@ -37,7 +37,7 @@ def create_packed_state(gamestate: GameState, player_index: int, opponent_index:
                               positionNormalizer, actionNormalizer).embed_input(gamestate)
 
 class ModelHandler:
-    network: ComputableNetwork | None
+    network: ComputableNetwork
     evaluator: Evaluator
     ai_controller_id: int
     model_helper: ModelHelper
