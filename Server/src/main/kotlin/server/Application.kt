@@ -83,7 +83,7 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     val sequenceSeparator: Char = 2000.toChar()
-//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(100_000)
+    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(80_000)
     /*.map {
         ActionStringedBehavior(
             it.allActions.actionString(),
@@ -103,8 +103,8 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
-            damageMultiplier = .1f,
-            actionMultiplier = 2f,
+            damageMultiplier = .5f,
+            actionMultiplier = 1f,
             killMultiplier = 100f,
             recoveryMultiplier = 10f
         )
@@ -112,12 +112,12 @@ fun Application.module() {
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
 //        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
 //    )
-//    knnNoveltyArchive.behaviors.addAll(a)
+    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = false
+        load = true
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -179,7 +179,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 30, 12)
+    val evaluatorSettings = EvaluatorSettings(10, 120, 6)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Pikachu, 0),
@@ -548,7 +548,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 15 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.8f)
+    val shFunction = shFunction(.75f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

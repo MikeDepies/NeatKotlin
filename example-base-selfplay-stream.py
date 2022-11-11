@@ -227,14 +227,14 @@ class ModelHandler:
             
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
-        elif self.network is None:
-            self.controller.release_button(melee.Button.BUTTON_A)
-            self.controller.release_button(melee.Button.BUTTON_B)
-            self.controller.release_button(melee.Button.BUTTON_Y)
-            self.controller.release_button(melee.Button.BUTTON_Z)
-            self.controller.release_button(melee.Button.BUTTON_L)
-            self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
-            self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
+        # elif self.network is None:
+        #     self.controller.release_button(melee.Button.BUTTON_A)
+        #     self.controller.release_button(melee.Button.BUTTON_B)
+        #     self.controller.release_button(melee.Button.BUTTON_Y)
+        #     self.controller.release_button(melee.Button.BUTTON_Z)
+        #     self.controller.release_button(melee.Button.BUTTON_L)
+        #     self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
+        #     self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
         if player0 and player0.stock == 0 or player1 and player1.stock == 0:
             print("no stocks! game over")
             
@@ -252,6 +252,7 @@ class ModelHandler:
                 self.network = None
                 self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                     self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+            self.reset()
             
     def reset(self):
         self.model_id, self.network = self.queue.get()
@@ -290,8 +291,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
             # model_handler2.postEvaluate(game_state)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 print("no stocks! game over")
-                if model_handler.network is None:
-                    model_handler.reset()
+                # if model_handler.network is None:
+                #     model_handler.reset()
                 controller_opponent.release_all()
                 controller_opponent.flush()
                 controller.release_all()

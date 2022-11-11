@@ -45,6 +45,7 @@ class Evaluator:
     logger: melee.Logger
     player_died: bool
     frame_data = melee.framedata.FrameData()
+    damage_action_available : bool
     def __init__(self, player: int, opponent: int, attack_timer: int , max_timer: int, action_limit: int, logger: melee.Logger = None) -> None:
         self.player_index = player
         self.opponent_index = opponent
@@ -78,6 +79,7 @@ class Evaluator:
         self.player_previous_actions = list()
         self.last_damage_action = None
         self.player_died = False
+        self.damage_action_available = True
         self.excluded_actions = [melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
                                  melee.Action.DAMAGE_FLY_HIGH, melee.Action.DAMAGE_FLY_LOW, melee.Action.DAMAGE_FLY_NEUTRAL, melee.Action.DAMAGE_FLY_ROLL,
@@ -259,7 +261,9 @@ class Evaluator:
                 self.actions_without_damage = 0
                 # self.player_previous_actions.clear()
                 self.total_damage += self.player_damage_amount(game_state)
-                self.damage_actions.append(player.action.value)
+                if self.damage_action_available:
+                    self.damage_actions.append(player.action.value)
+                    self.damage_action_available = False
                 self.last_damage_action = player.action
             
             # if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
@@ -269,6 +273,7 @@ class Evaluator:
                 # self.actions_without_damage += 3
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
                 # self.frames_without_damage += 10
+                self.damage_action_available = True
                 if self.capture_action(player) and on_stage:
                     # print("prev actions:")
                     # print(self.player_previous_actions)
