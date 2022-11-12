@@ -27,16 +27,19 @@ def parseCharacter(character_string : str):
     character_table = {
         "mario" : melee.Character.MARIO,
         "fox" : melee.Character.FOX,
+        "falco" : melee.Character.FALCO,
         "captainfalcon" : melee.Character.CPTFALCON,
         "samus" : melee.Character.SAMUS,
         "marth" : melee.Character.MARTH,
-        "pikachu" : melee.Character.PIKACHU
+        "pikachu" : melee.Character.PIKACHU,
+        "link" : melee.Character.LINK
     }
     return character_table[character_string.lower()]
     
 def parseStage(stage_string : str):
     stage_table = {
-        "finaldestination" : melee.Stage.FINAL_DESTINATION
+        "finaldestination" : melee.Stage.FINAL_DESTINATION,
+        "battlefield" : melee.Stage.BATTLEFIELD
     }
     return stage_table[stage_string.lower()]
 
