@@ -83,7 +83,7 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     val sequenceSeparator: Char = 2000.toChar()
-//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(80_000)
+//    val a = actionBehaviors("population/0_noveltyArchive.json")
     /*.map {
         ActionStringedBehavior(
             it.allActions.actionString(),
@@ -99,12 +99,12 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        20,
+        100,
         behaviorMeasureInt(
-            damageMultiplier = 3f,
-            actionMultiplier = 1f,
+            damageMultiplier = 2f,
+            actionMultiplier = 3f,
             killMultiplier = 100f,
             recoveryMultiplier = 10f
         )
@@ -117,7 +117,7 @@ fun Application.module() {
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = true
+        load = false
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -179,11 +179,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 120, 6)
+    val evaluatorSettings = EvaluatorSettings(120, 120, 14)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Falco, 0),
-        ControllerConfiguration(Character.Fox, 6),
+        ControllerConfiguration(Character.Fox, 4),
         MeleeStage.BattleField
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -516,7 +516,7 @@ private fun behaviorMeasureInt(
     allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
         .squared() + damageDistance.times(
         damageMultiplier
-    ).squared() + recoveryDistance.times(recoveryMultiplier).squared()
+    ).squared() + recoveryDistance.times(recoveryMultiplier).squared() + (a.totalDamageDone - b.totalDamageDone).squared()+ (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(20).squared()
 }
 //
 //
@@ -545,10 +545,10 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 15 + controllerId
+    val randomSeed: Int = 5 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.55f)
+    val shFunction = shFunction(.4f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

@@ -195,6 +195,7 @@ class ModelHandler:
     controller_helper : ControllerHelper
     queue : mp.Queue
     evaluator_configuration: EvaluatorConfiguration
+    stale_counter : int
     
     def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue, evaluator_configuration: EvaluatorConfiguration) -> None:
         self.network = None
@@ -209,6 +210,7 @@ class ModelHandler:
         self.model_id = ""    
         self.queue = queue
         self.dash_helper = DashHelper(ai_controller_id)
+        self.stale_counter = 0
         self.evaluator_configuration = evaluator_configuration
 
     def evaluate(self, game_state : melee.GameState):
@@ -216,25 +218,31 @@ class ModelHandler:
         player1: PlayerState = game_state.players[self.opponent_index]
         
         if self.evaluator.previous_frame:
+            if self.evaluator.previous_frame.distance == game_state.distance:
+                self.stale_counter +=1
+            else:
+                self.stale_counter = 0
+            
             if self.evaluator.player_lost_stock(game_state):
                 mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
                 
             if self.evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
+                
                 mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
-            
-        if self.network is not None and self.evaluator is not None:    
+        
+        if self.network is not None and self.evaluator is not None and self.stale_counter < 60 * 6:    
             state = create_packed_state(game_state, self.model_index, self.opponent_index)
             
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
-        # elif self.network is None:
-        #     self.controller.release_button(melee.Button.BUTTON_A)
-        #     self.controller.release_button(melee.Button.BUTTON_B)
-        #     self.controller.release_button(melee.Button.BUTTON_Y)
-        #     self.controller.release_button(melee.Button.BUTTON_Z)
-        #     self.controller.release_button(melee.Button.BUTTON_L)
-        #     self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
-        #     self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
+        else:
+            self.controller.release_button(melee.Button.BUTTON_A)
+            self.controller.release_button(melee.Button.BUTTON_B)
+            self.controller.release_button(melee.Button.BUTTON_Y)
+            self.controller.release_button(melee.Button.BUTTON_Z)
+            self.controller.release_button(melee.Button.BUTTON_L)
+            self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
+            self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
         if player0 and player0.stock == 0 or player1 and player1.stock == 0:
             print("no stocks! game over")
             

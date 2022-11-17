@@ -230,7 +230,7 @@ class Evaluator:
                 if opponent_knockback_combined_speed > 0:
                     self.opponent_knocked = True
                     self.opponent_touched_ground = False
-            elif opponent.on_ground:
+            elif opponent.on_ground and opponent_knockback_combined_speed == 0:
                 self.opponent_touched_ground = True
 
             if self.opponent_touched_ground and self.opponent_knocked:
@@ -290,7 +290,7 @@ class Evaluator:
             if self.opponent_lost_stock(game_state) and self.opponent_knocked:
                 previous_frame_opponent: PlayerState = self.previous_frame.players[
                     self.opponent_index]
-                self.kill_actions.append(previous_frame_opponent.action.value)
+                # self.kill_actions.append(previous_frame_opponent.action.value)
                 if self.last_damage_action is not None:
                     self.kill_actions.append(self.last_damage_action.value)
                 self.frames_without_damage = -60 * 4
