@@ -218,8 +218,8 @@ class Evaluator:
             # and not self.frame_data.is_roll(player.character, player.action)
             if toward_opponent:
                 self.total_distanceTowardOpponent += abs(x_diff)
-            if opponent.hitstun_frames_left > 0:
-                self.total_frames_hitstun +=1
+            # if opponent.hitstun_frames_left > 0:
+            #     self.total_frames_hitstun +=1
             if on_stage and self.knocked_off_stage and self.damage_since_recovery:
                 self.frames_without_damage = 0
                 self.knocked_off_stage = False

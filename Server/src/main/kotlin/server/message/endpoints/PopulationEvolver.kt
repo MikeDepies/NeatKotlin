@@ -42,7 +42,7 @@ class PopulationEvolver(
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
             mateChance = .8f,
-            survivalThreshold = .2f,
+            survivalThreshold = .1f,
             speciesScoreKeeper = scoreKeeper,
             stagnation = 200,
             championThreshold = 5
