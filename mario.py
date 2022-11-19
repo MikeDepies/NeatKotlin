@@ -213,12 +213,12 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # if (score != info["score"]):
         #     framesSinceMaxXChange = 0
         #     score = info["score"]
-        if abs(prevX - info["x_pos"]) > 32:
-            if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
-                steps_left += 1
-                prevXReset = info["x_pos"]
-            else:
-                steps_right += 1
+        if abs(prevX - info["x_pos"]) > 64:
+            # if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
+            #     steps_left += 1
+            #     prevXReset = info["x_pos"]
+            # else:
+            #     steps_right += 1
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
         else:
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 6
+    process_num = 10
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     

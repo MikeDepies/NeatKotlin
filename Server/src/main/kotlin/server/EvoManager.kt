@@ -19,6 +19,7 @@ import java.io.File
 import java.lang.Exception
 import java.lang.Float.max
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -173,22 +174,23 @@ class EvoManager(
     private fun captureBestModel(
         m: NeatMutator, behaviorScore: Float, populationEvolver: PopulationEvolver, it: ModelEvaluationResult
     ) {
-
+        var tempBestModels : MutableList<ScoredModel> = ArrayList(bestModels)
         val average = bestModels.map { it.score }.average()
-        bestModels += ScoredModel(
+        tempBestModels += ScoredModel(
             behaviorScore,
             populationEvolver.generation,
             m,
             it.modelId,
             populationEvolver.speciationController.species(m).id
         )
-        bestModels.sortByDescending {
+        tempBestModels.sortByDescending {
             it.score - (populationEvolver.generation - it.generation) * (average / 10)
         }
-        bestModels = bestModels.distinctBy { it.id }.toMutableList()
-        if (bestModels.size > 10) {
-            bestModels.removeAt(10)
+        tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()
+        if (tempBestModels.size > 10) {
+            tempBestModels.removeAt(10)
         }
+        bestModels = tempBestModels
 
     }
 

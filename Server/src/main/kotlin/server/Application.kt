@@ -83,7 +83,7 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     val sequenceSeparator: Char = 2000.toChar()
-//    val a = actionBehaviors("population/0_noveltyArchive.json")
+    val a = actionBehaviors("population/0_noveltyArchive.json")
     /*.map {
         ActionStringedBehavior(
             it.allActions.actionString(),
@@ -103,21 +103,21 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         100,
         behaviorMeasureInt(
-            damageMultiplier = 2f,
-            actionMultiplier = 3f,
-            killMultiplier = 100f,
+            damageMultiplier = .1f,
+            actionMultiplier = .1f,
+            killMultiplier = 400f,
             recoveryMultiplier = 10f
         )
     )
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
 //        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
 //    )
-//    knnNoveltyArchive.behaviors.addAll(a)
+    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = false
+        load = true
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -179,12 +179,12 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(120, 120, 14)
+    val evaluatorSettings = EvaluatorSettings(30, 30, 14)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Falco, 0),
-        ControllerConfiguration(Character.Fox, 4),
-        MeleeStage.BattleField
+        ControllerConfiguration(Character.Fox, 3),
+        MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
@@ -512,11 +512,15 @@ private fun behaviorMeasureInt(
     val recoveryDistance = levenshteinInt(
         lhs, rhs
     )
-
-    allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
-        .squared() + damageDistance.times(
-        damageMultiplier
-    ).squared() + recoveryDistance.times(recoveryMultiplier).squared() + (a.totalDamageDone - b.totalDamageDone).squared()+ (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(20).squared()
+    //
+//        .squared() + (a.totalDamageDone - b.totalDamageDone).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
+//        20
+//    ).squared()
+    (
+            allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
+                .squared() + damageDistance.times(
+                damageMultiplier
+            ).squared() + recoveryDistance.times(recoveryMultiplier) + (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).squared())
 }
 //
 //
@@ -548,7 +552,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 5 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.8f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
