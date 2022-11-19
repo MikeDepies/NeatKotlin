@@ -40,7 +40,8 @@ class ModelHelper:
                     "damage" : score.damage_actions,
                     "totalDamageDone" : score.total_damage,
                     "totalDistanceTowardOpponent" : score.total_distance_toward_opponent,
-                    "playerDied" : score.player_died
+                    "playerDied" : score.player_died,
+                    "totalFramesHitstunOpponent" : score.total_frames_hitstun_opponent
                 }
             }, timeout=30)
         print("eval send for " + model_id)

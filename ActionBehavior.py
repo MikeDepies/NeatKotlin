@@ -10,8 +10,9 @@ class ActionBehavior:
     total_damage: float
     total_distance_toward_opponent: float
     player_died: bool
+    total_frames_hitstun_opponent: int
 
-    def __init__(self, actions: List[int], kills: List[int], damage_actions: List[int], recovery_sets: List[List[int]], total_damage: float, total_distance_toward_opponent: float, player_died: bool) -> None:
+    def __init__(self, actions: List[int], kills: List[int], damage_actions: List[int], recovery_sets: List[List[int]], total_damage: float, total_distance_toward_opponent: float, player_died: bool, total_frames_hitstun_opponent: int) -> None:
         self.actions = actions
         self.kills = kills
         self.damage_actions = damage_actions
@@ -19,3 +20,4 @@ class ActionBehavior:
         self.total_damage = total_damage
         self.total_distance_toward_opponent = total_distance_toward_opponent
         self.player_died = player_died
+        self.total_frames_hitstun_opponent = total_frames_hitstun_opponent

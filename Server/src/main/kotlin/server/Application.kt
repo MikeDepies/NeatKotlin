@@ -182,7 +182,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(30, 30, 14)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Falco, 0),
+        ControllerConfiguration(Character.Pikachu, 0),
         ControllerConfiguration(Character.Fox, 1),
         MeleeStage.FinalDestination
     )
@@ -520,7 +520,7 @@ private fun behaviorMeasureInt(
             allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
                 .squared() + damageDistance.times(
                 damageMultiplier
-            ).squared() + recoveryDistance.times(recoveryMultiplier) + (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).squared())
+            ).squared() + recoveryDistance.times(recoveryMultiplier) /*+ (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).squared()*/)
 }
 //
 //
