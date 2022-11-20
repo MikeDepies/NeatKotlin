@@ -215,7 +215,8 @@ class EvoManager(
             it.damage,
             it.totalDamageDone,
             it.totalDistanceTowardOpponent,
-            it.playerDied
+            it.playerDied,
+            it.totalFramesHitstunOpponent
         )
     }
 
