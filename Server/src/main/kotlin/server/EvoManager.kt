@@ -71,10 +71,10 @@ class EvoManager(
                     )
                     val behaviorScore = max(
                         0f, scoredBehavior
-                    ) + if (!it.score.playerDied) min(scoredBehavior/ 2, 200f) else 0f
-                    while (knnNoveltyArchive.behaviors.size > 80_000) {
-                        knnNoveltyArchive.behaviors.removeAt(0)
-                    }
+                    ) + if (!it.score.playerDied) min(scoredBehavior, 1000f) else 0f
+//                    while (knnNoveltyArchive.behaviors.size > 80_000) {
+//                        knnNoveltyArchive.behaviors.removeAt(0)
+//                    }
                     log.info { "$it" }
                     scores += FitnessModel(model, behaviorScore)
                     finishedScores[uuid] = true
@@ -183,10 +183,10 @@ class EvoManager(
             it.modelId,
             populationEvolver.speciationController.species(m).id
         )
+        tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()
         tempBestModels.sortByDescending {
             it.score - (populationEvolver.generation - it.generation) * (average / 10)
         }
-        tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()
         if (tempBestModels.size > 10) {
             tempBestModels.removeAt(10)
         }

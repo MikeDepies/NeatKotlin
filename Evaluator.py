@@ -216,7 +216,7 @@ class Evaluator:
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
             # and not self.frame_data.is_roll(player.character, player.action)
-            if toward_opponent:
+            if toward_opponent and not self.frame_data.is_roll(player.character, player.action):
                 self.total_distanceTowardOpponent += abs(x_diff)
             if opponent.hitstun_frames_left > 1:
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))

@@ -99,14 +99,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 1000
     val knnNoveltyArchive = knnNoveltyArchive(
-        50,
+        150,
         behaviorMeasureInt(
             damageMultiplier = 1f,
-            actionMultiplier = 2f,
-            killMultiplier = 400f,
-            recoveryMultiplier = 10f
+            actionMultiplier = 5f,
+            killMultiplier = 500f,
+            recoveryMultiplier = 1f
         )
     )
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -179,11 +179,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(120, 120, 14)
+    val evaluatorSettings = EvaluatorSettings(120, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Pikachu, 0),
-        ControllerConfiguration(Character.Fox, 8),
+        ControllerConfiguration(Character.Fox, 4),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -526,10 +526,10 @@ private fun behaviorMeasureInt(
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
     val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
-        10
+        1
     ).squared()
-    val totalFrames = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).squared()
-    (all + kills + damage + recovery + damageDone + totalDistanceToward + totalFrames)
+    val totalFrames = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(20).squared()
+    (all + kills + damage + /*recovery +*/ damageDone + totalDistanceToward + totalFrames)
 }
 //
 //
@@ -561,7 +561,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 5 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.7f)
+    val shFunction = shFunction(.5f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

@@ -104,10 +104,10 @@ fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
     val inputPlane = layerPlane(4, 30)
     val plane1 = layerPlane(15, 15)
-    val plane2 = layerPlane(12, 12)
-    val plane3 = layerPlane(10, 10)
-    val plane4 = layerPlane(10, 10)
-    val plane5 = layerPlane(8, 8)
+    val plane2 = layerPlane(15, 15)
+    val plane3 = layerPlane(15, 15)
+    val plane4 = layerPlane(15, 15)
+    val plane5 = layerPlane(15, 15)
     val outputPlane = layerPlane(1, 9)
     val computationOrder = listOf(/*inputImagePlane, controllerPlane,*/ plane1,
         plane2,
