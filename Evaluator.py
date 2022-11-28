@@ -47,6 +47,7 @@ class Evaluator:
     frame_data = melee.framedata.FrameData()
     damage_action_available : bool
     total_frames_hitstun : int
+    total_frames_alive: int
     def __init__(self, player: int, opponent: int, attack_timer: int , max_timer: int, action_limit: int, logger: melee.Logger = None) -> None:
         self.player_index = player
         self.opponent_index = opponent
@@ -82,6 +83,7 @@ class Evaluator:
         self.player_died = False
         self.damage_action_available = True
         self.total_frames_hitstun = 0
+        self.total_frames_alive = 0
         self.excluded_actions = [melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
                                  melee.Action.DAMAGE_FLY_HIGH, melee.Action.DAMAGE_FLY_LOW, melee.Action.DAMAGE_FLY_NEUTRAL, melee.Action.DAMAGE_FLY_ROLL,
@@ -213,6 +215,7 @@ class Evaluator:
                 self.knocked_off_stage = True
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
+            self.total_frames_alive +=1
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
             # and not self.frame_data.is_roll(player.character, player.action)

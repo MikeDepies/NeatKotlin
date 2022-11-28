@@ -83,7 +83,7 @@ fun Application.module() {
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     val sequenceSeparator: Char = 2000.toChar()
-    val a = actionBehaviors("population/0_noveltyArchive.json")
+//    val a = actionBehaviors("population/0_noveltyArchive.json").takeLast(100_000)
     /*.map {
         ActionStringedBehavior(
             it.allActions.actionString(),
@@ -99,9 +99,9 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 1000
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        150,
+        30,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 5f,
@@ -112,12 +112,12 @@ fun Application.module() {
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
 //        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
 //    )
-    knnNoveltyArchive.behaviors.addAll(a)
+//    knnNoveltyArchive.behaviors.addAll(a)
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = true
+        load = false
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -179,7 +179,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(120, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(12, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Pikachu, 0),
@@ -528,8 +528,8 @@ private fun behaviorMeasureInt(
     val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
         1
     ).squared()
-    val totalFrames = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(20).squared()
-    (all + kills + damage + /*recovery +*/ damageDone + totalDistanceToward + totalFrames)
+    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(5).squared()
+    (all + kills + damage + /*recovery +*/ damageDone /*+ totalDistanceToward */+ totalFramesHitstun)
 }
 //
 //
@@ -561,7 +561,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 5 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.5f)
+    val shFunction = shFunction(.6f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

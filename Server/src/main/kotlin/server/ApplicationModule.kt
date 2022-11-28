@@ -187,7 +187,7 @@ fun simulation(
     generation: Int,
     manifest: Manifest
 ): Simulation {
-    val speciesGeneList = manifest.scoreLineageModel.speciesMap.values.map { it.toGene() }
+    val speciesGeneList = manifest.scoreLineageModel.speciesMap.values.map { it.toGene() }.filter { it.species.id > 3330 }
     val adjustedFitnessCalculation = adjustedFitnessCalculation(speciationController, distanceFunction, sharingFunction)
     val speciesLineage = SpeciesLineage(speciesGeneList)
     val scoreKeeper = manifest.scoreKeeperModel.toScoreKeeper()
