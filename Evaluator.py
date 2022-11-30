@@ -258,8 +258,8 @@ class Evaluator:
 
             if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action):
                 self.frames_without_damage += 1
-                if self.player_took_damage(game_state):
-                    self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
+                # if self.player_took_damage(game_state):
+                #     self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
 
             if self.player_dealt_damage(game_state):
                 self.damage_since_recovery = True
