@@ -83,16 +83,14 @@ class ModelHandler:
             self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
 
     def postEvaluate(self, game_state: melee.GameState):
-        if self.network is None or self.evaluator.is_finished(game_state):
-            if self.network is not None:
-
-                behavior = self.evaluator.score(game_state)
-                print(behavior.actions)
-                self.model_helper.send_evaluation_result(
-                    self.model_id, behavior)
-                self.network = None
-                self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
-                                        self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+        if self.evaluator.is_finished(game_state) and self.network is not None:
+            behavior = self.evaluator.score(game_state)
+            # print(behavior.actions)
+            self.model_helper.send_evaluation_result(
+                self.model_id, behavior)
+            self.network = None
+            self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
+                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
 
             # self.model_id, self.network = self.queue.get()
             # print("creating new evaluator")
@@ -100,6 +98,6 @@ class ModelHandler:
                                     #    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
     def reset(self):
         self.model_id, self.network = self.queue.get()
-        print("creating new evaluator")
+        # print("creating new evaluator")
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)

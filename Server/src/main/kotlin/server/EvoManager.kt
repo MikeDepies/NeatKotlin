@@ -71,7 +71,7 @@ class EvoManager(
                     )
                     val behaviorScore = max(
                         0f, scoredBehavior
-                    ) + (it.score.totalFrames / 10)
+                    ) + (it.score.totalFrames / 20) + (it.score.kills.size * 100f) + it.score.totalDamageDone / 10f
 //                    while (knnNoveltyArchive.behaviors.size > 80_000) {
 //                        knnNoveltyArchive.behaviors.removeAt(0)
 //                    }
