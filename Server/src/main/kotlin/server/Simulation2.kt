@@ -119,7 +119,7 @@ fun createNetwork(): TaskNetworkBuilder {
         hiddenPlanes.forEachIndexed { index, layerPlane ->
             put(layerPlane, planeList.drop(index + 1).take(3))
         }
-        put(outputPlane, planeList.dropLast(2))
+        put(outputPlane, planeList.dropLast(0))
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         var zIndex =0
