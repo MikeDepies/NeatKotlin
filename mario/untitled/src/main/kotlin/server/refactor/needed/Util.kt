@@ -30,9 +30,9 @@ val minSpeices = 5
 val maxSpecies = 15
 val speciesThresholdDelta = .0f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .9f
+var speciesSharingDistance = .3f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -81,14 +81,14 @@ fun MarioDiscovery.toVector() = listOf(
     score.toFloat() / 100,
     flags.toFloat() * 30f,
     lifes.toFloat() * 10f,
-    xPos.toFloat(),
+    xPos.toFloat() / 32,
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
-    (yPos.toFloat()) / 32,
+//    (yPos.toFloat()) / 32,
 //    xPos.toFloat(),
 //    stageParts.toFloat(),
-//    time.toFloat()
-    (min(10f, time.toFloat() / stageParts) * stageParts),
+    time.toFloat()
+//    (min(10f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
 //    stage.toFloat() * 100f
@@ -105,7 +105,7 @@ fun evolve(
     var newPopulation = populationEvolver.evolveNewPopulation(modelScores, neatExperiment)
     populationEvolver.speciationController.speciesSet.forEach { species ->
         val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
+        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.random(neatExperiment.random))
     }
     while (newPopulation.size < populationSize) {
         newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone(UUID.randomUUID())

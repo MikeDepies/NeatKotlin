@@ -101,10 +101,10 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        20,
+        40,
         behaviorMeasureInt(
             damageMultiplier = 1f,
-            actionMultiplier = 10f,
+            actionMultiplier = 1f,
             killMultiplier = 100f,
             recoveryMultiplier = 1f
         )
@@ -179,11 +179,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 240, 12)
+    val evaluatorSettings = EvaluatorSettings(20, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Pikachu, 0),
-        ControllerConfiguration(Character.Fox, 4),
+        ControllerConfiguration(Character.Link, 0),
+        ControllerConfiguration(Character.Fox, 5),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -471,29 +471,29 @@ private fun behaviorMeasure(
     )
 }
 
-
-private fun behaviorMeasurePreStringed(
-    sequenceSeparator: Char = 2000.toChar(),
-    actionMultiplier: Float = 1f,
-    killMultiplier: Float = 50f,
-    damageMultiplier: Float = 2f,
-    recoveryMultiplier: Float = 5f
-) = { a: ActionStringedBehavior, b: ActionStringedBehavior ->
-    val allActionDistance = levenshtein(a.allActions, b.allActions)
-    val damageDistance = levenshtein(a.damage, b.damage)
-    val killsDistance = levenshtein(a.kills, b.kills)
-    val lhs = a.recovery
-    val rhs = b.recovery
-//    val minLen = lhs.length
-    val recoveryDistance = levenshtein(
-        lhs, rhs
-    )
-
-    allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
-        .squared() + damageDistance.times(
-        damageMultiplier
-    ).squared() + recoveryDistance.times(recoveryMultiplier).squared()
-}
+//
+//private fun behaviorMeasurePreStringed(
+//    sequenceSeparator: Char = 2000.toChar(),
+//    actionMultiplier: Float = 1f,
+//    killMultiplier: Float = 50f,
+//    damageMultiplier: Float = 2f,
+//    recoveryMultiplier: Float = 5f
+//) = { a: ActionStringedBehavior, b: ActionStringedBehavior ->
+//    val allActionDistance = levenshtein(a.allActions, b.allActions)
+//    val damageDistance = levenshtein(a.damage, b.damage)
+//    val killsDistance = levenshtein(a.kills, b.kills)
+//    val lhs = a.recovery
+//    val rhs = b.recovery
+////    val minLen = lhs.length
+//    val recoveryDistance = levenshtein(
+//        lhs, rhs
+//    )
+//
+//    allActionDistance.times(actionMultiplier).squared() + killsDistance.times(killMultiplier)
+//        .squared() + damageDistance.times(
+//        damageMultiplier
+//    ).squared() + recoveryDistance.times(recoveryMultiplier).squared()
+//}
 
 
 private fun behaviorMeasureInt(
@@ -528,8 +528,8 @@ private fun behaviorMeasureInt(
     val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
         1
     ).squared()
-    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).squared()
-    (all + kills + damage + /*recovery +*/ damageDone /*+ totalDistanceToward */+ totalFramesHitstun)
+    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
+    (all + kills + damage  /*recovery + damageDone + totalDistanceToward + totalFramesHitstun*/)
 }
 //
 //
@@ -558,10 +558,10 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 577 + controllerId
+    val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.45f)
+    val shFunction = shFunction(.5f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

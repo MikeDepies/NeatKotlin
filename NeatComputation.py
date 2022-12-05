@@ -488,6 +488,15 @@ class HyperNeatBuilder:
                                                source_x] = weight * self.connection_magnitude
         return connection_ndarray
 
+    def filter_ndarrays(self, target_id : str, connection_plane_map : 'Dict[str, LayerShape3D]', connection_map : 'Dict[str, ndarray]'):
+        network_design = self.network_design
+        for source_id in network_design.target_connection_mapping[target_id]:
+            connections = connection_map[source_id + ":" + target_id]
+            # target y, x source y, x
+            
+            pass
+        pass
+
     def create_ndarrays(self, activation_function) -> ComputableNetwork:
         network_design = self.network_design
         connection_plane_map : 'Dict[str, LayerShape3D]'= dict()
@@ -509,12 +518,6 @@ class HyperNeatBuilder:
                                    target_id] = self.compute_connections_between_layers(p, t)
                     connection_count += connection_map[id +
                                                        ":" + target_id].size
-                    # print(connection_map[id + ":" + target_id])
-                    # connection_map[id + ":" + target_id] = np.zeros([
-                    #     t.layer_plane.height, t.layer_plane.width,
-                    #     p.layer_plane.height, p.layer_plane.width,
-                    # ])
-        # print("number of connections in hyper_network: " + str(connection_count))
         output_index = network_design.calculation_order.index(self.output_layer)
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map,

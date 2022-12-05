@@ -17,7 +17,7 @@ import multiprocessing as mp
 from skimage.transform import rescale, resize, downscale_local_mean
 import time
 # import cv2 as cv
-from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
+from gym_super_mario_bros.actions import RIGHT_ONLY
 from dataclasses import dataclass
 from dacite import from_dict
 
@@ -130,7 +130,7 @@ def get_network_novelty(host: str, port : int):
 
 def marioNovelty(queue : mp.Queue, render : Boolean):
     env = gym_super_mario_bros.make('SuperMarioBros-v1')
-    env = JoypadSpace(env, COMPLEX_MOVEMENT)
+    env = JoypadSpace(env, RIGHT_ONLY)
     host = "192.168.0.100"
     port = 8095
     done = False
@@ -203,9 +203,10 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # print(state.shape)
         state = rescale(
             rgb2gray(state),
-            1 / 16,
+            1 / 8,
             #channel_axis=2
-        )  # * np.random.binomial(1, .25,  state.size)
+        )
+        # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
         network = child_network
         network.input(state / 255.0)
         network.compute()
@@ -225,19 +226,19 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 15 * 20 or reward < -14:
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:
             idle = True
 
-        action = 11 - output.argmax(1)[0]
+        action = output.argmax(1)[0]
         # print(output)
         # print(output.shape)
         # print(action)
 
-        if action != last_action or action == 0:
-            framesSinceMaxXChange += max(0, 5 - same_action_counter)
-            same_action_counter = max(0, same_action_counter - .1)
-        else:
-            same_action_counter += .2
+        # if action != last_action or action == 0:
+        #     framesSinceMaxXChange += max(0, 5 - same_action_counter)
+        #     same_action_counter = max(0, same_action_counter - .1)
+        # else:
+        #     same_action_counter += .2
         last_action = action
         if render:
             env.render()
@@ -274,17 +275,20 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 5
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     
     for i in range(process_num):
-        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 2))
+        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 1))
         processes.append(p)
         p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         processes.append(p)
         p.start() 
+        # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        # processes.append(p)
+        # p.start() 
 
     for p in processes:
         p.join()

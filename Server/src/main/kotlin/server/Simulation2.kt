@@ -103,40 +103,31 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
     val inputPlane = layerPlane(4, 30)
-    val plane1 = layerPlane(15, 15)
-    val plane2 = layerPlane(15, 15)
-    val plane3 = layerPlane(15, 15)
-    val plane4 = layerPlane(15, 15)
-    val plane5 = layerPlane(15, 15)
+//    val plane1 = layerPlane(15, 15)
+//    val plane2 = layerPlane(15, 15)
+//    val plane3 = layerPlane(15, 15)
+//    val plane4 = layerPlane(15, 15)
+//    val plane5 = layerPlane(15, 15)
+    val hiddenPlanes = (0..20).map {
+        if (it < 1) layerPlane(12, 12) else layerPlane(9, 9)
+    }
     val outputPlane = layerPlane(1, 9)
-    val computationOrder = listOf(/*inputImagePlane, controllerPlane,*/ plane1,
-        plane2,
-        plane3,
-        plane4,
-        plane5,
-        outputPlane
-    )
+    val computationOrder = hiddenPlanes + outputPlane
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
-        put(inputPlane, computationOrder)
-        put(plane1, computationOrder.drop(1))
-        put(plane2, computationOrder.drop(2))
-        put(plane3, computationOrder.drop(3))
-        put(plane4, computationOrder.drop(4))
-        put(plane5, computationOrder.drop(5))
-//        put(outputPlane, computationOrder)
+        val planeList = hiddenPlanes + outputPlane
+        put(inputPlane, planeList.take(3))
+        hiddenPlanes.forEachIndexed { index, layerPlane ->
+            put(layerPlane, planeList.drop(index + 1).take(3))
+        }
+        put(outputPlane, planeList.dropLast(2))
     }
     val planeZMap = buildMap<LayerPlane, Int> {
-        put(inputPlane, 0)
-
-        put(plane1, 1)
-
-        put(plane2, 2)
-
-        put(plane3, 3)
-
-        put(plane4, 4)
-        put(plane5, 5)
-        put(outputPlane, 6)
+        var zIndex =0
+        put(inputPlane, zIndex++)
+        hiddenPlanes.forEach {
+            put(it, zIndex++)
+        }
+        put(outputPlane, zIndex++)
     }
     val targetConnectionMapping: Map<LayerPlane, List<LayerPlane>> = buildMap<LayerPlane, MutableList<LayerPlane>> {
         computationOrder.forEach {

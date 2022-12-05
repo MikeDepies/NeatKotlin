@@ -24,6 +24,7 @@ import neat.novelty.euclidean
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import server.*
+import server.message.endpoints.NeatModel
 import server.message.endpoints.toModel
 import server.server.WebSocketManager
 import java.io.File
@@ -134,11 +135,11 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .8f
-    val survivalThreshold = .1f
+    val mateChance = .7f
+    val survivalThreshold = .4f
     val stagnation = 40
 
-    val randomSeed: Int = 291 + evaluationId
+    val randomSeed: Int = 39 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
@@ -166,13 +167,14 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    val behaviors = Json { }.decodeFromString<List<MarioDiscovery>>(
 //        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
+    val populationHistory = mutableListOf<List<NeatModel>>()
     val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
     var population = simpleNeatExperiment.generateInitialPopulation2(
         populationSize, 6, 2, activationFunctions1
     ).mapIndexed { index, neatMutator ->
         NetworkWithId(neatMutator, UUID.randomUUID().toString())
     }
-    var settings = Settings(0f)
+    var settings = Settings(1f)
     var mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
 //    createTaskNetwork(population.first().toNetwork())
@@ -212,7 +214,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                     simulation.populationEvolver.speciationController, distanceFunction, shFunction
                 )
             )
-
+            populationHistory.add(population.map { it.neatMutator.toModel() })
             population = evolve(
                 populationEvolver, toModelScores, simpleNeatExperiment, population.size
             ).mapIndexed { index, neatMutator ->
@@ -338,11 +340,16 @@ fun Application.moduleNovelty(testing: Boolean = false) {
             knnNoveltyArchive.noveltyThreshold = settings.noveltyThreshold
             logger.info { "$it applied" }
         }
+        post<ModelsRequest>("models") {
+            call.respond(populationHistory.drop(it.skip).take(it.generations))
+        }
+
+
     }
     launch(Dispatchers.Default) {
         for (it in scoreChannel) {
             val populationEvolver = simulation.populationEvolver
-            val score = if (knnNoveltyArchive.size > 0) {
+            val b = if (knnNoveltyArchive.size > 0) {
                 val addBehavior = knnNoveltyArchive.addBehavior(it)
                 (if (addBehavior < knnNoveltyArchive.noveltyThreshold) 0f else addBehavior)
             } else {
@@ -350,6 +357,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //                euclidean(toVector(it), toVector(it).map { 0f})
                 it.stageParts.toFloat()
             }
+            val score = b+  it.xPos / 32 + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
 
             val model = mapIndexed[it.id]?.neatMutator
@@ -367,3 +375,4 @@ fun Application.moduleNovelty(testing: Boolean = false) {
         }
     }
 }
+data class ModelsRequest(val generations : Int, val skip : Int)

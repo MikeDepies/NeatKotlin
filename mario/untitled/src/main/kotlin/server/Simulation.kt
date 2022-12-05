@@ -17,6 +17,7 @@ import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
 import server.message.endpoints.NeatModel
+import java.lang.Integer.max
 import java.util.*
 
 private val log = KotlinLogging.logger { }
@@ -472,19 +473,20 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 @OptIn(ExperimentalStdlibApi::class)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
-    val inputImagePlane = layerPlane(15, 16)
-    val hiddenPlanes = (0..3).map {
-        layerPlane(8, 8)
+    val inputImagePlane = layerPlane(30, 32)
+    val hiddenPlanes = (0..20).map {
+        if (it < 1) layerPlane(12, 12) else layerPlane(7, 7)
     }
-    val outputPlane = layerPlane(1, 12)
+    val outputPlane = layerPlane(1, 5)
     val computationOrder = hiddenPlanes + outputPlane
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes + outputPlane
-        put(inputImagePlane, planeList)
+        put(inputImagePlane, planeList.take(2))
         hiddenPlanes.forEachIndexed { index, layerPlane ->
-            put(layerPlane, planeList/*.take(1)*/)
+            val prev = if (index - 2 > 0) planeList.drop(index-2).take(2) else listOf()
+            put(layerPlane, prev + planeList.drop(index + 1).take(2))
         }
-        put(outputPlane, planeList)
+        put(outputPlane, planeList.dropLast(1).takeLast(2))
     }
 //    println(connectionMapping)
     val planeZMap = buildMap<LayerPlane, Int> {

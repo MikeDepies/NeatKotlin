@@ -279,7 +279,7 @@ class Evaluator:
             # if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
                 # self.actions_without_damage += 3
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
-                # self.frames_without_damage += 10
+                self.frames_without_damage += 10
                 self.damage_action_available = True
                 if self.capture_action(player) and on_stage:
                     # print("prev actions:")
