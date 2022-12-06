@@ -148,7 +148,7 @@ class EvoManager(
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
         populationEvolver.speciationController.speciesSet.forEach { species ->
             val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-            populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
+            populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.random())
         }
 
         while (newPopulation.size < populationSize) {
