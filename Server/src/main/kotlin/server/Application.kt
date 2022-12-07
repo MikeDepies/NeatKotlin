@@ -104,7 +104,7 @@ fun Application.module() {
         40,
         behaviorMeasureInt(
             damageMultiplier = 2f,
-            actionMultiplier = 10f,
+            actionMultiplier = 4f,
             killMultiplier = 100f,
             recoveryMultiplier = 1f
         )
@@ -561,7 +561,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.2f)
+    val shFunction = shFunction(.3f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
