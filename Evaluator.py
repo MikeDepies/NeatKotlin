@@ -48,6 +48,7 @@ class Evaluator:
     damage_action_available : bool
     total_frames_hitstun : int
     total_frames_alive: int
+    movement_frames : int
     def __init__(self, player: int, opponent: int, attack_timer: int , max_timer: int, action_limit: int, logger: melee.Logger = None) -> None:
         self.player_index = player
         self.opponent_index = opponent
@@ -84,6 +85,7 @@ class Evaluator:
         self.damage_action_available = True
         self.total_frames_hitstun = 0
         self.total_frames_alive = 0
+        self.movement_frames = 0
         self.excluded_actions = [melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
                                  melee.Action.DAMAGE_FLY_HIGH, melee.Action.DAMAGE_FLY_LOW, melee.Action.DAMAGE_FLY_NEUTRAL, melee.Action.DAMAGE_FLY_ROLL,
@@ -215,7 +217,7 @@ class Evaluator:
                 self.knocked_off_stage = True
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
-            self.total_frames_alive +=1
+            self.total_frames_alive += pow(max(0, 1 - (player.x / 88)), 2)
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
             # and not self.frame_data.is_roll(player.character, player.action)
@@ -247,7 +249,11 @@ class Evaluator:
             if self.frames_since_opponent_unknocked > 90:
                 self.opponent_knocked = False
                 self.frames_since_opponent_unknocked = 0
-
+            if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING]:
+                self.movement_frames +=1
+                if self.movement_frames > 30:
+                    self.player_previous_actions.pop()
+                    self.movement_frames = 0
             opponent_off_stage = not self.is_on_stage(game_state, opponent)
             opponent_on_stage = not opponent_off_stage and opponent.position.y >= 0
             if opponent_off_stage and self.opponent_knocked:
@@ -309,4 +315,4 @@ class Evaluator:
     def score(self, game_state: GameState) -> ActionBehavior:
         return ActionBehavior(self.actions, self.kill_actions,
                               self.damage_actions, self.recovery_actions_set,
-                              self.total_damage, self.total_distanceTowardOpponent, self.player_died, self.total_frames_hitstun, self.total_frames)
+                              self.total_damage, self.total_distanceTowardOpponent, self.player_died, self.total_frames_hitstun, self.total_frames_alive)

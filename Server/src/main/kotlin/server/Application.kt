@@ -99,7 +99,7 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         40,
         behaviorMeasureInt(
@@ -112,7 +112,7 @@ fun Application.module() {
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
 //        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
 //    )
-//    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
+//    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json").takeLast(100_000))
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
@@ -129,10 +129,10 @@ fun Application.module() {
 //    launch { evoManager2.start(initialPopulation2) }
     val dashboardManager = DashboardManager(
         evaluationId, StreamStats(
-            0,
-            0,
-            0,
-            0
+            3,
+            368,
+            255,
+            1479
         )
     )
     launch {
@@ -179,11 +179,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(60, 480, 7)
+    val evaluatorSettings = EvaluatorSettings(120, 960, 7)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 5),
+        ControllerConfiguration(Character.Fox, 4),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -561,7 +561,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.5f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
