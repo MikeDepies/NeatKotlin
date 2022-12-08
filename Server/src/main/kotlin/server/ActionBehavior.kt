@@ -12,7 +12,7 @@ data class ActionBehavior(
     val totalDistanceTowardOpponent: Float,
     val playerDied: Boolean,
     val totalFramesHitstunOpponent: Int,
-    val totalFrames : Int
+    val totalFrames : Float
 )
 
 @Serializable
@@ -46,5 +46,5 @@ data class ActionBehaviorInt(
     val totalDistanceTowardOpponent: Float,
     val playerDied: Boolean,
     val totalFramesHitstunOpponent : Int,
-    val totalFrames : Int
+    val totalFrames : Float
 )

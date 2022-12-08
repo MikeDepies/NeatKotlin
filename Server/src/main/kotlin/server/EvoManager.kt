@@ -217,7 +217,7 @@ class EvoManager(
             it.totalDistanceTowardOpponent,
             it.playerDied,
             it.totalFramesHitstunOpponent,
-            it.totalFrames
+            it.totalFrames.toFloat()
         )
     }
 

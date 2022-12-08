@@ -252,7 +252,8 @@ class Evaluator:
             if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING]:
                 self.movement_frames +=1
                 if self.movement_frames > 30:
-                    self.player_previous_actions.pop()
+                    if len(self.player_previous_actions) > 0:
+                        self.player_previous_actions.pop()
                     self.movement_frames = 0
             opponent_off_stage = not self.is_on_stage(game_state, opponent)
             opponent_on_stage = not opponent_off_stage and opponent.position.y >= 0
