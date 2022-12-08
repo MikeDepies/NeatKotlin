@@ -86,7 +86,8 @@ class Evaluator:
         self.total_frames_hitstun = 0
         self.total_frames_alive = 0
         self.movement_frames = 0
-        self.excluded_actions = [melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
+        self.excluded_actions = [melee.Action.SHIELD_BREAK_FALL, melee.Action.SHIELD_BREAK_DOWN_D, melee.Action.SHIELD_BREAK_DOWN_U, melee.Action.SHIELD_BREAK_TEETER, melee.Action.SHIELD_BREAK_FLY, melee.Action.SHIELD_BREAK_STAND_D, melee.Action.SHIELD_BREAK_STAND_U,
+                                 melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
                                  melee.Action.DAMAGE_FLY_HIGH, melee.Action.DAMAGE_FLY_LOW, melee.Action.DAMAGE_FLY_NEUTRAL, melee.Action.DAMAGE_FLY_ROLL,
                                  melee.Action.DAMAGE_FLY_TOP, melee.Action.DAMAGE_GROUND, melee.Action.DAMAGE_HIGH_1, melee.Action.DAMAGE_HIGH_2, melee.Action.DAMAGE_HIGH_3, melee.Action.DAMAGE_ICE, melee.Action.DAMAGE_ICE_JUMP, melee.Action.DAMAGE_LOW_1, melee.Action.DAMAGE_LOW_2, melee.Action.DAMAGE_LOW_3, melee.Action.DAMAGE_NEUTRAL_1,
