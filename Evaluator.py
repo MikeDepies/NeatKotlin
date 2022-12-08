@@ -218,7 +218,7 @@ class Evaluator:
                 self.knocked_off_stage = True
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
-            self.total_frames_alive += pow(max(0, 1 - (player.x / 88)), 2)
+            self.total_frames_alive += pow(max(0, 1 - abs(player.x / 88)), 2)
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
             # and not self.frame_data.is_roll(player.character, player.action)
@@ -285,7 +285,7 @@ class Evaluator:
                 self.frames_without_damage += 3
             
             if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
-                self.actions_without_damage += 3
+                self.actions_without_damage += 10
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
                 # self.frames_without_damage += 10
                 self.damage_action_available = True

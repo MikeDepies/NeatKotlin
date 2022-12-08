@@ -129,10 +129,7 @@ fun Application.module() {
 //    launch { evoManager2.start(initialPopulation2) }
     val dashboardManager = DashboardManager(
         evaluationId, StreamStats(
-            3,
-            368,
-            255,
-            1479
+            0,0,0,0
         )
     )
     launch {
