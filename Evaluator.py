@@ -254,7 +254,7 @@ class Evaluator:
                 self.movement_frames +=1
                 if self.movement_frames > 30:
                     if len(self.player_previous_actions) > 0:
-                        self.player_previous_actions.pop()
+                        self.player_previous_actions.pop(0)
                     self.movement_frames = 0
             opponent_off_stage = not self.is_on_stage(game_state, opponent)
             opponent_on_stage = not opponent_off_stage and opponent.position.y >= 0
