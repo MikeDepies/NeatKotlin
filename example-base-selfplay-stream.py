@@ -196,8 +196,9 @@ class ModelHandler:
     queue : mp.Queue
     evaluator_configuration: EvaluatorConfiguration
     stale_counter : int
+    stat_queue : mp.Queue
     
-    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue, evaluator_configuration: EvaluatorConfiguration) -> None:
+    def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue, evaluator_configuration: EvaluatorConfiguration, stat_queue : mp.Queue) -> None:
         self.network = None
         self.evaluator = Evaluator(model_index, opponent_index, evaluator_configuration.attack_time,
                                    evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
@@ -212,6 +213,7 @@ class ModelHandler:
         self.dash_helper = DashHelper(ai_controller_id)
         self.stale_counter = 0
         self.evaluator_configuration = evaluator_configuration
+        self.stat_queue = stat_queue
 
     def evaluate(self, game_state : melee.GameState):
         player0: PlayerState = game_state.players[self.model_index]
@@ -224,11 +226,12 @@ class ModelHandler:
                 self.stale_counter = 0
             
             if self.evaluator.player_lost_stock(game_state):
-                mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
+                self.stat_queue.put("death")
+                # mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
                 
             if self.evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
-                
-                mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
+                self.stat_queue.put("kill")
+                # mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
         
         if self.network is not None and self.evaluator is not None and self.stale_counter < 60 * 6:    
             state = create_packed_state(game_state, self.model_index, self.opponent_index)
@@ -247,9 +250,11 @@ class ModelHandler:
             print("no stocks! game over")
             
             if player0.stock == 0:
-                mp.Process(target=self.dash_helper.updateLoss, daemon=True).start()
+                self.stat_queue.put("loss")
+                # mp.Process(target=self.dash_helper.updateLoss, daemon=True).start()
             elif player1.stock == 0:
-                mp.Process(target=self.dash_helper.updateWin, daemon=True).start()
+                self.stat_queue.put("win")
+                # mp.Process(target=self.dash_helper.updateWin, daemon=True).start()
 
     def postEvaluate(self, game_state : melee.GameState):
         if self.network is None or self.evaluator is not None and self.evaluator.is_finished(game_state):
@@ -264,13 +269,14 @@ class ModelHandler:
             
     def reset(self):
         self.model_id, self.network = self.queue.get()
-        mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
+        self.stat_queue.put(self.model_id)
+        # mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
         print("creating new evaluator")
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                     self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
 
 
-def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configuration):
+def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configuration, stat_queue : mp.Queue):
     console, controller, controller_opponent, args, log = startConsole()
     player_index = args.port
     opponent_index = args.opponent
@@ -280,7 +286,7 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     hand_counter = 0
     
     controller_helper = ControllerHelper()
-    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator)
+    model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
     model_handler.reset()
     # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
     while True:
@@ -353,6 +359,20 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, contro
         #     print("failed to get network...")
 
 
+def httpRequestProcess(queue : mp.Queue):
+    dash_helper = DashHelper(0)
+    while True:
+        request_data = queue.get()
+        if (request_data == "kill"):
+            dash_helper.updateKill()
+        elif (request_data == "death"):
+            dash_helper.updateDeath()
+        elif (request_data == "win"):
+            dash_helper.updateWin()
+        elif (request_data == "loss"):
+            dash_helper.updateLoss()
+        else:
+            dash_helper.updateModel(request_data)
 
 if __name__ == '__main__':
     mgr = mp.Manager()
@@ -368,8 +388,12 @@ if __name__ == '__main__':
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num)
     queue_2 = mgr.Queue(process_num * 2)
+    stat_queue = mgr.Queue(20)
+    p = mp.Process(target=httpRequestProcess, daemon=True, args=(stat_queue,))
+    processes.append(p)
+    p.start()
     for i in range(process_num):
-        p = mp.Process(target=console_loop, args=(queue_1, queue_2, configuration))
+        p = mp.Process(target=console_loop, args=(queue_1, queue_2, configuration, stat_queue))
         processes.append(p)
         p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))

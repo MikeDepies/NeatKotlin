@@ -104,7 +104,7 @@ fun Application.module() {
         40,
         behaviorMeasureInt(
             damageMultiplier = 2f,
-            actionMultiplier = 4f,
+            actionMultiplier = 3f,
             killMultiplier = 100f,
             recoveryMultiplier = 1f
         )
@@ -179,11 +179,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(30, 120, 7)
+    val evaluatorSettings = EvaluatorSettings(60, 480, 7)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 7),
+        ControllerConfiguration(Character.Fox, 5),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -529,7 +529,7 @@ private fun behaviorMeasureInt(
         1
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage  /*recovery + damageDone + totalDistanceToward + totalFramesHitstun*/)
+    (all + kills + damage+ damageDone  /*recovery  + totalDistanceToward + totalFramesHitstun*/)
 }
 //
 //
