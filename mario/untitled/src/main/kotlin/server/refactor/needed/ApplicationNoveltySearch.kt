@@ -132,7 +132,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 500
+    val populationSize = 100
 
 
     val mateChance = .8f

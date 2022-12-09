@@ -117,7 +117,7 @@ fun createNetwork(): TaskNetworkBuilder {
         val planeList = hiddenPlanes + outputPlane
         put(inputPlane, planeList.take(2))
         hiddenPlanes.forEachIndexed { index, layerPlane ->
-            put(layerPlane, planeList.drop(index + 1).take(1))
+            put(layerPlane, planeList.drop(index + 1).take(2))
         }
 //        put(outputPlane, planeList.dropLast(1))
     }

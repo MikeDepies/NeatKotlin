@@ -99,12 +99,12 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        40,
+        20,
         behaviorMeasureInt(
             damageMultiplier = 2f,
-            actionMultiplier = 3f,
+            actionMultiplier = 5f,
             killMultiplier = 100f,
             recoveryMultiplier = 1f
         )
@@ -176,7 +176,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(120, 960, 14)
+    val evaluatorSettings = EvaluatorSettings(120, 960, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
@@ -522,11 +522,10 @@ private fun behaviorMeasureInt(
     val recovery = recoveryDistance.times(recoveryMultiplier)
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
-    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
-        1
+    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(1
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage+ damageDone  /*recovery  + totalDistanceToward + totalFramesHitstun*/)
+    (all + kills + damage+ damageDone  + totalDistanceToward /*recovery  + totalFramesHitstun*/)
 }
 //
 //
@@ -558,7 +557,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.5f)
+    val shFunction = shFunction(.25f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
