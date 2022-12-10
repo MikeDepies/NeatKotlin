@@ -168,9 +168,10 @@ fun NeatExperiment.generateInitialPopulation2(
         }
         mutateBias(this, clone)
 
-        clone.outputNodes.forEach {
-            it.activationFunction = activationFunctions.random(random)
-        }
+//        clone.outputNodes.forEach {
+//            it.activationFunction = activationFunctions.random(random)
+//        }
+        clone.outputNodes[1].activationFunction = activationFunctions.random(random)
         clone.outputNodes[1].activationFunction = Activation.CPPN.linear
         clone
     }

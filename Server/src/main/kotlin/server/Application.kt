@@ -101,9 +101,9 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        20,
+        50,
         behaviorMeasureInt(
-            damageMultiplier = 2f,
+            damageMultiplier = 20f,
             actionMultiplier = 5f,
             killMultiplier = 100f,
             recoveryMultiplier = 1f
@@ -112,12 +112,12 @@ fun Application.module() {
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
 //        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
 //    )
-//    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json").takeLast(100_000))
+    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json").takeLast(100_000))
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = false
+        load = true
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -176,7 +176,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(120, 960, 10)
+    val evaluatorSettings = EvaluatorSettings(40, 960, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
@@ -557,7 +557,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.25f)
+    val shFunction = shFunction(.2f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
