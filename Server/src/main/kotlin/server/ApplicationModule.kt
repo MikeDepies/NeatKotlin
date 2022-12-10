@@ -126,7 +126,7 @@ fun NeatExperiment.generateInitialPopulation2(
     numberOfOutputNodes: Int,
     activationFunctions: List<ActivationGene>
 ): List<NeatMutator> {
-    val neatMutator = createNeatMutator2(numberOfInputNodes, numberOfOutputNodes, random, activationFunctions.first())
+    val neatMutator = createNeatMutator2(numberOfInputNodes, numberOfOutputNodes, random, activationFunctions.last())
     val assignConnectionRandomWeight = assignConnectionRandomWeight(7f)
     fun addConnectionNode(sourceNode: Int, targetNode: Int): ConnectionGene {
         return ConnectionGene(
@@ -171,8 +171,8 @@ fun NeatExperiment.generateInitialPopulation2(
 //        clone.outputNodes.forEach {
 //            it.activationFunction = activationFunctions.random(random)
 //        }
-        clone.outputNodes[1].activationFunction = activationFunctions.random(random)
-        clone.outputNodes[1].activationFunction = Activation.CPPN.linear
+        clone.outputNodes[0].activationFunction = activationFunctions.random(random)
+        clone.outputNodes[1].activationFunction = activationFunctions.random(random)// Activation.CPPN.linear
         clone
     }
 }
