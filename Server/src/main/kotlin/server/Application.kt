@@ -103,9 +103,9 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         50,
         behaviorMeasureInt(
-            damageMultiplier = 20f,
+            damageMultiplier = 10f,
             actionMultiplier = 5f,
-            killMultiplier = 100f,
+            killMultiplier = 200f,
             recoveryMultiplier = 1f
         )
     )
@@ -176,11 +176,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 960, 10)
+    val evaluatorSettings = EvaluatorSettings(30, 960, 8)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 4),
+        ControllerConfiguration(Character.Fox, 7),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -525,7 +525,7 @@ private fun behaviorMeasureInt(
     val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(.1f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage+ damageDone  + totalDistanceToward /*recovery  + totalFramesHitstun*/)
+    (all + kills + damage+ damageDone /* + totalDistanceToward recovery  + totalFramesHitstun*/)
 }
 //
 //
@@ -557,7 +557,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.35f)
+    val shFunction = shFunction(.6f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

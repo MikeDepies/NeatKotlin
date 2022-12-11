@@ -135,7 +135,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 100
 
 
-    val mateChance = .8f
+    val mateChance = .7f
     val survivalThreshold = .2f
     val stagnation = 600
 
@@ -199,7 +199,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(40,  settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(400,  settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }

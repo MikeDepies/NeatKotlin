@@ -267,7 +267,7 @@ class Evaluator:
             if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action):
                 self.frames_without_damage += 1
                 if self.player_took_damage(game_state):
-                    self.frames_without_damage += self.player_damage_amount_taken(game_state) * 30
+                    self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
 
             if self.player_dealt_damage(game_state):
                 self.damage_since_recovery = True
@@ -282,12 +282,12 @@ class Evaluator:
                 self.last_damage_action = player.action
             
             if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
-                self.frames_without_damage += 3
+                self.frames_without_damage += 2
             
             if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
-                self.actions_without_damage += 7
+                self.actions_without_damage += 6
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
-                self.frames_without_damage += 10
+                self.frames_without_damage += 5
                 self.damage_action_available = True
                 if self.capture_action(player) and on_stage:
                     # print("prev actions:")

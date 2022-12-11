@@ -71,7 +71,7 @@ class EvoManager(
                     )
                     val behaviorScore = max(
                         0f, scoredBehavior
-                    ) + (it.score.totalFrames / 5) + (it.score.kills.size * 100f) + it.score.totalDamageDone / 10f
+                    ) + (it.score.totalFrames / 2) + (it.score.kills.size * 100f) + it.score.totalDamageDone / 10f
                     while (knnNoveltyArchive.behaviors.size > 100_000) {
                         knnNoveltyArchive.behaviors.removeAt(0)
                     }
@@ -146,10 +146,10 @@ class EvoManager(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-        populationEvolver.speciationController.speciesSet.forEach { species ->
-            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-            populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
-        }
+//        populationEvolver.speciationController.speciesSet.forEach { species ->
+//            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+//            populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.first())
+//        }
 
         while (newPopulation.size < populationSize) {
             newPopulation =
