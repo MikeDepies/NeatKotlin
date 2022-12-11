@@ -103,10 +103,10 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         50,
         behaviorMeasureInt(
-            damageMultiplier = 10f,
-            actionMultiplier = 5f,
+            damageMultiplier = 3f,
+            actionMultiplier = 3f,
             killMultiplier = 200f,
-            recoveryMultiplier = 1f
+            recoveryMultiplier = 30f
         )
     )
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -179,8 +179,8 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(30, 960, 8)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 7),
+        ControllerConfiguration(Character.DoctorMario, 0),
+        ControllerConfiguration(Character.Fox, 3),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -522,10 +522,10 @@ private fun behaviorMeasureInt(
     val recovery = recoveryDistance.times(recoveryMultiplier)
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
-    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(.1f
+    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(1f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage+ damageDone /* + totalDistanceToward recovery  + totalFramesHitstun*/)
+    (all + kills + damage+ damageDone  + totalDistanceToward + recovery /* + totalFramesHitstun*/)
 }
 //
 //
@@ -557,7 +557,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.6f)
+    val shFunction = shFunction(.4f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

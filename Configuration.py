@@ -34,6 +34,7 @@ def parseCharacter(character_string : str):
         "pikachu" : melee.Character.PIKACHU,
         "link" : melee.Character.LINK,
         "yoshi" : melee.Character.YOSHI,
+        "doctormario" : melee.Character.DOC
     }
     return character_table[character_string.lower()]
     
