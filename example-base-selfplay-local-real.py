@@ -293,7 +293,8 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
                     # print(configuration.player_1.character)
                
                 
-                model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
+                model_handler = ModelHandler(ai_controller_id, player_index, opponent_index,
+                                 controller, controller_helper, queue_1, configuration.evaluator)
                 model_handler.reset()
                 reset +=1
             hand_counter +=1
