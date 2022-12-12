@@ -290,12 +290,13 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     ai_controller_id = 0
     ai_controller_id2 = 1
     hand_counter = 0
-    
+    reset = 0
     controller_helper = ControllerHelper()
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
     model_handler.reset()
     # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2)
     while True:
+        
         game_state = console.step()
         if game_state is None:
             print("We hit this None BS")
@@ -303,6 +304,7 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
         
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
             hand_counter = 0
+            reset = 0
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
@@ -318,7 +320,21 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 controller.release_all()
                 controller.flush()
         else:
+            if reset == 0:
+                if random.random() >= .5:
+                    player_index = args.opponent
+                    opponent_index = args.port
+                    temp_controller = controller
+                    controller = controller_opponent
+                    controller_opponent = temp_controller
+                    # print(configuration.player_1.character)
+               
+                
+                model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
+                model_handler.reset()
+                reset +=1
             hand_counter +=1
+            
             if hand_counter < 200:
                 melee.MenuHelper.menu_helper_simple(game_state,
                                                     controller,
@@ -332,20 +348,26 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 # if game_state.players and game_state.players[player_index].character == melee.Character.MARIO:
                 if game_state.players:
                     player: melee.PlayerState = game_state.players[player_index]
+                    player1: melee.PlayerState = game_state.players[opponent_index]
                     if player and player.cpu_level == configuration.player_1.cpu_level and player.character == configuration.player_1.character:
-                        melee.MenuHelper.menu_helper_simple(game_state,
-                                                            controller_opponent,
-                                                            configuration.player_2.character,
-                                                            configuration.stage,
-                                                            args.connect_code,
-                                                            costume=0,
-                                                            autostart=True,
-                                                            swag=False,
-                                                            cpu_level=configuration.player_2.cpu_level)
+                        melee.MenuHelper.choose_character(
+                            character=configuration.player_2.character,
+                                            gamestate=game_state,
+                                            controller=controller_opponent,
+                                            cpu_level=configuration.player_2.cpu_level,
+                                            costume=0,
+                                            swag=False,
+                                            start=True)
+                    if game_state.menu_state == melee.Menu.STAGE_SELECT:
+                        if player and player.cpu_level == configuration.player_1.cpu_level and player.character == configuration.player_1.character and player1 and player1.cpu_level == configuration.player_2.cpu_level and player1.character == configuration.player_2.character:
+                            print("ready")
+                            # melee.MenuHelper.
+                            melee.MenuHelper.choose_stage(configuration.stage, game_state, controller_opponent)
             elif hand_counter < 400:
                 controller_opponent.tilt_analog(melee.Button.BUTTON_MAIN, 0, 0)
             else:
                 hand_counter = 0
+            
 
                 
 
