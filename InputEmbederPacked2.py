@@ -154,7 +154,10 @@ class InputEmbederPacked2:
         # # state[0, 63] = (gamestate.projectiles) / self.positionNormalizer
         for projectile in gamestate.projectiles[:5]:
             projectile: Projectile
-            state[2, statePosition] = float(projectile.owner / 4)
+            if projectile.owner == player0:
+                state[2, statePosition] = float(1)
+            else: 
+                state[2, statePosition] = float(0)
             statePosition += 1
             state[2, statePosition] = float(
                 projectile.position.x) / self.positionNormalizer

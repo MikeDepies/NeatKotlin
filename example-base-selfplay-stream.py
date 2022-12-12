@@ -280,7 +280,13 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     console, controller, controller_opponent, args, log = startConsole()
     player_index = args.port
     opponent_index = args.opponent
-    
+    if random.random() >= .5:
+        player_index = args.opponent
+        opponent_index = args.port
+        temp_controller = controller
+        controller = controller_opponent
+        controller_opponent = temp_controller
+        # print(configuration.player_1.character)
     ai_controller_id = 0
     ai_controller_id2 = 1
     hand_counter = 0

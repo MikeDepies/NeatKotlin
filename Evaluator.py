@@ -252,11 +252,11 @@ class Evaluator:
                 self.frames_since_opponent_unknocked = 0
             if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
                 self.movement_frames +=1
-                # print("movement: " + str(self.movement_frames))
+                print("movement: " + str(self.movement_frames))
                 if self.movement_frames > 30:
                     if len(self.player_previous_actions) > 0:
                         a = self.player_previous_actions.pop(0)
-                        # print("popped action: " + str(a) )
+                        print("popped action: " + str(a) )
                     self.movement_frames = 0
             opponent_off_stage = not self.is_on_stage(game_state, opponent)
             opponent_on_stage = not opponent_off_stage and opponent.position.y >= 0
