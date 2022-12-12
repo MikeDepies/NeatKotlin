@@ -104,7 +104,7 @@ fun Application.module() {
         30,
         behaviorMeasureInt(
             damageMultiplier = 2f,
-            actionMultiplier = 12f,
+            actionMultiplier = 2f,
             killMultiplier = 400f,
             recoveryMultiplier = 50f
         )
@@ -176,7 +176,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(12, 960, 50)
+    val evaluatorSettings = EvaluatorSettings(20, 960, 50)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DoctorMario, 0),
@@ -541,7 +541,7 @@ private fun behaviorMeasureInt(
     val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(.2f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage+ damageDone  + totalDistanceToward + recovery /* + totalFramesHitstun*/)
+    (all + kills + damage+ damageDone  + recovery /* + totalFramesHitstun*/)
 }
 //
 //
@@ -573,7 +573,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.4f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
