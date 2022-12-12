@@ -101,12 +101,12 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        50,
+        30,
         behaviorMeasureInt(
-            damageMultiplier = 3f,
-            actionMultiplier = 3f,
-            killMultiplier = 200f,
-            recoveryMultiplier = 30f
+            damageMultiplier = 2f,
+            actionMultiplier = 12f,
+            killMultiplier = 400f,
+            recoveryMultiplier = 50f
         )
     )
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -176,11 +176,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(30, 960, 8)
+    val evaluatorSettings = EvaluatorSettings(12, 960, 50)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Fox, 3),
+        ControllerConfiguration(Character.Fox, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -331,6 +331,15 @@ private fun Application.routing(
                     val dashboardManager = evoHandler.dashboardManager(it.controllerId)
                     call.respond(ActiveModelId(dashboardManager.modelId))
                 }
+                post<ModelsRequest>("/generationStatus") {
+                    val evoManager = evoHandler.evoManager(it.controllerId)
+                    val amountComplete = evoManager.finishedScores.filter { !it.value }.mapNotNull { evoManager.mapIndexed[it.key] }
+                    call.respond(GenerationStatus(amountComplete.size))
+                }
+                post<ModelsRequest>("/populationSize") {
+                    val evoManager = evoHandler.evoManager(it.controllerId)
+                    call.respond(PopulationSize(evoManager.populationSize))
+                }
             }
             post<ModelsRequest>("/bestList") { modelsRequest ->
                 val evoManager = evoHandler.evoManager(modelsRequest.controllerId)
@@ -401,6 +410,13 @@ private fun Application.routing(
 
         }
     }
+}
+@Serializable
+data class PopulationSize(val populationSize: Int)
+
+@Serializable
+data class GenerationStatus(val amountComplete: Int) {
+
 }
 
 sealed class StatOperation {
@@ -522,7 +538,7 @@ private fun behaviorMeasureInt(
     val recovery = recoveryDistance.times(recoveryMultiplier)
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
-    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(1f
+    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(.2f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
     (all + kills + damage+ damageDone  + totalDistanceToward + recovery /* + totalFramesHitstun*/)
@@ -557,7 +573,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.3f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
