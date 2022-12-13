@@ -25,7 +25,7 @@ from DashHelper import DashHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
 from InputEmbederPacked import InputEmbederPacked
-from InputEmbederPacked2 import InputEmbederPacked2
+from InputEmbederPacked3 import InputEmbederPacked3
 from ModelHelper import ModelHelper
 
 
@@ -180,7 +180,7 @@ class Session:
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
     positionNormalizer = 100.0
     actionNormalizer = 60.0
-    return InputEmbederPacked2(player_index, opponent_index,
+    return InputEmbederPacked3(player_index, opponent_index,
                            positionNormalizer, actionNormalizer).embed_input(gamestate)
 
 class ModelHandler:

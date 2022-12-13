@@ -103,9 +103,9 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         30,
         behaviorMeasureInt(
-            damageMultiplier = 5f,
-            actionMultiplier = 2f,
-            killMultiplier = 40f,
+            damageMultiplier = 30f,
+            actionMultiplier = 1f,
+            killMultiplier = 100f,
             recoveryMultiplier = 50f
         )
     )
@@ -179,7 +179,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(20, 960, 50)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DoctorMario, 0),
+        ControllerConfiguration(Character.CaptainFalcon, 0),
         ControllerConfiguration(Character.Fox, 0),
         MeleeStage.FinalDestination
     )
@@ -538,7 +538,7 @@ private fun behaviorMeasureInt(
     val recovery = recoveryDistance.times(recoveryMultiplier)
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
-    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(10f
+    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(50f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
     (all + kills + damage+ damageDone  + recovery + totalDistanceToward /* + totalFramesHitstun*/)
@@ -573,7 +573,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.4f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

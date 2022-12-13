@@ -41,10 +41,10 @@ class PopulationEvolver(
         val mutationEntries = mutationDictionary()
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
-            mateChance = .7f,
+            mateChance = .85f,
             survivalThreshold = .2f,
             speciesScoreKeeper = scoreKeeper,
-            stagnation = 40,
+            stagnation = 80,
             championThreshold = 5
         )
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation, generation)
