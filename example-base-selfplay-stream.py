@@ -333,26 +333,26 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 controller.release_all()
                 controller.flush()
         else:
-            if reset == 0:
-                if random.random() >= .5:
-                    player_index = args.opponent
-                    opponent_index = args.port
+            # if reset == 0:
+            #     if random.random() >= .5:
+            #         player_index = args.opponent
+            #         opponent_index = args.port
                     
-                    controller = controller_opponent_orig
-                    controller_opponent = controller_orig
-                else:
-                    player_index = args.port
-                    opponent_index =  args.opponent
-                    controller = controller_orig
-                    controller_opponent = controller_opponent_orig
-                    # print(configuration.player_1.character)
+            #         controller = controller_opponent_orig
+            #         controller_opponent = controller_orig
+            #     else:
+            #         player_index = args.port
+            #         opponent_index =  args.opponent
+            #         controller = controller_orig
+            #         controller_opponent = controller_opponent_orig
+            #         # print(configuration.player_1.character)
                
                 
-                model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
-                model_handler.reset()
-                reset +=1
+            #     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
+            #     model_handler.reset()
+            #     reset +=1
             hand_counter +=1
-            
+
             if hand_counter < 200:
                 melee.MenuHelper.menu_helper_simple(game_state,
                                                     controller,
@@ -368,7 +368,6 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                     player: melee.PlayerState = game_state.players[player_index]
                     player1: melee.PlayerState = game_state.players[opponent_index]
                     if player and player.cpu_level == configuration.player_1.cpu_level and player.character == configuration.player_1.character:
-                        print("choose character")
                         melee.MenuHelper.choose_character(
                             character=configuration.player_2.character,
                                             gamestate=game_state,
