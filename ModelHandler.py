@@ -31,8 +31,8 @@ from ModelHelper import ModelHelper
 
 
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
-    positionNormalizer = 100.0
-    actionNormalizer = 60.0
+    positionNormalizer = 30.0
+    actionNormalizer = 20.0
     return InputEmbederPacked3(player_index, opponent_index,
                               positionNormalizer, actionNormalizer).embed_input(gamestate)
 

@@ -235,9 +235,9 @@ class ModelHandler:
         
         if self.network is not None and self.evaluator is not None and self.stale_counter < 60 * 6:    
             state = create_packed_state(game_state, self.model_index, self.opponent_index)
-            # if game_state.frame % 30 == 0:
-            #     print("--------")
-            #     print(state)
+            if game_state.frame % 30 == 0:
+                print("--------")
+                print(state)
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
         else:
