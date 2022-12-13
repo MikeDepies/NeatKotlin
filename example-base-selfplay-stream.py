@@ -368,6 +368,7 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                     player: melee.PlayerState = game_state.players[player_index]
                     player1: melee.PlayerState = game_state.players[opponent_index]
                     if player and player.cpu_level == configuration.player_1.cpu_level and player.character == configuration.player_1.character:
+                        print("choose character")
                         melee.MenuHelper.choose_character(
                             character=configuration.player_2.character,
                                             gamestate=game_state,
