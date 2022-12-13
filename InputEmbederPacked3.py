@@ -34,8 +34,8 @@ class InputEmbederPacked3:
         return statePosition + 3
 
     def applyPlayerState(self, player0: PlayerState, state: np.ndarray, statePosition : int):
-        state[statePosition + 0] = player0.speed_air_x_self 
-        state[statePosition + 1] = player0.speed_ground_x_self
+        state[statePosition + 0] = player0.speed_air_x_self / 2.5
+        state[statePosition + 1] = player0.speed_ground_x_self / 2.5
         state[statePosition + 2] = player0.speed_x_attack 
         state[statePosition + 3] = player0.speed_y_attack 
         state[statePosition + 4] = player0.speed_y_self 
