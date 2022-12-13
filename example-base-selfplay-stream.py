@@ -179,7 +179,7 @@ class Session:
 
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
     positionNormalizer = 30.0
-    actionNormalizer = 20.0
+    actionNormalizer = 150.0
     return InputEmbederPacked3(player_index, opponent_index,
                            positionNormalizer, actionNormalizer).embed_input(gamestate)
 
@@ -197,6 +197,7 @@ class ModelHandler:
     evaluator_configuration: EvaluatorConfiguration
     stale_counter : int
     stat_queue : mp.Queue
+    max_state : np.ndarray
     
     def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue, evaluator_configuration: EvaluatorConfiguration, stat_queue : mp.Queue) -> None:
         self.network = None
@@ -214,6 +215,7 @@ class ModelHandler:
         self.stale_counter = 0
         self.evaluator_configuration = evaluator_configuration
         self.stat_queue = stat_queue
+        self.max_state = None
 
     def evaluate(self, game_state : melee.GameState):
         player0: PlayerState = game_state.players[self.model_index]
@@ -235,9 +237,13 @@ class ModelHandler:
         
         if self.network is not None and self.evaluator is not None and self.stale_counter < 60 * 6:    
             state = create_packed_state(game_state, self.model_index, self.opponent_index)
-            if game_state.frame % 30 == 0:
-                print("--------")
-                print(state)
+            if (self.max_state is not None):
+                self.max_state = np.maximum(state, self.max_state)
+            else:
+                self.max_state = state
+            # if game_state.frame % 30 == 0:
+            #     print("--------")
+            #     print(state)
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
         else:
@@ -273,6 +279,9 @@ class ModelHandler:
         self.model_id, self.network = self.queue.get()
         self.stat_queue.put(self.model_id)
         # mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
+        print(self.max_state)
+        if (self.max_state is not None):
+            self.max_state = np.zeros(self.max_state.shape)
         print("creating new evaluator")
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                     self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
