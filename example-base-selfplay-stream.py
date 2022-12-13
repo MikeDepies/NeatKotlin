@@ -178,8 +178,8 @@ class Session:
                       melee.Character.MARIO, melee.Character.DK, melee.Character.KIRBY, melee.Character.BOWSER, melee.Character.LINK, melee.Character.NESS, melee.Character.PEACH, melee.Character.YOSHI, melee.Character.MEWTWO, melee.Character.LUIGI, melee.Character.YLINK, melee.Character.DOC, melee.Character.GAMEANDWATCH, melee.Character.ROY]
 
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
-    positionNormalizer = 100.0
-    actionNormalizer = 60.0
+    positionNormalizer = 30.0
+    actionNormalizer = 20.0
     return InputEmbederPacked3(player_index, opponent_index,
                            positionNormalizer, actionNormalizer).embed_input(gamestate)
 
@@ -235,7 +235,9 @@ class ModelHandler:
         
         if self.network is not None and self.evaluator is not None and self.stale_counter < 60 * 6:    
             state = create_packed_state(game_state, self.model_index, self.opponent_index)
-            
+            # if game_state.frame % 30 == 0:
+            #     print("--------")
+            #     print(state)
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
         else:
