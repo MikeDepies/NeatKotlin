@@ -99,14 +99,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         60,
         behaviorMeasureInt(
             damageMultiplier = 5f,
-            actionMultiplier = 1f,
+            actionMultiplier = 2f,
             killMultiplier = 100f,
-            recoveryMultiplier = 50f
+            recoveryMultiplier = 5f
         )
     )
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -180,7 +180,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.Fox, 1),
+        ControllerConfiguration(Character.Fox, 3),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -573,7 +573,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.3f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

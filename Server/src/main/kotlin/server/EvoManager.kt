@@ -1,7 +1,6 @@
 package server
 
 import PopulationEvolver
-import io.ktor.util.date.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -13,14 +12,11 @@ import neat.*
 import neat.model.NeatMutator
 import neat.novelty.KNNNoveltyArchive
 import server.local.ModelEvaluationResult
-import server.local.ModelStatus
 import server.message.endpoints.toModel
 import java.io.File
-import java.lang.Exception
 import java.lang.Float.max
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.min
 import kotlin.math.sqrt
 
 private val log = KotlinLogging.logger { }
@@ -172,7 +168,7 @@ class EvoManager(
     }
 
     private fun captureBestModel(
-        m: NeatMutator, behaviorScore: Float, populationEvolver: PopulationEvolver, it: ModelEvaluationResult
+        m: NeatMutator, behaviorScore: Float, populationEvolver: PopulationEvolver, modelEvaluationResult: ModelEvaluationResult
     ) {
         var tempBestModels : MutableList<ScoredModel> = ArrayList(bestModels)
         val average = bestModels.map { it.score }.average()
@@ -180,7 +176,7 @@ class EvoManager(
             behaviorScore,
             populationEvolver.generation,
             m,
-            it.modelId,
+            modelEvaluationResult.modelId,
             populationEvolver.speciationController.species(m).id
         )
         tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()

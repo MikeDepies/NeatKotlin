@@ -285,24 +285,24 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
                 controller.release_all()
                 controller.flush()
         else:
-            if reset == 0:
-                if random.random() >= .5:
-                    player_index = args.opponent
-                    opponent_index = args.port
+            # if reset == 0:
+            #     if random.random() >= .5:
+            #         player_index = args.opponent
+            #         opponent_index = args.port
                     
-                    controller = controller_opponent_orig
-                    controller_opponent = controller_orig
-                else:
-                    player_index = args.port
-                    opponent_index =  args.opponent
-                    controller = controller_orig
-                    controller_opponent = controller_opponent_orig
-                    # print(configuration.player_1.character)
+            #         controller = controller_opponent_orig
+            #         controller_opponent = controller_orig
+            #     else:
+            #         player_index = args.port
+            #         opponent_index =  args.opponent
+            #         controller = controller_orig
+            #         controller_opponent = controller_opponent_orig
+            #         # print(configuration.player_1.character)
                
                 
-                model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator)
-                model_handler.reset()
-                reset +=1
+            #     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator)
+            #     model_handler.reset()
+            #     reset +=1
             melee.MenuHelper.menu_helper_simple(game_state,
                                                 controller,
                                                 configuration.player_1.character,
