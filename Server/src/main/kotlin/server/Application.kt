@@ -105,7 +105,7 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 5f,
             actionMultiplier = 2f,
-            killMultiplier = 100f,
+            killMultiplier = 200f,
             recoveryMultiplier = 5f
         )
     )
@@ -179,8 +179,8 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(12, 60, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.Fox, 5),
+        ControllerConfiguration(Character.DonkeyKong, 0),
+        ControllerConfiguration(Character.Fox, 7),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
