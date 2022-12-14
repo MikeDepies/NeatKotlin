@@ -389,8 +389,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                             print("ready")
                             # melee.MenuHelper.
                             melee.MenuHelper.choose_stage(configuration.stage, game_state, controller_opponent)
-            elif hand_counter < 400:
-                controller_opponent.tilt_analog(melee.Button.BUTTON_MAIN, 0, 0)
+            # elif hand_counter < 400:
+            #     controller_opponent.tilt_analog(melee.Button.BUTTON_MAIN, 0, 0)
             else:
                 hand_counter = 0
             
