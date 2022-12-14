@@ -17,7 +17,7 @@ import multiprocessing as mp
 from skimage.transform import rescale, resize, downscale_local_mean
 import time
 # import cv2 as cv
-from gym_super_mario_bros.actions import RIGHT_ONLY
+from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 from dataclasses import dataclass
 from dacite import from_dict
 
@@ -129,8 +129,8 @@ def get_network_novelty(host: str, port : int):
     return id, builder
 
 def marioNovelty(queue : mp.Queue, render : Boolean):
-    env = gym_super_mario_bros.make('SuperMarioBros-v1')
-    env = JoypadSpace(env, RIGHT_ONLY)
+    env = gym_super_mario_bros.make('SuperMarioBrosRandomStages-v1')
+    env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
     done = False
@@ -208,7 +208,7 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         )
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
         network = child_network
-        network.input(state / 255.0)
+        network.input((state / 42.5) - 3)
         network.compute()
         output = network.output()
         # if (score != info["score"]):

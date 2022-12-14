@@ -186,6 +186,7 @@ def create_packed_state(gamestate: GameState, player_index: int, opponent_index:
 class ModelHandler:
     network : ComputableNetwork
     evaluator : Evaluator
+    dashboard_evaluator : Evaluator
     ai_controller_id: int
     model_helper: ModelHelper
     
@@ -202,6 +203,8 @@ class ModelHandler:
     def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper : ControllerHelper, queue : mp.Queue, evaluator_configuration: EvaluatorConfiguration, stat_queue : mp.Queue) -> None:
         self.network = None
         self.evaluator = Evaluator(model_index, opponent_index, evaluator_configuration.attack_time,
+                                   evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
+        self.dashboard_evaluator = Evaluator(model_index, opponent_index, evaluator_configuration.attack_time,
                                    evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
         self.ai_controller_id = ai_controller_id
         self.model_index = model_index
@@ -227,11 +230,11 @@ class ModelHandler:
             else:
                 self.stale_counter = 0
             
-            if self.evaluator.player_lost_stock(game_state):
+            if self.dashboard_evaluator.player_lost_stock(game_state):
                 self.stat_queue.put("death")
                 # mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
                 
-            if self.evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
+            if self.dashboard_evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
                 self.stat_queue.put("kill")
                 # mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
         
@@ -246,6 +249,7 @@ class ModelHandler:
             #     print(state)
             self.controller_helper.process(self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
+            self.dashboard_evaluator.evaluate_frame(game_state)
         else:
             self.controller.release_button(melee.Button.BUTTON_A)
             self.controller.release_button(melee.Button.BUTTON_B)
@@ -333,7 +337,10 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 controller.release_all()
                 controller.flush()
         else:
-            # if reset == 0:
+            if reset == 0:
+                evaluator_configuration = configuration.evaluator
+                model_handler.dashboard_evaluator = Evaluator(player_index, opponent_index, evaluator_configuration.attack_time,
+                                   evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
             #     if random.random() >= .5:
             #         player_index = args.opponent
             #         opponent_index = args.port
@@ -350,10 +357,11 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 
             #     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
             #     model_handler.reset()
-            #     reset +=1
+                reset +=1
             hand_counter +=1
 
             if hand_counter < 200:
+                
                 melee.MenuHelper.menu_helper_simple(game_state,
                                                     controller,
                                                     configuration.player_1.character,
