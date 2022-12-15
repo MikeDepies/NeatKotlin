@@ -252,8 +252,9 @@ class Evaluator:
                 self.opponent_knocked = False
                 self.frames_since_opponent_unknocked = 0
             if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
-                self.movement_frames += player.speed_ground_x_self
-                self.total_distanceTowardOpponent += player.speed_ground_x_self / 10
+                print(player.speed_ground_x_self)
+                self.movement_frames += abs(player.speed_ground_x_self)
+                self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 if self.frames_without_damage > 1:
                     self.frames_without_damage -= 1
                 # print("movement: " + str(self.movement_frames))
@@ -270,7 +271,7 @@ class Evaluator:
             if opponent_on_stage and self.opponent_knocked_off_stage:
                 self.opponent_knocked_off_stage = False
 
-            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action):
+            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable:
                 self.frames_without_damage += 1
                 if self.player_took_damage(game_state):
                     self.frames_without_damage += self.player_damage_amount_taken(game_state) * 2
