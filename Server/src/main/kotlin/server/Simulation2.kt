@@ -102,7 +102,7 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
-    val inputPlane = layerPlane(3, 13)
+    val inputPlane = layerPlane(4, 14)
 //    val plane1 = layerPlane(15, 15)
 //    val plane2 = layerPlane(15, 15)
 //    val plane3 = layerPlane(15, 15)

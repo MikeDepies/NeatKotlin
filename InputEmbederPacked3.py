@@ -108,12 +108,12 @@ class InputEmbederPacked3:
                 projectile.position.y) / self.positionNormalizer
             statePosition += 1
             state[2, statePosition] = float(
-                projectile.speed.x) / self.positionNormalizer
+                projectile.speed.x) / 2.5
             statePosition += 1
             state[2, statePosition] = float(
-                projectile.speed.y) / self.positionNormalizer
+                projectile.speed.y) / 2.5
             statePosition += 1
-            state[2, statePosition] = float(projectile.subtype / 11)
+            state[2, statePosition] = float((projectile.subtype - 5) / 2)
             # self.embedCategory(state, statePosition, , 11)
             statePosition += 1
         return state
