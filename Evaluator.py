@@ -252,11 +252,11 @@ class Evaluator:
                 self.opponent_knocked = False
                 self.frames_since_opponent_unknocked = 0
             if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
-                self.movement_frames +=1
+                self.movement_frames += player.speed_ground_x_self / 2.5
                 self.total_distanceTowardOpponent += player.speed_ground_x_self / 10
                 if self.frames_without_damage > 1:
                     self.frames_without_damage = 1
-                print("movement: " + str(self.movement_frames))
+                # print("movement: " + str(self.movement_frames))
                 if self.movement_frames > 15:
                     if len(self.player_previous_actions) > 0:
                         a = self.player_previous_actions.pop(0)

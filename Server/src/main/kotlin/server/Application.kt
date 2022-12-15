@@ -103,21 +103,21 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         60,
         behaviorMeasureInt(
-            damageMultiplier = 5f,
-            actionMultiplier = 4f,
+            damageMultiplier = 8f,
+            actionMultiplier = 2f,
             killMultiplier = 200f,
-            recoveryMultiplier = 15f
+            recoveryMultiplier = 30f
         )
     )
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
 //        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
 //    )
-//    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json").takeLast(100_000))
+    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = false
+        load = true
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -538,7 +538,7 @@ private fun behaviorMeasureInt(
     val recovery = recoveryDistance.times(recoveryMultiplier)
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
-    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(50f
+    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(2f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
     (all + kills + damage+ damageDone  + recovery + totalDistanceToward /* + totalFramesHitstun*/)

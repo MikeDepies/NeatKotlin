@@ -272,7 +272,7 @@ class ModelHandler:
         if self.network is None or self.evaluator is not None and self.evaluator.is_finished(game_state):
             if self.network is not None:
                 behavior = self.evaluator.score(game_state)
-                print(behavior.actions)
+                print(behavior.recovery_sets)
                 # self.model_helper.send_evaluation_result(self.model_id, behavior)
                 self.network = None
                 self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
