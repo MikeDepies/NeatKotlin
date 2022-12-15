@@ -180,7 +180,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 3),
+        ControllerConfiguration(Character.Fox, 4),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()

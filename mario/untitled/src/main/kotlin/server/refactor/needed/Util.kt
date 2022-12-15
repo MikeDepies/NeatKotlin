@@ -81,6 +81,7 @@ fun MarioDiscovery.toVector() = listOf(
     score.toFloat() / 100,
     flags.toFloat() * 30f,
     lifes.toFloat() * 10f,
+    life.toFloat() * 100f,
     xPos.toFloat() / 32,
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
