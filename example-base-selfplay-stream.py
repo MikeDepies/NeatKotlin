@@ -230,11 +230,11 @@ class ModelHandler:
             else:
                 self.stale_counter = 0
             
-            if self.dashboard_evaluator.player_lost_stock(game_state):
+            if self.dashboard_evaluator.previous_frame and self.dashboard_evaluator.player_lost_stock(game_state):
                 self.stat_queue.put("death")
                 # mp.Process(target=self.dash_helper.updateDeath, daemon=True).start()
                 
-            if self.dashboard_evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
+            if self.dashboard_evaluator.previous_frame and self.dashboard_evaluator.opponent_lost_stock(game_state) and self.evaluator.opponent_knocked:
                 self.stat_queue.put("kill")
                 # mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
         

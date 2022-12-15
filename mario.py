@@ -129,7 +129,7 @@ def get_network_novelty(host: str, port : int):
     return id, builder
 
 def marioNovelty(queue : mp.Queue, render : Boolean):
-    env = gym_super_mario_bros.make('SuperMarioBrosRandomStages-v1')
+    env = gym_super_mario_bros.make('SuperMarioBros-v1')
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
@@ -275,7 +275,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 8
+    process_num = 5
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     

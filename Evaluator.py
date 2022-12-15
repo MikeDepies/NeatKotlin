@@ -227,10 +227,11 @@ class Evaluator:
             if opponent.hitstun_frames_left > 1:
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
                 self.total_frames_hitstun +=1
-            if on_stage and self.knocked_off_stage and self.damage_since_recovery:
-                self.frames_without_damage = 0
+            if on_stage and self.knocked_off_stage:
+                if self.damage_since_recovery:
+                    self.frames_without_damage = 0
+                    self.damage_since_recovery = False
                 self.knocked_off_stage = False
-                self.damage_since_recovery = False
                 if (len(self.recovery_actions) > 0):
                     self.recovery_actions_set.append(self.recovery_actions)
                 self.recovery_actions = []

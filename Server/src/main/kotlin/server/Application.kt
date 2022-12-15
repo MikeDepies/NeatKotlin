@@ -106,7 +106,7 @@ fun Application.module() {
             damageMultiplier = 5f,
             actionMultiplier = 4f,
             killMultiplier = 200f,
-            recoveryMultiplier = 5f
+            recoveryMultiplier = 15f
         )
     )
 //    val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -573,7 +573,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.5f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
