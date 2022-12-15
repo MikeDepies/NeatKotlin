@@ -104,7 +104,7 @@ fun Application.module() {
         60,
         behaviorMeasureInt(
             damageMultiplier = 5f,
-            actionMultiplier = 2f,
+            actionMultiplier = 4f,
             killMultiplier = 200f,
             recoveryMultiplier = 5f
         )
@@ -176,7 +176,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 120, 14)
+    val evaluatorSettings = EvaluatorSettings(10, 120, 14)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
