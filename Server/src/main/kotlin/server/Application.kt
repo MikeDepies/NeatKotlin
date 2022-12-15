@@ -179,7 +179,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(12, 60, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DoctorMario, 0),
+        ControllerConfiguration(Character.Yoshi, 0),
         ControllerConfiguration(Character.Fox, 5),
         MeleeStage.FinalDestination
     )
@@ -573,7 +573,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 7 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.7f)
+    val shFunction = shFunction(.45f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

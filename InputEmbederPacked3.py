@@ -50,16 +50,17 @@ class InputEmbederPacked3:
         state[statePosition + 10] = 1 if player0.facing else 0
         state[statePosition + 11] = 1 if player0.off_stage else 0
         state[statePosition + 12] = 1 if player0.on_ground else 0
-        return statePosition + 13
+        state[statePosition + 13] = 1 if player0.invulnerable else 0
+        return statePosition + 14
 
     def embed_input(self, gamestate: GameState) -> np.ndarray:
-        state: np.ndarray = np.zeros((3, 13))
+        state: np.ndarray = np.zeros((4, 14))
         player0: PlayerState = gamestate.players[self.player_index]
         
         statePosition = self.applyPlayerState(player0, state[0,...], 0)
 
         player1: PlayerState = gamestate.players[self.opponent_index]
-        statePosition = self.applyPlayerState(player1, state[2,...], 0)
+        statePosition = self.applyPlayerState(player1, state[3,...], 0)
         statePosition = 0
         state[1, statePosition] = player0.controller_state.button[melee.Button.BUTTON_A]
         statePosition +=1
@@ -91,28 +92,28 @@ class InputEmbederPacked3:
             gamestate.distance) / self.positionNormalizer
         # print(statePosition)
         # statePosition += 1
-        # statePosition = 0
-        # # # state[0, 63] = (gamestate.projectiles) / self.positionNormalizer
-        # for projectile in gamestate.projectiles[:5]:
-        #     projectile: Projectile
-        #     if projectile.owner == player0:
-        #         state[2, statePosition] = float(1)
-        #     else: 
-        #         state[2, statePosition] = float(0)
-        #     statePosition += 1
-        #     state[2, statePosition] = float(
-        #         projectile.position.x) / self.positionNormalizer
-        #     statePosition += 1
-        #     state[2, statePosition] = float(
-        #         projectile.position.y) / self.positionNormalizer
-        #     statePosition += 1
-        #     state[2, statePosition] = float(
-        #         projectile.speed.x) / self.positionNormalizer
-        #     statePosition += 1
-        #     state[2, statePosition] = float(
-        #         projectile.speed.y) / self.positionNormalizer
-        #     statePosition += 1
-        #     state[2, statePosition] = float(projectile.subtype / 11)
-        #     # self.embedCategory(state, statePosition, , 11)
-        #     statePosition += 1
+        statePosition = 0
+        # # state[0, 63] = (gamestate.projectiles) / self.positionNormalizer
+        for projectile in gamestate.projectiles[:2]:
+            projectile: Projectile
+            if projectile.owner == player0:
+                state[2, statePosition] = float(1)
+            else: 
+                state[2, statePosition] = float(0)
+            statePosition += 1
+            state[2, statePosition] = float(
+                projectile.position.x) / self.positionNormalizer
+            statePosition += 1
+            state[2, statePosition] = float(
+                projectile.position.y) / self.positionNormalizer
+            statePosition += 1
+            state[2, statePosition] = float(
+                projectile.speed.x) / self.positionNormalizer
+            statePosition += 1
+            state[2, statePosition] = float(
+                projectile.speed.y) / self.positionNormalizer
+            statePosition += 1
+            state[2, statePosition] = float(projectile.subtype / 11)
+            # self.embedCategory(state, statePosition, , 11)
+            statePosition += 1
         return state
