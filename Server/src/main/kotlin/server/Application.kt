@@ -105,7 +105,7 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 8f,
             actionMultiplier = 2f,
-            killMultiplier = 200f,
+            killMultiplier = 500f,
             recoveryMultiplier = 30f
         )
     )
