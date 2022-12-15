@@ -176,8 +176,8 @@ class Evaluator:
     def player_lost_stock(self, game_state: GameState) -> bool:
         player: PlayerState = game_state.players[self.player_index]
         prev_frame: PlayerState = self.previous_frame.players[self.player_index]
-        if player.stock + 1 == prev_frame.stock:
-            print("player lost stock!")
+        # if player.stock + 1 == prev_frame.stock:
+        #     print("player lost stock!")
         return player.stock + 1 == prev_frame.stock
 
     def signOf(self, value):
@@ -194,7 +194,7 @@ class Evaluator:
         if self.last_x is None or game_state.frame < 0:
             self.storeFrameData(game_state)
         else:
-
+            
             # need handling for game ending and new one starting
             # stocks and other values get reset...
 
@@ -237,7 +237,7 @@ class Evaluator:
             opponent_knockback_combined_speed = abs(
                 opponent.speed_x_attack) + abs(opponent.speed_y_attack)
             if not self.opponent_knocked:
-                if opponent_knockback_combined_speed > 0:
+                if opponent_knockback_combined_speed > 0 or opponent.action == melee.Action.YOSHI_EGG:
                     self.opponent_knocked = True
                     self.opponent_touched_ground = False
             elif opponent.on_ground and opponent_knockback_combined_speed == 0:
