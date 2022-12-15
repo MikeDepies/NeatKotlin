@@ -104,8 +104,8 @@ fun Application.module() {
         60,
         behaviorMeasureInt(
             damageMultiplier = 8f,
-            actionMultiplier = 2f,
-            killMultiplier = 500f,
+            actionMultiplier = 5f,
+            killMultiplier = 200f,
             recoveryMultiplier = 30f
         )
     )
@@ -176,7 +176,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(12, 120, 14)
+    val evaluatorSettings = EvaluatorSettings(15, 120, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
@@ -541,7 +541,7 @@ private fun behaviorMeasureInt(
     val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(2f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage+ damageDone  + recovery + totalDistanceToward /* + totalFramesHitstun*/)
+    (all + kills + damage+ damageDone  + recovery /*+ totalDistanceToward  + totalFramesHitstun*/)
 }
 //
 //
@@ -570,10 +570,10 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 7 + controllerId
+    val randomSeed: Int = 712 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.4f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
