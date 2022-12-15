@@ -357,7 +357,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //                euclidean(toVector(it), toVector(it).map { 0f})
                 it.stageParts.toFloat()
             }
-            val score = b//+  it.xPos / 32 + ((it.stage -1) + (it.world -1) * 4)  * 200f
+            val score = b + ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
 
             val model = mapIndexed[it.id]?.neatMutator

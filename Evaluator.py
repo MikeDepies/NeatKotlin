@@ -292,7 +292,7 @@ class Evaluator:
                 self.frames_without_damage += 2
             
             if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
-                self.actions_without_damage += 6
+                self.frames_without_damage += 6
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
                 # self.frames_without_damage += 1
                 self.damage_action_available = True
