@@ -73,9 +73,9 @@ class ModelHandler:
             self.controller_helper.process(
                 self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
-            print("evaluating " + str(self.ai_controller_id))
+            # print("evaluating " + str(self.ai_controller_id))
         elif self.network is None:
-            print("dead " + str(self.ai_controller_id))
+            # print("dead " + str(self.ai_controller_id))
             self.controller.release_button(melee.Button.BUTTON_A)
             self.controller.release_button(melee.Button.BUTTON_B)
             self.controller.release_button(melee.Button.BUTTON_Y)
