@@ -99,19 +99,25 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
-        60,
+        100,
         behaviorMeasureInt(
-            damageMultiplier = 8f,
+            damageMultiplier = 18f,
             actionMultiplier = 5f,
             killMultiplier = 200f,
             recoveryMultiplier = 30f
         )
     )
-//    val knnNoveltyArchive2 = knnNoveltyArchive(
-//        40, behaviorMeasure(damageMultiplier = 1f, actionMultiplier = 1f, killMultiplier = 15f, recoveryMultiplier = 1f)
-//    )
+    val knnNoveltyArchive2 = knnNoveltyArchive(
+        100,
+        behaviorMeasureInt(
+            damageMultiplier = 18f,
+            actionMultiplier = 5f,
+            killMultiplier = 200f,
+            recoveryMultiplier = 30f
+        )
+    )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
@@ -122,16 +128,38 @@ fun Application.module() {
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
     logger.info { initialPopulation.distinctBy { it.id }.size }
-//    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(1, populationSize)
-//    val evoManager2 =
-//        EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(1, populationSize, false)
+    val evoManager2 =
+        EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
-//    launch { evoManager2.start(initialPopulation2) }
+    launch { evoManager2.start(initialPopulation2) }
     val dashboardManager = DashboardManager(
         evaluationId, StreamStats(
-            0,0,0,0
+            0, 0, 0, 0
         )
     )
+    val dashboardManager2 = DashboardManager(
+        evaluationId2, StreamStats(
+            0, 0, 0, 0
+        )
+    )
+    dashboardLoop(evoManager, dashboardManager)
+    dashboardLoop(evoManager2, dashboardManager2)
+    routing(
+        EvoControllerHandler(
+            mapOf(
+                evaluationId to evoManager,
+                evaluationId2 to evoManager2
+            ), mapOf(evaluationId to dashboardManager,
+                evaluationId2 to dashboardManager2)
+        )
+    )
+}
+
+private fun Application.dashboardLoop(
+    evoManager: EvoManager,
+    dashboardManager: DashboardManager
+) {
     launch {
         for (scoreList in evoManager.populationScoresChannel) {
             dashboardManager.scores.add(scoreList)
@@ -142,14 +170,6 @@ fun Application.module() {
                 dashboardManager.scores.flatMap { it.scoreList }.associateBy { it.id }
         }
     }
-    routing(
-        EvoControllerHandler(
-            mapOf(
-                evaluationId to evoManager,
-//                evaluationId2 to evoManager2
-            ), mapOf(evaluationId to dashboardManager)
-        )
-    )
 }
 
 private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromString(
@@ -176,11 +196,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(15, 120, 10)
+    val evaluatorSettings = EvaluatorSettings(40, 120, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 5),
+        ControllerConfiguration(Character.Pikachu, 0),
+        ControllerConfiguration(Character.Fox, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -333,7 +353,8 @@ private fun Application.routing(
                 }
                 post<ModelsRequest>("/generationStatus") {
                     val evoManager = evoHandler.evoManager(it.controllerId)
-                    val amountComplete = evoManager.finishedScores.filter { !it.value }.mapNotNull { evoManager.mapIndexed[it.key] }
+                    val amountComplete =
+                        evoManager.finishedScores.filter { !it.value }.mapNotNull { evoManager.mapIndexed[it.key] }
                     call.respond(GenerationStatus(amountComplete.size))
                 }
                 post<ModelsRequest>("/populationSize") {
@@ -411,6 +432,7 @@ private fun Application.routing(
         }
     }
 }
+
 @Serializable
 data class PopulationSize(val populationSize: Int)
 
@@ -538,10 +560,11 @@ private fun behaviorMeasureInt(
     val recovery = recoveryDistance.times(recoveryMultiplier)
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
-    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(2f
+    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
+        2f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage+ damageDone  + recovery /*+ totalDistanceToward  + totalFramesHitstun*/)
+    (all + kills + damage + damageDone + recovery /*+ totalDistanceToward  + totalFramesHitstun*/)
 }
 //
 //
@@ -573,7 +596,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 712 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.6f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
