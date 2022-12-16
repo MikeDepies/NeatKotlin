@@ -149,8 +149,8 @@ class Evaluator:
             print("max_timer_elapsed: " + str(self.total_frames) + " / 60 -> " + str(self.max_timer) )
         if attack_timer_elapsed:
             print("attack_timer_elapsed: " + str(self.frames_without_damage) + " / 60 -> " + str(self.attack_timer) )
-        if self.player_died:
-            print("player " + str(self.player_index) + " died.")
+        # if self.player_died:
+        #     print("player " + str(self.player_index) + " died.")
         #player.stock == 0 #
         return attack_timer_elapsed or max_timer_elapsed or player.stock == 0#self.player_died
 
