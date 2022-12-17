@@ -78,7 +78,10 @@ class ModelHandler:
             # print("dead " + str(self.ai_controller_id))
             self.controller.release_button(melee.Button.BUTTON_A)
             self.controller.release_button(melee.Button.BUTTON_B)
-            self.controller.release_button(melee.Button.BUTTON_Y)
+            if game_state.frame % 3 == 0:
+                self.controller.press_button(melee.Button.BUTTON_Y)
+            else:
+                self.controller.release_button(melee.Button.BUTTON_Y)
             self.controller.release_button(melee.Button.BUTTON_Z)
             self.controller.release_button(melee.Button.BUTTON_L)
             self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
