@@ -255,8 +255,8 @@ class Evaluator:
                 # print(player.speed_ground_x_self)
                 self.movement_frames += abs(player.speed_ground_x_self)
                 self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
-                if self.frames_without_damage > 1:
-                    self.frames_without_damage -= abs(player.speed_ground_x_self)
+                if self.frames_without_damage > 1 and not player.invulnerable:
+                    self.frames_without_damage -= abs(player.speed_ground_x_self) / 2
                 # print("movement: " + str(self.movement_frames))
                 if self.movement_frames > 15:
                     if len(self.player_previous_actions) > 0:
