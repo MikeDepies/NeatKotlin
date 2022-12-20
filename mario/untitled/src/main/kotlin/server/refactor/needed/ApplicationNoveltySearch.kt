@@ -135,9 +135,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .55f
-    val survivalThreshold = .2f
-    val stagnation = 60
+    val mateChance = .85f
+    val survivalThreshold = .3f
+    val stagnation = 20
 
     val randomSeed: Int = 9 + evaluationId
     val addConnectionAttempts = 5

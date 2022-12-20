@@ -101,7 +101,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10,
+        40,
         behaviorMeasureInt(
             damageMultiplier = 12f,
             actionMultiplier = 1f,
@@ -110,7 +110,7 @@ fun Application.module() {
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        20,
+        40,
         behaviorMeasureInt(
             damageMultiplier = 12f,
             actionMultiplier = 1f,
@@ -561,7 +561,7 @@ private fun behaviorMeasureInt(
         .squared()
     val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
     val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
-        10f
+        20f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
     (all + kills + damage + damageDone + recovery + totalDistanceToward /* + totalFramesHitstun*/)
@@ -596,7 +596,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 602 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.6f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
