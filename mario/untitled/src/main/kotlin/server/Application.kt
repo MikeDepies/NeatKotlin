@@ -141,7 +141,7 @@ fun Application.module(testing: Boolean = false) {
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
         val activationFunctions = Activation.CPPN.functions
-        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
+        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 7f)
         var population = simpleNeatExperiment.generateInitialPopulation2(
             populationSize, 6, 2, activationFunctions
         ).mapIndexed { index, neatMutator ->
@@ -284,7 +284,7 @@ fun loadModels(random: Random, activationFunctions: List<ActivationGene>, addCon
     val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
     val simpleNeatExperiment = simpleNeatExperiment(
         random, maxInnovation, maxNodeInnovation, activationFunctions,
-        addConnectionAttempts
+        addConnectionAttempts, 7f
     )
     var population = models.map { it.toNeatMutator() }.mapIndexed { index, neatMutator ->
         NetworkWithId(neatMutator, UUID.randomUUID().toString(), 0)

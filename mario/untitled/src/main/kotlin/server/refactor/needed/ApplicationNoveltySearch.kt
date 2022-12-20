@@ -132,10 +132,10 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 100
+    val populationSize = 200
 
 
-    val mateChance = .75f
+    val mateChance = .55f
     val survivalThreshold = .2f
     val stagnation = 60
 
@@ -168,7 +168,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
     val populationHistory = mutableListOf<List<NeatModel>>()
-    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts)
+    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 7f)
     var population = simpleNeatExperiment.generateInitialPopulation2(
         populationSize, 6, 2, activationFunctions1
     ).mapIndexed { index, neatMutator ->
@@ -357,7 +357,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //                euclidean(toVector(it), toVector(it).map { 0f})
                 it.stageParts.toFloat()
             }
-            val score = b + ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
+            val score = b //+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
 
             val model = mapIndexed[it.id]?.neatMutator

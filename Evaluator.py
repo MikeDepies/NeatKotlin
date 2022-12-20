@@ -219,6 +219,7 @@ class Evaluator:
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
             self.total_frames_alive += pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)
+            # print(str(pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)))
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
             # and not self.frame_data.is_roll(player.character, player.action)
@@ -253,7 +254,7 @@ class Evaluator:
                 self.frames_since_opponent_unknocked = 0
             if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
                 # print(player.speed_ground_x_self)
-                self.movement_frames += abs(player.speed_ground_x_self)
+                self.movement_frames += 1 #abs(player.speed_ground_x_self)
                 self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 if self.frames_without_damage > 1 and not player.invulnerable:
                     self.frames_without_damage -= abs(player.speed_ground_x_self) / 2

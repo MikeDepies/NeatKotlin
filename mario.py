@@ -214,7 +214,7 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # if (score != info["score"]):
         #     framesSinceMaxXChange = 0
         #     score = info["score"]
-        if abs(prevX - info["x_pos"]) > 64:
+        if abs(prevX - info["x_pos"]) > 16:
             # if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
             #     steps_left += 1
             #     prevXReset = info["x_pos"]
@@ -226,7 +226,7 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 40 * 20 or reward < -14:
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:
             idle = True
 
         action = output.argmax(1)[0]

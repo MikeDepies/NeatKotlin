@@ -7,7 +7,7 @@ suspend fun runWeightSummationExample() {
 //    val activationFunctions = listOf(SigmoidalTransferFunction, Identity)
     val dataFunction: DistanceFunction = { a, b -> compatibilityDistance(a, b, 1f, 1f, .4f) }
     val sharingFunction = shFunction(1f)
-    val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, baseActivationFunctions(), 0)
+    val simpleNeatExperiment = simpleNeatExperiment(Random(0), 0, 0, baseActivationFunctions(), 0, 5f)
     val population = simpleNeatExperiment.generateInitialPopulation(100, 3, 1, Activation.sigmoidal)
     val speciationController = SpeciationController(0, )
     val speciesScoreKeeper = SpeciesScoreKeeper()

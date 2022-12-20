@@ -271,8 +271,11 @@ class ModelHandler:
     def postEvaluate(self, game_state : melee.GameState):
         if self.network is None or self.evaluator is not None and self.evaluator.is_finished(game_state):
             if self.network is not None:
+                player0: PlayerState = game_state.players[self.model_index]
                 behavior = self.evaluator.score(game_state)
+                print(player0.character)
                 print(behavior.recovery_sets)
+                print(behavior.total_frames_alive)
                 # self.model_helper.send_evaluation_result(self.model_id, behavior)
                 self.network = None
                 self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,

@@ -11,9 +11,10 @@ fun simpleNeatExperiment(
     innovation: Int,
     nodeInnovation: Int,
     activationFunctions: List<ActivationGene>,
-    addConnectionAttempts: Int
+    addConnectionAttempts: Int,
+    weightRange: Float
 ): NeatExperiment {
-    return SimpleNeatExperiment(innovation, nodeInnovation, activationFunctions, random, addConnectionAttempts)
+    return SimpleNeatExperiment(innovation, nodeInnovation, activationFunctions, random, addConnectionAttempts, weightRange)
 }
 
 fun matchingGenes(
@@ -32,6 +33,7 @@ class SimpleNeatExperiment(
     override val activationFunctions: List<ActivationGene>,
     override val random: Random,
     val addConnectionAttempts: Int,
+    val weightRange: Float
 ) : NeatExperiment {
 
 //    private var innovation = innovation
@@ -53,7 +55,7 @@ class SimpleNeatExperiment(
         return ConnectionGene(
             sourceNode,
             targetNode,
-            randomWeight(random),
+            randomWeight(random, weightRange),
             true,
             nextInnovation()
         )
@@ -62,8 +64,8 @@ class SimpleNeatExperiment(
     override fun mutateAddConnection(neatMutator: NeatMutator) {
         val nodeMap = neatMutator.nodes.groupBy { it.nodeType }
         val connectedNodes = neatMutator.connections.map { it.inNode to it.outNode }
-        val sourceList = nodeMap[NodeType.Hidden] ?: setOf<NodeGene>() + nodeMap.getValue(NodeType.Input)
-        val targetList = nodeMap[NodeType.Hidden] ?: setOf<NodeGene>() + nodeMap.getValue(NodeType.Output)
+        val sourceList = (nodeMap[NodeType.Hidden] ?: setOf<NodeGene>()) + nodeMap.getValue(NodeType.Input)
+        val targetList = (nodeMap[NodeType.Hidden] ?: setOf<NodeGene>()) + nodeMap.getValue(NodeType.Output)
 
         var attempts = -addConnectionAttempts
         while (attempts++ < 1) {
@@ -76,7 +78,7 @@ class SimpleNeatExperiment(
                         null
                     }
                 }
-            val targetPool = (targetList - sourceNodeGene) - alreadyConnected
+            val targetPool = (targetList - sourceNodeGene) - alreadyConnected.toSet()
             if (targetPool.isNotEmpty()) {
                 val targetNodeGene = targetPool.random(random)
                 val sourceNode = sourceNodeGene.node
@@ -108,7 +110,7 @@ class SimpleNeatExperiment(
         }
 
         val randomConnection = getRandomConnectionGeneWithValidNodes()
-        val node = NodeGene(nextNode(), randomWeight(random), NodeType.Hidden, activationFunctions.random(random))
+        val node = NodeGene(nextNode(), randomWeight(random, weightRange), NodeType.Hidden, activationFunctions.random(random))
         val copiedConnection = randomConnection.copy(innovation = nextInnovation(), inNode = node.node)
         val newEmptyConnection = ConnectionGene(randomConnection.inNode, node.node, 1f, true, nextInnovation())
 //        println("\tMUTATE ADD NODE")
