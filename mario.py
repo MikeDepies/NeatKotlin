@@ -203,7 +203,7 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
         # print(state.shape)
         state = rescale(
             rgb2gray(state),
-            1 / 8,
+            1 / 16,
             #channel_axis=2
         )
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
@@ -275,7 +275,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 8
+    process_num = 10
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
     
