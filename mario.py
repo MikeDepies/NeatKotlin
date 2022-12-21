@@ -280,7 +280,7 @@ if __name__ == '__main__':
     processes: List[mp.Process] = []
     
     for i in range(process_num):
-        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 1))
+        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 0))
         processes.append(p)
         p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))

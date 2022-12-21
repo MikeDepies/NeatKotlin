@@ -19,6 +19,7 @@ import neat.*
 import neat.model.*
 import org.koin.ktor.ext.*
 import server.mcc.*
+import server.message.endpoints.NeatModel
 import server.message.endpoints.toModel
 import server.server.*
 import java.io.*
@@ -152,10 +153,10 @@ fun Application.module(testing: Boolean = false) {
 
     val (neatExperiment, population) = loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
     val (neatExperiment2, population2) = loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
-    val envOffspringFunction = offspringFunction(.5f, mutationDictionary)
+    val envOffspringFunction = offspringFunction(.8f, mutationDictionary)
     val agentOffspringFunction = offspringFunction(.5f, mutationDictionary)
     val minimalCriterion = MinimalCriterion(
-        Random(1), 40, 10, 5, population, population, 100
+        Random(1), 40, 40, 5, population, population, 100
     )
 
     fun neatExperiment(minimalCriterion: MinimalCriterion) = when (minimalCriterion.activePopulation) {
@@ -219,18 +220,31 @@ fun Application.module(testing: Boolean = false) {
             }
         }
     }
-    val taskNetworkBuilder = createNetwork()
-    val networkBlueprintBuilder = NetworkBlueprintBuilder(taskNetworkBuilder)
 
+
+    val createNetwork = createNetwork()
+    val connectionRelationships =
+        createNetwork.connectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
+    val targetConnectionMapping =
+        createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
+    val calculationOrder = createNetwork.calculationOrder.map { it.id }
     routing {
         get("/model") {
             val pairedAgents = pairedAgentsChannel.receive()
-            val childConnections = taskNetworkBuilder.build(pairedAgents.child.neatMutator.toNetwork(), 3f)
-            val agentConnections = taskNetworkBuilder.build(pairedAgents.agent.neatMutator.toNetwork(), 3f)
-            val childNetworkBlueprint = networkBlueprintBuilder.networkBlueprint(childConnections, pairedAgents)
-            val agentNetworkBlueprint = networkBlueprintBuilder.networkBlueprint(agentConnections, pairedAgents)
-            val pairedNetworkBlueprints = PairedNetworkBlueprints(childNetworkBlueprint, agentNetworkBlueprint)
-            call.respond(pairedNetworkBlueprints)
+
+            val blueprint = NetworkBlueprint(
+                pairedAgents.agent.id,
+                createNetwork.planes,
+                connectionRelationships,
+                targetConnectionMapping,
+                calculationOrder,
+                0,
+                0,
+                createNetwork.outputPlane.id,
+                pairedAgents.agent.neatMutator.toModel(),
+                createNetwork.depth
+            )
+            call.respond(PairedNetworkWithBlueprint(blueprint, pairedAgents.child.neatMutator.toModel()))
         }
 
         get("/fillModels") {
@@ -244,6 +258,9 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 }
+
+@Serializable
+data class PairedNetworkWithBlueprint(val agent: NetworkBlueprint,  val child: NeatModel)
 
 @Serializable
 data class PairedNetworkBlueprints(val child: NetworkBlueprint, val agent: NetworkBlueprint)

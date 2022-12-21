@@ -101,7 +101,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        40,
+        20,
         behaviorMeasureInt(
             damageMultiplier = 6f,
             actionMultiplier = 1f,
@@ -110,7 +110,7 @@ fun Application.module() {
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        40,
+        20,
         behaviorMeasureInt(
             damageMultiplier = 6f,
             actionMultiplier = 1f,
@@ -196,7 +196,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(5, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
@@ -593,10 +593,10 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 602 + controllerId
+    val randomSeed: Int = 682 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.6f)
+    val shFunction = shFunction(1f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

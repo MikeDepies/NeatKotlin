@@ -224,7 +224,7 @@ class Evaluator:
                 x_diff) == self.signOf(x_diff_opponent)
             # and not self.frame_data.is_roll(player.character, player.action)
             #and not self.frame_data.is_roll(player.character, player.action) and not self.frame_data.is_bmove(player.character, player.action)and not self.frame_data.is_attack(player.character, player.action)
-            if toward_opponent:
+            if toward_opponent and not self.frame_data.is_roll(player.character, player.action) :
                 self.total_distanceTowardOpponent += abs(x_diff)
             if opponent.hitstun_frames_left > 1:
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
@@ -258,7 +258,7 @@ class Evaluator:
                 self.movement_frames += 1 #abs(player.speed_ground_x_self)
                 self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 if self.frames_without_damage > 1 and not player.invulnerable:
-                    self.frames_without_damage -= abs(player.speed_ground_x_self) / 2
+                    self.frames_without_damage -= abs(player.speed_ground_x_self) 
                 # print("movement: " + str(self.movement_frames))
                 if self.movement_frames > 15:
                     if len(self.player_previous_actions) > 0:
