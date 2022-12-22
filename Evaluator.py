@@ -231,7 +231,8 @@ class Evaluator:
                 self.total_frames_hitstun +=1
             if on_stage and self.knocked_off_stage:
                 if self.damage_since_recovery:
-                    self.frames_without_damage = 0
+                    self.frames_without_damage -= 60 * self.attack_timer
+                    self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
                     self.damage_since_recovery = False
                 self.knocked_off_stage = False
                 if (len(self.recovery_actions) > 0):
@@ -281,7 +282,8 @@ class Evaluator:
             if self.player_dealt_damage(game_state):
                 self.damage_since_recovery = True
                 # if game_state.distance < 22:
-                self.frames_without_damage = 0
+                self.frames_without_damage -= 60 * self.attack_timer
+                self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
                 self.actions_without_damage = 0
                 # self.player_previous_actions.clear()
                 self.total_damage += self.player_damage_amount(game_state)
@@ -317,7 +319,8 @@ class Evaluator:
                 # self.kill_actions.append(previous_frame_opponent.action.value)
                 if self.last_damage_action is not None:
                     self.kill_actions.append(self.last_damage_action.value)
-                self.frames_without_damage = -60 * 4
+                self.frames_without_damage -= 60 * self.attack_timer * 1.5
+                self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
                 self.actions_without_damage = 0
             # print(self.frames_without_damage)
             # update data to compare for next frame
