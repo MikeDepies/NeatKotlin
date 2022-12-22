@@ -273,7 +273,7 @@ class Evaluator:
             if opponent_on_stage and self.opponent_knocked_off_stage:
                 self.opponent_knocked_off_stage = False
 
-            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable:
+            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked:
                 self.frames_without_damage += 1
                 # if self.player_took_damage(game_state):
                 #     self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
