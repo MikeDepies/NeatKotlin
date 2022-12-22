@@ -302,7 +302,7 @@ class Evaluator:
                     # print("prev actions:")
                     # print(self.player_previous_actions)
                     self.actions.append(player.action.value)
-                if self.knocked_off_stage  and player.action not in self.excluded_actions:
+                if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
             if self.player_lost_stock(game_state) :
                 self.recovery_actions.clear()

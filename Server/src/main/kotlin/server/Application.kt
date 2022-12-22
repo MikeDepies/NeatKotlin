@@ -104,7 +104,7 @@ fun Application.module() {
         20,
         behaviorMeasureInt(
             damageMultiplier = 6f,
-            actionMultiplier = 1f,
+            actionMultiplier = .5f,
             killMultiplier = 100f,
             recoveryMultiplier = 30f
         )
@@ -113,7 +113,7 @@ fun Application.module() {
         20,
         behaviorMeasureInt(
             damageMultiplier = 6f,
-            actionMultiplier = 1f,
+            actionMultiplier = .5f,
             killMultiplier = 100f,
             recoveryMultiplier = 30f
         )
@@ -196,7 +196,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(12, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
@@ -596,7 +596,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 682 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1f)
+    val shFunction = shFunction(.6f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
