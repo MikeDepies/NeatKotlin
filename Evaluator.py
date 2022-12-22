@@ -218,7 +218,7 @@ class Evaluator:
                 self.knocked_off_stage = True
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
-            self.total_frames_alive += pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)
+            self.total_frames_alive += pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3)) * 2), 2)
             # print(str(pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)))
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
@@ -256,7 +256,7 @@ class Evaluator:
             if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
                 # print(player.speed_ground_x_self)
                 self.movement_frames += 1 #abs(player.speed_ground_x_self)
-                self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
+                # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 if self.frames_without_damage > 1 and not player.invulnerable:
                     self.frames_without_damage -= abs(player.speed_ground_x_self) 
                 # print("movement: " + str(self.movement_frames))
@@ -273,7 +273,7 @@ class Evaluator:
             if opponent_on_stage and self.opponent_knocked_off_stage:
                 self.opponent_knocked_off_stage = False
 
-            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked:
+            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action):
                 self.frames_without_damage += 1
                 # if self.player_took_damage(game_state):
                 #     self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
