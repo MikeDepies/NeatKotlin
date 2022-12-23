@@ -21,7 +21,7 @@ def create_packed_state(gamestate: GameState, player_index: int, opponent_index:
                               positionNormalizer, actionNormalizer).embed_input(gamestate)
 
 class ModelHandlerMCC:
-    network: ComputableNetwork | None
+    network: ComputableNetwork
     evaluator: Evaluator
     ai_controller_id: int
 
