@@ -244,7 +244,8 @@ def queueNetworkPairs(queue: mp.Queue):
     while True:
         id, builder, child, agent_controller_id, child_controller_id = model_helper.getNetworks()
         network = builder.create_ndarrays(sigmoidal)
-        queue.put((id, network))
+        child_network = child.create_ndarrays(sigmoidal)
+        queue.put((id, network, child_network, agent_controller_id, child_controller_id))
 
 
 if __name__ == '__main__':
@@ -261,14 +262,14 @@ if __name__ == '__main__':
 
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num * 2)
-    queue_2 = mgr.Queue(process_num * 2)
+    
     for i in range(process_num):
-        p = mp.Process(target=console_loop, args=(
-            i + 51460, queue_1, queue_2, configuration), daemon=True)
+        p = mp.Process(target=console_loop_mcc, args=(
+            i + 51460, queue_1, configuration), daemon=True)
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworks, daemon=True,
-                       args=(queue_1, ns))
+        p = mp.Process(target=queueNetworkPairs, daemon=True,
+                       args=(queue_1, ))
         processes.append(p)
         p.start()
     for p in processes:
