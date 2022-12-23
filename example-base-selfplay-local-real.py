@@ -5,7 +5,7 @@ import multiprocessing as mp
 from multiprocessing.managers import DictProxy, Namespace
 import random
 import time
-from typing import Any, List
+from typing import Any, List, Tuple
 from urllib import response
 from httpx import ReadTimeout, get
 
@@ -106,7 +106,7 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
                         # melee.MenuHelper.
                         melee.MenuHelper.choose_stage(configuration.stage, game_state, controller_opponent)
 
-def get_next(queue : mp.Queue) -> tuple[str, HyperNeatBuilder, HyperNeatBuilder, int, int]:
+def get_next(queue : mp.Queue) -> Tuple[str, HyperNeatBuilder, HyperNeatBuilder, int, int]:
     return queue.get()
 
 def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration):
