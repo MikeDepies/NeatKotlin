@@ -22,8 +22,8 @@ class ModelHelperMCC:
     def send_evaluation_result(self, result : EvalResult):
         
         res = httpx.post("http://" + self.host + ":8091/model/score", json={
-                "modelId": result.id,
-                "satisfy": result.satisfy
+                "id": result.id,
+                "satisfyMC": result.satisfy
             }, timeout=30)
         print("eval send for " + str(result))
         # if not res.ok:
