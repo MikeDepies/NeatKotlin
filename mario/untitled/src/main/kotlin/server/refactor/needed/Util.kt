@@ -9,18 +9,17 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
-import neat.ModelScore
-import neat.NeatExperiment
+import neat.*
 import neat.model.NeatMutator
 import neat.novelty.NoveltyArchive
-import neat.shFunction
-import neat.standardCompatibilityTest
 import org.jetbrains.exposed.sql.Database
 import server.*
 import server.message.BroadcastMessage
 import server.message.TypedUserMessage
 import server.message.endpoints.*
 import java.util.*
+import kotlin.math.absoluteValue
+import kotlin.math.max
 
 import kotlin.math.min
 import kotlin.streams.toList
@@ -43,6 +42,46 @@ data class DeadNetwork(val id: String)
 data class NetworkWithId(val neatMutator: NeatMutator, val id: String)
 
 
+fun compatibilityDistanceFunction(c1: Float, c2: Float, c3: Float): DistanceFunction = { a, b ->
+    compatibilityDistance(a, b, c1, c2, c3)
+}
+
+class CPPNGeneRuler(val weightCoefficient: Float = .5f, val disjointCoefficient: Float = 1f, val normalize: Int) {
+    fun measure(parent1: NeatMutator, parent2: NeatMutator): Float {
+        return nodeDistance(parent1, parent2) + connectionDistance(parent1, parent2)
+    }
+
+    private fun connectionDistance(parent1: NeatMutator, parent2: NeatMutator): Float {
+        val connectionDisjoint =
+            parent1.connections.count { !parent2.hasConnection(it.innovation) } + parent2.connections.count {
+                !parent1.hasConnection(
+                    it.innovation
+                )
+            }
+        val connectionDistance = parent2.connections.filter { parent1.hasConnection(it.innovation) }
+            .map { (it.weight - parent2.connection(it.innovation).weight).absoluteValue * weightCoefficient }.sum()
+        val max = max(
+            parent1.connections.size, parent2.connections.size
+        )
+        return (connectionDistance + connectionDisjoint * disjointCoefficient) / (if (max < normalize) 1 else max)
+    }
+
+    private fun nodeDistance(parent1: NeatMutator, parent2: NeatMutator): Float {
+        val nodeDisjoint =
+            parent1.nodes.count { !parent2.hasNode(it.node) } + parent2.nodes.count { !parent1.hasNode(it.node) }
+        val nodeDistance = 0f + parent2.nodes.filter { parent1.hasNode(it.node) }.map {
+            val node = parent1.node(it.node)
+            val activationFunctionDistance = if (node.activationFunction == it.activationFunction) 0f else 1f
+            val biasDistance = (it.bias - node.bias).absoluteValue
+            val distance = biasDistance + activationFunctionDistance
+            distance * weightCoefficient
+        }.sum()
+        val max = max(parent1.nodes.size, parent2.nodes.size)
+        return (nodeDistance + nodeDisjoint * disjointCoefficient) / (if (max < normalize) 1 else max)
+    }
+
+
+}
 class KNNNoveltyArchiveWeighted(
     var k: Int,
     val baseK: Int,

@@ -9,26 +9,26 @@ import server.NetworkBlueprint
 import java.util.*
 
 import kotlin.random.Random
-
+@Serializable
 enum class PopulationType {
     Agent, Environment
 }
 
 private val logger = KotlinLogging.logger { }
 
-data class NetworkWithId(val neatMutator: NeatMutator, val id: String, var age: Int)
+data class NetworkMCC(val neatMutator: NeatMutator, val id: String, var age: Int)
 class MinimalCriterion(
     val random: Random,
     val batchSize: Int,
     val batchSizeEnv: Int,
     val resourceLimit: Int,
-    val agentSeeds: List<NetworkWithId>,
-    val agentEnvironmentSeeds: List<NetworkWithId>,
+    val agentSeeds: List<NetworkMCC>,
+    val agentEnvironmentSeeds: List<NetworkMCC>,
 
     val populationCap: Int
 ) {
-    val agentPopulationQueue: Queue<NetworkWithId> = LinkedList(agentSeeds)
-    val environmentPopulationQueue: Queue<NetworkWithId> = LinkedList(agentEnvironmentSeeds)
+    val agentPopulationQueue: Queue<NetworkMCC> = LinkedList(agentSeeds)
+    val environmentPopulationQueue: Queue<NetworkMCC> = LinkedList(agentEnvironmentSeeds)
     val environmentPopulationResourceMap = agentEnvironmentSeeds.map { it.id to 0 }.toMap().toMutableMap()
     var activePopulation = PopulationType.Agent
 
@@ -71,7 +71,7 @@ class MinimalCriterion(
         val children = createChildren(neatExperiment, parents, offspringFunction, batchNumber)
         val pairedAgents = children.map {
             val agentEnvironment = resourceViableEnvironments.random(random)
-            PairedAgents(it, agentEnvironment)
+            PairedAgents(it, agentEnvironment, batchType)
         }
         return MCCBatch(pairedAgents, batchType)
     }
@@ -85,10 +85,10 @@ class MinimalCriterion(
 
     fun createChildren(
         neatExperiment: NeatExperiment,
-        reproducingPopulation: List<NetworkWithId>,
+        reproducingPopulation: List<NetworkMCC>,
         offspringFunction: OffspringFunctionTargeted,
         batchNumber: Int
-    ): List<NetworkWithId> {
+    ): List<NetworkMCC> {
         //insert reproduction logic
         val modelScores = activePopulationQueue.map {
             val fakeScore = random.nextFloat()
@@ -97,7 +97,7 @@ class MinimalCriterion(
         return reproducingPopulation.map {
             val score = random.nextFloat()
             val neatMutator = offspringFunction(neatExperiment, modelScores, ModelScore(it.neatMutator, score, score))
-            NetworkWithId(neatMutator, neatMutator.id.toString(), batchNumber)
+            NetworkMCC(neatMutator, neatMutator.id.toString(), batchNumber)
         }
     }
 
@@ -153,7 +153,7 @@ data class MCCBatchResult(
 
 data class MCCBatch(val pairedAgents: List<PairedAgents>, val batchPopulationType: PopulationType)
 
-data class PairedAgents(val child: NetworkWithId, val agent: NetworkWithId)
+data class PairedAgents(val child: NetworkMCC, val agent: NetworkMCC, val type : PopulationType)
 
 
 @Serializable

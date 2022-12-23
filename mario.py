@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from dacite import from_dict
 
 from ComputableNetwork import ComputableNetwork, relu, sigmoidal
-from NeatService import process_model_data
+from NeatService import process_model_data, process_model_data_mcc
 
 
 
@@ -244,6 +244,135 @@ def marioNovelty(queue : mp.Queue, render : Boolean):
             env.render()
 
 
+def mario_mcc(queue : mp.Queue, render : Boolean):
+    env = gym_super_mario_bros.make('SuperMarioBros-v1')
+    env = JoypadSpace(env, COMPLEX_MOVEMENT)
+    host = "localhost"
+    done = False
+    network : ComputableNetwork
+    id, agent_network, child_network = queue.get()
+    evaluated_child = False
+    evaluated_agent = False
+    state = None
+    score = 0
+    stage = 0
+    action = 0  #no op
+    last_action = 0
+    state = env.reset()
+    prevX = 0
+    prevXReset = 0
+    framesSinceMaxXChange = 0
+    status = "small"
+    startInfo = None
+    idle = False
+    game_event_helper = GameEventHelper()
+    game_event_collector = GameEventCollector(game_event_helper, 0)
+    steps_left = 0
+    steps_right = 0
+    same_action_counter = 0
+    child_x = 0
+    agent_x = 0
+    while True:
+        if evaluated_child:
+            network = agent_network
+        else:
+            network = child_network
+        if done or idle:
+            state = env.reset()
+            # death
+            if not evaluated_child:
+                if int(info["x_pos"]) > 50:
+                    child_x = int(info["x_pos"]) / 10_000 + int(info["stage"]) + int(info["world"]) * 10 
+                else:
+                    child_x = 0
+                evaluated_child = True
+                # print("child: " + str(child_x))
+                done = False
+                idle = False
+                framesSinceMaxXChange = 0
+                same_action_counter = 0
+                prevX = 0
+                steps_left = 0
+                steps_right = 0
+            elif not evaluated_agent:
+                evaluated_agent = True
+                agent_x = int(info["x_pos"]) / 10_000 + int(info["stage"]) + int(info["world"]) * 10 
+                # print("agent: " + str(agent_x))
+            if evaluated_agent and evaluated_child:
+                mc_satisfy = child_x > agent_x
+                print(id + ": agent: " + str(agent_x) + " child: " + str(child_x) + " -> " + str(mc_satisfy))
+                submitScore(
+                    {
+                        "id": id,
+                        "satisfyMC": bool(mc_satisfy)
+                    }, host)
+                id, agent_network, child_network = queue.get()
+                startInfo = None
+                prevX = 0
+                steps_left = 0
+                steps_right = 0
+                framesSinceMaxXChange = 0
+                game_event_collector = GameEventCollector(game_event_helper, 0)
+                idle = False
+                evaluated_child = False
+                evaluated_agent = False
+                child_x = 0
+                agent_x = 0
+                same_action_counter = 0
+
+        state, reward, done, info = env.step(action)
+        game_event_collector.process_frame(info)
+        if (startInfo == None):
+            startInfo = info
+        if (status != info["status"]):
+            framesSinceMaxXChange = 0
+        if (stage != info["stage"]):
+            framesSinceMaxXChange = 0
+
+        status = info["status"]
+        stage = info["stage"]
+        # print(state.shape)
+        state = rescale(
+            rgb2gray(state),
+            1 / 16,
+            #channel_axis=2
+        )  # * np.random.binomial(1, .25,  state.size)
+        # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
+        network.input(state / 255.0)
+        # network.input((state / 42.5) - 3)
+        network.compute()
+        output = network.output()
+        # if (score != info["score"]):
+        #     framesSinceMaxXChange = 0
+        #     score = info["score"]
+        if abs(prevX - info["x_pos"]) > 32:
+            if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
+                steps_left += 1
+                prevXReset = info["x_pos"]
+            else:
+                steps_right += 1
+            framesSinceMaxXChange = 0
+            prevX = info["x_pos"]
+
+        else:
+            framesSinceMaxXChange += 1
+        framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
+
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:
+            idle = True
+
+        action = 11 - output.argmax(1)[0]
+        # print(output.shape)
+        # print(action)
+        
+        # if action != last_action or action == 0:
+        #     framesSinceMaxXChange += max(0, 5 - same_action_counter)
+        #     same_action_counter = max(0, same_action_counter - .1)
+        # else:
+        #     same_action_counter += .2
+        last_action = action
+        if render:
+            env.render()
 def actionToNdArray(value: int):
     array = np.zeros([1, 12])
     array[0, value] = 1
@@ -268,6 +397,36 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
         # except:
         #     print("failed to get network...")
 
+
+def get_network_mcc(host: str, port : int):
+    res = get("http://" + host + ":" + str(port) + "/model", timeout=100)
+    if not res.is_success:
+        raise Exception("No data for request")
+    data = res.json()
+    id, builder, child = process_model_data_mcc(data)
+    
+    return id, builder, child
+
+def queueNetworkPairs(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
+    host = "192.168.0.100"
+    port = 8095
+    ns.generation = 0
+    while True:
+        # try:
+        id, builder_agent, builder_child = get_network_mcc(host, port)
+        if id not in mgr_dict:
+            mgr_dict[id] = True
+            network = builder_agent.create_ndarrays(sigmoidal)
+            network_child = builder_child.create_ndarrays(sigmoidal)
+            ns.generation += 1
+            queue.put((id, network, network_child))
+        if ns.generation > 100_000:
+            mgr_dict.clear()
+            ns.generation = 0
+                
+        # except:
+        #     print("failed to get network...")
+
 if __name__ == '__main__':
     mgr = mp.Manager()
     mgr_dict = mgr.dict()
@@ -280,10 +439,10 @@ if __name__ == '__main__':
     processes: List[mp.Process] = []
     
     for i in range(process_num):
-        p = mp.Process(target=marioNovelty, daemon=True, args=(queue, i < 0))
+        p = mp.Process(target=mario_mcc, daemon=True, args=(queue, i < 1))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        p = mp.Process(target=queueNetworkPairs, daemon=True, args=(queue,mgr_dict, ns))
         processes.append(p)
         p.start() 
         # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))

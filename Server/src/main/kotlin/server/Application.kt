@@ -8,6 +8,7 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -94,7 +95,7 @@ fun Application.module() {
             it.totalDistanceTowardOpponent,
             it.playerDied
         ) }*/
-//    val b = actionBehaviors("population/1_noveltyArchive.json").takeLast(5000)
+//    val b = actionBehaviors("population/1_noveltyArchive.json")
 
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
@@ -104,18 +105,18 @@ fun Application.module() {
         20,
         behaviorMeasureInt(
             damageMultiplier = 6f,
-            actionMultiplier = .5f,
+            actionMultiplier = 1.5f,
             killMultiplier = 100f,
-            recoveryMultiplier = 30f
+            recoveryMultiplier = 3f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
             damageMultiplier = 6f,
-            actionMultiplier = .5f,
+            actionMultiplier = 1.5f,
             killMultiplier = 100f,
-            recoveryMultiplier = 30f
+            recoveryMultiplier = 3f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
@@ -128,7 +129,11 @@ fun Application.module() {
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
     logger.info { initialPopulation.distinctBy { it.id }.size }
-    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(1, populationSize, false)
+    val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(
+        1,
+        populationSize,
+        false
+    )
     val evoManager2 =
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
@@ -143,25 +148,27 @@ fun Application.module() {
             0, 0, 0, 0
         )
     )
-    dashboardLoop(evoManager, dashboardManager)
-    dashboardLoop(evoManager2, dashboardManager2)
+    dashboardLoop(dashboardManager, evoManager.populationScoresChannel)
+    dashboardLoop(dashboardManager2, evoManager2.populationScoresChannel)
     routing(
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
                 evaluationId2 to evoManager2
-            ), mapOf(evaluationId to dashboardManager,
-                evaluationId2 to dashboardManager2)
+            ), mapOf(
+                evaluationId to dashboardManager,
+                evaluationId2 to dashboardManager2
+            )
         )
     )
 }
 
-private fun Application.dashboardLoop(
-    evoManager: EvoManager,
-    dashboardManager: DashboardManager
+fun Application.dashboardLoop(
+    dashboardManager: DashboardManager,
+    scoreEntryChannel: Channel<PopulationScoreEntry>
 ) {
     launch {
-        for (scoreList in evoManager.populationScoresChannel) {
+        for (scoreList in scoreEntryChannel) {
             dashboardManager.scores.add(scoreList)
             if (dashboardManager.scores.size > 100) {
                 dashboardManager.scores.removeAt(0)
@@ -188,19 +195,19 @@ class EvoControllerHandler(val map: Map<Int, EvoManager>, val dashboardManagerMa
 }
 
 fun character(controllerId: Int) = when (controllerId) {
-    0 -> Character.Link
-    1 -> Character.Pikachu
+    0 -> Character.Fox
+    1 -> Character.Falco
     else -> throw Exception()
 }
 
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(30, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(5, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.CaptainFalcon, 0),
+        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Falco, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -564,7 +571,7 @@ private fun behaviorMeasureInt(
         20f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage + damageDone + recovery + totalDistanceToward /* + totalFramesHitstun*/)
+    (all + kills + damage  + recovery + totalDistanceToward /* + totalFramesHitstun*/)
 }
 //
 //
@@ -596,12 +603,12 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.55f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
         val json = Json {}
-        val manifest = json.decodeFromStream<Manifest>(File("population/manifest.json").inputStream())
+        val manifest = json.decodeFromStream<Manifest>(File("population/${controllerId}_manifest.json").inputStream())
         val populationModel = loadPopulation(File("population/${controllerId}_population.json"), json)
         val models = populationModel.models
         logger.info { "population loaded with size of: ${models.size}" }
@@ -614,7 +621,8 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         val population = models.map { it.toNeatMutator() }
         SimulationStart(simpleNeatExperiment, population, manifest)
     } else {
-        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts, 7f)
+        val simpleNeatExperiment =
+            simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts, 7f)
         val population = simpleNeatExperiment.generateInitialPopulation2(
             populationSize, 6, 2, Activation.CPPN.functions
         )

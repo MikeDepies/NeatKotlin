@@ -123,7 +123,7 @@ class EvoManager(
 
 
         scores = mutableListOf()
-        writeGenerationToDisk(population.map { it }, runFolder, populationEvolver, "${evaluationId}_")
+        writeGenerationToDiskMCC(population.map { it }, runFolder, populationEvolver, "${evaluationId}_")
         val json = Json { prettyPrint = true }
         runFolder.resolve("${evaluationId}_noveltyArchive.json").bufferedWriter().use {
             val json = Json { prettyPrint = true }
@@ -254,7 +254,7 @@ class EvoManager(
 
 }
 
-fun writeGenerationToDisk(
+fun writeGenerationToDiskMCC(
     currentPopulation: List<NeatMutator>, runFolder: File, populationEvolver: PopulationEvolver, prefix: String
 ) {
     val modelPopulationPersist = currentPopulation.toModel()
@@ -265,7 +265,7 @@ fun writeGenerationToDisk(
         it.write(encodedModel)
         it.flush()
     }
-    val manifestFile = runFolder.resolve("manifest.json")
+    val manifestFile = runFolder.resolve("${prefix}manifest.json")
     val manifestData = Manifest(
         populationEvolver.generation,
         populationEvolver.scoreKeeper.toModel(), populationEvolver.speciesLineage.toModel()
@@ -274,4 +274,19 @@ fun writeGenerationToDisk(
         it.write(json.encodeToString(manifestData))
         it.flush()
     }
+}
+
+
+fun writeGenerationToDiskMCC(
+    currentPopulation: List<NeatMutator>, runFolder: File, batchNumber: Int, prefix: String
+) {
+    val modelPopulationPersist = currentPopulation.toModel()
+    val savePopulationFile = runFolder.resolve("${prefix}population.json")
+    val json = Json { prettyPrint = true }
+    val encodedModel = json.encodeToString(modelPopulationPersist)
+    savePopulationFile.bufferedWriter().use {
+        it.write(encodedModel)
+        it.flush()
+    }
+
 }

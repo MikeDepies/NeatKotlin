@@ -36,46 +36,6 @@ fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 private val logger = KotlinLogging.logger { }
 
 
-fun compatibilityDistanceFunction(c1: Float, c2: Float, c3: Float): DistanceFunction = { a, b ->
-    compatibilityDistance(a, b, c1, c2, c3)
-}
-
-class CPPNGeneRuler(val weightCoefficient: Float = .5f, val disjointCoefficient: Float = 1f, val normalize: Int) {
-    fun measure(parent1: NeatMutator, parent2: NeatMutator): Float {
-        return nodeDistance(parent1, parent2) + connectionDistance(parent1, parent2)
-    }
-
-    private fun connectionDistance(parent1: NeatMutator, parent2: NeatMutator): Float {
-        val connectionDisjoint =
-            parent1.connections.count { !parent2.hasConnection(it.innovation) } + parent2.connections.count {
-                !parent1.hasConnection(
-                    it.innovation
-                )
-            }
-        val connectionDistance = parent2.connections.filter { parent1.hasConnection(it.innovation) }
-            .map { (it.weight - parent2.connection(it.innovation).weight).absoluteValue * weightCoefficient }.sum()
-        val max = max(
-            parent1.connections.size, parent2.connections.size
-        )
-        return (connectionDistance + connectionDisjoint * disjointCoefficient) / (if (max < normalize) 1 else max)
-    }
-
-    private fun nodeDistance(parent1: NeatMutator, parent2: NeatMutator): Float {
-        val nodeDisjoint =
-            parent1.nodes.count { !parent2.hasNode(it.node) } + parent2.nodes.count { !parent1.hasNode(it.node) }
-        val nodeDistance = 0f + parent2.nodes.filter { parent1.hasNode(it.node) }.map {
-            val node = parent1.node(it.node)
-            val activationFunctionDistance = if (node.activationFunction == it.activationFunction) 0f else 1f
-            val biasDistance = (it.bias - node.bias).absoluteValue
-            val distance = biasDistance + activationFunctionDistance
-            distance * weightCoefficient
-        }.sum()
-        val max = max(parent1.nodes.size, parent2.nodes.size)
-        return (nodeDistance + nodeDisjoint * disjointCoefficient) / (if (max < normalize) 1 else max)
-    }
-
-
-}
 
 
 @KtorExperimentalAPI
@@ -127,16 +87,12 @@ fun Application.module(testing: Boolean = false) {
         json(get())
     }
 
-    //connectAndCreateDatabase()
-
-//    println(get<Channel<FrameUpdate>>(qualifier<FrameUpdate>()))
-//    println(get<Channel<FrameOutput>>(qualifier<FrameOutput>()))
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
     val evaluationId = 0
-    val populationSize = 50
+    val populationSize = 100
     val mutationDictionary = createMutationDictionary()
     fun createPopulation(randomSeed: Int): Pair<NeatExperiment, List<NetworkWithId>> {
         val random = Random(randomSeed)
@@ -146,17 +102,17 @@ fun Application.module(testing: Boolean = false) {
         var population = simpleNeatExperiment.generateInitialPopulation2(
             populationSize, 6, 2, activationFunctions
         ).mapIndexed { index, neatMutator ->
-            NetworkWithId(neatMutator, UUID.randomUUID().toString(), 0)
+            NetworkWithId(neatMutator, neatMutator.id.toString(), 0)
         }
         return simpleNeatExperiment to population
     }
 
-    val (neatExperiment, population) = loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
-    val (neatExperiment2, population2) = loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
-    val envOffspringFunction = offspringFunction(.8f, mutationDictionary)
-    val agentOffspringFunction = offspringFunction(.5f, mutationDictionary)
+    val (neatExperiment, population) = createPopulation(1) //loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
+    val (neatExperiment2, population2) = createPopulation(16) //loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
+    val envOffspringFunction = offspringFunctionMCC(.7f, mutationDictionary)
+    val agentOffspringFunction = offspringFunctionMCC(.8f, mutationDictionary)
     val minimalCriterion = MinimalCriterion(
-        Random(1), 40, 40, 5, population, population, 100
+        Random(1), 40, 40, 5, population, population2, 100
     )
 
     fun neatExperiment(minimalCriterion: MinimalCriterion) = when (minimalCriterion.activePopulation) {
@@ -208,8 +164,11 @@ fun Application.module(testing: Boolean = false) {
     }
     launch {
         for (mccResult in mccResultChannel) {
+//            logger.info { mccBatchMap.containsKey(mccResult.id) }
             mccBatchMap[mccResult.id] = true
             mccResultList.add(mccResult)
+//            logger.info { "Score $mccResult" }
+//            logger.info { "remaining: ${mccBatchMap.filter { !it.value }.size}" }
             if (mccBatchMap.all { it.value }) {
                 val mccBatchResult = MCCBatchResult(
                     currentMccBatch.pairedAgents,
@@ -233,7 +192,7 @@ fun Application.module(testing: Boolean = false) {
             val pairedAgents = pairedAgentsChannel.receive()
 
             val blueprint = NetworkBlueprint(
-                pairedAgents.agent.id,
+                pairedAgents.child.id,
                 createNetwork.planes,
                 connectionRelationships,
                 targetConnectionMapping,
@@ -262,32 +221,6 @@ fun Application.module(testing: Boolean = false) {
 @Serializable
 data class PairedNetworkWithBlueprint(val agent: NetworkBlueprint,  val child: NeatModel)
 
-@Serializable
-data class PairedNetworkBlueprints(val child: NetworkBlueprint, val agent: NetworkBlueprint)
-
-class NetworkBlueprintBuilder(private val taskNetworkBuilder: TaskNetworkBuilder) {
-    private val connectionRelationships =
-        taskNetworkBuilder.connectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
-    private val targetConnectionMapping =
-        taskNetworkBuilder.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
-    private val calculationOrder = taskNetworkBuilder.calculationOrder.map { it.id }
-
-    fun networkBlueprint(
-        connections: List<ConnectionLocation>, pairedAgents: PairedAgents
-    ) = NetworkBlueprint(
-
-        pairedAgents.child.id,
-        taskNetworkBuilder.planes,
-        connectionRelationships,
-        targetConnectionMapping,
-        calculationOrder,
-        0,
-        0,
-        taskNetworkBuilder.outputPlane.id,
-        pairedAgents.child.neatMutator.toModel(),
-        taskNetworkBuilder.depth
-    )
-}
 
 @Serializable
 data class MCCResult(val id: String, val satisfyMC: Boolean)

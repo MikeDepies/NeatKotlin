@@ -474,7 +474,7 @@ fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
     val inputImagePlane = layerPlane(15, 16)
     val hiddenPlanes = (0..10).map {
-        if (it < 2) layerPlane(12, 12) else layerPlane(15,15)
+        if (it < 2) layerPlane(12, 12) else layerPlane(5,5)
     }
     val outputPlane = layerPlane(1, 12)
     val computationOrder = hiddenPlanes + outputPlane
