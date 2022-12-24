@@ -168,14 +168,16 @@ def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 # TODO: Handle MC satisfication problem and reset model handlers with new networks
                 mc_satisfy = False
-                if model_handler.network is None and model_handler.ai_controller_id == child_controller_id:
-                    mc_satisfy = False
+                
                 if model_handler.network is None and model_handler.ai_controller_id == agent_controller_id:
+                    mc_satisfy = True
+                
+                if model_handler2.network is None and model_handler2.ai_controller_id == agent_controller_id:
                     mc_satisfy = True
                 if model_handler2.network is None and model_handler2.ai_controller_id == child_controller_id:
                     mc_satisfy = False
-                if model_handler2.network is None and model_handler2.ai_controller_id == agent_controller_id:
-                    mc_satisfy = True
+                if model_handler.network is None and model_handler.ai_controller_id == child_controller_id:
+                    mc_satisfy = False
                 model_helper.send_evaluation_result(EvalResult(id, mc_satisfy))
                     # model_handler.reset()
                 # if model_handler2.network is None:
