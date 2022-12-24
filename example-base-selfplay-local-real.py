@@ -171,16 +171,16 @@ def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration)
                 
                 if model_handler.network is None and model_handler.ai_controller_id == agent_controller_id:
                     mc_satisfy = True
-                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler.model_index].character) + " against Child" + game_state[model_handler2.model_index].character)
+                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler.model_index].character) + " against Child" + str(game_state[model_handler2.model_index].character))
                 if model_handler2.network is None and model_handler2.ai_controller_id == agent_controller_id:
                     mc_satisfy = True
-                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler2.model_index].character) + " against Child" + game_state[model_handler.model_index].character)
+                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler2.model_index].character) + " against Child" + str(game_state[model_handler.model_index].character))
                 if model_handler2.network is None and model_handler2.ai_controller_id == child_controller_id:
                     mc_satisfy = False
-                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler.model_index].character) + " against Child" + game_state[model_handler2.model_index].character)
+                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler.model_index].character) + " against Child" + str(game_state[model_handler2.model_index].character))
                 if model_handler.network is None and model_handler.ai_controller_id == child_controller_id:
                     mc_satisfy = False
-                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler2.model_index].character) + " against Child" + game_state[model_handler.model_index].character)
+                    print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state[model_handler2.model_index].character) + " against Child" + str(game_state[model_handler.model_index].character))
                 
                 model_helper.send_evaluation_result(EvalResult(id, mc_satisfy))
                     # model_handler.reset()
