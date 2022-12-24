@@ -153,27 +153,28 @@ def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration)
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             if agent_controller_id == model_handler.ai_controller_id:
-                if model_handler2.network is not None:
-                    model_handler.evaluate(game_state)
-                    model_handler.postEvaluate(game_state)
-                else:
-                    controller.release_all()
                 if model_handler.network is not None:
                     model_handler2.evaluate(game_state)
                     model_handler2.postEvaluate(game_state)
                 else:
                     controller_opponent.release_all()
+                if model_handler2.network is not None:
+                    model_handler.evaluate(game_state)
+                    model_handler.postEvaluate(game_state)
+                else:
+                    controller.release_all()
             else:
-                if model_handler.network is not None:
-                    model_handler2.evaluate(game_state)
-                    model_handler2.postEvaluate(game_state)
-                else:
-                    controller_opponent.release_all()
+                
                 if model_handler2.network is not None:
                     model_handler.evaluate(game_state)
                     model_handler.postEvaluate(game_state)
                 else:
                     controller.release_all()
+                if model_handler.network is not None:
+                    model_handler2.evaluate(game_state)
+                    model_handler2.postEvaluate(game_state)
+                else:
+                    controller_opponent.release_all()
                 
             
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
