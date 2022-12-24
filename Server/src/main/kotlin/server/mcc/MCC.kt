@@ -11,7 +11,8 @@ import java.util.*
 import kotlin.random.Random
 @Serializable
 enum class PopulationType {
-    Agent, Environment
+    Agent, //Yoshi
+    Environment // Falcon
 }
 
 private val logger = KotlinLogging.logger { }
