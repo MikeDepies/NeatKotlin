@@ -92,7 +92,7 @@ fun Application.module(testing: Boolean = false) {
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
     val evaluationId = 0
-    val populationSize = 500
+    val populationSize = 100
     val mutationDictionary = createMutationDictionary()
     fun createPopulation(randomSeed: Int): Pair<NeatExperiment, List<NetworkWithId>> {
         val random = Random(randomSeed)
@@ -107,12 +107,12 @@ fun Application.module(testing: Boolean = false) {
         return simpleNeatExperiment to population
     }
 
-    val (neatExperiment, population) = createPopulation(1) //loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
-    val (neatExperiment2, population2) = createPopulation(16) //loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
-    val envOffspringFunction = offspringFunctionMCC(.7f, mutationDictionary)
+    val (neatExperiment, population) = createPopulation(12) //loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
+    val (neatExperiment2, population2) = createPopulation(126) //loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
+    val envOffspringFunction = offspringFunctionMCC(.5f, mutationDictionary)
     val agentOffspringFunction = offspringFunctionMCC(.8f, mutationDictionary)
     val minimalCriterion = MinimalCriterion(
-        Random(1), 120, 40, 5, population, population2, populationSize
+        Random(1), 40, 40, 5, population, population2, populationSize
     )
 
     fun neatExperiment(minimalCriterion: MinimalCriterion) = when (minimalCriterion.activePopulation) {
@@ -207,9 +207,11 @@ fun Application.module(testing: Boolean = false) {
         }
 
         get("/fillModels") {
-            currentMccBatch.pairedAgents.filter { !mccBatchMap.getValue(it.child.id) }.forEach {
+            val filter = currentMccBatch.pairedAgents.filter { !mccBatchMap.getValue(it.child.id) }
+            filter.forEach {
                 pairedAgentsChannel.send(it)
             }
+            call.respond(filter.size)
         }
 
         post<MCCResult>("/score") {

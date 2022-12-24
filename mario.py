@@ -284,7 +284,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
                 if int(info["x_pos"]) > 50:
                     child_x = int(info["x_pos"]) / 10_000 + int(info["stage"]) + int(info["world"]) * 10 
                 else:
-                    child_x = 0
+                    child_x = int(info["stage"]) + int(info["world"]) * 10
                 evaluated_child = True
                 # print("child: " + str(child_x))
                 done = False
@@ -299,7 +299,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
                 agent_x = int(info["x_pos"]) / 10_000 + int(info["stage"]) + int(info["world"]) * 10 
                 # print("agent: " + str(agent_x))
             if evaluated_agent and evaluated_child:
-                mc_satisfy = child_x > agent_x + .005
+                mc_satisfy = child_x > agent_x
                 print(id + ": agent: " + str(agent_x) + " child: " + str(child_x) + " -> " + str(mc_satisfy))
                 submitScore(
                     {
@@ -334,7 +334,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
         # print(state.shape)
         state = rescale(
             rgb2gray(state),
-            1 / 16,
+            1 / 8,
             #channel_axis=2
         )  # * np.random.binomial(1, .25,  state.size)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
@@ -358,7 +358,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 40 * 20 or reward < -14:
+        if framesSinceMaxXChange > 10 * 20 or reward < -14:
             idle = True
 
         action = 11 - output.argmax(1)[0]
@@ -413,19 +413,20 @@ def queueNetworkPairs(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
     ns.generation = 0
     while True:
         # try:
-        id, builder_agent, builder_child = get_network_mcc(host, port)
-        if id not in mgr_dict:
-            mgr_dict[id] = True
-            network = builder_agent.create_ndarrays(sigmoidal)
-            network_child = builder_child.create_ndarrays(sigmoidal)
-            ns.generation += 1
-            queue.put((id, network, network_child))
-        if ns.generation > 100_000:
-            mgr_dict.clear()
-            ns.generation = 0
-                
-        # except:
-        #     print("failed to get network...")
+        try:
+            id, builder_agent, builder_child = get_network_mcc(host, port)
+            if id not in mgr_dict:
+                mgr_dict[id] = True
+                network = builder_agent.create_ndarrays(sigmoidal)
+                network_child = builder_child.create_ndarrays(sigmoidal)
+                ns.generation += 1
+                queue.put((id, network, network_child))
+            if ns.generation > 100_000:
+                mgr_dict.clear()
+                ns.generation = 0
+                    
+        except:
+            print("failed to get network...")
 
 if __name__ == '__main__':
     mgr = mp.Manager()
