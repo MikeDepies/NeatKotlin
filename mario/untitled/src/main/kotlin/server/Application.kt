@@ -92,7 +92,7 @@ fun Application.module(testing: Boolean = false) {
     runFolder.mkdirs()
     get<WebSocketManager>().attachWSRoute()
     val evaluationId = 0
-    val populationSize = 100
+    val populationSize = 500
     val mutationDictionary = createMutationDictionary()
     fun createPopulation(randomSeed: Int): Pair<NeatExperiment, List<NetworkWithId>> {
         val random = Random(randomSeed)
@@ -112,7 +112,7 @@ fun Application.module(testing: Boolean = false) {
     val envOffspringFunction = offspringFunctionMCC(.7f, mutationDictionary)
     val agentOffspringFunction = offspringFunctionMCC(.8f, mutationDictionary)
     val minimalCriterion = MinimalCriterion(
-        Random(1), 40, 40, 5, population, population2, 100
+        Random(1), 120, 40, 5, population, population2, populationSize
     )
 
     fun neatExperiment(minimalCriterion: MinimalCriterion) = when (minimalCriterion.activePopulation) {

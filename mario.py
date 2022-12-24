@@ -299,7 +299,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
                 agent_x = int(info["x_pos"]) / 10_000 + int(info["stage"]) + int(info["world"]) * 10 
                 # print("agent: " + str(agent_x))
             if evaluated_agent and evaluated_child:
-                mc_satisfy = child_x > agent_x
+                mc_satisfy = child_x > agent_x + .005
                 print(id + ": agent: " + str(agent_x) + " child: " + str(child_x) + " -> " + str(mc_satisfy))
                 submitScore(
                     {
@@ -358,7 +358,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 20 * 20 or reward < -14:
+        if framesSinceMaxXChange > 40 * 20 or reward < -14:
             idle = True
 
         action = 11 - output.argmax(1)[0]

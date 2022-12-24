@@ -31,7 +31,7 @@ class ModelHelperMCC:
         
 
     def getNetworks(self):
-        res = httpx.get("http://" + self.host + ":8091/model/next", timeout=300)
+        res = httpx.get("http://" + self.host + ":8091/model/next", timeout=3)
         if not res.is_success:
             raise Exception("No data for request")
         data = res.json()

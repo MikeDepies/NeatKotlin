@@ -260,10 +260,14 @@ def queueNetworkPairs(queue: mp.Queue):
     model_helper = ModelHelperMCC(host)
     
     while True:
-        id, builder, child, agent_controller_id, child_controller_id = model_helper.getNetworks()
-        network = builder.create_ndarrays(sigmoidal)
-        child_network = child.create_ndarrays(sigmoidal)
-        queue.put((id, network, child_network, agent_controller_id, child_controller_id))
+        try:
+            id, builder, child, agent_controller_id, child_controller_id = model_helper.getNetworks()
+            network = builder.create_ndarrays(sigmoidal)
+            child_network = child.create_ndarrays(sigmoidal)
+            last_data = (id, network, child_network, agent_controller_id, child_controller_id)
+            queue.put(last_data)
+        except:
+            queue.put(last_data)
 
 
 if __name__ == '__main__':
