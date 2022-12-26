@@ -112,7 +112,7 @@ fun Application.module(testing: Boolean = false) {
     val envOffspringFunction = offspringFunctionMCC(.5f, mutationDictionary)
     val agentOffspringFunction = offspringFunctionMCC(.8f, mutationDictionary)
     val minimalCriterion = MinimalCriterion(
-        Random(1), 40, 40, 5, population, population2, populationSize
+        Random(1), 40, 40, 2, population, population2, populationSize
     )
 
     fun neatExperiment(minimalCriterion: MinimalCriterion) = when (minimalCriterion.activePopulation) {

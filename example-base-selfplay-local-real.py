@@ -153,7 +153,11 @@ def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration)
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             if agent_controller_id == model_handler.ai_controller_id:
-                model_handler.evaluator.frames_without_damage=0
+                if child_controller_id == 1:
+                    model_handler2.evaluator.frames_without_damage=0
+                else:
+                    model_handler.evaluator.frames_without_damage=0
+                
                 if model_handler.network is not None:
                     model_handler2.evaluate(game_state)
                     model_handler2.postEvaluate(game_state)
@@ -165,7 +169,10 @@ def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration)
                 else:
                     controller.release_all()
             else:
-                model_handler2.evaluator.frames_without_damage=0
+                if child_controller_id == 1:
+                    model_handler.evaluator.frames_without_damage=0
+                else:
+                    model_handler2.evaluator.frames_without_damage=0
                 if model_handler2.network is not None:
                     model_handler.evaluate(game_state)
                     model_handler.postEvaluate(game_state)
