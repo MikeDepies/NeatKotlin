@@ -89,6 +89,7 @@ class Evaluator:
         self.excluded_actions = [melee.Action.SHIELD_BREAK_FALL, melee.Action.SHIELD_BREAK_DOWN_D, melee.Action.SHIELD_BREAK_DOWN_U, melee.Action.SHIELD_BREAK_TEETER, melee.Action.SHIELD_BREAK_FLY, melee.Action.SHIELD_BREAK_STAND_D, melee.Action.SHIELD_BREAK_STAND_U,
                                  melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
+                                 melee.Action.REBOUND, melee.Action.REBOUND_STOP, melee.Action.LANDING_SPECIAL, melee.Action.SHIELD_STUN,
                                  melee.Action.DAMAGE_FLY_HIGH, melee.Action.DAMAGE_FLY_LOW, melee.Action.DAMAGE_FLY_NEUTRAL, melee.Action.DAMAGE_FLY_ROLL,
                                  melee.Action.DAMAGE_FLY_TOP, melee.Action.DAMAGE_GROUND, melee.Action.DAMAGE_HIGH_1, melee.Action.DAMAGE_HIGH_2, melee.Action.DAMAGE_HIGH_3, melee.Action.DAMAGE_ICE, melee.Action.DAMAGE_ICE_JUMP, melee.Action.DAMAGE_LOW_1, melee.Action.DAMAGE_LOW_2, melee.Action.DAMAGE_LOW_3, melee.Action.DAMAGE_NEUTRAL_1,
                                  melee.Action.DAMAGE_NEUTRAL_2, melee.Action.DAMAGE_NEUTRAL_3, melee.Action.DAMAGE_SCREW, melee.Action.DAMAGE_SCREW_AIR,
@@ -254,13 +255,7 @@ class Evaluator:
             if self.frames_since_opponent_unknocked > 90:
                 self.opponent_knocked = False
                 self.frames_since_opponent_unknocked = 0
-            if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
-            #     # print(player.speed_ground_x_self)
-            #     self.movement_frames += 1 #abs(player.speed_ground_x_self)
-            #     # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
-                self.frames_without_damage -= abs(player.speed_ground_x_self) 
-                # print(abs(player.speed_ground_x_self))
-                self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
+            
             #     # print("movement: " + str(self.movement_frames))
             #     if self.movement_frames > 15:
             #         if len(self.player_previous_actions) > 0:
@@ -274,8 +269,16 @@ class Evaluator:
 
             if opponent_on_stage and self.opponent_knocked_off_stage:
                 self.opponent_knocked_off_stage = False
-
-            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked and player.action not in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING] or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
+            if player.speed_ground_x_self != 0 and not (player.action in self.excluded_actions or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action) or self.frame_data.is_bmove(player.character, player.action) or self.frame_data.is_attack(player.character, player.action) or self.frame_data.is_grab(player.character, player.action)):
+                
+                print(str(player.character) + " - " + str(player.action))
+                print(player.speed_ground_x_self)
+            #     self.movement_frames += 1 #abs(player.speed_ground_x_self)
+            #     # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
+                self.frames_without_damage -= abs(player.speed_ground_x_self) 
+                # print(abs(player.speed_ground_x_self))
+                self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
+            elif not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
                 self.frames_without_damage += 1
                 # if self.player_took_damage(game_state):
                 #     self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
