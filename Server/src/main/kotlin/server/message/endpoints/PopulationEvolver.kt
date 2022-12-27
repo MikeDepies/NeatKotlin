@@ -64,7 +64,7 @@ fun mutationDictionary(): List<MutationEntry> {
         .2f chanceToMutate mutateAddNode,
         .2f chanceToMutate mutateAddConnection,
         .2f chanceToMutate getMutateBiasConnections(.1f, .05f, 7f),
-        .01f chanceToMutate mutateToggleConnection,
+        .05f chanceToMutate mutateToggleConnection,
         .1f chanceToMutate mutateNodeActivationFunction(),
     )
 }
