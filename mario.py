@@ -345,7 +345,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
         # if (score != info["score"]):
         #     framesSinceMaxXChange = 0
         #     score = info["score"]
-        if abs(prevX - info["x_pos"]) > 32:
+        if abs(prevX - info["x_pos"]) > 16:
             if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
                 steps_left += 1
                 prevXReset = info["x_pos"]
