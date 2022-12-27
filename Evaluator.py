@@ -254,12 +254,12 @@ class Evaluator:
             if self.frames_since_opponent_unknocked > 90:
                 self.opponent_knocked = False
                 self.frames_since_opponent_unknocked = 0
-            # if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
+            if player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]:
             #     # print(player.speed_ground_x_self)
             #     self.movement_frames += 1 #abs(player.speed_ground_x_self)
             #     # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
-            #     if self.frames_without_damage > 1 and not player.invulnerable:
-            #         self.frames_without_damage -= abs(player.speed_ground_x_self) 
+                if self.frames_without_damage > 1 and not player.invulnerable:
+                    self.frames_without_damage -= abs(player.speed_ground_x_self) 
             #     # print("movement: " + str(self.movement_frames))
             #     if self.movement_frames > 15:
             #         if len(self.player_previous_actions) > 0:
@@ -292,8 +292,8 @@ class Evaluator:
                     self.damage_action_available = False
                 self.last_damage_action = player.action
             
-            # if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
-            #     self.frames_without_damage += 2
+            if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
+                self.frames_without_damage += 2
             
             # if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
             #     self.frames_without_damage += 6
