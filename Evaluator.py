@@ -271,8 +271,8 @@ class Evaluator:
                 self.opponent_knocked_off_stage = False
             if player.speed_ground_x_self != 0 and not (player.action in self.excluded_actions or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action) or self.frame_data.is_bmove(player.character, player.action) or self.frame_data.is_attack(player.character, player.action) or self.frame_data.is_grab(player.character, player.action)):
                 
-                print(str(player.character) + " - " + str(player.action))
-                print(player.speed_ground_x_self)
+                # print(str(player.character) + " - " + str(player.action))
+                # print(player.speed_ground_x_self)
             #     self.movement_frames += 1 #abs(player.speed_ground_x_self)
             #     # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 self.frames_without_damage -= abs(player.speed_ground_x_self) 
