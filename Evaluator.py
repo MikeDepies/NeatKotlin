@@ -9,7 +9,7 @@ from ActionBehavior import ActionBehavior
 
 
 class Evaluator:
-    frames_without_damage: int
+    frames_without_damage: float
     actions_without_damage: int
     total_damage: float
     knocked: bool
@@ -279,7 +279,7 @@ class Evaluator:
                 # print(abs(player.speed_ground_x_self))
                 self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
             elif not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
-                self.frames_without_damage += 1
+                self.frames_without_damage += .5
                 # if self.player_took_damage(game_state):
                 #     self.frames_without_damage += self.player_damage_amount_taken(game_state) * 10
 
@@ -297,7 +297,7 @@ class Evaluator:
                 self.last_damage_action = player.action
             
             if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
-                self.frames_without_damage += 1.5
+                self.frames_without_damage += .5
             
             # if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
             #     self.frames_without_damage += 6
