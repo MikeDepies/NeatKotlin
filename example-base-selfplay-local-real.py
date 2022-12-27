@@ -183,10 +183,10 @@ def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration)
                 mc_satisfy = False
                 
                 if model_handler.network is None and model_handler.ai_controller_id == agent_controller_id:
-                    mc_satisfy = len(model_handler2.evaluator.actions) > 10
+                    mc_satisfy = len(model_handler2.evaluator.actions) > 5
                     print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state.player[model_handler.model_index].character) + " against Child" + str(game_state.player[model_handler2.model_index].character))
                 if model_handler2.network is None and model_handler2.ai_controller_id == agent_controller_id:
-                    mc_satisfy = len(model_handler.evaluator.actions) > 10
+                    mc_satisfy = len(model_handler.evaluator.actions) > 5
                     print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state.player[model_handler2.model_index].character) + " against Child" + str(game_state.player[model_handler.model_index].character))
                 if model_handler2.network is None and model_handler2.ai_controller_id == child_controller_id:
                     mc_satisfy = False
