@@ -358,7 +358,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 10 * 20 or reward < -14:
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:
             idle = True
 
         action = 11 - output.argmax(1)[0]
