@@ -183,10 +183,10 @@ def console_loop_mcc(port: int, queue_1: mp.Queue, configuration: Configuration)
                 mc_satisfy = False
                 
                 if model_handler.network is None and model_handler.ai_controller_id == agent_controller_id:
-                    mc_satisfy = True #len(model_handler2.evaluator.actions) > 5
+                    mc_satisfy = model_handler2.evaluator.total_damage > 0 #len(model_handler2.evaluator.actions) > 5
                     print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state.player[model_handler.model_index].character) + " against Child" + str(game_state.player[model_handler2.model_index].character))
                 if model_handler2.network is None and model_handler2.ai_controller_id == agent_controller_id:
-                    mc_satisfy = True #len(model_handler.evaluator.actions) > 5
+                    mc_satisfy = model_handler.evaluator.total_damage > 0 #len(model_handler.evaluator.actions) > 5
                     print("satisfy: " + str(mc_satisfy) + " -> Agent: " + str(game_state.player[model_handler2.model_index].character) + " against Child" + str(game_state.player[model_handler.model_index].character))
                 if model_handler2.network is None and model_handler2.ai_controller_id == child_controller_id:
                     mc_satisfy = False
@@ -278,7 +278,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 15
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
