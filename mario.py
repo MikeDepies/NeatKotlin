@@ -377,7 +377,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
 def mario_mcc_stage(queue : mp.Queue, render : Boolean):
     env_mariogym = gym_super_mario_bros.make('SuperMarioBrosRandomStages-v1')
     env = JoypadSpace(env_mariogym, COMPLEX_MOVEMENT)
-    host = "localhost"
+    host = "192.168.0.100"
     done = False
     stage_track_gene : StageTrackGene
     agent_network : ComputableNetwork
