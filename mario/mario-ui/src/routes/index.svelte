@@ -41,7 +41,7 @@
 				offset: 0
 			},
 			{
-				width: 2800,
+				width: 2560,
 				height: 240,
 				image: 'mario-1-4-stage.png',
 				offset: 0

@@ -9,7 +9,7 @@ import server.NetworkBlueprint
 import java.util.*
 
 import kotlin.random.Random
-
+@Serializable
 enum class PopulationType {
     Agent, Environment
 }

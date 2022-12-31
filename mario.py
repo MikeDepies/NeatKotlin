@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from dacite import from_dict
 
 from ComputableNetwork import ComputableNetwork, relu, sigmoidal
-from NeatService import process_model_data, process_model_data_mcc
+from NeatService import process_model_data, process_model_data_mcc, process_model_data_mcc_stage, StageGene, StageTrackGene
 
 
 
@@ -373,6 +373,109 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
         last_action = action
         if render:
             env.render()
+
+def mario_mcc_stage(queue : mp.Queue, render : Boolean):
+    env_mariogym = gym_super_mario_bros.make('SuperMarioBrosRandomStages-v1')
+    env = JoypadSpace(env_mariogym, COMPLEX_MOVEMENT)
+    host = "localhost"
+    done = False
+    stage_track_gene : StageTrackGene
+    agent_network : ComputableNetwork
+    id: str
+    id, agent_network, stage_track_gene = getNextModel()
+    state = None
+    action = 0  #no op
+    prevX = 0
+    framesSinceMaxXChange = 0 * 20
+    status = "small"
+    idle = False
+    game_event_helper = GameEventHelper()
+    game_event_collector = GameEventCollector(game_event_helper, 0)
+    
+    agent_x = 0
+    stage_index = 0
+    stage_gene = stage_track_gene.stages[stage_index]
+    print("stage track: " + stage_track_gene.id)
+    print("stage index: " + str(stage_index) + " -> " + str(stage_gene.world)+"-"+str(stage_gene.stage) + " d=" +str(stage_gene.distance) + " c=" +str(stage_gene.coin) + " s=" +str(stage_gene.score))
+    state = env_mariogym.reset(options={
+        "stages" : [str(stage_gene.world)+"-"+str(stage_gene.stage)]
+    })
+    
+    #Iterate through each stage in track
+    #exit the stage when dead, run out of time alotted, flag reached or completed the stageGene
+    #Continue through iteration until complete or first failure
+    while True:
+        if done or idle:
+            
+            agent_x = int(info["x_pos"])
+            coin = int(info["coins"])
+            score = int(info["score"])
+            stage_gene = stage_track_gene.stages[stage_index]
+            mc_satisfy = (agent_x > stage_gene.distance or bool(info["flag_get"])) and int(info["coins"]) >= stage_gene.coin and int(info["score"]) >= stage_gene.score
+            print("stage index: " + str(stage_index) + " -> " + str(stage_gene.world)+"-"+str(stage_gene.stage) + " d=" +str(stage_gene.distance) + " c=" +str(stage_gene.coin) + " s=" +str(stage_gene.score) + " ---- " + str(agent_x) + ", " + str(coin) +", " + str(score) + " - Satisfied: " + str(mc_satisfy))
+            
+            # print(id + ": agent: " + str(agent_x) + " child: " + str(child_x) + " -> " + str(mc_satisfy))
+            if not mc_satisfy or stage_index +1 == len(stage_track_gene.stages):
+                submitScore(
+                {
+                    "id": id,
+                    "satisfyMC": bool(mc_satisfy)
+                }, host)
+                
+                id, agent_network, stage_track_gene = getNextModel()
+                stage_index = 0
+                stage_gene = stage_track_gene.stages[stage_index]
+                state = env_mariogym.reset(options={
+                    "stages" : [str(stage_gene.world)+"-"+str(stage_gene.stage)]
+                })
+                print("stage track: " + stage_track_gene.id)
+                print("stage index: " + str(stage_index) + " -> " + str(stage_gene.world)+"-"+str(stage_gene.stage) + " d=" +str(stage_gene.distance) + " c=" +str(stage_gene.coin) + " s=" +str(stage_gene.score))
+                prevX = 40
+                framesSinceMaxXChange = 0 * 20
+                game_event_collector = GameEventCollector(game_event_helper, 0)
+                idle = False
+            else:
+                idle = False
+                prevX = 40
+                framesSinceMaxXChange = 0 * 20
+                stage_index+=1
+                stage_gene = stage_track_gene.stages[stage_index]
+                state = env_mariogym.reset(options={
+                    "stages" : [str(stage_gene.world)+"-"+str(stage_gene.stage)]
+                })
+                print("stage index: " + str(stage_index) + " -> " + str(stage_gene.world)+"-"+str(stage_gene.stage) + " d=" +str(stage_gene.distance) + " c=" +str(stage_gene.coin) + " s=" +str(stage_gene.score))
+
+        state, reward, done, info = env.step(action)
+        game_event_collector.process_frame(info)
+        
+        if (status != info["status"]):
+            framesSinceMaxXChange = 0
+        status = info["status"]
+        state = rescale(
+            rgb2gray(state),
+            1 / 8,
+            #channel_axis=2
+        )  # * np.random.binomial(1, .25,  state.size)
+        # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
+        agent_network.input(state / 255.0)
+        # network.input((state / 42.5) - 3)
+        agent_network.compute()
+        output = agent_network.output()
+        if abs(prevX - info["x_pos"]) > 32:
+            framesSinceMaxXChange = 0
+            prevX = info["x_pos"]
+
+        else:
+            framesSinceMaxXChange += 1
+        framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
+        stage_gene = stage_track_gene.stages[stage_index]
+        if framesSinceMaxXChange > 20 * 20 or reward < -14 or info["x_pos"] > stage_gene.distance:
+            idle = True
+
+        action = 11 - output.argmax(1)[0]
+        if render:
+            env.render()
+
 def actionToNdArray(value: int):
     array = np.zeros([1, 12])
     array[0, value] = 1
@@ -407,6 +510,17 @@ def get_network_mcc(host: str, port : int):
     
     return id, builder, child
 
+
+def get_network_mcc_stage(host: str, port : int):
+    res = get("http://" + host + ":" + str(port) + "/model", timeout=100)
+    if not res.is_success:
+        raise Exception("No data for request")
+    data = res.json()
+    
+    id, agent, environment = process_model_data_mcc_stage(data)
+    
+    return id, agent, environment
+
 def queueNetworkPairs(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
     host = "192.168.0.100"
     port = 8095
@@ -428,6 +542,33 @@ def queueNetworkPairs(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace):
         except:
             print("failed to get network...")
 
+def queue_network_mcc_stage(queue : mp.Queue):
+    host = "192.168.0.100"
+    port = 8095
+    
+    while True:
+        try:
+        
+            id, builder_agent, environment = get_network_mcc_stage(host, port)
+            
+            network = builder_agent.create_ndarrays(sigmoidal)
+            queue.put((id, network, environment))
+        
+                    
+        except:
+            print("failed to get network...")
+
+def getNextModel():
+    host = "192.168.0.100"
+    port = 8095
+    while True:
+        try:
+            id, builder_agent, environment = get_network_mcc_stage(host, port)
+                    
+            network = builder_agent.create_ndarrays(sigmoidal)
+            return (id, network, environment)
+        except:
+            print("failed to get network...")
 if __name__ == '__main__':
     mgr = mp.Manager()
     mgr_dict = mgr.dict()
@@ -435,17 +576,17 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 8
-    queue = mgr.Queue(process_num * 2)
+    process_num = 30
+    queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
     
     for i in range(process_num):
-        p = mp.Process(target=mario_mcc, daemon=True, args=(queue, i < 1))
+        p = mp.Process(target=mario_mcc_stage, daemon=True, args=(queue, i < 0))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworkPairs, daemon=True, args=(queue,mgr_dict, ns))
-        processes.append(p)
-        p.start() 
+        # p = mp.Process(target=queue_network_mcc_stage, daemon=True, args=(queue,))
+        # processes.append(p)
+        # p.start() 
         # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         # processes.append(p)
         # p.start() 

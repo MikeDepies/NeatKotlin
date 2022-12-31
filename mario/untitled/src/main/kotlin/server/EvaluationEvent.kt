@@ -10,6 +10,7 @@ import mu.*
 import neat.*
 import neat.model.*
 import neat.novelty.*
+import server.mcc.StageTrackGene
 import server.message.endpoints.*
 import server.refactor.needed.Manifest
 import java.io.*
@@ -132,6 +133,23 @@ fun writeGenerationToDisk(
     prefix: String
 ) {
     val modelPopulationPersist = currentPopulation.toModel()
+    val savePopulationFile = runFolder.resolve("$prefix${batchNumber + 0}.json")
+    val json = Json { prettyPrint = true }
+    val encodedModel = json.encodeToString(modelPopulationPersist)
+    savePopulationFile.bufferedWriter().use {
+        it.write(encodedModel)
+        it.flush()
+    }
+}
+
+
+fun writeStageGenerationToDisk(
+    currentPopulation: List<StageTrackGene>,
+    runFolder: File,
+    batchNumber: Int,
+    prefix: String
+) {
+    val modelPopulationPersist = currentPopulation
     val savePopulationFile = runFolder.resolve("$prefix${batchNumber + 0}.json")
     val json = Json { prettyPrint = true }
     val encodedModel = json.encodeToString(modelPopulationPersist)

@@ -63,19 +63,10 @@ val applicationModule = module {
     single<MessageWriter> { MessageWriterImpl(get(), get(), get()) }
     single<SessionScope> { SessionScopeImpl(this, get()) }
     single { SimulationSessionScope(this, get()) }
-    single<MessageEndpointRegistry> {
-        val endpointProvider = get<EndpointProvider>()
-        val endpoints = endpointProvider.run {
-            simulationEndpoints()
-        }.toList()
-        MessageEndpointRegistryImpl(endpoints, get())
-    }
 
-    single { EndpointProvider(get(), get(), this) }
-    single<UserTokenResolver> { UserTokenResolverImpl(get()) }
-    single<AuthService> { AuthServiceAuth0(get(), get()) }
+
     single { ClientRegistry(listOf()) }
-    single { WebSocketManager(get(), get(), get(), get()) }
+
     single {
         HttpClient(CIO) {
             install(HttpTimeout) {
