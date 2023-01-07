@@ -275,7 +275,7 @@ fun Application.moduleStageGene(testing: Boolean = false) {
                     environmentMccBatchMap.clear()
                     environmentMccResultList.clear()
                     environmentMccBatch = mccBatch
-                    mccBatch.pairedAgents.forEach {
+                    mccBatch.pairedAgents.shuffled().forEach {
 //                        logger.info { mccBatch.pairedAgents.size }
                         environmentMccBatchMap[it.environment.data.id] = false
                         pairedAgentsChannel.send(it)

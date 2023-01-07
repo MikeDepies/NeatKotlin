@@ -580,7 +580,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 30
+    process_num = 20
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
     
