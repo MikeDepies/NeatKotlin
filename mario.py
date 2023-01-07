@@ -512,7 +512,7 @@ def get_network_mcc(host: str, port : int):
 
 
 def get_network_mcc_stage(host: str, port : int):
-    res = get("http://" + host + ":" + str(port) + "/model", timeout=100)
+    res = get("http://" + host + ":" + str(port) + "/model", timeout=30)
     if not res.is_success:
         raise Exception("No data for request")
     data = res.json()
@@ -568,6 +568,7 @@ def getNextModel():
             network = builder_agent.create_ndarrays(sigmoidal)
             return (id, network, environment)
         except:
+            get("http://localhost:8095/fillModels")
             print("failed to get network...")
 if __name__ == '__main__':
     mgr = mp.Manager()
@@ -576,7 +577,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 30
+    process_num = 25
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
     

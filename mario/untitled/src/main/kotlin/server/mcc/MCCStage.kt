@@ -7,6 +7,7 @@ import neat.model.NeatMutator
 import server.NetworkBlueprint
 
 import java.util.*
+import kotlin.math.min
 
 import kotlin.random.Random
 
@@ -27,7 +28,7 @@ class MinimalCriterionStage(
     val agentPopulationQueue: Queue<MCCElement<NeatMutator>> = LinkedList(agentSeeds)
     val environmentPopulationQueue: Queue<MCCElement<StageTrackGene>> = LinkedList(agentEnvironmentSeeds)
     val environmentPopulationResourceMap = agentEnvironmentSeeds.associate { it.data.id to 0 }.toMutableMap()
-    var activePopulation = PopulationType.Agent
+//    var activePopulation = PopulationType.Agent
 
 
     fun stepAgent(
@@ -45,19 +46,30 @@ class MinimalCriterionStage(
         }
         logger.info { "${PopulationType.Agent} -> ${resourceViableEnvironments.size}" }
         val children = createAgentChildren(neatExperiment, parents, offspringFunction, batchNumber)
-        val pairedAgents = children.map {
-            val agentEnvironment = resourceViableEnvironments.random(random)
-            PairedAgentsStage(it, agentEnvironment, PopulationType.Agent)
+//        val pairedAgents = children.map {
+//            val agentEnvironment = resourceViableEnvironments.random(random)
+//            PairedAgentsStage(it, agentEnvironment, PopulationType.Agent)
+//        }
+        val sampleSize = min((environmentSampleSize * populationCap).toInt(), resourceViableEnvironments.size)
+        val pairedAgents = children.flatMap { agent ->
+            val sampled = mutableSetOf<MCCElement<StageTrackGene>>()
+            (0 until sampleSize).map {
+                val mccElementList = resourceViableEnvironments - sampled
+//                if (mccElementList.isEmpty()) break
+                val environment = mccElementList.random(random)
+                sampled += environment
+                PairedAgentsStage(agent, environment, PopulationType.Agent)
+            }
         }
         return MCCStageBatch(pairedAgents, PopulationType.Agent)
     }
 
-    fun togglePopulation() {
-        activePopulation = when (activePopulation) {
-            PopulationType.Agent -> PopulationType.Environment
-            PopulationType.Environment -> PopulationType.Agent
-        }
-    }
+//    fun togglePopulation() {
+//        activePopulation = when (activePopulation) {
+//            PopulationType.Agent -> PopulationType.Environment
+//            PopulationType.Environment -> PopulationType.Agent
+//        }
+//    }
 
     private fun createAgentChildren(
         neatExperiment: NeatExperiment,
@@ -80,7 +92,7 @@ class MinimalCriterionStage(
     fun processBatchAgent(batchResult: MCCStageBatchResult) {
         logger.info { "processing ${batchResult.batchPopulationType}" }
         val childrenThatSatisfiedMC =
-            batchResult.pairedAgents.filter { batchResult.mccMap[it.agent.data.id.toString()] ?: false }
+            batchResult.pairedAgents.filter { batchResult.mccMap[it.agent.data.id.toString()] ?: false }.distinctBy { it.agent.data.id }
 
         childrenThatSatisfiedMC.forEach {
             val resourceUsed = environmentPopulationResourceMap.getValue(it.environment.data.id) + 1

@@ -11,20 +11,19 @@ import java.util.*
 
 fun createStageMutationDictionary(): List<StageMutationEntry> {
     return listOf(
-        .1f chanceToMutate NeatExperiment::mutateStage,
-        .05f chanceToMutate NeatExperiment::mutateCoin,
-        .1f chanceToMutate NeatExperiment::mutateScore,
-        .9f chanceToMutate NeatExperiment::mutateDistance
+        .01f chanceToMutate NeatExperiment::mutateStage,
+//        .05f chanceToMutate NeatExperiment::mutateCoin,
+//        .1f chanceToMutate NeatExperiment::mutateScore,
+        1f chanceToMutate NeatExperiment::mutateDistance
     )
 }
 
 
 fun createStageTrackMutationDictionary(stageGeneMutations : List<StageMutationEntry>): List<StageTrackMutationEntry> {
     return listOf(
-//        .01f chanceToMutate NeatExperiment::mutateRemoveStage,
-        .05f chanceToMutate NeatExperiment::mutateAddStage,
-        .1f chanceToMutate NeatExperiment::mutateShuffleStages,
-        .9f chanceToMutate mutateStageGenes(stageGeneMutations)
+        .9f chanceToMutate mutateStageGenes(stageGeneMutations),
+        .001f chanceToMutate NeatExperiment::mutateAddStage,
+        .1f chanceToMutate NeatExperiment::mutateShuffleStages
     )
 }
 fun mutateStageGenes(stageGeneMutations : List<StageMutationEntry>) : StageTrackMutation {
@@ -109,7 +108,7 @@ fun NeatExperiment.mutateDistance(stageGene: StageGene): StageGene {
     if (stageGene.distance > stageGene.lengthOfStage) return stageGene
     var nextStage = stageGene.stage
     var world = stageGene.world
-    var distance = stageGene.distance + random.nextInt(16, 64)
+    var distance = stageGene.distance + random.nextInt(4, 32) * 16
 
     return stageGene.copy(world = world, stage=nextStage, distance=distance)
 }

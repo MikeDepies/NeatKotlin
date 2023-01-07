@@ -234,8 +234,8 @@ fun loadModels(random: Random, activationFunctions: List<ActivationGene>, addCon
 
     val models = loadPopulation(File(path), 0).models
     logger.info { "population loaded with size of: ${models.size}" }
-    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
-    val maxInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
+    val maxInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
+    val maxNodeInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
     val simpleNeatExperiment = simpleNeatExperiment(
         random, maxInnovation, maxNodeInnovation, activationFunctions,
         addConnectionAttempts, 7f
