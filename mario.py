@@ -11,7 +11,7 @@ import math
 
 from httpx import get, post
 
-
+import pyglet
 import time
 import multiprocessing as mp
 from skimage.transform import rescale, resize, downscale_local_mean
@@ -372,6 +372,7 @@ def mario_mcc(queue : mp.Queue, render : Boolean):
         #     same_action_counter += .2
         last_action = action
         if render:
+            
             env.render()
 
 def mario_mcc_stage(queue : mp.Queue, render : Boolean):
@@ -419,7 +420,8 @@ def mario_mcc_stage(queue : mp.Queue, render : Boolean):
                 submitScore(
                 {
                     "id": id,
-                    "satisfyMC": bool(mc_satisfy)
+                    "satisfyMC": bool(mc_satisfy),
+                    "dead": agent_x <= 40
                 }, host)
                 
                 id, agent_network, stage_track_gene = getNextModel()
@@ -475,6 +477,7 @@ def mario_mcc_stage(queue : mp.Queue, render : Boolean):
         action = 11 - output.argmax(1)[0]
         if render:
             env.render()
+            
 
 def actionToNdArray(value: int):
     array = np.zeros([1, 12])
@@ -577,7 +580,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 25
+    process_num = 30
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
     

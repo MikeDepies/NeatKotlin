@@ -100,7 +100,10 @@ fun Application.moduleStageGene(testing: Boolean = false) {
     }
 //createPopulation(12)
 
-    val (neatExperiment, population) = loadModelsMCC(Random(12), "population/agent.json") //loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
+    val (neatExperiment, population) = createPopulation(12)/*loadModelsMCC(
+        Random(12),
+        "population/agent.json"
+    )*/ //loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
     val environmentPopulation = //loadModelsMCCStage("population/environment.json")
         createEnvironmentPopulation(neatExperiment) //loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
     val envOffspringFunction = environmentOffSpringFunction(
@@ -111,13 +114,14 @@ fun Application.moduleStageGene(testing: Boolean = false) {
     val agentOffspringFunction = offspringFunctionMCC(.1f, mutationDictionary)
     val minimalCriterion = MinimalCriterionStage(
         Random(5),
-        20,
+        30,
         5,
         5,
         population,
         environmentPopulation,
         populationSize,
-        1f
+        1f,
+        .01f
     )
 
     fun offspringFunction(minimalCriterion: MinimalCriterion) = when (minimalCriterion.activePopulation) {
@@ -172,6 +176,7 @@ fun Application.moduleStageGene(testing: Boolean = false) {
 //            batchNumber += 1
 //        }
 //    }
+    var initialization = true
     launch(Dispatchers.Default) {
         var agentBatchReceived = true
         var environmentBatchReceived = true
@@ -179,11 +184,19 @@ fun Application.moduleStageGene(testing: Boolean = false) {
 
             if (agentBatchReceived && environmentBatchReceived) {
                 logger.info { "MC Step Batch $batchNumber" }
-                val mccBatch = minimalCriterion.stepEnvironment(
-                    neatExperiment,
-                    batchNumber,
-                    envOffspringFunction
-                )
+                if (initialization) {
+                    initialization = minimalCriterion.agentPopulationQueue.any { it.age <= 30 }
+                    if (!initialization) minimalCriterion.agentSampleSize=1f
+                }
+                if (!initialization) {
+                    val mccBatch = minimalCriterion.stepEnvironment(
+                        neatExperiment,
+                        batchNumber,
+                        envOffspringFunction
+                    )
+                    mccBatchChannel.send(mccBatch)
+                    environmentBatchReceived = false
+                }
 
                 val agentBatch = minimalCriterion.stepAgent(
                     neatExperiment,
@@ -191,9 +204,9 @@ fun Application.moduleStageGene(testing: Boolean = false) {
                     agentOffspringFunction
                 )
                 agentBatchReceived = false
-                environmentBatchReceived = false
 
-                mccBatchChannel.send(mccBatch)
+
+
                 mccBatchChannel.send(agentBatch)
             }
             val mccBatchResult = mccBatchResultChannel.receive()
@@ -213,24 +226,27 @@ fun Application.moduleStageGene(testing: Boolean = false) {
                 }
             }
             if (agentBatchReceived && environmentBatchReceived) {
-                writeStageGenerationToDisk(
-                    minimalCriterion.environmentPopulationQueue.map { it.data },
-                    runFolder,
-                    batchNumber,
-                    "environment_"
-                )
-                writeGenerationToDisk(
-                    minimalCriterion.agentPopulationQueue.map { it.data },
-                    runFolder,
-                    batchNumber,
-                    "agent_"
-                )
+                if (!initialization) {
+                    writeStageGenerationToDisk(
+                        minimalCriterion.environmentPopulationQueue.map { it.data },
+                        runFolder,
+                        batchNumber,
+                        "environment_"
+                    )
+                    writeGenerationToDisk(
+                        minimalCriterion.agentPopulationQueue.map { it.data },
+                        runFolder,
+                        batchNumber,
+                        "agent_"
+                    )
+                }
                 batchNumber += 1
             }
         }
     }
 //    val mccBatchMap = mutableMapOf<String, Boolean>()
     val agentMccBatchMap = mutableMapOf<String, Boolean>()
+    val agentMccBatchDeadMap = mutableMapOf<String, Int>()
     val environmentMccBatchMap = mutableMapOf<String, Boolean>()
 //    val mccResultList = mutableListOf<MCCResult>()
     val agentMccResultList = mutableListOf<MCCResult>()
@@ -244,11 +260,13 @@ fun Application.moduleStageGene(testing: Boolean = false) {
             when (mccBatch.batchPopulationType) {
                 PopulationType.Agent -> {
                     agentMccBatchMap.clear()
+                    agentMccBatchDeadMap.clear()
                     agentMccResultList.clear()
                     agentMccBatch = mccBatch
                     mccBatch.pairedAgents.forEach {
 //                        logger.info { mccBatch.pairedAgents.size }
                         agentMccBatchMap[it.agent.data.id.toString()] = false
+                        agentMccBatchDeadMap[it.agent.data.id.toString()] = 0
                         pairedAgentsChannel.send(it)
                     }
                 }
@@ -290,6 +308,9 @@ fun Application.moduleStageGene(testing: Boolean = false) {
             val mccResultList = if (mccResult.id in agentMccBatchMap) agentMccResultList else environmentMccResultList
             val currentMccBatch = if (mccResult.id in agentMccBatchMap) agentMccBatch else environmentMccBatch
             if (mccResult.id in mccBatchMap) {
+                if (mccResult.id in agentMccBatchMap && mccResult.dead) {
+                    agentMccBatchDeadMap[mccResult.id] = (agentMccBatchDeadMap[mccResult.id] ?: 0) + 1
+                }
                 if (mccResult.id in agentMccBatchMap) agentCount++ else environmentCount++
                 val count = if (mccResult.id in agentMccBatchMap) agentCount else environmentCount
                 if (mccResult.satisfyMC) {
@@ -323,6 +344,13 @@ fun Application.moduleStageGene(testing: Boolean = false) {
         PopulationType.Agent -> agentMccBatchMap
         PopulationType.Environment -> environmentMccBatchMap
     }
+    fun isDead(pairedAgents: PairedAgentsStage): Boolean {
+
+        return when (pairedAgents.type) {
+            PopulationType.Agent -> (agentMccBatchDeadMap[pairedAgents.agent.data.id.toString()]?: 0) >= 5
+            PopulationType.Environment -> false
+        }
+    }
 
     routing {
         get("/model") {
@@ -335,9 +363,9 @@ fun Application.moduleStageGene(testing: Boolean = false) {
                     PopulationType.Agent -> agentMccResultList
                 }
             )
-            while (!map(pairedAgents).containsKey(id(pairedAgents)) || mccResultArrayList.any { it.id == id(pairedAgents) }
+            while (!map(pairedAgents).containsKey(id(pairedAgents)) || mccResultArrayList.any { it.id == id(pairedAgents) || isDead(pairedAgents) }
             ) {
-                mccResultChannel.send(MCCResult(id(pairedAgents), false))
+                mccResultChannel.send(MCCResult(id(pairedAgents), false, false))
                 pairedAgents = pairedAgentsChannel.receive()
 //                logger.info { "Paired Agent Pulled: ${pairedAgents.type}" }
                 mccResultArrayList = ArrayList(

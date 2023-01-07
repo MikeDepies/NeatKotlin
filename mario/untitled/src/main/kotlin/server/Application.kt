@@ -227,7 +227,7 @@ data class PairedNetworkWithBlueprint(val agent: NetworkBlueprint,  val child: N
 @Serializable
 data class MCCCheck(val id: String)
 @Serializable
-data class MCCResult(val id: String, val satisfyMC: Boolean)
+data class MCCResult(val id: String, val satisfyMC: Boolean, val dead : Boolean)
 data class LoadedPopulation(val populationModels: List<NetworkWithId>, val simpleNeatExperiment: NeatExperiment)
 
 fun loadModels(random: Random, activationFunctions: List<ActivationGene>, addConnectionAttempts: Int, path: String): Pair<NeatExperiment, List<NetworkWithId>> {

@@ -23,7 +23,8 @@ class MinimalCriterionStage(
     agentSeeds: List<MCCElement<NeatMutator>>,
     agentEnvironmentSeeds: List<MCCElement<StageTrackGene>>,
     val populationCap: Int,
-    val environmentSampleSize: Float
+    var environmentSampleSize: Float,
+    var agentSampleSize: Float
 ) {
     val agentPopulationQueue: Queue<MCCElement<NeatMutator>> = LinkedList(agentSeeds)
     val environmentPopulationQueue: Queue<MCCElement<StageTrackGene>> = LinkedList(agentEnvironmentSeeds)
@@ -50,7 +51,7 @@ class MinimalCriterionStage(
 //            val agentEnvironment = resourceViableEnvironments.random(random)
 //            PairedAgentsStage(it, agentEnvironment, PopulationType.Agent)
 //        }
-        val sampleSize = min((environmentSampleSize * populationCap).toInt(), resourceViableEnvironments.size)
+        val sampleSize = min((agentSampleSize * populationCap).toInt(), resourceViableEnvironments.size)
         val pairedAgents = children.flatMap { agent ->
             val sampled = mutableSetOf<MCCElement<StageTrackGene>>()
             (0 until sampleSize).map {
