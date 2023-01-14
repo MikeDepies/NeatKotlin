@@ -62,7 +62,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
         cpu_gene, controller, controller_opponent, player_index, opponent_index)
     model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
                                         aiDef.controller, controller_helper, configuration.evaluator)
-
+    print(cpu_gene)
     # Figure out which handlers to pass the networks to
     model_handler.reset(agent)
     while True:
@@ -180,7 +180,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 20
+    process_num = 5
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
