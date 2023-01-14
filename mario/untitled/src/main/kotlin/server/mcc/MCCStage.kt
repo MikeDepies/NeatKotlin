@@ -53,12 +53,9 @@ class MinimalCriterionStage(
 //        }
         val sampleSize = min((agentSampleSize * populationCap).toInt(), resourceViableEnvironments.size)
         val pairedAgents = children.flatMap { agent ->
-            val sampled = mutableSetOf<MCCElement<StageTrackGene>>()
-            (0 until sampleSize).map {
-                val mccElementList = resourceViableEnvironments - sampled
-//                if (mccElementList.isEmpty()) break
-                val environment = mccElementList.random(random)
-                sampled += environment
+
+            resourceViableEnvironments.shuffled(random).take(sampleSize).map { environment ->
+
                 PairedAgentsStage(agent, environment, PopulationType.Agent)
             }
         }
@@ -93,7 +90,8 @@ class MinimalCriterionStage(
     fun processBatchAgent(batchResult: MCCStageBatchResult) {
         logger.info { "processing ${batchResult.batchPopulationType}" }
         val childrenThatSatisfiedMC =
-            batchResult.pairedAgents.filter { batchResult.mccMap[it.agent.data.id.toString()] ?: false }.distinctBy { it.agent.data.id }
+            batchResult.pairedAgents.filter { batchResult.mccMap[it.agent.data.id.toString()] ?: false }
+                .distinctBy { it.agent.data.id }
 
         childrenThatSatisfiedMC.forEach {
             val resourceUsed = environmentPopulationResourceMap.getValue(it.environment.data.id) + 1
@@ -125,12 +123,11 @@ class MinimalCriterionStage(
         }
         val sampleSize = (environmentSampleSize * populationCap).toInt()
         logger.info { "${PopulationType.Environment} -> ${agentPopulationQueue.size}" }
-        val children = createEnvironmentChildren(neatExperiment,parents, offspringFunction, batchNumber)
+        val children = createEnvironmentChildren(neatExperiment, parents, offspringFunction, batchNumber)
+
         val pairedAgents = children.flatMap { environment ->
-            val agentsSampled = mutableSetOf<MCCElement<NeatMutator>>()
-            (0 until sampleSize).map {
-                val agent = (agentPopulationQueue - agentsSampled).random(random)
-                agentsSampled += agent
+            agentPopulationQueue.shuffled(random).take(sampleSize).map { agent ->
+
                 PairedAgentsStage(agent, environment, PopulationType.Environment)
             }
         }
@@ -154,7 +151,8 @@ class MinimalCriterionStage(
     fun processBatchEnvironment(batchResult: MCCStageBatchResult) {
         logger.info { "processing ${batchResult.batchPopulationType}" }
         val childrenThatSatisfiedMC =
-            batchResult.pairedAgents.filter { batchResult.mccMap[it.environment.data.id] ?: false }.distinctBy { it.environment.data.id }
+            batchResult.pairedAgents.filter { batchResult.mccMap[it.environment.data.id] ?: false }
+                .distinctBy { it.environment.data.id }
 
         childrenThatSatisfiedMC.forEach {
             environmentPopulationResourceMap[it.environment.data.id] = 0
@@ -183,6 +181,15 @@ data class MCCStageBatchResult(
 data class MCCStageBatch(val pairedAgents: List<PairedAgentsStage>, val batchPopulationType: PopulationType)
 
 
-data class PairedAgentsStage(val agent: MCCElement<NeatMutator>, val environment: MCCElement<StageTrackGene>, val type : PopulationType)
+data class PairedAgentsStage(
+    val agent: MCCElement<NeatMutator>,
+    val environment: MCCElement<StageTrackGene>,
+    val type: PopulationType
+)
+
 @Serializable
-data class PairedHyperAgentEnvironment(val agent: NetworkBlueprint, val environment : StageTrackGene, val type : PopulationType)
+data class PairedHyperAgentEnvironment(
+    val agent: NetworkBlueprint,
+    val environment: StageTrackGene,
+    val type: PopulationType
+)

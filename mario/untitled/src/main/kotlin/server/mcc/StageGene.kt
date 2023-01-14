@@ -1,32 +1,31 @@
 package server.mcc
 
 import kotlinx.serialization.Serializable
-import neat.MutationEntry
 import neat.MutationRoll
 import neat.NeatExperiment
-import neat.model.NeatMutator
 import neat.rollFrom
 import java.lang.Integer.max
 import java.util.*
 
 fun createStageMutationDictionary(): List<StageMutationEntry> {
     return listOf(
-        .01f chanceToMutate NeatExperiment::mutateStage,
-//        .05f chanceToMutate NeatExperiment::mutateCoin,
-//        .1f chanceToMutate NeatExperiment::mutateScore,
-        1f chanceToMutate NeatExperiment::mutateDistance
+        .1f chanceToMutate NeatExperiment::mutateStage,
+        .05f chanceToMutate NeatExperiment::mutateCoin,
+        .1f chanceToMutate NeatExperiment::mutateScore,
+        .9f chanceToMutate NeatExperiment::mutateDistance
     )
 }
 
 
-fun createStageTrackMutationDictionary(stageGeneMutations : List<StageMutationEntry>): List<StageTrackMutationEntry> {
+fun createStageTrackMutationDictionary(stageGeneMutations: List<StageMutationEntry>): List<StageTrackMutationEntry> {
     return listOf(
         .9f chanceToMutate mutateStageGenes(stageGeneMutations),
-        .001f chanceToMutate NeatExperiment::mutateAddStage,
+        .1f chanceToMutate NeatExperiment::mutateAddStage,
         .1f chanceToMutate NeatExperiment::mutateShuffleStages
     )
 }
-fun mutateStageGenes(stageGeneMutations : List<StageMutationEntry>) : StageTrackMutation {
+
+fun mutateStageGenes(stageGeneMutations: List<StageMutationEntry>): StageTrackMutation {
     return { stageTrackGene ->
         val newStageGenes = stageTrackGene.stages.map {
             mutateStageGene(it, stageGeneMutations)
@@ -56,25 +55,41 @@ typealias StageMutation = NeatExperiment.(StageGene) -> StageGene
 typealias StageTrackMutation = NeatExperiment.(StageTrackGene) -> StageTrackGene
 
 data class StageID(val world: Int, val stage: Int)
+
 @Serializable
-data class StageGene(val world: Int, val stage: Int, val distance: Int, val coins : Int, val score : Int)
+data class StageGene(val world: Int, val stage: Int, val distance: Int, val coins: Int, val score: Int)
+
 @Serializable
-data class StageTrackGene(val stages: List<StageGene>, val id : String)
+data class StageTrackGene(val stages: List<StageGene>, val id: String)
 
 val StageGene.stageID get() = StageID(world, stage)
 val StageGene.lengthOfStage get() = stageLengthMap.getValue(stageID)
 fun StageGene.canMutateStage() = !(world == 8 && stage == 4)
-fun NeatExperiment.mutateAddStage(stageTrackGene: StageTrackGene): StageTrackGene {
-    return StageTrackGene(
-        stageTrackGene.stages + StageGene(
+fun NeatExperiment.mutateAddStage(stageTrackGene: StageTrackGene, distance: Int = 200): StageTrackGene {
+    var stageGene = StageGene(
+        random.nextInt(1, 9),
+        random.nextInt(1, 5),
+        distance,
+        0,
+        0
+    )
+    while (isWaterLevel(stageGene.world, stageGene.stage)) {
+        stageGene = StageGene(
             random.nextInt(1, 9),
             random.nextInt(1, 5),
-            200,
+            distance,
             0,
             0
-        ),
+        )
+    }
+    return StageTrackGene(
+        stageTrackGene.stages + stageGene,
         UUID.randomUUID().toString()
     )
+}
+
+private fun isWaterLevel(world: Int, stage: Int): Boolean {
+    return stage == 2 && world == 2 || stage == 2 && world == 7
 }
 
 fun NeatExperiment.mutateRemoveStage(stageTrackGene: StageTrackGene): StageTrackGene {
@@ -99,8 +114,8 @@ fun NeatExperiment.mutateStage(stageGene: StageGene): StageGene {
     var nextStage = random.nextInt(1, 5)
     var world = random.nextInt(1, 9)
 //    var distance = 100
-    return if (nextStage != stageGene.stage && world != stageGene.world)
-        stageGene.copy(world = world, stage = nextStage, distance= max(200, stageGene.distance/2))
+    return if (nextStage != stageGene.stage && world != stageGene.world && !isWaterLevel(world, nextStage))
+        stageGene.copy(world = world, stage = nextStage, distance = max(512, stageGene.distance / 2))
     else stageGene
 }
 
@@ -108,18 +123,18 @@ fun NeatExperiment.mutateDistance(stageGene: StageGene): StageGene {
     if (stageGene.distance > stageGene.lengthOfStage) return stageGene
     var nextStage = stageGene.stage
     var world = stageGene.world
-    var distance = stageGene.distance + random.nextInt(4, 32) * 16
+    var distance = stageGene.distance + random.nextInt(1, 8) * 16
 
-    return stageGene.copy(world = world, stage=nextStage, distance=distance)
+    return stageGene.copy(world = world, stage = nextStage, distance = distance)
 }
 
 fun NeatExperiment.mutateCoin(stageGene: StageGene): StageGene {
-    return stageGene.copy(coins = stageGene.coins + if (stageGene.distance > 256)  random.nextInt(1, 3) else 0)
+    return stageGene.copy(coins = stageGene.coins + if (stageGene.distance > 256) random.nextInt(1, 3) else 0)
 }
 
 fun NeatExperiment.mutateScore(stageGene: StageGene): StageGene {
 
-    return stageGene.copy(score = stageGene.score + if (stageGene.distance > 256) random.nextInt(1, 3)*50 else 0)
+    return stageGene.copy(score = stageGene.score + if (stageGene.distance > 256) random.nextInt(1, 3) * 50 else 0)
 }
 
 

@@ -5,6 +5,7 @@ import io.ktor.application.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.*
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import mu.*
 import neat.*
@@ -143,8 +144,8 @@ fun writeGenerationToDisk(
 }
 
 
-fun writeStageGenerationToDisk(
-    currentPopulation: List<StageTrackGene>,
+fun <T> writeStageGenerationToDisk(
+    currentPopulation: List<T>,
     runFolder: File,
     batchNumber: Int,
     prefix: String
@@ -153,6 +154,21 @@ fun writeStageGenerationToDisk(
     val savePopulationFile = runFolder.resolve("$prefix${batchNumber + 0}.json")
     val json = Json { prettyPrint = true }
     val encodedModel = json.encodeToString(modelPopulationPersist)
+    savePopulationFile.bufferedWriter().use {
+        it.write(encodedModel)
+        it.flush()
+    }
+}
+@Serializable
+data class ResourceUsage(val resourceMap : Map<String, Int>)
+fun writeResourceUsageGenerationToDisk(
+    resourceMap : ResourceUsage,
+    runFolder: File,
+    batchNumber: Int
+) {
+    val savePopulationFile = runFolder.resolve("resource_${batchNumber + 0}.json")
+    val json = Json { prettyPrint = true }
+    val encodedModel = json.encodeToString(resourceMap)
     savePopulationFile.bufferedWriter().use {
         it.write(encodedModel)
         it.flush()

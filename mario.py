@@ -430,7 +430,7 @@ def mario_mcc_stage(queue : mp.Queue, render : Boolean):
                 state = env_mariogym.reset(options={
                     "stages" : [str(stage_gene.world)+"-"+str(stage_gene.stage)]
                 })
-                print("stage track: " + stage_track_gene.id)
+                print("stage track: " + stage_track_gene.id + " & ID: " + id)
                 print("stage index: " + str(stage_index) + " -> " + str(stage_gene.world)+"-"+str(stage_gene.stage) + " d=" +str(stage_gene.distance) + " c=" +str(stage_gene.coin) + " s=" +str(stage_gene.score))
                 prevX = 40
                 framesSinceMaxXChange = 0 * 20
@@ -580,7 +580,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 20
+    process_num = 10
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
     

@@ -87,25 +87,29 @@ fun Application.moduleStageGene(testing: Boolean = false) {
         var population = simpleNeatExperiment.generateInitialPopulation2(
             populationSize, 6, 2, activationFunctions
         ).mapIndexed { index, neatMutator ->
-            MCCElement(0, neatMutator)
+            MCCElement(-1, neatMutator)
         }
         return simpleNeatExperiment to population
     }
 
     fun createEnvironmentPopulation(neatExperiment: NeatExperiment): List<MCCElement<StageTrackGene>> {
         val population = (0 until populationSize).map {
-            MCCElement(0, neatExperiment.mutateAddStage(StageTrackGene(listOf(), UUID.randomUUID().toString())))
+            MCCElement(
+                0, neatExperiment.mutateAddStage(
+                    StageTrackGene(listOf(), UUID.randomUUID().toString()),
+                    400
+                )
+            )
         }
         return population
     }
 //createPopulation(12)
 
-    val (neatExperiment, population) = createPopulation(12)/*loadModelsMCC(
-        Random(12),
-        "population/agent.json"
-    )*/ //loadModels(Random(15), Activation.CPPN.functions, 5, "population/population_1.json")//createPopulation(15)
-    val environmentPopulation = //loadModelsMCCStage("population/environment.json")
-        createEnvironmentPopulation(neatExperiment) //loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
+    val (neatExperiment, population) = loadModelsMCC(Random(12), "population/agent.json")
+    //createPopulation(112) /**/
+    val environmentPopulation = loadModelsMCCStage("population/environment.json")
+    //createEnvironmentPopulation(neatExperiment)//loadModelsMCCStage("population/environment.json")
+//        createEnvironmentPopulation(neatExperiment) //loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
     val envOffspringFunction = environmentOffSpringFunction(
         createStageTrackMutationDictionary(
             createStageMutationDictionary()
@@ -114,14 +118,14 @@ fun Application.moduleStageGene(testing: Boolean = false) {
     val agentOffspringFunction = offspringFunctionMCC(.1f, mutationDictionary)
     val minimalCriterion = MinimalCriterionStage(
         Random(5),
-        30,
-        5,
+        100,
+        10,
         5,
         population,
         environmentPopulation,
         populationSize,
         1f,
-        .01f
+        .1f
     )
 
     fun offspringFunction(minimalCriterion: MinimalCriterion) = when (minimalCriterion.activePopulation) {
@@ -133,50 +137,8 @@ fun Application.moduleStageGene(testing: Boolean = false) {
     val mccBatchResultChannel = Channel<MCCStageBatchResult>()
     val mccResultChannel = Channel<MCCResult>()
     val pairedAgentsChannel = Channel<PairedAgentsStage>(Channel.UNLIMITED)
-    var batchNumber = 0
-//    launch(Dispatchers.Default) {
-//        while (true) {
-//
-//            logger.info { "MC Step ${minimalCriterion.activePopulation} Batch $batchNumber" }
-//            val mccBatch = when (minimalCriterion.activePopulation) {
-//                PopulationType.Environment -> minimalCriterion.stepEnvironment(
-//                    neatExperiment,
-//                    batchNumber,
-//                    envOffspringFunction
-//                )
-//
-//                PopulationType.Agent -> minimalCriterion.stepAgent(
-//                    neatExperiment,
-//                    batchNumber,
-//                    agentOffspringFunction
-//                )
-//            }
-//            mccBatchChannel.send(mccBatch)
-//            val mccBatchResult = mccBatchResultChannel.receive()
-//            if (batchNumber % 10 == 0) {
-//                writeStageGenerationToDisk(
-//                    minimalCriterion.environmentPopulationQueue.map { it.data },
-//                    runFolder,
-//                    batchNumber,
-//                    "environment_"
-//                )
-//                writeGenerationToDisk(
-//                    minimalCriterion.agentPopulationQueue.map { it.data },
-//                    runFolder,
-//                    batchNumber,
-//                    "agent_"
-//                )
-//            }
-//            logger.info { "Process batch result: ${batchNumber} (${mccBatchResult.mccMap.values.filter { it }.size} / ${mccBatchResult.pairedAgents.size})" }
-//            when (mccBatchResult.batchPopulationType) {
-//                PopulationType.Agent -> minimalCriterion.processBatchAgent(mccBatchResult)
-//                PopulationType.Environment -> minimalCriterion.processBatchEnvironment(mccBatchResult)
-//            }
-//            minimalCriterion.togglePopulation()
-//            batchNumber += 1
-//        }
-//    }
-    var initialization = true
+    var batchNumber = 843
+    var initialization = false
     launch(Dispatchers.Default) {
         var agentBatchReceived = true
         var environmentBatchReceived = true
@@ -185,8 +147,8 @@ fun Application.moduleStageGene(testing: Boolean = false) {
             if (agentBatchReceived && environmentBatchReceived) {
                 logger.info { "MC Step Batch $batchNumber" }
                 if (initialization) {
-                    initialization = minimalCriterion.agentPopulationQueue.any { it.age <= 30 }
-                    if (!initialization) minimalCriterion.agentSampleSize=1f
+                    initialization = minimalCriterion.agentPopulationQueue.any { it.age < 0 }
+                    if (!initialization) minimalCriterion.agentSampleSize = .1f
                 }
                 if (!initialization) {
                     val mccBatch = minimalCriterion.stepEnvironment(
@@ -239,8 +201,15 @@ fun Application.moduleStageGene(testing: Boolean = false) {
                         batchNumber,
                         "agent_"
                     )
+                    writeResourceUsageGenerationToDisk(
+                        ResourceUsage(minimalCriterion.environmentPopulationResourceMap),
+                        runFolder,
+                        batchNumber
+                    )
+
+                    batchNumber += 1
                 }
-                batchNumber += 1
+
             }
         }
     }
@@ -263,7 +232,7 @@ fun Application.moduleStageGene(testing: Boolean = false) {
                     agentMccBatchDeadMap.clear()
                     agentMccResultList.clear()
                     agentMccBatch = mccBatch
-                    mccBatch.pairedAgents.forEach {
+                    mccBatch.pairedAgents.shuffled().forEach {
 //                        logger.info { mccBatch.pairedAgents.size }
                         agentMccBatchMap[it.agent.data.id.toString()] = false
                         agentMccBatchDeadMap[it.agent.data.id.toString()] = 0
@@ -344,10 +313,11 @@ fun Application.moduleStageGene(testing: Boolean = false) {
         PopulationType.Agent -> agentMccBatchMap
         PopulationType.Environment -> environmentMccBatchMap
     }
+
     fun isDead(pairedAgents: PairedAgentsStage): Boolean {
 
         return when (pairedAgents.type) {
-            PopulationType.Agent -> (agentMccBatchDeadMap[pairedAgents.agent.data.id.toString()]?: 0) >= 5
+            PopulationType.Agent -> (agentMccBatchDeadMap[pairedAgents.agent.data.id.toString()] ?: 0) >= 1
             PopulationType.Environment -> false
         }
     }
@@ -363,7 +333,11 @@ fun Application.moduleStageGene(testing: Boolean = false) {
                     PopulationType.Agent -> agentMccResultList
                 }
             )
-            while (!map(pairedAgents).containsKey(id(pairedAgents)) || mccResultArrayList.any { it.id == id(pairedAgents) || isDead(pairedAgents) }
+            while (!map(pairedAgents).containsKey(id(pairedAgents)) || mccResultArrayList.any {
+                    it.id == id(pairedAgents) || isDead(
+                        pairedAgents
+                    )
+                }
             ) {
                 mccResultChannel.send(MCCResult(id(pairedAgents), false, false))
                 pairedAgents = pairedAgentsChannel.receive()
@@ -447,7 +421,7 @@ fun newOffspringStage(
     mutationEntries: List<StageTrackMutationEntry>,
     stageTrackGene: StageTrackGene
 ): StageTrackGene {
-    var newStageTrack = stageTrackGene.copy()
+    var newStageTrack = stageTrackGene.copy(id = UUID.randomUUID().toString())
     for (entry in mutationEntries) {
         if (entry.roll(neatExperiment)) {
             newStageTrack = entry.mutation(neatExperiment, newStageTrack)
