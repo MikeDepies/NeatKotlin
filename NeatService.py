@@ -226,4 +226,4 @@ def parse_stage_track_gene(data : Any) -> StageTrackGene:
     return StageTrackGene(data["id"], stages)
 
 def parse_cpu_gene(data : Any) -> CPUGene:
-    return CPUGene(int(data["levels"]), int(data["kills"]), int(data["deaths"]), int(data["damage"]), int(data["damage_taken"]), parseStage(data["stage"]), parseCharacter(data["character"]), parseCharacter(data["cpuCharacter"]), int(data["controllerId"]))
+    return CPUGene(int(data["level"]), int(data["kills"]), int(data["deaths"]), int(data["damage"]), int(data["damageTaken"]), parseStage(data["stage"]), parseCharacter(data["character"]), parseCharacter(data["cpuCharacter"]), int(data["controllerId"]))
