@@ -51,16 +51,16 @@ class InputEmbederPacked3:
         state[statePosition + 11] = 1 if player0.off_stage else 0
         state[statePosition + 12] = 1 if player0.on_ground else 0
         state[statePosition + 13] = 1 if player0.invulnerable else 0
-        return statePosition + 14
+        state[statePosition + 14] = (player0.character.value - 13) / 4
 
     def embed_input(self, gamestate: GameState) -> np.ndarray:
         state: np.ndarray = np.zeros((4, 14))
         player0: PlayerState = gamestate.players[self.player_index]
         
-        statePosition = self.applyPlayerState(player0, state[0,...], 0)
+        self.applyPlayerState(player0, state[0,...], 0)
 
         player1: PlayerState = gamestate.players[self.opponent_index]
-        statePosition = self.applyPlayerState(player1, state[3,...], 0)
+        self.applyPlayerState(player1, state[3,...], 0)
         statePosition = 0
         state[1, statePosition] = player0.controller_state.button[melee.Button.BUTTON_A]
         statePosition +=1
