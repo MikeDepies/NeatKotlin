@@ -90,7 +90,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             if player0 and player0.stock == 0 or player1 and player1.stock == 0 and model_handler.network == None:
                 model_helper.send_evaluation_result(
                     EvalResultCPU(id, mc_satisfy, False))
-
+                print(score)
                 id, agent, cpu_gene = get_next(queue_1)
                 print(cpu_gene)
                 model_handler.reset(agent)
