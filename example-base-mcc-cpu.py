@@ -77,32 +77,32 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
             score = model_handler.evaluator.score()
-            if (score.total_frames_alive % 30 == 0):
-                print(score)
+            # if (score.total_frames_alive % 60 * 20 == 0):
+            #     print(score)
             if not (model_handler.network == None):
                 if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > (cpu_gene.kills + 1) * (60 + cpu_gene.level * 10 )):
                     mc_satisfy = False
                     model_handler.network = None
-                    print("failed!")
+                    # print("failed!")
                 elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
                     mc_satisfy = True
                     model_handler.network = None
-                    print("Success!")
+                    # print("Success!")
             
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
                 model_helper.send_evaluation_result(
                     EvalResultCPU(id, mc_satisfy, False))
                 print(score)
+                print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
                 id, agent, cpu_gene = get_next(queue_1)
                 print(cpu_gene)
                 model_handler.reset(agent)
-                print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
                 controller_opponent.release_all()
                 controller.release_all()
 
         else:
-            if game_state.frame % 30 == 0:
-                print("in character selection")
+            # if game_state.frame % 30 == 0:
+            #     print("in character selection")
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             melee.MenuHelper.menu_helper_simple(game_state,
@@ -127,7 +127,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                         swag=False,
                         start=True)
                 if game_state.menu_state == melee.Menu.STAGE_SELECT:
-                    print("in stage selection")
+                    # print("in stage selection")
                     if player and player.cpu_level == leftSide.level and player.character == leftSide.character and player1 and player1.cpu_level == rightSide.level and player1.character == rightSide.character:
                         melee.MenuHelper.choose_stage(
                             cpu_gene.stage, game_state, controller_opponent)
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 1
+    process_num = 20
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
