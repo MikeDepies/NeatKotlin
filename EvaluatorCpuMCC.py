@@ -108,7 +108,8 @@ class EvaluatorCpuMCC:
         if self.last_x is None or game_state.frame < 0:
             self.storeFrameData(game_state)
         else:
-
+            print("processing frame")
+            
             if self.player_took_damage(game_state):
                 self.total_damage_taken += self.player_damage_amount_taken(
                     game_state)

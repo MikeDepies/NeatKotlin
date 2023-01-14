@@ -82,12 +82,13 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > cpu_gene.kills * (60 + cpu_gene.level * 10 )):
                 mc_satisfy = False
                 model_handler.network = None
+                print("failed!")
             elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
                 mc_satisfy = True
                 model_handler.network = None
-
+                print("Success!")
             
-            if player0 and player0.stock == 0 or player1 and player1.stock == 0 and model_handler.network == None:
+            if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
                 model_helper.send_evaluation_result(
                     EvalResultCPU(id, mc_satisfy, False))
                 print(score)
