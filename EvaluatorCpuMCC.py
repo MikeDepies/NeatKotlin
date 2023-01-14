@@ -105,6 +105,7 @@ class EvaluatorCpuMCC:
             return 0
 
     def evaluate_frame(self, game_state: GameState) -> None:
+        self.total_frames +=1
         if self.last_x is None or game_state.frame < 0:
             self.storeFrameData(game_state)
         else:
