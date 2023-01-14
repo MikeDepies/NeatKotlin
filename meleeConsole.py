@@ -10,6 +10,7 @@ import sys
 import melee
 import numpy as np
 
+
 def check_port(value):
     ivalue = int(value)
     if ivalue < 1 or ivalue > 4:
@@ -60,7 +61,11 @@ def startConsole(port: int):
                             slippi_port=port,
                             blocking_input=True,
                             polling_mode=False,
-                            setup_gecko_codes=True, gfx_backend="Null", use_exi_inputs=True, enable_ffw=True, save_replays=False)
+                            setup_gecko_codes=True,
+                            # gfx_backend="Null",
+                            use_exi_inputs=True,
+                            enable_ffw=False,
+                            save_replays=False)
     controller = melee.Controller(console=console,
                                   port=args.port,
                                   type=melee.ControllerType.STANDARD)
