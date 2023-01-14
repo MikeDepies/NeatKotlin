@@ -16,17 +16,15 @@ class EvaluatorCpuMCC:
     last_percent: float or None
     last_opponent_percent: float or None
 
-    max_timer: int
     player_index: int
     opponent_index: int
     logger: melee.Logger
 
     frame_data = melee.framedata.FrameData()
 
-    def __init__(self, player: int, opponent: int, max_timer: int, logger: melee.Logger = None) -> None:
+    def __init__(self, player: int, opponent: int, logger: melee.Logger = None) -> None:
         self.player_index = player
         self.opponent_index = opponent
-        self.max_timer = max_timer
 
         self.logger = logger
         self.total_damage = 0

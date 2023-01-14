@@ -30,8 +30,7 @@ class ModelHandlerMCC_CPU:
 
     def __init__(self, ai_controller_id: int, model_index: int, opponent_index: int, controller: melee.Controller, controller_helper: ControllerHelper, evaluator_configuration: EvaluatorConfiguration) -> None:
         self.network = None
-        self.evaluator = EvaluatorCpuMCC(model_index, opponent_index, evaluator_configuration.attack_time,
-                                   evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
+        self.evaluator = EvaluatorCpuMCC(model_index, opponent_index, None)
         self.ai_controller_id = ai_controller_id
         self.model_index = model_index
         self.opponent_index = opponent_index
@@ -65,5 +64,4 @@ class ModelHandlerMCC_CPU:
 
     def reset(self, network : ComputableNetwork):
         self.network = network
-        self.evaluator = EvaluatorCpuMCC(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
-                                   self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+        self.evaluator = EvaluatorCpuMCC(self.model_index, self.opponent_index, None)
