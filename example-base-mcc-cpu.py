@@ -77,8 +77,8 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
             score = model_handler.evaluator.score()
-            # if (score.total_frames_alive % 30 == 0):
-            #     print(score)
+            if (score.total_frames_alive % 30 == 0):
+                print(score)
             if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > cpu_gene.kills * (60 + cpu_gene.level * 10 )):
                 mc_satisfy = False
                 model_handler.network = None
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 20
+    process_num = 1
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
