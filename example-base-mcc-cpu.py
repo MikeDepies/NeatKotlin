@@ -101,6 +101,8 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 controller.release_all()
 
         else:
+            if game_state.frame % 30 == 0:
+                print("in character selection")
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             melee.MenuHelper.menu_helper_simple(game_state,
@@ -125,6 +127,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                         swag=False,
                         start=True)
                 if game_state.menu_state == melee.Menu.STAGE_SELECT:
+                    print("in stage selection")
                     if player and player.cpu_level == leftSide.level and player.character == leftSide.character and player1 and player1.cpu_level == rightSide.level and player1.character == rightSide.character:
                         melee.MenuHelper.choose_stage(
                             cpu_gene.stage, game_state, controller_opponent)
