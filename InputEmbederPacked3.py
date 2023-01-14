@@ -61,36 +61,36 @@ class InputEmbederPacked3:
         player1: PlayerState = gamestate.players[self.opponent_index]
         self.applyPlayerState(player1, state[3, ...], 0)
         statePosition = 0
-        state[1, statePosition] = player0.controller_state.button[melee.Button.BUTTON_A]
+        state[1, 0] = player0.controller_state.button[melee.Button.BUTTON_A]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.button[melee.Button.BUTTON_B]
+        state[1, 1] = player0.controller_state.button[melee.Button.BUTTON_B]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.button[melee.Button.BUTTON_Y]
+        state[1, 2] = player0.controller_state.button[melee.Button.BUTTON_Y]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.button[melee.Button.BUTTON_Z]
+        state[1, 3] = player0.controller_state.button[melee.Button.BUTTON_Z]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.main_stick[1]
+        state[1, 4] = player0.controller_state.main_stick[1]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.main_stick[1]
+        state[1, 5] = player0.controller_state.main_stick[1]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.c_stick[0]
+        state[1, 6] = player0.controller_state.c_stick[0]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.c_stick[1]
+        state[1, 7] = player0.controller_state.c_stick[1]
         statePosition += 1
-        state[1, statePosition] = player0.controller_state.l_shoulder
+        state[1, 8] = player0.controller_state.l_shoulder
         statePosition += 1
         edge = melee.stages.EDGE_GROUND_POSITION[gamestate.stage]
         leftPlatform = melee.stages.left_platform_position(gamestate.stage)
         topPlatform = melee.stages.top_platform_position(gamestate.stage)
         rightPlatform = melee.stages.right_platform_position(gamestate.stage)
-        state[1, statePosition] = edge / self.positionNormalizer
-        state[1, statePosition + 1] = (edge * -1) / self.positionNormalizer
+        state[1, 9] = edge / self.positionNormalizer
+        state[1, 10] = (edge * -1) / self.positionNormalizer
         blastzones: tuple[float, float, float,
                           float] = melee.stages.BLASTZONES[gamestate.stage]
-        state[1, statePosition + 2] = (
+        state[1, 11] = (
             gamestate.distance) / self.positionNormalizer
-        state[statePosition + 3] = (player1.character.value - 13) / 4
-        state[statePosition + 4] = (player0.character.value - 13) / 4
+        state[1, 12] = (player1.character.value - 13) / 4
+        state[1, 13] = (player0.character.value - 13) / 4
         # print(statePosition)
         # statePosition += 1
         statePosition = 0
