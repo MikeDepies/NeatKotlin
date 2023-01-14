@@ -62,7 +62,7 @@ def startConsole(port: int):
                             blocking_input=True,
                             polling_mode=False,
                             setup_gecko_codes=True,
-                            # gfx_backend="Null",
+                            gfx_backend="",
                             use_exi_inputs=True,
                             enable_ffw=False,
                             save_replays=False)
