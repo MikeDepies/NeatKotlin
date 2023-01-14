@@ -585,7 +585,7 @@ if __name__ == '__main__':
     processes: List[mp.Process] = []
     
     for i in range(process_num):
-        p = mp.Process(target=mario_mcc_stage, daemon=True, args=(queue, i < 0))
+        p = mp.Process(target=mario_mcc_stage, daemon=True, args=(queue, i < 5))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queue_network_mcc_stage, daemon=True, args=(queue,))
