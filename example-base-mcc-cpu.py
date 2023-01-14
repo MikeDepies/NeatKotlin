@@ -91,6 +91,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     EvalResultCPU(id, mc_satisfy, False))
 
                 id, agent, cpu_gene = get_next(queue_1)
+                print(cpu_gene)
                 model_handler.reset(agent)
                 print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
                 controller_opponent.release_all()
