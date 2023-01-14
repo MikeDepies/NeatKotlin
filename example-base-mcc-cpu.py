@@ -111,7 +111,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             if game_state.players:
                 player: melee.PlayerState = game_state.players[leftSide.player_index]
                 player1: melee.PlayerState = game_state.players[rightSide.player_index]
-                if player and player.cpu_level == configuration.player_1.cpu_level and player.character == configuration.player_1.character:
+                if player and player.cpu_level == leftSide.level and player.character == leftSide.character:
                     melee.MenuHelper.choose_character(
                         character=rightSide.character,
                         gamestate=game_state,
