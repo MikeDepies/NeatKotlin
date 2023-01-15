@@ -65,6 +65,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
     print(cpu_gene)
     # Figure out which handlers to pass the networks to
     model_handler.reset(agent)
+    check_controller_status = False
     while True:
         game_state = console.step()
         if game_state is None:
@@ -72,7 +73,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             continue
 
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-
+            check_controller_status = True
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
@@ -80,7 +81,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             # if (score.total_frames_alive % 60 * 20 == 0):
             #     print(score)
             if not (model_handler.network == None):
-                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > (cpu_gene.kills + 1) * (60 + cpu_gene.level * 10 )):
+                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > (cpu_gene.kills + 1) * (20 + cpu_gene.level * 10 )):
                     mc_satisfy = False
                     model_handler.network = None
                     # print("failed!")
@@ -111,32 +112,51 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             #     print("in character selection")
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
-            melee.MenuHelper.menu_helper_simple(game_state,
-                                                leftSide.controller,
-                                                leftSide.character,
-                                                cpu_gene.stage,
-                                                args.connect_code,
-                                                costume=0,
-                                                autostart=False,
-                                                swag=False,
-                                                cpu_level=leftSide.level)
-            if game_state.players:
-                player: melee.PlayerState = game_state.players[leftSide.player_index]
-                player1: melee.PlayerState = game_state.players[rightSide.player_index]
-                if player and player.cpu_level == leftSide.level and player.character == leftSide.character:
-                    melee.MenuHelper.choose_character(
-                        character=rightSide.character,
-                        gamestate=game_state,
-                        controller=rightSide.controller,
-                        cpu_level=rightSide.level,
-                        costume=0,
-                        swag=False,
-                        start=True)
-                if game_state.menu_state == melee.Menu.STAGE_SELECT:
-                    # print("in stage selection")
-                    if player and player.cpu_level == leftSide.level and player.character == leftSide.character and player1 and player1.cpu_level == rightSide.level and player1.character == rightSide.character:
-                        melee.MenuHelper.choose_stage(
-                            cpu_gene.stage, game_state, controller_opponent)
+            if check_controller_status:
+                print(cpu_gene.controller_id)
+                print(str(model_handler.model_index) + " vs " + str(model_handler.opponent_index))
+                if leftSide.level == 0:
+                    leftSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
+                else:
+                    leftSideStatus = melee.ControllerStatus.CONTROLLER_CPU
+                if (game_state.players[leftSide.player_index].controller_status != leftSideStatus):
+                    melee.MenuHelper.change_controller_status(leftSide.controller, game_state, leftSide.player_index, leftSideStatus)
+                if rightSide.level == 0:
+                    rightSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
+                else:
+                    rightSideStatus = melee.ControllerStatus.CONTROLLER_CPU
+                if (game_state.players[rightSide.player_index].controller_status != rightSideStatus):
+                    melee.MenuHelper.change_controller_status(rightSide.controller, game_state, rightSide.player_index, rightSideStatus)
+                
+                if game_state.players[leftSide.player_index].controller_status == leftSideStatus and game_state.players[rightSide.player_index].controller_status == rightSideStatus:
+                   check_controller_status = False 
+            else:
+                melee.MenuHelper.menu_helper_simple(game_state,
+                                                    leftSide.controller,
+                                                    leftSide.character,
+                                                    cpu_gene.stage,
+                                                    args.connect_code,
+                                                    costume=0,
+                                                    autostart=False,
+                                                    swag=False,
+                                                    cpu_level=leftSide.level)
+                if game_state.players:
+                    player: melee.PlayerState = game_state.players[leftSide.player_index]
+                    player1: melee.PlayerState = game_state.players[rightSide.player_index]
+                    if player and player.cpu_level == leftSide.level and player.character == leftSide.character:
+                        melee.MenuHelper.choose_character(
+                            character=rightSide.character,
+                            gamestate=game_state,
+                            controller=rightSide.controller,
+                            cpu_level=rightSide.level,
+                            costume=0,
+                            swag=False,
+                            start=True)
+                    if game_state.menu_state == melee.Menu.STAGE_SELECT:
+                        # print("in stage selection")
+                        if player and player.cpu_level == leftSide.level and player.character == leftSide.character and player1 and player1.cpu_level == rightSide.level and player1.character == rightSide.character:
+                            melee.MenuHelper.choose_stage(
+                                cpu_gene.stage, game_state, controller_opponent)
 
 
 def controllerDefs(cpu_gene: CPUGene, controller: melee.Controller, controller_opponent: melee.Controller, player_index: int, opponent_index: int):
