@@ -22,6 +22,7 @@ from meleeConsole import startConsole
 from NeatComputation import HyperNeatBuilder
 from NeatService import CPUGene
 from dataclasses import dataclass
+from cpuSelector import choose_character, menu_helper_simple
 
 
 @dataclass
@@ -81,7 +82,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             # if (score.total_frames_alive % 60 * 20 == 0):
             #     print(score)
             if not (model_handler.network == None):
-                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 10 )):
+                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 5 )):
                     mc_satisfy = False
                     model_handler.network = None
                     # print("failed!")
@@ -108,11 +109,10 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 controller.release_all()
 
         else:
-            # if game_state.frame % 30 == 0:
-            #     print("in character selection")
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             if check_controller_status:
+                print(cpu_gene)
                 print(cpu_gene.controller_id)
                 print(str(model_handler.model_index) + " vs " + str(model_handler.opponent_index))
                 if leftSide.level == 0:
@@ -131,20 +131,21 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 if game_state.players[leftSide.player_index].controller_status == leftSideStatus and game_state.players[rightSide.player_index].controller_status == rightSideStatus:
                    check_controller_status = False 
             else:
-                melee.MenuHelper.menu_helper_simple(game_state,
-                                                    leftSide.controller,
-                                                    leftSide.character,
-                                                    cpu_gene.stage,
-                                                    args.connect_code,
-                                                    costume=0,
-                                                    autostart=False,
-                                                    swag=False,
-                                                    cpu_level=leftSide.level)
+                menu_helper_simple(game_state,
+                                                leftSide.controller,
+                                                leftSide.character,
+                                                cpu_gene.stage,
+                                                args.connect_code,
+                                                costume=0,
+                                                autostart=False,
+                                                swag=False,
+                                                cpu_level=leftSide.level)
                 if game_state.players:
                     player: melee.PlayerState = game_state.players[leftSide.player_index]
                     player1: melee.PlayerState = game_state.players[rightSide.player_index]
+                    
                     if player and player.cpu_level == leftSide.level and player.character == leftSide.character:
-                        melee.MenuHelper.choose_character(
+                        choose_character(
                             character=rightSide.character,
                             gamestate=game_state,
                             controller=rightSide.controller,
