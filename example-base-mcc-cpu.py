@@ -220,7 +220,7 @@ if __name__ == '__main__':
     configuration = processConfiguration(data)
 
     processes: List[mp.Process] = []
-    queue_1 = mgr.Queue(process_num)
+    queue_1 = mgr.Queue(process_num * 2)
 
     for i in range(process_num):
         p = mp.Process(target=console_loop_mcc_cpu_gene, args=(
