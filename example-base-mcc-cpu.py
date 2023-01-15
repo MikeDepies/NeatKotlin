@@ -70,7 +70,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
     while True:
         game_state = console.step()
         if game_state is None:
-            print("We hit this None BS")
+            print("We hit this None BS => " + str(cpu_gene) )
             continue
 
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
