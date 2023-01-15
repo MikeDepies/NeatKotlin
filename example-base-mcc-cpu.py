@@ -81,7 +81,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             # if (score.total_frames_alive % 60 * 20 == 0):
             #     print(score)
             if not (model_handler.network == None):
-                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > (cpu_gene.kills + 1) * (20 + cpu_gene.level * 10 )):
+                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 10 )):
                     mc_satisfy = False
                     model_handler.network = None
                     # print("failed!")
