@@ -88,7 +88,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     queue_result.put(EvalResultCPU(id, mc_satisfy, False))
                     
                     print(score)
-                    print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
+                    
                     # print("failed!")
                 elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
                     mc_satisfy = True
@@ -96,7 +96,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     queue_result.put(EvalResultCPU(id, mc_satisfy, False))
                     
                     print(score)
-                    print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
+                    
                     # print("Success!")
             
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
@@ -220,6 +220,7 @@ def httpRequestProcess(queue : mp.Queue):
         request_data = queue.get()
         model_helper.send_evaluation_result(
                     request_data)
+        print(request_data)
             
 if __name__ == '__main__':
     mgr = mp.Manager()
