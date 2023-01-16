@@ -243,7 +243,7 @@ if __name__ == '__main__':
     configuration = processConfiguration(data)
 
     processes: List[mp.Process] = []
-    queue_1 = mgr.Queue(2)
+    queue_1 = mgr.Queue(process_num)
     queue_result = mgr.Queue(process_num * 5)
 
     p = mp.Process(target=httpRequestProcess, daemon=True,
