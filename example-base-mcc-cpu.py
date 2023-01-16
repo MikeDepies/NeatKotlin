@@ -86,7 +86,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 5 )):
                     mc_satisfy = False
                     model_handler.network = None
-                    queue_result.put(EvalResultCPU(agent_id, environment_id, mc_satisfy, False))
+                    queue_result.put(EvalResultCPU(population_type, agent_id, environment_id, mc_satisfy, False))
                     
                     # print(score)
                     
@@ -94,7 +94,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
                     mc_satisfy = True
                     model_handler.network = None
-                    queue_result.put(EvalResultCPU(agent_id, environment_id, mc_satisfy, False))
+                    queue_result.put(EvalResultCPU(population_type, agent_id, environment_id, mc_satisfy, False))
                     
                     # print(score)
                     
