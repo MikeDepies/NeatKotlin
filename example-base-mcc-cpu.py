@@ -120,8 +120,16 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
 
         else:
             reset+=1
-            if reset > 100 and (reset % (60 * 10)) ==0:
-                print("in menu: " + str(game_state.menu_state))
+            if reset > 100 and model_handler.network == None:
+                aiDef = aiControllerDef(cpu_gene, controller,
+                            controller_opponent, player_index, opponent_index)
+                cpuDef = opponentControllerDef(
+                    cpu_gene, controller, controller_opponent, player_index, opponent_index)
+                model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
+                                                    aiDef.controller, controller_helper, configuration.evaluator)
+                if (id != "fakeID"):
+                    model_handler.reset(agent)
+            
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             if check_controller_status:
@@ -143,7 +151,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 
                 if game_state.players[leftSide.player_index].controller_status == leftSideStatus and game_state.players[rightSide.player_index].controller_status == rightSideStatus:
                    check_controller_status = False 
-            else:
+            elif model_handler.network != None:
                 menu_helper_simple(game_state,
                                                 leftSide.controller,
                                                 leftSide.character,
