@@ -261,15 +261,15 @@ if __name__ == '__main__':
     processes.append(p)
     p.start()
     
-    p = mp.Process(target=queueCpuGeneMCC, daemon=True,
-                       args=(queue_1, ))
-    processes.append(p)
-    p.start()
     for i in range(process_num):
         p = mp.Process(target=console_loop_mcc_cpu_gene, args=(
             i + 51460, queue_1, configuration, queue_result), daemon=True)
         processes.append(p)
         p.start()
         
+        p = mp.Process(target=queueCpuGeneMCC, daemon=True,
+                        args=(queue_1, ))
+        processes.append(p)
+        p.start()
     for p in processes:
         p.join()
