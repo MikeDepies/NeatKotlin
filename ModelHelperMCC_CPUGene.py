@@ -28,7 +28,7 @@ class ModelHelperMCC_CPUGene:
         res = httpx.post("http://" + self.host + ":8091/model/score", json={
                 "agentId": result.agent_id,
                 "environmentId": result.environment_id,
-                "type" :result.population_type
+                "type" :result.population_type,
                 "satisfyMC": result.satisfy,
                 "dead": result.dead
             }, timeout=30)
