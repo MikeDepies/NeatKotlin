@@ -121,6 +121,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
         else:
             reset+=1
             if reset > 100 and model_handler.network == None:
+                reset = 0
                 aiDef = aiControllerDef(cpu_gene, controller,
                             controller_opponent, player_index, opponent_index)
                 cpuDef = opponentControllerDef(
