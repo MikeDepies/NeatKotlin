@@ -37,7 +37,7 @@ def get_next(queue: mp.Queue) -> Tuple[str, HyperNeatBuilder, CPUGene]:
     return queue.get()
 
 
-def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Configuration):
+def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Configuration, queue_result :mp.Queue):
     console, controller, controller_opponent, args, log = startConsole(port)
     player_index = args.port
     opponent_index = args.opponent
@@ -85,17 +85,22 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 5 )):
                     mc_satisfy = False
                     model_handler.network = None
+                    queue_result.put(EvalResultCPU(id, mc_satisfy, False))
+                    
+                    print(score)
+                    print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
                     # print("failed!")
                 elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
                     mc_satisfy = True
                     model_handler.network = None
+                    queue_result.put(EvalResultCPU(id, mc_satisfy, False))
+                    
+                    print(score)
+                    print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
                     # print("Success!")
             
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
-                model_helper.send_evaluation_result(
-                    EvalResultCPU(id, mc_satisfy, False))
-                print(score)
-                print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
+                
                 id, agent, cpu_gene = get_next(queue_1)
                 print(cpu_gene)
                 aiDef = aiControllerDef(cpu_gene, controller,
@@ -207,6 +212,15 @@ def queueCpuGeneMCC(queue: mp.Queue):
             queue.put(last_data)
 
 
+def httpRequestProcess(queue : mp.Queue):
+    host = "192.168.0.100"
+    model_helper = ModelHelperMCC_CPUGene(host)
+    request_data : EvalResultCPU
+    while True:
+        request_data = queue.get()
+        model_helper.send_evaluation_result(
+                    request_data)
+            
 if __name__ == '__main__':
     mgr = mp.Manager()
     mgr_dict = mgr.dict()
@@ -221,10 +235,15 @@ if __name__ == '__main__':
 
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num * 2)
+    queue_result = mgr.Queue(process_num * 5)
 
+    p = mp.Process(target=httpRequestProcess, daemon=True,
+                       args=(queue_result, ))
+    processes.append(p)
+    p.start()
     for i in range(process_num):
         p = mp.Process(target=console_loop_mcc_cpu_gene, args=(
-            i + 51460, queue_1, configuration), daemon=True)
+            i + 51460, queue_1, configuration, queue_result), daemon=True)
         processes.append(p)
         p.start()
         p = mp.Process(target=queueCpuGeneMCC, daemon=True,
