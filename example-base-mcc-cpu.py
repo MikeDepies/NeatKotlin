@@ -120,7 +120,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
 
         else:
             reset+=1
-            if reset % 60 * 10 ==0:
+            if reset > 100 and reset % 60 * 10 ==0:
                 print("in menu: " + str(game_state.menu_state))
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
@@ -228,7 +228,7 @@ def httpRequestProcess(queue : mp.Queue):
         request_data = queue.get()
         model_helper.send_evaluation_result(
                     request_data)
-        print(request_data)
+        # print(request_data)
             
 if __name__ == '__main__':
     mgr = mp.Manager()
