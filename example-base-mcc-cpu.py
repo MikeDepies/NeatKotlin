@@ -142,7 +142,11 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             if check_controller_status:
 
                 if game_state.menu_state in [melee.Menu.STAGE_SELECT]:
-                    controller.press_button(melee.Button.BUTTON_B)
+                    #just in case we enter the stage select with B held down
+                    if reset < 10:
+                        controller.release_button(melee.Button.BUTTON_B)
+                    else:
+                        controller.press_button(melee.Button.BUTTON_B)
                 else:
                     if leftSide.level == 0:
                         leftSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
