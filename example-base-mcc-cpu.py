@@ -110,7 +110,11 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     cpu_gene, controller, controller_opponent, player_index, opponent_index)
                 model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
                                                     aiDef.controller, controller_helper, configuration.evaluator)
-                model_handler.reset(agent)
+                if (id != "fakeID"):
+                    model_handler.reset(agent)
+                else:
+                    print(id)
+
                 controller_opponent.release_all()
                 controller.release_all()
 
