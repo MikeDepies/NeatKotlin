@@ -60,7 +60,7 @@ def startConsole(port: int):
                             logger=log,
                             slippi_port=port,
                             blocking_input=True,
-                            polling_mode=False,
+                            polling_mode=True,
                             setup_gecko_codes=True,
                             gfx_backend="Null",
                             use_exi_inputs=True,
