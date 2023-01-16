@@ -140,8 +140,9 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
 
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
-            if check_controller_status:
-
+            if check_controller_status and model_handler.network != None:
+                if reset > 60 *10:
+                    print("stuck.........")
                 if game_state.menu_state in [melee.Menu.STAGE_SELECT]:
                     #just in case we enter the stage select with B held down
                     if reset < 10:
@@ -168,7 +169,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                         check_controller_status = False
             elif model_handler.network != None:
                 if reset > 60 *10:
-                    print("stuck.........")
+                    print("stuck......... 2")
                 menu_helper_simple(game_state,
                                    leftSide.controller,
                                    leftSide.character,
@@ -196,6 +197,9 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                         if player and player.cpu_level == leftSide.level and player.character == leftSide.character and player1 and player1.cpu_level == rightSide.level and player1.character == rightSide.character:
                             melee.MenuHelper.choose_stage(
                                 cpu_gene.stage, game_state, controller_opponent)
+            else:
+                if reset > 60 *10:
+                    print("stuck......... 3")
 
 
 def controllerDefs(cpu_gene: CPUGene, controller: melee.Controller, controller_opponent: melee.Controller, player_index: int, opponent_index: int):
