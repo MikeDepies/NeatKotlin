@@ -147,7 +147,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                         controller.release_button(melee.Button.BUTTON_B)
                     else:
                         controller.press_button(melee.Button.BUTTON_B)
-                else:
+                elif game_state.menu_state in [melee.Menu.CHARACTER_SELECT]:
                     if leftSide.level == 0:
                         leftSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
                     else:
