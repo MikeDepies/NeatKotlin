@@ -241,10 +241,11 @@ if __name__ == '__main__':
     p = mp.Process(target=httpRequestProcess, daemon=True,
                        args=(queue_result, ))
     processes.append(p)
+    p.start()
+    
     p = mp.Process(target=queueCpuGeneMCC, daemon=True,
                        args=(queue_1, ))
     processes.append(p)
-    p.start()
     p.start()
     for i in range(process_num):
         p = mp.Process(target=console_loop_mcc_cpu_gene, args=(
