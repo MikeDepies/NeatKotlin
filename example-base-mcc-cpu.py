@@ -74,6 +74,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             continue
 
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
+            
             check_controller_status = True
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
@@ -100,7 +101,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     # print("Success!")
             
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
-                
+                reset=0
                 id, agent, cpu_gene = get_next(queue_1)
                 print(cpu_gene)
                 aiDef = aiControllerDef(cpu_gene, controller,
@@ -114,6 +115,9 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 controller.release_all()
 
         else:
+            reset+=1
+            if reset % 60 ==0:
+                print("in menu: " + str(game_state.menu_state))
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             if check_controller_status:
