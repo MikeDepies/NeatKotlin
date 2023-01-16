@@ -125,6 +125,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
         else:
             reset += 1
             if reset > 100 and model_handler.network == None:
+                print("fake agent")
                 reset = 0
                 population_type, agent_id, environment_id, agent, cpu_gene = get_next(
                     queue_1)
@@ -166,6 +167,8 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     if game_state.players[leftSide.player_index].controller_status == leftSideStatus and game_state.players[rightSide.player_index].controller_status == rightSideStatus:
                         check_controller_status = False
             elif model_handler.network != None:
+                if reset > 60 *10:
+                    print("stuck.........")
                 menu_helper_simple(game_state,
                                    leftSide.controller,
                                    leftSide.character,
