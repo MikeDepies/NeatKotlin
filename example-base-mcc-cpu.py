@@ -235,21 +235,22 @@ if __name__ == '__main__':
     configuration = processConfiguration(data)
 
     processes: List[mp.Process] = []
-    queue_1 = mgr.Queue(process_num * 2)
+    queue_1 = mgr.Queue(process_num * 1)
     queue_result = mgr.Queue(process_num * 5)
 
     p = mp.Process(target=httpRequestProcess, daemon=True,
                        args=(queue_result, ))
     processes.append(p)
+    p = mp.Process(target=queueCpuGeneMCC, daemon=True,
+                       args=(queue_1, ))
+    processes.append(p)
+    p.start()
     p.start()
     for i in range(process_num):
         p = mp.Process(target=console_loop_mcc_cpu_gene, args=(
             i + 51460, queue_1, configuration, queue_result), daemon=True)
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueCpuGeneMCC, daemon=True,
-                       args=(queue_1, ))
-        processes.append(p)
-        p.start()
+        
     for p in processes:
         p.join()
