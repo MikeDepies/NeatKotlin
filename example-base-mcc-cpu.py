@@ -141,7 +141,8 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             if check_controller_status and model_handler.network != None:
-                if reset > 60 *10:
+                if reset > 60 * 10:
+                    reset = 0
                     print("stuck.........")
                 if game_state.menu_state in [melee.Menu.STAGE_SELECT]:
                     #just in case we enter the stage select with B held down
