@@ -37,7 +37,7 @@ def get_next(queue: mp.Queue) -> Tuple[str, str, str, HyperNeatBuilder, CPUGene]
     return queue.get()
 
 
-def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Configuration, queue_result :mp.Queue):
+def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Configuration, queue_result: mp.Queue):
     console, controller, controller_opponent, args, log = startConsole(port)
     player_index = args.port
     opponent_index = args.opponent
@@ -56,7 +56,8 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
     host = "192.168.0.100"
     model_helper = ModelHelperMCC_CPUGene(host)
     controller_helper = ControllerHelper()
-    population_type, agent_id, environment_id, agent, cpu_gene = get_next(queue_1)
+    population_type, agent_id, environment_id, agent, cpu_gene = get_next(
+        queue_1)
     aiDef = aiControllerDef(cpu_gene, controller,
                             controller_opponent, player_index, opponent_index)
     cpuDef = opponentControllerDef(
@@ -70,11 +71,11 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
     while True:
         game_state = console.step()
         if game_state is None:
-            print("We hit this None BS => " + str(cpu_gene) )
+            print("We hit this None BS => " + str(cpu_gene))
             continue
 
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-            
+
             check_controller_status = True
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
@@ -83,29 +84,32 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             # if (score.total_frames_alive % 60 * 20 == 0):
             #     print(score)
             if not (model_handler.network == None):
-                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 5 )):
+                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive / 60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 5)):
                     mc_satisfy = False
                     model_handler.network = None
-                    queue_result.put(EvalResultCPU(population_type, agent_id, environment_id, mc_satisfy, False))
-                    
+                    queue_result.put(EvalResultCPU(
+                        population_type, agent_id, environment_id, mc_satisfy, False))
+
                     # print(score)
-                    
+
                     # print("failed!")
                 elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
                     mc_satisfy = True
                     model_handler.network = None
-                    queue_result.put(EvalResultCPU(population_type, agent_id, environment_id, mc_satisfy, False))
-                    
+                    queue_result.put(EvalResultCPU(
+                        population_type, agent_id, environment_id, mc_satisfy, False))
+
                     # print(score)
-                    
+
                     # print("Success!")
-            
+
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
-                reset=0
-                population_type, agent_id, environment_id, agent, cpu_gene = get_next(queue_1)
+                reset = 0
+                population_type, agent_id, environment_id, agent, cpu_gene = get_next(
+                    queue_1)
                 # print(cpu_gene)
                 aiDef = aiControllerDef(cpu_gene, controller,
-                            controller_opponent, player_index, opponent_index)
+                                        controller_opponent, player_index, opponent_index)
                 cpuDef = opponentControllerDef(
                     cpu_gene, controller, controller_opponent, player_index, opponent_index)
                 model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
@@ -119,54 +123,58 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 controller.release_all()
 
         else:
-            reset+=1
+            reset += 1
             if reset > 100 and model_handler.network == None:
                 reset = 0
-                population_type, agent_id, environment_id, agent, cpu_gene = get_next(queue_1)
+                population_type, agent_id, environment_id, agent, cpu_gene = get_next(
+                    queue_1)
                 aiDef = aiControllerDef(cpu_gene, controller,
-                            controller_opponent, player_index, opponent_index)
+                                        controller_opponent, player_index, opponent_index)
                 cpuDef = opponentControllerDef(
                     cpu_gene, controller, controller_opponent, player_index, opponent_index)
                 model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
                                                     aiDef.controller, controller_helper, configuration.evaluator)
                 if (agent_id != "fakeID"):
                     model_handler.reset(agent)
-            
+
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             if check_controller_status:
-                # print(cpu_gene)
-                # print(cpu_gene.controller_id)
-                # print(str(model_handler.model_index) + " vs " + str(model_handler.opponent_index))
-                if leftSide.level == 0:
-                    leftSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
+
+                if game_state.menu_state in [melee.Menu.STAGE_SELECT]:
+                    controller.press_button(melee.Button.BUTTON_B)
                 else:
-                    leftSideStatus = melee.ControllerStatus.CONTROLLER_CPU
-                if (game_state.players[leftSide.player_index].controller_status != leftSideStatus):
-                    melee.MenuHelper.change_controller_status(leftSide.controller, game_state, leftSide.player_index, leftSideStatus)
-                if rightSide.level == 0:
-                    rightSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
-                else:
-                    rightSideStatus = melee.ControllerStatus.CONTROLLER_CPU
-                if (game_state.players[rightSide.player_index].controller_status != rightSideStatus):
-                    melee.MenuHelper.change_controller_status(rightSide.controller, game_state, rightSide.player_index, rightSideStatus)
-                
-                if game_state.players[leftSide.player_index].controller_status == leftSideStatus and game_state.players[rightSide.player_index].controller_status == rightSideStatus:
-                   check_controller_status = False 
+                    if leftSide.level == 0:
+                        leftSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
+                    else:
+                        leftSideStatus = melee.ControllerStatus.CONTROLLER_CPU
+                    if (game_state.players[leftSide.player_index].controller_status != leftSideStatus):
+                        melee.MenuHelper.change_controller_status(
+                            leftSide.controller, game_state, leftSide.player_index, leftSideStatus)
+                    if rightSide.level == 0:
+                        rightSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
+                    else:
+                        rightSideStatus = melee.ControllerStatus.CONTROLLER_CPU
+                    if (game_state.players[rightSide.player_index].controller_status != rightSideStatus):
+                        melee.MenuHelper.change_controller_status(
+                            rightSide.controller, game_state, rightSide.player_index, rightSideStatus)
+
+                    if game_state.players[leftSide.player_index].controller_status == leftSideStatus and game_state.players[rightSide.player_index].controller_status == rightSideStatus:
+                        check_controller_status = False
             elif model_handler.network != None:
                 menu_helper_simple(game_state,
-                                                leftSide.controller,
-                                                leftSide.character,
-                                                cpu_gene.stage,
-                                                args.connect_code,
-                                                costume=0,
-                                                autostart=False,
-                                                swag=False,
-                                                cpu_level=leftSide.level)
+                                   leftSide.controller,
+                                   leftSide.character,
+                                   cpu_gene.stage,
+                                   args.connect_code,
+                                   costume=0,
+                                   autostart=False,
+                                   swag=False,
+                                   cpu_level=leftSide.level)
                 if game_state.players:
                     player: melee.PlayerState = game_state.players[leftSide.player_index]
                     player1: melee.PlayerState = game_state.players[rightSide.player_index]
-                    
+
                     if player and player.cpu_level == leftSide.level and player.character == leftSide.character:
                         choose_character(
                             character=rightSide.character,
@@ -224,22 +232,24 @@ def queueCpuGeneMCC(queue: mp.Queue):
             population_type, agent_id, environment_id, builder, cpu_gene = model_helper.getNetworks()
             network = builder.create_ndarrays(sigmoidal)
 
-            last_data = (population_type, agent_id, environment_id, network, cpu_gene)
+            last_data = (population_type, agent_id,
+                         environment_id, network, cpu_gene)
             queue.put(last_data)
         except:
             queue.put(last_data)
 
 
-def httpRequestProcess(queue : mp.Queue):
+def httpRequestProcess(queue: mp.Queue):
     host = "192.168.0.100"
     model_helper = ModelHelperMCC_CPUGene(host)
-    request_data : EvalResultCPU
+    request_data: EvalResultCPU
     while True:
         request_data = queue.get()
         model_helper.send_evaluation_result(
-                    request_data)
+            request_data)
         # print(request_data)
-            
+
+
 if __name__ == '__main__':
     mgr = mp.Manager()
     mgr_dict = mgr.dict()
@@ -257,18 +267,18 @@ if __name__ == '__main__':
     queue_result = mgr.Queue(process_num * 5)
 
     p = mp.Process(target=httpRequestProcess, daemon=True,
-                       args=(queue_result, ))
+                   args=(queue_result, ))
     processes.append(p)
     p.start()
-    
+
     for i in range(process_num):
         p = mp.Process(target=console_loop_mcc_cpu_gene, args=(
             i + 51460, queue_1, configuration, queue_result), daemon=True)
         processes.append(p)
         p.start()
-        
+
         p = mp.Process(target=queueCpuGeneMCC, daemon=True,
-                        args=(queue_1, ))
+                       args=(queue_1, ))
         processes.append(p)
         p.start()
     for p in processes:
