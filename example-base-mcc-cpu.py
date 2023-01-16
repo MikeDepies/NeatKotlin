@@ -33,7 +33,7 @@ class ControllerDef:
     player_index: int
 
 
-def get_next(queue: mp.Queue) -> Tuple[str, HyperNeatBuilder, CPUGene]:
+def get_next(queue: mp.Queue) -> Tuple[str, str, str, HyperNeatBuilder, CPUGene]:
     return queue.get()
 
 
@@ -56,7 +56,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
     host = "192.168.0.100"
     model_helper = ModelHelperMCC_CPUGene(host)
     controller_helper = ControllerHelper()
-    id, agent, cpu_gene = get_next(queue_1)
+    population_type, agent_id, environment_id, agent, cpu_gene = get_next(queue_1)
     aiDef = aiControllerDef(cpu_gene, controller,
                             controller_opponent, player_index, opponent_index)
     cpuDef = opponentControllerDef(
@@ -86,7 +86,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive /60 > max(1, cpu_gene.kills) * (20 + cpu_gene.level * 5 )):
                     mc_satisfy = False
                     model_handler.network = None
-                    queue_result.put(EvalResultCPU(id, mc_satisfy, False))
+                    queue_result.put(EvalResultCPU(agent_id, environment_id, mc_satisfy, False))
                     
                     # print(score)
                     
@@ -94,7 +94,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                 elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
                     mc_satisfy = True
                     model_handler.network = None
-                    queue_result.put(EvalResultCPU(id, mc_satisfy, False))
+                    queue_result.put(EvalResultCPU(agent_id, environment_id, mc_satisfy, False))
                     
                     # print(score)
                     
@@ -102,7 +102,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
                 reset=0
-                id, agent, cpu_gene = get_next(queue_1)
+                population_type, agent_id, environment_id, agent, cpu_gene = get_next(queue_1)
                 # print(cpu_gene)
                 aiDef = aiControllerDef(cpu_gene, controller,
                             controller_opponent, player_index, opponent_index)
@@ -110,7 +110,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     cpu_gene, controller, controller_opponent, player_index, opponent_index)
                 model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
                                                     aiDef.controller, controller_helper, configuration.evaluator)
-                if (id != "fakeID"):
+                if (agent_id != "fakeID"):
                     model_handler.reset(agent)
                 # else:
                 #     print(id)
@@ -122,13 +122,14 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             reset+=1
             if reset > 100 and model_handler.network == None:
                 reset = 0
+                population_type, agent_id, environment_id, agent, cpu_gene = get_next(queue_1)
                 aiDef = aiControllerDef(cpu_gene, controller,
                             controller_opponent, player_index, opponent_index)
                 cpuDef = opponentControllerDef(
                     cpu_gene, controller, controller_opponent, player_index, opponent_index)
                 model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
                                                     aiDef.controller, controller_helper, configuration.evaluator)
-                if (id != "fakeID"):
+                if (agent_id != "fakeID"):
                     model_handler.reset(agent)
             
             leftSide, rightSide = controllerDefs(
@@ -220,10 +221,10 @@ def queueCpuGeneMCC(queue: mp.Queue):
 
     while True:
         try:
-            id, builder, cpu_gene = model_helper.getNetworks()
+            population_type, agent_id, environment_id, builder, cpu_gene = model_helper.getNetworks()
             network = builder.create_ndarrays(sigmoidal)
 
-            last_data = (id, network, cpu_gene)
+            last_data = (population_type, agent_id, environment_id, network, cpu_gene)
             queue.put(last_data)
         except:
             queue.put(last_data)

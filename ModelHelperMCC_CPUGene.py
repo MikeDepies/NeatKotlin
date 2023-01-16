@@ -10,7 +10,9 @@ from dataclasses import dataclass
 import melee
 @dataclass
 class EvalResultCPU:
-    id : str
+    population_type: str
+    agent_id : str
+    environment_id: str
     satisfy: bool
     dead: bool
 
@@ -24,7 +26,9 @@ class ModelHelperMCC_CPUGene:
     def send_evaluation_result(self, result : EvalResultCPU):
         
         res = httpx.post("http://" + self.host + ":8091/model/score", json={
-                "id": result.id,
+                "agentId": result.agent_id,
+                "environmentId": result.environment_id,
+                "type" :result.population_type
                 "satisfyMC": result.satisfy,
                 "dead": result.dead
             }, timeout=30)
@@ -38,10 +42,12 @@ class ModelHelperMCC_CPUGene:
         if not res.is_success:
             raise Exception("No data for request")
         data = res.json()
-        
+        agent_id = data["agentId"]
+        environment_id = data["environmentId"]
+        population_type = data["type"]
         id, agent, cpu_gene = process_model_data_mcc_cpu_gene(data)
     
-        return id, agent, cpu_gene
+        return population_type, agent_id, environment_id, agent, cpu_gene
     
     def randomBest(self, controller_id : int):
         requestNetwork = True
