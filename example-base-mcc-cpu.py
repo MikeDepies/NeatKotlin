@@ -88,7 +88,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     model_handler.network = None
                     queue_result.put(EvalResultCPU(id, mc_satisfy, False))
                     
-                    print(score)
+                    # print(score)
                     
                     # print("failed!")
                 elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
@@ -96,14 +96,14 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     model_handler.network = None
                     queue_result.put(EvalResultCPU(id, mc_satisfy, False))
                     
-                    print(score)
+                    # print(score)
                     
                     # print("Success!")
             
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0) and model_handler.network == None:
                 reset=0
                 id, agent, cpu_gene = get_next(queue_1)
-                print(cpu_gene)
+                # print(cpu_gene)
                 aiDef = aiControllerDef(cpu_gene, controller,
                             controller_opponent, player_index, opponent_index)
                 cpuDef = opponentControllerDef(
@@ -112,22 +112,22 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                                                     aiDef.controller, controller_helper, configuration.evaluator)
                 if (id != "fakeID"):
                     model_handler.reset(agent)
-                else:
-                    print(id)
+                # else:
+                #     print(id)
 
                 controller_opponent.release_all()
                 controller.release_all()
 
         else:
             reset+=1
-            if reset % 60 ==0:
+            if reset % 60 * 10 ==0:
                 print("in menu: " + str(game_state.menu_state))
             leftSide, rightSide = controllerDefs(
                 cpu_gene, controller, controller_opponent, player_index, opponent_index)
             if check_controller_status:
-                print(cpu_gene)
-                print(cpu_gene.controller_id)
-                print(str(model_handler.model_index) + " vs " + str(model_handler.opponent_index))
+                # print(cpu_gene)
+                # print(cpu_gene.controller_id)
+                # print(str(model_handler.model_index) + " vs " + str(model_handler.opponent_index))
                 if leftSide.level == 0:
                     leftSideStatus = melee.ControllerStatus.CONTROLLER_HUMAN
                 else:
