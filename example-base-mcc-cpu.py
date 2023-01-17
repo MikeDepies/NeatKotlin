@@ -124,8 +124,8 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
 
         else:
             reset += 1
-            if reset > 100 and model_handler.network == None:
-                print("fake agent")
+            if reset > 10 and model_handler.network == None:
+                print("fake agent"+str(port))
                 reset = 0
                 population_type, agent_id, environment_id, agent, cpu_gene = get_next(
                     queue_1)
@@ -143,7 +143,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
             if check_controller_status and model_handler.network != None:
                 if reset > 60 * 10:
                     reset = 0
-                    print("stuck.........")
+                    print("stuck........."+str(port))
                 if game_state.menu_state in [melee.Menu.STAGE_SELECT]:
                     #just in case we enter the stage select with B held down
                     if reset < 10:
@@ -246,7 +246,12 @@ def queueCpuGeneMCC(queue: mp.Queue):
 
             last_data = (population_type, agent_id,
                          environment_id, network, cpu_gene)
-            queue.put(last_data)
+            if (agent_id == "fakeID" and queue.empty()) or agent_id != "fakeID":
+                queue.put(last_data)
+            if agent_id == "fakeID":
+                time.sleep(1)
+            
+            
         except:
             queue.put(last_data)
 
