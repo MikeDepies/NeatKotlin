@@ -238,18 +238,23 @@ def opponentControllerDef(cpu_gene: CPUGene, controller: melee.Controller, contr
 def queueCpuGeneMCC(queue: mp.Queue):
     host = "192.168.0.100"
     model_helper = ModelHelperMCC_CPUGene(host)
-
+    sleep = 0
     while True:
         try:
-            population_type, agent_id, environment_id, builder, cpu_gene = model_helper.getNetworks()
-            network = builder.create_ndarrays(sigmoidal)
+            if (sleep == 0):
+                population_type, agent_id, environment_id, builder, cpu_gene = model_helper.getNetworks()
+                network = builder.create_ndarrays(sigmoidal)
 
             last_data = (population_type, agent_id,
                          environment_id, network, cpu_gene)
             if (agent_id == "fakeID" and queue.empty()) or agent_id != "fakeID":
                 queue.put(last_data)
             if agent_id == "fakeID":
-                time.sleep(1)
+                sleep +=1
+                time.sleep(.01)
+            if (sleep > 100):
+                sleep = 0
+            
             
             
         except:
