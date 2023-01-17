@@ -5,14 +5,12 @@ import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
 import server.NetworkBlueprint
+import server.mcc.smash.PopulationType
 
 import java.util.*
 
 import kotlin.random.Random
-@Serializable
-enum class PopulationType {
-    Agent, Environment
-}
+
 
 private val logger = KotlinLogging.logger { }
 

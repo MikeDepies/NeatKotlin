@@ -5,6 +5,7 @@ import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
 import server.NetworkBlueprint
+import server.mcc.smash.PopulationType
 
 import java.util.*
 import kotlin.math.min
@@ -170,7 +171,7 @@ class MinimalCriterionStage(
 
 }
 
-@Serializable
+//@Serializable
 data class MCCElement<T>(val age: Int, val data: T)
 data class MCCStageBatchResult(
     val pairedAgents: List<PairedAgentsStage>,

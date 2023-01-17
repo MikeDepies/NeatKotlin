@@ -19,6 +19,7 @@ import neat.*
 import neat.model.*
 import org.koin.ktor.ext.*
 import server.mcc.*
+import server.mcc.smash.PopulationType
 import server.message.endpoints.NeatModel
 import server.message.endpoints.toModel
 import server.server.*
@@ -150,35 +151,35 @@ fun Application.module(testing: Boolean = false) {
     val mccBatchMap = mutableMapOf<String, Boolean>()
     val mccResultList = mutableListOf<MCCResult>()
     var currentMccBatch = MCCBatch(listOf(), PopulationType.Agent)
-    launch {
-        for (mccBatch in mccBatchChannel) {
-            mccBatchMap.clear()
-            mccResultList.clear()
-            currentMccBatch = mccBatch
-            logger.info { "New Batch ${batchNumber}" }
-            mccBatch.pairedAgents.forEach {
-                pairedAgentsChannel.send(it)
-                mccBatchMap[it.child.id] = false
-            }
-        }
-    }
-    launch {
-        for (mccResult in mccResultChannel) {
-//            logger.info { mccBatchMap.containsKey(mccResult.id) }
-            mccBatchMap[mccResult.id] = true
-            mccResultList.add(mccResult)
-//            logger.info { "Score $mccResult" }
-//            logger.info { "remaining: ${mccBatchMap.filter { !it.value }.size}" }
-            if (mccBatchMap.all { it.value }) {
-                val mccBatchResult = MCCBatchResult(
-                    currentMccBatch.pairedAgents,
-                    mccResultList.map { it.id to it.satisfyMC }.toMap(),
-                    currentMccBatch.batchPopulationType
-                )
-                mccBatchResultChannel.send(mccBatchResult)
-            }
-        }
-    }
+//    launch {
+//        for (mccBatch in mccBatchChannel) {
+//            mccBatchMap.clear()
+//            mccResultList.clear()
+//            currentMccBatch = mccBatch
+//            logger.info { "New Batch ${batchNumber}" }
+//            mccBatch.pairedAgents.forEach {
+//                pairedAgentsChannel.send(it)
+//                mccBatchMap[it.child.id] = false
+//            }
+//        }
+//    }
+//    launch {
+//        for (mccResult in mccResultChannel) {
+////            logger.info { mccBatchMap.containsKey(mccResult.id) }
+//            mccBatchMap[mccResult.id] = true
+//            mccResultList.add(mccResult)
+////            logger.info { "Score $mccResult" }
+////            logger.info { "remaining: ${mccBatchMap.filter { !it.value }.size}" }
+//            if (mccBatchMap.all { it.value }) {
+//                val mccBatchResult = MCCBatchResult(
+//                    currentMccBatch.pairedAgents,
+//                    mccResultList.map { it.id to it.satisfyMC }.toMap(),
+//                    currentMccBatch.batchPopulationType
+//                )
+//                mccBatchResultChannel.send(mccBatchResult)
+//            }
+//        }
+//    }
 
 
     val createNetwork = createNetwork()
@@ -227,7 +228,7 @@ data class PairedNetworkWithBlueprint(val agent: NetworkBlueprint,  val child: N
 @Serializable
 data class MCCCheck(val id: String)
 @Serializable
-data class MCCResult(val id: String, val satisfyMC: Boolean, val dead : Boolean)
+data class MCCResult(val agentId: String, val environmentId: String, val satisfyMC: Boolean, val dead: Boolean, val type : PopulationType)
 data class LoadedPopulation(val populationModels: List<NetworkWithId>, val simpleNeatExperiment: NeatExperiment)
 
 fun loadModels(random: Random, activationFunctions: List<ActivationGene>, addConnectionAttempts: Int, path: String): Pair<NeatExperiment, List<NetworkWithId>> {

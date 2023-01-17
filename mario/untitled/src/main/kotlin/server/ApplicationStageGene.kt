@@ -19,6 +19,7 @@ import neat.*
 import neat.model.*
 import org.koin.ktor.ext.*
 import server.mcc.*
+import server.mcc.smash.PopulationType
 import server.message.endpoints.NeatModel
 import server.message.endpoints.toModel
 import java.io.*
@@ -267,147 +268,147 @@ fun Application.moduleStageGene(testing: Boolean = false) {
 //            }
         }
     }
-    launch {
-
-        var agentCount = 0
-        var environmentCount = 0
-        for (mccResult in mccResultChannel) {
-//            logger.info { mccBatchMap.containsKey(mccResult.id) }
-            val mccBatchMap = if (mccResult.id in agentMccBatchMap) agentMccBatchMap else environmentMccBatchMap
-            val mccResultList = if (mccResult.id in agentMccBatchMap) agentMccResultList else environmentMccResultList
-            val currentMccBatch = if (mccResult.id in agentMccBatchMap) agentMccBatch else environmentMccBatch
-            if (mccResult.id in mccBatchMap) {
-                if (mccResult.id in agentMccBatchMap && mccResult.dead) {
-                    agentMccBatchDeadMap[mccResult.id] = (agentMccBatchDeadMap[mccResult.id] ?: 0) + 1
-                }
-                if (mccResult.id in agentMccBatchMap) agentCount++ else environmentCount++
-                val count = if (mccResult.id in agentMccBatchMap) agentCount else environmentCount
-                if (mccResult.satisfyMC) {
-                    mccBatchMap[mccResult.id] = true
-                    mccResultList.add(mccResult)
-                }
-//            logger.info { "Score $mccResult" }
-//            logger.info { "remaining: ${mccBatchMap.filter { !it.value }.size}" }
-                if (mccBatchMap.all { it.value } || count == currentMccBatch.pairedAgents.size) {
-                    val mccBatchResult = MCCStageBatchResult(
-                        currentMccBatch.pairedAgents,
-                        mccResultList.associate { it.id to it.satisfyMC },
-                        currentMccBatch.batchPopulationType
-                    )
-                    if (mccResult.id in agentMccBatchMap) agentCount = 0 else environmentCount = 0
-                    mccBatchMap.clear()
-                    mccBatchResultChannel.send(mccBatchResult)
-                }
-            }
-        }
-    }
-
-
-    val createNetwork = createNetwork()
-    val connectionRelationships =
-        createNetwork.connectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
-    val targetConnectionMapping =
-        createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
-    val calculationOrder = createNetwork.calculationOrder.map { it.id }
-    fun map(pairedAgents: PairedAgentsStage) = when (pairedAgents.type) {
-        PopulationType.Agent -> agentMccBatchMap
-        PopulationType.Environment -> environmentMccBatchMap
-    }
-
-    fun isDead(pairedAgents: PairedAgentsStage): Boolean {
-
-        return when (pairedAgents.type) {
-            PopulationType.Agent -> (agentMccBatchDeadMap[pairedAgents.agent.data.id.toString()] ?: 0) >= 1
-            PopulationType.Environment -> false
-        }
-    }
-
-    routing {
-        get("/model") {
-
-            var pairedAgents = pairedAgentsChannel.receive()
-//            logger.info { "Paired Agent Pulled: ${pairedAgents.type}" }
-            var mccResultArrayList = ArrayList(
-                when (pairedAgents.type) {
-                    PopulationType.Environment -> environmentMccResultList
-                    PopulationType.Agent -> agentMccResultList
-                }
-            )
-            while (!map(pairedAgents).containsKey(id(pairedAgents)) || mccResultArrayList.any {
-                    it.id == id(pairedAgents) || isDead(
-                        pairedAgents
-                    )
-                }
-            ) {
-                mccResultChannel.send(MCCResult(id(pairedAgents), false, false))
-                pairedAgents = pairedAgentsChannel.receive()
-//                logger.info { "Paired Agent Pulled: ${pairedAgents.type}" }
-                mccResultArrayList = ArrayList(
-                    when (pairedAgents.type) {
-                        PopulationType.Environment -> environmentMccResultList
-                        PopulationType.Agent -> agentMccResultList
-                    }
-                )
-            }
-            val blueprint = NetworkBlueprint(
-                id(pairedAgents),
-                createNetwork.planes,
-                connectionRelationships,
-                targetConnectionMapping,
-                calculationOrder,
-                0,
-                0,
-                createNetwork.outputPlane.id,
-                pairedAgents.agent.data.toModel(),
-                createNetwork.depth
-            )
-            call.respond(PairedHyperAgentEnvironment(blueprint, pairedAgents.environment.data, pairedAgents.type))
-        }
-
-        get("/fillModels") {
-            val filter =
-                environmentMccBatch.pairedAgents.filter {
-                    !(environmentMccBatchMap.get(it.environment.data.id) ?: true)
-                } + agentMccBatch.pairedAgents.filter {
-                    !(agentMccBatchMap.get(
-                        it.agent.data.id.toString()
-                    ) ?: true)
-
-                }
-            filter.forEach {
-                pairedAgentsChannel.send(it)
-            }
-            call.respond(filter.size)
-        }
-
-//        post<MCCCheck>("/stageCheck") { check ->
-//            call.respond(MCCResult(check.id, mccResultList.any { it.id == check.id }))
+//    launch {
+//
+//        var agentCount = 0
+//        var environmentCount = 0
+//        for (mccResult in mccResultChannel) {
+////            logger.info { mccBatchMap.containsKey(mccResult.id) }
+//            val mccBatchMap = if (mccResult.id in agentMccBatchMap) agentMccBatchMap else environmentMccBatchMap
+//            val mccResultList = if (mccResult.id in agentMccBatchMap) agentMccResultList else environmentMccResultList
+//            val currentMccBatch = if (mccResult.id in agentMccBatchMap) agentMccBatch else environmentMccBatch
+//            if (mccResult.id in mccBatchMap) {
+//                if (mccResult.id in agentMccBatchMap && mccResult.dead) {
+//                    agentMccBatchDeadMap[mccResult.id] = (agentMccBatchDeadMap[mccResult.id] ?: 0) + 1
+//                }
+//                if (mccResult.id in agentMccBatchMap) agentCount++ else environmentCount++
+//                val count = if (mccResult.id in agentMccBatchMap) agentCount else environmentCount
+//                if (mccResult.satisfyMC) {
+//                    mccBatchMap[mccResult.id] = true
+//                    mccResultList.add(mccResult)
+//                }
+////            logger.info { "Score $mccResult" }
+////            logger.info { "remaining: ${mccBatchMap.filter { !it.value }.size}" }
+//                if (mccBatchMap.all { it.value } || count == currentMccBatch.pairedAgents.size) {
+//                    val mccBatchResult = MCCStageBatchResult(
+//                        currentMccBatch.pairedAgents,
+//                        mccResultList.associate { it.id to it.satisfyMC },
+//                        currentMccBatch.batchPopulationType
+//                    )
+//                    if (mccResult.id in agentMccBatchMap) agentCount = 0 else environmentCount = 0
+//                    mccBatchMap.clear()
+//                    mccBatchResultChannel.send(mccBatchResult)
+//                }
+//            }
 //        }
-
-        post<MCCResult>("/score") {
-            mccResultChannel.send(it)
-        }
-        get("currentBatch") {
-
-        }
-    }
+//    }
+//
+//
+//    val createNetwork = createNetwork()
+//    val connectionRelationships =
+//        createNetwork.connectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
+//    val targetConnectionMapping =
+//        createNetwork.targetConnectionMapping.mapKeys { it.key.id }.mapValues { it.value.map { it.id } }
+//    val calculationOrder = createNetwork.calculationOrder.map { it.id }
+//    fun map(pairedAgents: PairedAgentsStage) = when (pairedAgents.type) {
+//        PopulationType.Agent -> agentMccBatchMap
+//        PopulationType.Environment -> environmentMccBatchMap
+//    }
+//
+//    fun isDead(pairedAgents: PairedAgentsStage): Boolean {
+//
+//        return when (pairedAgents.type) {
+//            PopulationType.Agent -> (agentMccBatchDeadMap[pairedAgents.agent.data.id.toString()] ?: 0) >= 1
+//            PopulationType.Environment -> false
+//        }
+//    }
+//
+//    routing {
+//        get("/model") {
+//
+//            var pairedAgents = pairedAgentsChannel.receive()
+////            logger.info { "Paired Agent Pulled: ${pairedAgents.type}" }
+//            var mccResultArrayList = ArrayList(
+//                when (pairedAgents.type) {
+//                    PopulationType.Environment -> environmentMccResultList
+//                    PopulationType.Agent -> agentMccResultList
+//                }
+//            )
+//            while (!map(pairedAgents).containsKey(id(pairedAgents)) || mccResultArrayList.any {
+//                    it.id == id(pairedAgents) || isDead(
+//                        pairedAgents
+//                    )
+//                }
+//            ) {
+//                mccResultChannel.send(MCCResult(id(pairedAgents), false, false))
+//                pairedAgents = pairedAgentsChannel.receive()
+////                logger.info { "Paired Agent Pulled: ${pairedAgents.type}" }
+//                mccResultArrayList = ArrayList(
+//                    when (pairedAgents.type) {
+//                        PopulationType.Environment -> environmentMccResultList
+//                        PopulationType.Agent -> agentMccResultList
+//                    }
+//                )
+//            }
+//            val blueprint = NetworkBlueprint(
+//                id(pairedAgents),
+//                createNetwork.planes,
+//                connectionRelationships,
+//                targetConnectionMapping,
+//                calculationOrder,
+//                0,
+//                0,
+//                createNetwork.outputPlane.id,
+//                pairedAgents.agent.data.toModel(),
+//                createNetwork.depth
+//            )
+//            call.respond(PairedHyperAgentEnvironment(blueprint, pairedAgents.environment.data, pairedAgents.type))
+//        }
+//
+//        get("/fillModels") {
+//            val filter =
+//                environmentMccBatch.pairedAgents.filter {
+//                    !(environmentMccBatchMap.get(it.environment.data.id) ?: true)
+//                } + agentMccBatch.pairedAgents.filter {
+//                    !(agentMccBatchMap.get(
+//                        it.agent.data.id.toString()
+//                    ) ?: true)
+//
+//                }
+//            filter.forEach {
+//                pairedAgentsChannel.send(it)
+//            }
+//            call.respond(filter.size)
+//        }
+//
+////        post<MCCCheck>("/stageCheck") { check ->
+////            call.respond(MCCResult(check.id, mccResultList.any { it.id == check.id }))
+////        }
+//
+//        post<MCCResult>("/score") {
+//            mccResultChannel.send(it)
+//        }
+//        get("currentBatch") {
+//
+//        }
+//    }
 }
 
-@Serializable
-data class PairedAgentEnvironment(
-    val type: PopulationType,
-    val agent: NeatModel?,
-    val environment: StageTrackGene,
-    val satisfied: Boolean
-)
+//@Serializable
+//data class PairedAgentEnvironment(
+//    val type: PopulationType,
+//    val agent: NeatModel?,
+//    val environment: StageTrackGene,
+//    val satisfied: Boolean
+//)
+//
+//@Serializable
+//data class CurrentBatch(val items: List<PairedAgentEnvironment>)
 
-@Serializable
-data class CurrentBatch(val items: List<PairedAgentEnvironment>)
-
-private fun id(pairedAgents: PairedAgentsStage) = when (pairedAgents.type) {
-    PopulationType.Environment -> pairedAgents.environment.data.id
-    PopulationType.Agent -> pairedAgents.agent.data.id.toString()
-}
+//private fun id(pairedAgents: PairedAgentsStage) = when (pairedAgents.type) {
+//    PopulationType.Environment -> pairedAgents.environment.data.id
+//    PopulationType.Agent -> pairedAgents.agent.data.id.toString()
+//}
 
 
 fun environmentOffSpringFunction(mutationEntries: List<StageTrackMutationEntry>): NeatExperiment.(StageTrackGene) -> StageTrackGene {
