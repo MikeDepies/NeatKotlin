@@ -17,6 +17,7 @@ import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
 import server.message.endpoints.NeatModel
+import java.lang.Integer.min
 import java.util.*
 
 private val log = KotlinLogging.logger { }
@@ -482,9 +483,9 @@ fun createNetwork(): TaskNetworkBuilder {
         val planeList = hiddenPlanes + outputPlane
         put(inputImagePlane, planeList.take(2))
         hiddenPlanes.forEachIndexed { index, layerPlane ->
-            put(layerPlane, planeList.drop(index + 1).take(2))
+            put(layerPlane, planeList.drop(min(index + 1, 2)))
         }
-//        put(outputPlane, planeList.drop(2))
+        put(outputPlane, planeList.drop(2))
     }
 //    println(connectionMapping)
     val planeZMap = buildMap<LayerPlane, Int> {

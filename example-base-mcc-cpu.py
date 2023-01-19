@@ -98,7 +98,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     model_handler.network = None
                     queue_result.put(EvalResultCPU(
                         population_type, agent_id, environment_id, mc_satisfy, False))
-
+                    mc_satisfy = False
                     # print(score)
 
                     # print("Success!")
