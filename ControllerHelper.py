@@ -52,10 +52,10 @@ class ControllerHelper:
         outputUnActivated1 = network.outputUnActivated()
         # c_stick_angle = self.clamp(outputUnActivated1[0, 6])
         # main_stick_angle = self.clamp(outputUnActivated1[0, 4])
-        main_stick_x = (self.clamp(outputUnActivated1[0,4], -3, 3) / 6) + .5
-        main_stick_y = (self.clamp(outputUnActivated1[0,5], -3, 3) / 6) + .5
-        c_stick_x = (self.clamp(outputUnActivated1[0,6], -3, 3) / 6) + .5
-        c_stick_y = (self.clamp(outputUnActivated1[0,7], -3, 3) / 6) + .5
+        main_stick_x = output1[0, 4] #(self.clamp(outputUnActivated1[0,4], -3, 3) / 6) + .5
+        main_stick_y = output1[0, 5] #(self.clamp(outputUnActivated1[0,5], -3, 3) / 6) + .5
+        c_stick_x = output1[0, 6] #(self.clamp(outputUnActivated1[0,6], -3, 3) / 6) + .5
+        c_stick_y = output1[0, 7] #(self.clamp(outputUnActivated1[0,7], -3, 3) / 6) + .5
         self.processMessage({
             "a": output1[0, 0] > .5,
             "b": output1[0, 1] > .5,
