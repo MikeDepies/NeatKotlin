@@ -50,8 +50,8 @@ class ControllerHelper:
         network.compute()
         output1 = network.output()
         outputUnActivated1 = network.outputUnActivated()
-        c_stick_angle = self.clamp(outputUnActivated1[0, 6])
-        main_stick_angle = self.clamp(outputUnActivated1[0, 4])
+        # c_stick_angle = self.clamp(outputUnActivated1[0, 6])
+        # main_stick_angle = self.clamp(outputUnActivated1[0, 4])
         main_stick_x = (self.clamp(outputUnActivated1[0,4], -3, 3) / 6) + .5
         main_stick_y = (self.clamp(outputUnActivated1[0,5], -3, 3) / 6) + .5
         c_stick_x = (self.clamp(outputUnActivated1[0,6], -3, 3) / 6) + .5
@@ -61,13 +61,13 @@ class ControllerHelper:
             "b": output1[0, 1] > .5,
             "y": output1[0, 2] > .5,
             "z": output1[0, 3] > .5,
-            "mainStickX": (((math.cos(main_stick_angle  * math.pi)  * output1[0, 5]) + 1) / 2),
-            "mainStickY": (((math.sin(main_stick_angle * math.pi) * output1[0, 5]) + 1) / 2),
-            "cStickX": (((math.cos(c_stick_angle * math.pi)* output1[0, 7]) + 1) / 2),
-            "cStickY": (((math.sin(c_stick_angle * math.pi) * output1[0, 7]) + 1) / 2) ,
-            # "mainStickX": main_stick_x,
-            # "mainStickY": main_stick_y,
-            # "cStickX": c_stick_x,
-            # "cStickY": c_stick_y,
+            # "mainStickX": (((math.cos(main_stick_angle  * math.pi)  * output1[0, 5]) + 1) / 2),
+            # "mainStickY": (((math.sin(main_stick_angle * math.pi) * output1[0, 5]) + 1) / 2),
+            # "cStickX": (((math.cos(c_stick_angle * math.pi)* output1[0, 7]) + 1) / 2),
+            # "cStickY": (((math.sin(c_stick_angle * math.pi) * output1[0, 7]) + 1) / 2) ,
+            "mainStickX": main_stick_x,
+            "mainStickY": main_stick_y,
+            "cStickX": c_stick_x,
+            "cStickY": c_stick_y,
             "leftShoulder": max(output1[0, 8]-.5, 0) *2,
         }, controller)
