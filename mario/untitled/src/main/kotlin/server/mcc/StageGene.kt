@@ -9,9 +9,9 @@ import java.util.*
 
 fun createStageMutationDictionary(): List<StageMutationEntry> {
     return listOf(
-        .1f chanceToMutate NeatExperiment::mutateStage,
-        .05f chanceToMutate NeatExperiment::mutateCoin,
-        .1f chanceToMutate NeatExperiment::mutateScore,
+        .5f chanceToMutate NeatExperiment::mutateStage,
+//        .05f chanceToMutate NeatExperiment::mutateCoin,
+//        .1f chanceToMutate NeatExperiment::mutateScore,
         .9f chanceToMutate NeatExperiment::mutateDistance
     )
 }
@@ -20,7 +20,7 @@ fun createStageMutationDictionary(): List<StageMutationEntry> {
 fun createStageTrackMutationDictionary(stageGeneMutations: List<StageMutationEntry>): List<StageTrackMutationEntry> {
     return listOf(
         .9f chanceToMutate mutateStageGenes(stageGeneMutations),
-        .1f chanceToMutate NeatExperiment::mutateAddStage,
+        .05f chanceToMutate NeatExperiment::mutateAddStage,
         .1f chanceToMutate NeatExperiment::mutateShuffleStages
     )
 }
@@ -115,7 +115,7 @@ fun NeatExperiment.mutateStage(stageGene: StageGene): StageGene {
     var world = random.nextInt(1, 9)
 //    var distance = 100
     return if (nextStage != stageGene.stage && world != stageGene.world && !isWaterLevel(world, nextStage))
-        stageGene.copy(world = world, stage = nextStage, distance = max(512, stageGene.distance / 2))
+        stageGene.copy(world = world, stage = nextStage)
     else stageGene
 }
 
