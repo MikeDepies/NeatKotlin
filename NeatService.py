@@ -177,6 +177,8 @@ class CPUGene:
     character: melee.Character
     cpu_character: melee.Character
     controller_id: int
+    ground_movement_distance: float
+    unique_actions : int
 
 
 def process_model_data_mcc_cpu_gene(data : Any) -> Tuple[str, HyperNeatBuilder, CPUGene]:
@@ -226,4 +228,4 @@ def parse_stage_track_gene(data : Any) -> StageTrackGene:
     return StageTrackGene(data["id"], stages)
 
 def parse_cpu_gene(data : Any) -> CPUGene:
-    return CPUGene(int(data["level"]), int(data["kills"]), int(data["deaths"]), int(data["damage"]), int(data["damageTaken"]), parseStage(data["stage"]), parseCharacter(data["character"]), parseCharacter(data["cpuCharacter"]), int(data["controllerId"]))
+    return CPUGene(int(data["level"]), int(data["kills"]), int(data["deaths"]), int(data["damage"]), int(data["damageTaken"]), parseStage(data["stage"]), parseCharacter(data["character"]), parseCharacter(data["cpuCharacter"]), int(data["controllerId"]), float(data["groundMovementDistance"]), int(data["uniqueActions"]))

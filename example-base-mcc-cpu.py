@@ -93,7 +93,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                     # print(score)
 
                     # print("failed!")
-                elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
+                elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage and score.unique_actions >= cpu_gene.unique_actions and score.ground_movement_distance >= cpu_gene.ground_movement_distance:
                     mc_satisfy = True
                     model_handler.network = None
                     queue_result.put(EvalResultCPU(
