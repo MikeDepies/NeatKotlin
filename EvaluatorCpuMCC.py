@@ -121,7 +121,7 @@ class EvaluatorCpuMCC:
 
     def player_ground_move(self, game_state: GameState) -> bool:
         player: PlayerState = game_state.players[self.player_index]
-        return player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.DASHING]
+        return not self.frame_data.is_roll(player.character, player.action) and player.speed_ground_x_self != 0
 
     def evaluate_frame(self, game_state: GameState) -> None:
         if self.last_x is None or game_state.frame < 0:

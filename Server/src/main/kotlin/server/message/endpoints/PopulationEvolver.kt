@@ -61,7 +61,7 @@ class PopulationEvolver(
 fun mutationDictionary(): List<MutationEntry> {
 
     return listOf(
-        .8f chanceToMutate getMutateConnections(.05f, .2f, 7f),
+        .8f chanceToMutate getMutateConnections(.05f, .02f, 7f),
         .2f chanceToMutate mutateAddNode,
         .2f chanceToMutate mutateAddConnection,
         .1f chanceToMutate mutatePerturbBiasConnections(),

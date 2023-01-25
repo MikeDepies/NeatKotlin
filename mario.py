@@ -394,7 +394,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
     agent_id: str
     environment_id: str
     population_type: str
-    population_type, agent_id, environment_id, agent_network, stage_track_gene = getNextModel()
+    population_type, agent_id, environment_id, agent_network, stage_track_gene = queue.get() #getNextModel()
     state = None
     action = 0  # no op
     prevX = 0
@@ -440,7 +440,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
                         "dead": agent_x <= 40
                     }, host)
 
-                population_type, agent_id, environment_id, agent_network, stage_track_gene = getNextModel()
+                population_type, agent_id, environment_id, agent_network, stage_track_gene = queue.get() #getNextModel()getNextModel()
                 stage_index = 0
                 stage_gene = stage_track_gene.stages[stage_index]
                 state = env_mariogym.reset(options={
@@ -489,7 +489,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         stage_gene = stage_track_gene.stages[stage_index]
-        if framesSinceMaxXChange > 20 * 20 or reward < -14 or info["x_pos"] > stage_gene.distance:
+        if framesSinceMaxXChange > 60 * 20 or reward < -14 or info["x_pos"] > stage_gene.distance:
             idle = True
 
         action = 11 - output.argmax(1)[0]
@@ -602,6 +602,23 @@ def getNextModel():
             print("failed to get network...")
 
 
+def queueModels(queue : mp.Queue):
+    host = "192.168.0.100"
+    port = 8095
+    tryCount = 0
+    while True:
+        try:
+            population_type, agent_id, environment_id, builder_agent, environment = get_network_mcc_stage(host, port)
+            tryCount =0
+            network = builder_agent.create_ndarrays(sigmoidal)
+            queue.put((population_type, agent_id, environment_id, network, environment))
+        except:
+            
+            get("http://localhost:8095/fillModels")
+            
+            print("failed to get network...")
+
+
 if __name__ == '__main__':
     mgr = mp.Manager()
     mgr_dict = mgr.dict()
@@ -609,18 +626,21 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 25
-    queue = mgr.Queue(process_num * 1)
+    process_num = 8
+    queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
 
     for i in range(process_num):
         p = mp.Process(target=mario_mcc_stage,
-                       daemon=True, args=(queue, i < 0))
+                       daemon=True, args=(queue, i < 5))
         processes.append(p)
         p.start()
-        # p = mp.Process(target=queue_network_mcc_stage, daemon=True, args=(queue,))
-        # processes.append(p)
-        # p.start()
+        p = mp.Process(target=queueModels, daemon=True, args=(queue,))
+        processes.append(p)
+        p.start()
+        p = mp.Process(target=queueModels, daemon=True, args=(queue,))
+        processes.append(p)
+        p.start()
         # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         # processes.append(p)
         # p.start()
