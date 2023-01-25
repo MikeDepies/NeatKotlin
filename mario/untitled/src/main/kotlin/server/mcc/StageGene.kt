@@ -115,7 +115,7 @@ fun NeatExperiment.mutateStage(stageGene: StageGene): StageGene {
     var world = random.nextInt(1, 9)
 //    var distance = 100
     return if (nextStage != stageGene.stage && world != stageGene.world && !isWaterLevel(world, nextStage))
-        stageGene.copy(world = world, stage = nextStage, distance = max(400, stageGene.distance / 2))
+        stageGene.copy(world = world, stage = nextStage, distance = max(400, (stageGene.distance *.7).toInt()))
     else stageGene
 }
 
