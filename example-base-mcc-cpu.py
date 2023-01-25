@@ -279,14 +279,14 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 20
+    process_num = 15
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
 
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num)
-    queue_result = mgr.Queue(process_num * 5)
+    queue_result = mgr.Queue(process_num)
 
     p = mp.Process(target=httpRequestProcess, daemon=True,
                    args=(queue_result, ))
