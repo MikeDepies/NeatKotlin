@@ -103,7 +103,7 @@ def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration, p
                 # print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
                 # id, agent, cpu_gene = get_next(queue_1)
                 print(cpu_gene)
-                
+                id, agent, cpu_gene = get_next(queue_1)
                 ai_controller_index = (ai_controller_index + 1) % 2
                 cpu_gene.character = random.choice(characters)
                 cpu_gene.cpu_character = random.choice(characters)
