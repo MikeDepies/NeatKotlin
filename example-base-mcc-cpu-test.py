@@ -37,11 +37,11 @@ def get_next(queue: mp.Queue) -> Tuple[str, HyperNeatBuilder, CPUGene]:
     return queue.get()
 
 
-def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration):
+def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration, port : int):
     console: melee.Console
     controller: melee.Controller
     controller_opponent: melee.Controller
-    console, controller, controller_opponent, args, log = startConsole()
+    console, controller, controller_opponent, args, log = startConsole(port)
     player_index = args.port
     opponent_index = args.opponent
 
@@ -241,7 +241,7 @@ if __name__ == '__main__':
 
     for i in range(process_num):
         p = mp.Process(target=console_loop_mcc_cpu_gene,
-                       args=(queue_1, configuration), daemon=True)
+                       args=(queue_1, configuration, i + 51460), daemon=True)
         processes.append(p)
         p.start()
         p = mp.Process(target=queueCpuGeneMCC, daemon=True,
