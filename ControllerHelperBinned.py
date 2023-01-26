@@ -85,13 +85,13 @@ class ControllerHelper:
         network.input(state)
         network.compute()
         outputs = network.output()
-        print(outputs[0].shape)
-        print(outputs[1].shape)
-        print(outputs[2].shape)
-        print(outputs[1][0, ...])
-        print(outputs[1][0, ...].argmax(0))
-        button1 = outputs[1][0, ...].argmax(0)[0]
-        button2 = outputs[2][0, ...].argmax(0)[0]
+        # print(outputs[0].shape)
+        # print(outputs[1].shape)
+        # print(outputs[2].shape)
+        # print(outputs[1][0, ...])
+        # print(outputs[1][0, ...].argmax(0))
+        button1 = outputs[1][0, ...].argmax(0)
+        button2 = outputs[2][0, ...].argmax(0)
         pressA = button1 == 1 or button2 == 1
         pressB = button1 == 2 or button2 == 2
         pressZ = button1 == 3 or button2 == 3
