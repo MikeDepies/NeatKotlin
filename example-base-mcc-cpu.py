@@ -125,7 +125,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
         else:
             reset += 1
             if reset > 60 and model_handler.network == None:
-                print("fake agent"+str(port))
+                # print("fake agent"+str(port))
                 reset = 0
                 population_type, agent_id, environment_id, agent, cpu_gene = get_next(
                     queue_1)
