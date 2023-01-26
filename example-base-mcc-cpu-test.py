@@ -76,27 +76,27 @@ def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration, p
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
-            score = model_handler.evaluator.score()
+            # score = model_handler.evaluator.score()
             # if (score.total_frames_alive % 60 * 20 == 0):
             # print(score)
-            if not (model_handler.network == None):
-                if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive / 60 > max(1, cpu_gene.kills) * (20 + (cpu_gene.level * 5))):
-                    mc_satisfy = False
-                    model_handler.network = None
-                    print("failed! -> " + str((cpu_gene.kills + 1)
-                          * (20 + (cpu_gene.level * 10))))
-                    id, agent, cpu_gene = get_next(queue_1)
+            # if not (model_handler.network == None):
+            #     if (score.deaths >= cpu_gene.deaths or score.total_damage_taken >= cpu_gene.damage_taken or score.total_frames_alive / 60 > max(1, cpu_gene.kills) * (20 + (cpu_gene.level * 5))):
+            #         mc_satisfy = False
+            #         model_handler.network = None
+            #         print("failed! -> " + str((cpu_gene.kills + 1)
+            #               * (20 + (cpu_gene.level * 10))))
+            #         id, agent, cpu_gene = get_next(queue_1)
 
-                    model_handler.reset(agent)
-                    cpu_gene.level = cpu_level
-                elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
-                    mc_satisfy = True
-                    model_handler.network = None
-                    id, agent, cpu_gene = get_next(queue_1)
-                    model_handler.reset(agent)
-                    cpu_gene.level = cpu_level
-                    print(str((cpu_gene.kills) * (20 + (cpu_gene.level * 10))))
-                    # print("Success!")
+            #         model_handler.reset(agent)
+            #         cpu_gene.level = cpu_level
+            #     elif score.kills >= cpu_gene.kills and score.total_damage >= cpu_gene.damage:
+            #         mc_satisfy = True
+            #         model_handler.network = None
+            #         id, agent, cpu_gene = get_next(queue_1)
+            #         model_handler.reset(agent)
+            #         cpu_gene.level = cpu_level
+            #         print(str((cpu_gene.kills) * (20 + (cpu_gene.level * 10))))
+            #         # print("Success!")
 
             if (player0 and player0.stock == 0 or player1 and player1.stock == 0):
                 # print(score)
