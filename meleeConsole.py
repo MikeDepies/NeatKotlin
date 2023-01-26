@@ -64,7 +64,7 @@ def startConsole(port: int):
                             setup_gecko_codes=True,
                             gfx_backend="Null",
                             use_exi_inputs=True,
-                            enable_ffw=True,
+                            enable_ffw=False,
                             save_replays=False)
     controller = melee.Controller(console=console,
                                   port=args.port,
