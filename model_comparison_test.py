@@ -10,7 +10,7 @@ import time
 import numpy as np
 from melee.gamestate import GameState, PlayerState, Projectile
 
-from ComputableNetwork import ComputableNetwork, ConnectionLocation, constructNetwork
+
 from ControllerHelper import ControllerHelper
 from Evaluator import Evaluator
 from HyperNeatDomain import HyperDimension3D, LayerPlane, LayerShape3D, NetworkDesign

@@ -3,7 +3,6 @@ from typing import List
 import httpx
 import time
 from ActionBehavior import ActionBehavior
-from ComputableNetwork import ComputableNetwork, ConnectionLocation, constructNetwork
 from HyperNeatDomain import LayerPlane, LayerShape3D
 from NeatService import process_model_data, process_model_data_mcc_cpu_gene
 from dataclasses import dataclass
