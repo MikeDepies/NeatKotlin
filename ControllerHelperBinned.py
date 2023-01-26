@@ -46,7 +46,7 @@ class ControllerHelper:
         return max(min_value, min(max_value, value))
 
     def processAnalog(self, analogOutput : ndarray):
-        maxAnalog = analogOutput.argmax(0)[0]
+        maxAnalog = analogOutput.argmax(0)
         if (maxAnalog == 1):
             return (0.0, 0.0)
         elif (maxAnalog == 2):
