@@ -34,7 +34,7 @@ class ControllerDef:
 
 
 def get_next(queue: mp.Queue) -> Tuple[str, HyperNeatBuilder, CPUGene]:
-    return queue.get()
+    return queue.get_nowait()
 
 
 def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration, port : int):
