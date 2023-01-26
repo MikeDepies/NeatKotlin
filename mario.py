@@ -614,8 +614,9 @@ def queueModels(queue : mp.Queue):
             queue.put((population_type, agent_id, environment_id, network, environment))
         except:
             
-            get("http://localhost:8095/fillModels")
+            res = get("http://192.168.0.100:8095/fillModels")
             
+            print(res.text)
             print("failed to get network...")
 
 
