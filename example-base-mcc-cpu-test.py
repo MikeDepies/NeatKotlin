@@ -222,6 +222,7 @@ def queueCpuGeneMCC(queue: mp.Queue):
             queue.put(last_data)
         except:
             queue.put(last_data)
+            print("palced into queue last data")
 
 
 if __name__ == '__main__':
