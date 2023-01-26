@@ -170,7 +170,7 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                         check_controller_status = False
             elif model_handler.network != None:
                 if reset > 60 *10:
-                    print("stuck......... 2")
+                    print("stuck......... 2 - " + str(cpu_gene))
                 menu_helper_simple(game_state,
                                    leftSide.controller,
                                    leftSide.character,
