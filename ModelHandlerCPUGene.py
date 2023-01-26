@@ -5,7 +5,7 @@ import numpy as np
 from melee.gamestate import GameState, PlayerState
 from ComputableNetwork import ComputableNetwork
 from Configuration import Configuration, EvaluatorConfiguration
-from ControllerHelper import ControllerHelper
+from ControllerHelperBinned import ControllerHelper
 from EvaluatorCpuMCC import EvaluatorCpuMCC
 # from InputEmbederPacked import InputEmbederPacked
 from InputEmbederPacked3 import InputEmbederPacked3

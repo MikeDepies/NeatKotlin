@@ -422,7 +422,7 @@ class HyperNeatBuilder:
     network_design: NetworkDesign
     network_computer: NeatComputer
 
-    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float, output_layer : str) -> None:
+    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float, output_layer : 'list[str]') -> None:
         self.network_design = network_design
         self.network_computer = network_computer
         self.hyper_shape = hyper_shape
@@ -518,7 +518,7 @@ class HyperNeatBuilder:
                                    target_id] = self.compute_connections_between_layers(p, t)
                     connection_count += connection_map[id +
                                                        ":" + target_id].size
-        output_index = network_design.calculation_order.index(self.output_layer)
+        output_index = list(map(lambda layer: network_design.calculation_order.index(layer), self.output_layer))
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map,
                                  ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, activation_function)

@@ -82,7 +82,7 @@ data class NetworkBlueprint(
     val calculationOrder : List<String>,
     val species: Int,
     val hiddenNodes: Int,
-    val outputLayer: String,
+    val outputLayer: List<String>,
     val neatModel: NeatModel,
     val depth: Int,
     val bestModel : Boolean
@@ -111,10 +111,13 @@ fun createNetwork(): TaskNetworkBuilder {
     val hiddenPlanes = (0..15).map {
         if (it < 1) layerPlane(12, 12) else layerPlane(9, 9)
     }
-    val outputPlane = layerPlane(1, 9)
-    val computationOrder = hiddenPlanes + outputPlane
+    val analogPlane = layerPlane(2, 17)
+    val button1Plane = layerPlane(1, 7)
+    val button2Plane = layerPlane(1, 7)
+    val outputPlanes = listOf(analogPlane) + button1Plane + button2Plane
+    val computationOrder = hiddenPlanes + outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
-        val planeList = hiddenPlanes + outputPlane
+        val planeList = hiddenPlanes + outputPlanes
         put(inputPlane, planeList.take(2))
         hiddenPlanes.forEachIndexed { index, layerPlane ->
             put(layerPlane, planeList.drop(index + 1).take(2))
@@ -127,7 +130,9 @@ fun createNetwork(): TaskNetworkBuilder {
         hiddenPlanes.forEach {
             put(it, zIndex++)
         }
-        put(outputPlane, zIndex++)
+        put(analogPlane, zIndex++)
+        put(button1Plane, zIndex++)
+        put(button2Plane, zIndex++)
     }
     val targetConnectionMapping: Map<LayerPlane, List<LayerPlane>> = buildMap<LayerPlane, MutableList<LayerPlane>> {
         computationOrder.forEach {
@@ -148,9 +153,10 @@ fun createNetwork(): TaskNetworkBuilder {
         planeZMap,
         planeZMap.values.maxOrNull()!!,
         computationOrder,
-        outputPlane
+        outputPlanes
     )
 }
+val List<LayerPlane>.id get() = map { it.id }
 
 class TaskNetworkBuilder(
     val networkShape: NetworkShape,
@@ -159,7 +165,7 @@ class TaskNetworkBuilder(
     val planeZMap: Map<LayerPlane, Int>,
     val depth: Int,
     val calculationOrder: List<LayerPlane>,
-    val outputPlane: LayerPlane
+    val outputPlane: List<LayerPlane>
 ) {
     private val idZMap = planeZMap.mapKeys { it.key.id }
     val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }

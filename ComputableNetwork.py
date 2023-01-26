@@ -48,64 +48,6 @@ class NetworkBlueprint:
     connectionPlanes: List[LayerShape3D]
     connectionRelationships: Dict[str, List[str]]
 
-# Identify input, hidden and output nodes
-def constructNetwork(connections: 'list[ConnectionLocation]',
-                     connection_planes: 'list[LayerShape3D]',
-                     connection_relationships: 'dict[str, list[str]]',
-                     connection_relationships_inverse: 'dict[str, list[str]]',
-                     calculation_order: 'list[str]'):
-
-    connection_plane_map : 'dict[str, LayerShape3D]' = dict()
-    connection_map : 'dict[str, ndarray]' = dict()
-    connection_z_map : 'dict[int, str]'= dict()
-    # for r in connection_relationships:
-    #     connection_map[p] = np.zeros([p.layerPlane.height, p.layerPlane.width, 2])
-    value_map : 'dict[str, ndarray]' = dict()
-    for p in connection_planes:
-        id = p.layer_plane.id
-        value_map[id] = np.zeros([p.layer_plane.height, p.layer_plane.width, 2])
-        connection_plane_map[id] = p
-        # print(p)
-    # print("connection Plane Map:")
-    # print(connection_plane_map)
-    # print("====")
-    for p in connection_planes:
-        connection_z_map[p.z_origin] = p.layer_plane.id
-        id = p.layer_plane.id
-        if p.layer_plane.id in connection_relationships:
-            for target_id in connection_relationships[p.layer_plane.id]:
-                t = connection_plane_map[target_id]
-                # if t.zOrigin == 1 and p.zOrigin == 0:
-                #     print("CREATING THE CONNECTION !")
-                #     # print(connection_relationships_inverse)
-                #     print(connection_relationships_inverse[target_id])
-                #     print("==========")
-                #     print(connection_z_map)
-                #     print("==========")
-                #     # print(list(map(lambda d: connection_plane_map[d], connection_relationships_inverse[target_id])))
-                #     print(id + ":" + target_id)
-                # if id + ":" + target_id in connection_map:
-                connection_map[id + ":" + target_id] = np.zeros([
-                    t.layer_plane.height, t.layer_plane.width,
-                    p.layer_plane.height, p.layer_plane.width,
-                ])
-    # print(connection_map.keys())
-    # print(connection_z_map)
-    for c in connections:
-        # source = NodeLocation(c.x1, c.y1, c.z1)
-        # target = NodeLocation(c.x2, c.y2, c.z2)
-
-        source_id = connection_z_map[c.z1]
-        target_id = connection_z_map[c.z2]
-        if (source_id + ":" + target_id) in connection_map:
-            connection = connection_map[source_id + ":" + target_id]
-            connection[c.y2, c.x2, c.y1, c.x1] = c.weight
-    print("Constructed Computable Network... " + str(len(connections)))
-
-    return ComputableNetwork(connection_plane_map,
-                             connection_relationships_inverse, connection_map,
-                             value_map, connection_z_map, calculation_order)
-
 
 class ComputableNetwork:
     # nodeMap: Dict[NodeLocation, List[Tuple[NodeLocation, ConnectionLocation]]]
@@ -122,7 +64,7 @@ class ComputableNetwork:
     def __init__(self, connection_plane_map: 'dict[str, LayerShape3D]',
                  connection_relationships_inverse: 'dict[str, list[str]]',
                  connection_map: 'dict[str, ndarray]', value_map: 'dict[str,ndarray]',
-                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : int, activation_function):
+                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : 'list[int]', activation_function):
         self.connection_map = connection_map
         self.connection_plane_map = connection_plane_map
         self.connection_relationships_inverse = connection_relationships_inverse
@@ -178,8 +120,9 @@ class ComputableNetwork:
                     #     print(self.value_map[c][..., 1])
             index +=1
 
-    def output(self) -> ndarray:
-        return self.value_map[self.connection_z_map[self.output_index+1]][..., 1]
+    def output(self) -> 'list[ndarray]':
+        
+        return list(map(lambda index: self.value_map[self.connection_z_map[index+1]][..., 1], self.output_index))
     def outputUnActivated(self) -> ndarray:
         return self.value_map[self.connection_z_map[self.output_index+1]][..., 0]
 
