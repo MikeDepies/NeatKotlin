@@ -23,7 +23,8 @@ from NeatComputation import HyperNeatBuilder
 from NeatService import CPUGene
 from dataclasses import dataclass
 from cpuSelector import choose_character, menu_helper_simple
-
+from signal import signal, SIGPIPE, SIG_DFL
+signal(SIGPIPE,SIG_DFL)
 
 @dataclass
 class ControllerDef:
