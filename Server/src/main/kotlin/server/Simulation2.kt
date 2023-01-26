@@ -170,7 +170,7 @@ class TaskNetworkBuilder(
     private val idZMap = planeZMap.mapKeys { it.key.id }
     val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }
         .map { val zOrigin = idZMap.getValue(it.id)
-            LayerShape3D(it, 0, if (zOrigin == depth) 1 else 0, zOrigin) }
+            LayerShape3D(it, 0, 0, zOrigin) }
 
 }
 
