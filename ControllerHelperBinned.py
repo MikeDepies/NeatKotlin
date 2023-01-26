@@ -88,6 +88,8 @@ class ControllerHelper:
         print(outputs[0].shape)
         print(outputs[1].shape)
         print(outputs[2].shape)
+        print(outputs[1][0, ...])
+        print(outputs[1][0, ...].argmax(0))
         button1 = outputs[1][0, ...].argmax(0)[0]
         button2 = outputs[2][0, ...].argmax(0)[0]
         pressA = button1 == 1 or button2 == 1
