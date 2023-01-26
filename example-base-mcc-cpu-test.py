@@ -75,7 +75,7 @@ def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration, p
             check_controller_status = True
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
-            model_handler.evaluate(game_state)
+            # model_handler.evaluate(game_state)
             # score = model_handler.evaluator.score()
             # if (score.total_frames_alive % 60 * 20 == 0):
             # print(score)
@@ -116,7 +116,7 @@ def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration, p
                     cpu_gene, controller, controller_opponent, player_index, opponent_index)
                 model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
                                                     aiDef.controller, controller_helper, configuration.evaluator)
-                model_handler.reset(agent)
+                # model_handler.reset(agent)
                 controller_opponent.release_all()
                 controller.release_all()
 
