@@ -123,7 +123,8 @@ class ComputableNetwork:
             index +=1
 
     def output(self) -> 'list[ndarray]':
-        
+        print(self.output_index)
+        print(self.connection_z_map)
         return list(map(lambda index: self.value_map[self.connection_z_map[index+1]][..., 1], self.output_index))
     def outputUnActivated(self) -> ndarray:
         return self.value_map[self.connection_z_map[self.output_index+1]][..., 0]

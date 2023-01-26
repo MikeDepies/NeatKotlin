@@ -13,7 +13,7 @@ import melee
 from melee.gamestate import GameState, PlayerState, Projectile
 from ComputableNetwork import ComputableNetwork, sigmoidal
 from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
-from ControllerHelper import ControllerHelper
+from ControllerHelperBinned import ControllerHelper
 
 from ModelHelperMCC_CPUGene import ModelHelperMCC_CPUGene, EvalResultCPU
 from ModelHandlerCPUGene import ModelHandlerMCC_CPU
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 15
+    process_num = 1
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
