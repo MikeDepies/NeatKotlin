@@ -85,7 +85,7 @@ class ControllerHelper:
         network.input(state)
         network.compute()
         outputs = network.output()
-        
+        print(outputs)
         button1 = outputs[1][0, ...].argmax(0)[0]
         button2 = outputs[2][0, ...].argmax(0)[0]
         pressA = button1 == 1 or button2 == 1
