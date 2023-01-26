@@ -103,22 +103,22 @@ def console_loop_mcc_cpu_gene(queue_1: mp.Queue, configuration: Configuration, p
                 # print("no stocks! game over -> Satisfied: " + str(mc_satisfy))
                 # id, agent, cpu_gene = get_next(queue_1)
                 print(cpu_gene)
-                ai_controller_index = (ai_controller_index + 1) % 2
-                cpu_gene.character = random.choice(characters)
-                cpu_gene.cpu_character = random.choice(characters)
-                cpu_gene.controller_id = ai_controller_index
-                cpu_level = random.randint(3, 9)
-                cpu_gene.level = cpu_level
-                cpu_gene.stage = random.choice(stages)
-                aiDef = aiControllerDef(cpu_gene, controller,
-                                        controller_opponent, player_index, opponent_index)
-                cpuDef = opponentControllerDef(
-                    cpu_gene, controller, controller_opponent, player_index, opponent_index)
-                model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
-                                                    aiDef.controller, controller_helper, configuration.evaluator)
+                # ai_controller_index = (ai_controller_index + 1) % 2
+                # cpu_gene.character = random.choice(characters)
+                # cpu_gene.cpu_character = random.choice(characters)
+                # cpu_gene.controller_id = ai_controller_index
+                # cpu_level = random.randint(3, 9)
+                # cpu_gene.level = cpu_level
+                # cpu_gene.stage = random.choice(stages)
+                # aiDef = aiControllerDef(cpu_gene, controller,
+                #                         controller_opponent, player_index, opponent_index)
+                # cpuDef = opponentControllerDef(
+                #     cpu_gene, controller, controller_opponent, player_index, opponent_index)
+                # model_handler = ModelHandlerMCC_CPU(cpu_gene.controller_id, aiDef.player_index, cpuDef.player_index,
+                #                                     aiDef.controller, controller_helper, configuration.evaluator)
                 # model_handler.reset(agent)
-                controller_opponent.release_all()
-                controller.release_all()
+                # controller_opponent.release_all()
+                # controller.release_all()
 
         else:
 
