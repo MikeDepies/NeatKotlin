@@ -47,7 +47,8 @@ def parseCharacter(character_string : str):
         "pichu" : melee.Character.PICHU,
         "roy" : melee.Character.ROY,
         "sheik" : melee.Character.SHEIK,
-        "younglink" : melee.Character.YLINK
+        "younglink" : melee.Character.YLINK,
+        "zelda" : melee.Character.ZELDA
     }
     return character_table[character_string.lower()]
     
