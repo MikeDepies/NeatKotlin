@@ -47,55 +47,8 @@ class ControllerHelper:
 
     def processAnalog(self, analogOutput : ndarray):
         maxAnalog = analogOutput.argmax(0)
-        if (maxAnalog == 1):
-            return (0.0, 0.0)
-        elif (maxAnalog == 2):
-            return (0.0, .25)
-        elif (maxAnalog == 3):
-            return (0.0, .5)
-        elif (maxAnalog == 4):
-            return (0.0, 0.75)
-        elif (maxAnalog == 5):
-            return (0.0, 1.0)
-        elif (maxAnalog == 6):
-            return (.25, 0.0)
-        elif (maxAnalog == 7):
-            return (.25, .25)
-        elif (maxAnalog == 8):
-            return (.25, .5)
-        elif (maxAnalog == 9):
-            return (0.25, .75)
-        elif (maxAnalog == 10):
-            return (0.25, 1.0)
-        elif (maxAnalog == 11):
-            return (.5, 0.0)
-        elif (maxAnalog == 12):
-            return (.5, .25)
-        elif (maxAnalog == 13):
-            return (.5, .75)
-        elif (maxAnalog == 14):
-            return (.5, 1.0)
-        elif (maxAnalog == 15):
-            return (.75, .0)
-        elif (maxAnalog == 16):
-            return (.75, .25)
-        elif (maxAnalog == 17):
-            return (.75, .5)
-        elif (maxAnalog == 18):
-            return (.75, .75)
-        elif (maxAnalog == 19):
-            return (.75, 1.0)
-        elif (maxAnalog == 20):
-            return (1.0, 0.0)
-        elif (maxAnalog == 21):
-            return (1.0, .25)
-        elif (maxAnalog == 22):
-            return (1.0, .5)
-        elif (maxAnalog == 23):
-            return (1.0, .75)
-        elif (maxAnalog == 24):
-            return (1.0, 1.0)
-        return (.5, .5)
+        shape = analogOutput.shape
+        return (maxAnalog[0] / shape[0], maxAnalog[1] / shape [1])
 
     def process(self, network : ComputableNetwork, controller : melee.Controller, state : ndarray):
         network.input(state)
@@ -106,14 +59,14 @@ class ControllerHelper:
         # print(outputs[2].shape)
         # print(outputs[1][0, ...])
         # print(outputs[1][0, ...].argmax(0))
-        button1 = outputs[1][0, ...].argmax(0)
-        button2 = outputs[2][0, ...].argmax(0)
+        button1 = outputs[2][0, ...].argmax(0)
+        button2 = outputs[3][0, ...].argmax(0)
         pressA = button1 == 1 or button2 == 1
         pressB = button1 == 2 or button2 == 2
         pressZ = button1 == 3 or button2 == 3
         pressY = button1 == 4 or button2 == 4
-        main_stick_x, main_stick_y = self.processAnalog(outputs[0][0, ...])
-        c_stick_x, c_stick_y = self.processAnalog(outputs[0][1, ...])
+        main_stick_x, main_stick_y = self.processAnalog(outputs[0])
+        c_stick_x, c_stick_y = self.processAnalog(outputs[1])
         leftShoulder = 0
         if button1 == 5 or button2 ==5:
             leftShoulder = .1
