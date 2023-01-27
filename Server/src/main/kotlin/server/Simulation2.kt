@@ -135,6 +135,7 @@ fun createNetwork(): TaskNetworkBuilder {
             put(it, zIndex++)
         }
         put(analogPlane, zIndex++)
+        put(analogCPlane, zIndex++)
         put(button1Plane, zIndex++)
         put(button2Plane, zIndex++)
     }
