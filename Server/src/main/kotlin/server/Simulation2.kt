@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import neat.ActivatableNetwork
 import server.message.endpoints.NeatModel
+import java.lang.Integer.min
 import java.util.*
 
 private val log = KotlinLogging.logger { }
@@ -108,7 +109,7 @@ fun createNetwork(): TaskNetworkBuilder {
 //    val plane3 = layerPlane(15, 15)
 //    val plane4 = layerPlane(15, 15)
 //    val plane5 = layerPlane(15, 15)
-    val hiddenPlanes = (0..15).map {
+    val hiddenPlanes = (0..5).map {
         if (it < 1) layerPlane(12, 12) else layerPlane(9, 9)
     }
     val analogPlane = layerPlane(2, 25)
@@ -120,7 +121,7 @@ fun createNetwork(): TaskNetworkBuilder {
         val planeList = hiddenPlanes
         put(inputPlane, planeList.take(2))
         hiddenPlanes.forEachIndexed { index, layerPlane ->
-            put(layerPlane, planeList.drop(index + 1).take(2) + outputPlanes)
+            put(layerPlane, planeList.drop(min(index + 1, 2)) + outputPlanes)
         }
 //        put(outputPlane, planeList.drop(2))
     }
