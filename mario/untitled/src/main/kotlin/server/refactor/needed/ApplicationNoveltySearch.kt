@@ -275,7 +275,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                         calculationOrder,
                         populationEvolver.speciationController.species(network.neatMutator).id,
                         network.neatMutator.hiddenNodes.size,
-                        createNetwork.outputPlane.id,
+                        createNetwork.outputPlane.map { it.id },
                         network.neatMutator.toModel(),
                         createNetwork.depth
                     )
@@ -290,7 +290,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                         calculationOrder,
                         populationEvolver.speciationController.species(network.neatMutator).id,
                         network.neatMutator.hiddenNodes.size,
-                        createNetwork.outputPlane.id,
+                        createNetwork.outputPlane.map { it.id },
                         network.neatMutator.toModel(),
                         createNetwork.depth
                     )

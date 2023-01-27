@@ -492,7 +492,51 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
         if framesSinceMaxXChange > 60 * 20 or reward < -14 or info["x_pos"] > stage_gene.distance:
             idle = True
 
-        action = 11 - output.argmax(1)[0]
+        depad = output[0].argmax(1)[0]
+        button1 = output[1].argmax(1)[0]
+        button2 = output[2].argmax(1)[0]
+
+        depadDirection = "NOOP"
+        aPress = False
+        bPress = False
+        if (depad == 1):
+            depadDirection = "right"
+        elif (depad == 2):
+            depadDirection = "up"
+        elif (depad == 3):
+            depadDirection = "left"
+        elif (depad == 4):
+            depadDirection = "down"
+        if button1 == 1 or button2 == 1:
+            aPress = True
+        if button1 == 2 or button2 == 2:
+            bPress = True
+
+        action = 0
+        if (depadDirection == "right" and not aPress and not bPress):
+            action = 1
+        elif (depadDirection == "right" and aPress and not bPress):
+            action = 2
+        elif (depadDirection == "right" and not aPress and bPress):
+            action = 3
+        elif (depadDirection == "right" and aPress and bPress):
+            action = 4
+        elif (depadDirection == "left" and not aPress and not bPress):
+            action = 6
+        elif (depadDirection == "left" and aPress and not bPress):
+            action = 7
+        elif (depadDirection == "left" and not aPress and bPress):
+            action = 8
+        elif (depadDirection == "left" and aPress and bPress):
+            action = 9
+        elif (depadDirection == "down"):
+            action = 10
+        elif (depadDirection == "up"):
+            action = 11
+        elif (aPress):
+            action = 5
+        
+        
         if render:
             env.render()
 
@@ -639,9 +683,9 @@ if __name__ == '__main__':
         p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueModels, daemon=True, args=(queue,))
-        processes.append(p)
-        p.start()
+        # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
+        # processes.append(p)
+        # p.start()
         # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         # processes.append(p)
         # p.start()

@@ -200,7 +200,7 @@ fun Application.module(testing: Boolean = false) {
                 calculationOrder,
                 0,
                 0,
-                createNetwork.outputPlane.id,
+                createNetwork.outputPlane.map { it.id },
                 pairedAgents.agent.neatMutator.toModel(),
                 createNetwork.depth
             )
