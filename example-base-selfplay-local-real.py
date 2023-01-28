@@ -373,10 +373,10 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
 
 
 
-def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace, controller_index: int):
+def queueNetworks(queue: mp.Queue, controller_index: int):
     host = "192.168.0.100"
     model_helper = ModelHelper(controller_index, host)
-    ns.generation = 0
+    
     while True:
         # try:
         id, builder, best = model_helper.getNetwork(controller_index)
@@ -417,14 +417,19 @@ if __name__ == '__main__':
 
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num)
+    queue_2 = mgr.Queue(process_num)
     
     for i in range(process_num):
         p = mp.Process(target=console_loop, args=(
-            i + 51460, queue_1, configuration), daemon=True)
+            i + 51460, queue_1, queue_2, configuration), daemon=True)
         processes.append(p)
         p.start()
         p = mp.Process(target=queueNetworks, daemon=True,
-                       args=(queue_1, ))
+                       args=(queue_1, 0 ))
+        processes.append(p)
+        p.start()
+        p = mp.Process(target=queueNetworks, daemon=True,
+                       args=(queue_2, 1 ))
         processes.append(p)
         p.start()
     for p in processes:
