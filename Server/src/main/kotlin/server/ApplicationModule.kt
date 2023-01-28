@@ -172,7 +172,7 @@ fun NeatExperiment.generateInitialPopulation2(
 //            it.activationFunction = activationFunctions.random(random)
 //        }
         clone.outputNodes[0].activationFunction = activationFunctions.random(random)
-        clone.outputNodes[1].activationFunction =  Activation.CPPN.linear
+        clone.outputNodes[1].activationFunction =  activationFunctions.random(random)//Activation.CPPN.linear
         clone
     }
 }

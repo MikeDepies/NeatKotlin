@@ -69,7 +69,7 @@ class ControllerHelper:
         c_stick_x, c_stick_y = self.processAnalog(outputs[1])
         leftShoulder = 0
         if button1 == 5 or button2 ==5:
-            leftShoulder = .1
+            leftShoulder = .31
         if button1 == 6 or button2 == 6:
             leftShoulder = 1.0
         self.processMessage({
