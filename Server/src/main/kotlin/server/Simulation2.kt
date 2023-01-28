@@ -161,7 +161,7 @@ fun createNetwork(): TaskNetworkBuilder {
         outputPlanes
     )
 }
-val List<LayerPlane>.id get() = map { it.id }
+
 
 class TaskNetworkBuilder(
     val networkShape: NetworkShape,

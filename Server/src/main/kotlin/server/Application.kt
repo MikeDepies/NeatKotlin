@@ -137,7 +137,7 @@ fun Application.module() {
     val evoManager2 =
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
-    launch { evoManager2.start(initialPopulation2) }
+//    launch { evoManager2.start(initialPopulation2) }
     val dashboardManager = DashboardManager(
         evaluationId, StreamStats(
             0, 0, 0, 0
@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(10, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.Falco, 0),
+        ControllerConfiguration(Character.Falco, 5),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -241,7 +241,7 @@ private fun Application.routing(
                 calculationOrder,
                 0,
                 neatMutator.hiddenNodes.size,
-                createNetwork.outputPlane.id,
+                createNetwork.outputPlane.map { it.id},
                 neatMutator.toModel(),
                 createNetwork.depth,
                 orNull == null
@@ -283,7 +283,7 @@ private fun Application.routing(
                     calculationOrder,
                     0,
                     model.hiddenNodes.size,
-                    createNetwork.outputPlane.id,
+                    createNetwork.outputPlane.map { it.id},
                     model.toModel(),
                     createNetwork.depth,
                     true
@@ -571,7 +571,7 @@ private fun behaviorMeasureInt(
         20f
     ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage  + recovery + totalDistanceToward /* + totalFramesHitstun*/)
+    (all + kills + damage  + recovery  /* + totalFramesHitstun*/)
 }
 //
 //

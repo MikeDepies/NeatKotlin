@@ -55,24 +55,24 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
 
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
-            if model_handler2.network is not None:
-                model_handler.evaluate(game_state)
-                model_handler.postEvaluate(game_state)
-            else:
-                controller.release_all()
-            if model_handler.network is not None:
-                model_handler2.evaluate(game_state)
-                model_handler2.postEvaluate(game_state)
-            else:
-                controller_opponent.release_all()
+            # if model_handler2.network is not None:
+            model_handler.evaluate(game_state)
+            model_handler.postEvaluate(game_state)
+            # else:
+            #     controller.release_all()
+            # if model_handler.network is not None:
+            #     model_handler2.evaluate(game_state)
+            #     model_handler2.postEvaluate(game_state)
+            # else:
+            #     controller_opponent.release_all()
             
                 
             
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 if model_handler.network is None:
                     model_handler.reset()
-                if model_handler2.network is None:
-                    model_handler2.reset()
+                # if model_handler2.network is None:
+                #     model_handler2.reset()
                 # print("no stocks! game over")
                 controller_opponent.release_all()
                 controller_opponent.flush()
@@ -428,9 +428,9 @@ if __name__ == '__main__':
                        args=(queue_1, 0 ))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworks, daemon=True,
-                       args=(queue_2, 1 ))
-        processes.append(p)
-        p.start()
+        # p = mp.Process(target=queueNetworks, daemon=True,
+        #                args=(queue_2, 1 ))
+        # processes.append(p)
+        # p.start()
     for p in processes:
         p.join()
