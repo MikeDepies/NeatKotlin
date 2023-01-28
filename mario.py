@@ -657,7 +657,10 @@ def queueModels(queue : mp.Queue):
             network = builder_agent.create_ndarrays(sigmoidal)
             queue.put((population_type, agent_id, environment_id, network, environment))
         except:
+            time.sleep(1)
+            res = get("http://192.168.0.100:8095/fillModels")
             
+            print(res.text)
             res = get("http://192.168.0.100:8095/fillModels")
             
             print(res.text)

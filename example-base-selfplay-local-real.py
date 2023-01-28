@@ -13,7 +13,7 @@ import melee
 from melee.gamestate import GameState, PlayerState, Projectile
 from ComputableNetwork import ComputableNetwork, sigmoidal
 from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
-from ControllerHelper import ControllerHelper
+from ControllerHelperBinned import ControllerHelper
 from ModelHelperMCC import ModelHelperMCC, EvalResult
 from ModelHelperMCC_CPUGene import ModelHelperMCC_CPUGene, EvalResultCPU
 from ModelHandler import ModelHandler

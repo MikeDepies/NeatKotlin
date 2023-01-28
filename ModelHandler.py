@@ -22,7 +22,7 @@ import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
 from ComputableNetwork import ComputableNetwork
 from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
-from ControllerHelper import ControllerHelper
+from ControllerHelperBinned import ControllerHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
 # from InputEmbederPacked import InputEmbederPacked
