@@ -419,11 +419,11 @@ if __name__ == '__main__':
     queue_1 = mgr.Queue(process_num)
     
     for i in range(process_num):
-        p = mp.Process(target=console_loop_mcc, args=(
+        p = mp.Process(target=console_loop, args=(
             i + 51460, queue_1, configuration), daemon=True)
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworkPairs, daemon=True,
+        p = mp.Process(target=queueNetworks, daemon=True,
                        args=(queue_1, ))
         processes.append(p)
         p.start()
