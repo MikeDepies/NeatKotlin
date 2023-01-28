@@ -102,7 +102,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        20,
+        50,
         behaviorMeasureInt(
             damageMultiplier = 6f,
             actionMultiplier = 1.5f,
@@ -195,7 +195,7 @@ class EvoControllerHandler(val map: Map<Int, EvoManager>, val dashboardManagerMa
 }
 
 fun character(controllerId: Int) = when (controllerId) {
-    0 -> Character.Fox
+    0 -> Character.DoctorMario
     1 -> Character.Falco
     else -> throw Exception()
 }

@@ -29,13 +29,13 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
     
     controller_orig = controller
     controller_opponent_orig = controller_opponent
-    if random.random() >= .5:
-        player_index = args.opponent
-        opponent_index = args.port
-        temp_controller = controller_orig
-        controller = controller_opponent_orig
-        controller_opponent = temp_controller
-        # print(configuration.player_1.character)
+    # if random.random() >= .5:
+    #     player_index = args.opponent
+    #     opponent_index = args.port
+    #     temp_controller = controller_orig
+    #     controller = controller_opponent_orig
+    #     controller_opponent = temp_controller
+    #     # print(configuration.player_1.character)
     ai_controller_id = 0
     ai_controller_id2 = 1
     reset = 0
@@ -43,8 +43,8 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index,
                                  controller, controller_helper, queue_1, configuration.evaluator)
     model_handler.reset()
-    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2, configuration.evaluator)
-    model_handler2.reset()
+    # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2, configuration.evaluator)
+    # model_handler2.reset()
     while True:
         game_state = console.step()
         if game_state is None:
@@ -52,7 +52,7 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
             continue
 
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-
+            print("game")
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             # if model_handler2.network is not None:
