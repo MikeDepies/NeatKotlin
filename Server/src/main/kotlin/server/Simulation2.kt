@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import neat.ActivatableNetwork
 import server.message.endpoints.NeatModel
+import java.lang.Integer.min
 import java.util.*
 
 private val log = KotlinLogging.logger { }
@@ -108,13 +109,13 @@ fun createNetwork(): TaskNetworkBuilder {
 //    val plane3 = layerPlane(15, 15)
 //    val plane4 = layerPlane(15, 15)
 //    val plane5 = layerPlane(15, 15)
-    val hiddenPlanes = (0..15).map {
+    val hiddenPlanes = (0..7).map {
         if (it < 1) layerPlane(12, 12) else layerPlane(9, 9)
     }
     val analogPlane = layerPlane(17, 17)
     val analogCPlane = layerPlane(17, 17)
-    val button1Plane = layerPlane(1, 7)
-    val button2Plane = layerPlane(1, 7)
+    val button1Plane = layerPlane(1, 8)
+    val button2Plane = layerPlane(1, 8)
     val outputPlanes = listOf(analogPlane, analogCPlane ,button1Plane,button2Plane)
     val computationOrder = hiddenPlanes + outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
@@ -122,9 +123,9 @@ fun createNetwork(): TaskNetworkBuilder {
         put(inputPlane, planeList.take(2))
         hiddenPlanes.forEachIndexed { index, layerPlane ->
             if (index > hiddenPlanes.size -3)
-                put(layerPlane, planeList.drop(index + 1).take(2) + outputPlanes)
+                put(layerPlane, planeList.drop(min(2, index + 1)).take(2) + outputPlanes)
             else
-                put(layerPlane, planeList.drop(index + 1).take(2))
+                put(layerPlane, planeList.drop(min(2, index + 1)))
         }
 //        put(outputPlane, planeList.drop(2))
     }
