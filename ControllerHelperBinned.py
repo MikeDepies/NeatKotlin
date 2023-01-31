@@ -67,7 +67,9 @@ class ControllerHelper:
         pressY = button1 == 4 or button2 == 4
         useCStick = button1 == 7 or button2 == 7
         main_stick_x, main_stick_y = self.processAnalog(outputs[0])
-        c_stick_x, c_stick_y = self.processAnalog(outputs[1])
+        c_stick_x, c_stick_y = (.5, .5)
+        if useCStick:
+            c_stick_x, c_stick_y = self.processAnalog(outputs[1])
         leftShoulder = 0
         if button1 == 5 or button2 ==5:
             leftShoulder = .31
