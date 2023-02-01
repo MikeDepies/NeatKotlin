@@ -277,7 +277,7 @@ class Evaluator:
             #     # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 # self.frames_without_damage -= abs(player.speed_ground_x_self)
                 # print(abs(player.speed_ground_x_self))
-                self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
+                pass
             elif not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
                 self.frames_without_damage += 1
                 # if self.player_took_damage(game_state):
@@ -287,7 +287,7 @@ class Evaluator:
                 self.damage_since_recovery = True
                 # if game_state.distance < 22:
                 self.frames_without_damage -= 60 * self.attack_timer
-                self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
+                
                 self.actions_without_damage = 0
                 # self.player_previous_actions.clear()
                 self.total_damage += self.player_damage_amount(game_state)
@@ -297,7 +297,7 @@ class Evaluator:
                 self.last_damage_action = player.action
             
             if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
-                self.frames_without_damage += 2.5
+                self.frames_without_damage += 5
             
             # if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
             #     self.frames_without_damage += 6
@@ -325,10 +325,10 @@ class Evaluator:
                 if self.last_damage_action is not None:
                     self.kill_actions.append(self.last_damage_action.value)
                 self.frames_without_damage -= 60 * self.attack_timer * 1.5
-                self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
                 self.actions_without_damage = 0
             # print(self.frames_without_damage)
             # update data to compare for next frame
+            self.frames_without_damage  = max(self.frames_without_damage, -2 * self.attack_timer)
             self.storeFrameData(game_state)
 
     def score(self, game_state: GameState) -> ActionBehavior:
