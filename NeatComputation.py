@@ -509,6 +509,7 @@ class HyperNeatBuilder:
             connection_plane_map[p.layer_plane.id] = p
             ndarray_map[p.layer_plane.id] = np.zeros(
                 [p.layer_plane.height, p.layer_plane.width, 2])
+            print( str(p.z_origin) +" - " + str(ndarray_map[p.layer_plane.id].shape))
             connection_zindex_map[p.z_origin] = p.layer_plane.id
             zindex_map[p.layer_plane.id] = p.z_origin
         connection_count = 0
