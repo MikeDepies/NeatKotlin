@@ -240,10 +240,10 @@ class ModelHandler:
         
         if self.network is not None and self.evaluator is not None and self.stale_counter < 60 * 6:    
             state = create_packed_state(game_state, self.model_index, self.opponent_index)
-            if (self.max_state is not None):
-                self.max_state = np.maximum(state, self.max_state)
-            else:
-                self.max_state = state
+            # if (self.max_state is not None):
+            #     self.max_state = np.maximum(state, self.max_state)
+            # else:
+            #     self.max_state = state
             # if game_state.frame % 30 == 0:
             #     print("--------")
             #     print(state)
@@ -286,9 +286,9 @@ class ModelHandler:
         self.model_id, self.network = self.queue.get()
         self.stat_queue.put(self.model_id)
         # mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
-        print(self.max_state)
-        if (self.max_state is not None):
-            self.max_state = np.zeros(self.max_state.shape)
+        # print(self.max_state)
+        # if (self.max_state is not None):
+        #     self.max_state = np.zeros(self.max_state.shape)
         print("creating new evaluator")
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                     self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)

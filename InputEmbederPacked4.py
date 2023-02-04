@@ -134,25 +134,25 @@ class InputEmbederPacked4:
         for index, projectile in enumerate(gamestate.projectiles[:8]):
             projectile: Projectile
             if projectile.owner == player0:
-                state[index, 0] = float(1)
+                state_projectile[index, 0] = float(1)
             else:
-                state[index, 0] = float(-1)
-            state[index, 1] = float(
+                state_projectile[index, 0] = float(-1)
+            state_projectile[index, 1] = float(
                 projectile.position.x) / self.positionNormalizer
 
-            state[index, 2] = float(
+            state_projectile[index, 2] = float(
                 projectile.position.y) / self.positionNormalizer
 
-            state[index, 3] = float(
+            state_projectile[index, 3] = float(
                 projectile.speed.x) / 2.5
 
-            state[index, 4] = float(
+            state_projectile[index, 4] = float(
                 projectile.speed.y) / 2.5
-            state[index, 4] = float(
+            state_projectile[index, 4] = float(
                 projectile.frame) / 60
 
-            state[index, 6] = float((projectile.subtype - 5) / 2)
-            state[index, 7] = float((projectile.type.value) / 156)
+            state_projectile[index, 6] = float((projectile.subtype - 5) / 2)
+            state_projectile[index, 7] = float((projectile.type.value) / 156)
             # self.embedCategory(state, statePosition, , 11)
 
         state_stage: np.ndarray = np.zeros((1, 16))
