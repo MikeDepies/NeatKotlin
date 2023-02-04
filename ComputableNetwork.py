@@ -87,6 +87,7 @@ class ComputableNetwork:
         for index, input in enumerate(inputs):
             print(index)
             print(input.shape)
+            
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 0] = input
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 1] = input
 
