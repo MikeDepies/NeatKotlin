@@ -82,8 +82,11 @@ class ComputableNetwork:
         self.value_map[self.connection_z_map[0]][..., 0] = self.inputNdArray
         self.value_map[self.connection_z_map[0]][..., 1] = self.inputNdArray
     
-    def inputs(self, input: 'list[ndarray]'):
-        for index, input in enumerate(input):
+    def inputs(self, inputs: 'list[ndarray]'):
+        print(self.input_index)
+        for index, input in enumerate(inputs):
+            print(index)
+            print(input.shape)
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 0] = input
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 1] = input
 
