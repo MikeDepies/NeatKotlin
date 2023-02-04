@@ -201,6 +201,7 @@ fun Application.module(testing: Boolean = false) {
                 0,
                 0,
                 createNetwork.outputPlane.map { it.id },
+                createNetwork.inputPlane.map { it.id },
                 pairedAgents.agent.neatMutator.toModel(),
                 createNetwork.depth
             )

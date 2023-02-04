@@ -6,11 +6,15 @@ class PopulationEvolver(
     var generation: Int = 0,
     val speciationController: SpeciationController,
     val scoreKeeper: SpeciesScoreKeeper,
-    val speciesLineage: SpeciesLineage,
+    var speciesLineage: SpeciesLineage,
     var weightedReproduction: NeatExperiment.(SpeciationController, List<ModelScore>, Int) -> List<NeatMutator>,
 ) {
-
+    val stagnation = 45
     fun speciate(population: List<NeatMutator>, compatibilityTest: CompatibilityTest) {
+        speciesLineage = SpeciesLineage(speciesLineage.species.map {speciesLineage.speciesGene(it)}.filter {
+            val generationImproved = scoreKeeper.getModelScore(it.species)?.generationLastImproved ?: 0
+            generation - generationImproved <= stagnation
+        })
         speciationController.speciate(population, speciesLineage, generation++, compatibilityTest)
     }
 
@@ -51,9 +55,9 @@ fun createMutationDictionary(): List<MutationEntry> {
         .8f chanceToMutate getMutateConnections(.05f, .02f, 7f),
         .1f chanceToMutate mutateAddNode,
         .1f chanceToMutate mutateAddConnection,
-        .2f chanceToMutate mutatePerturbBiasConnections(),
+        .5f chanceToMutate getMutateBiasConnections(.05f, .02f, 7f),
         .02f chanceToMutate mutateToggleConnection,
-        .1f chanceToMutate mutateNodeActivationFunction(),
+        .02f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 

@@ -66,7 +66,7 @@ class ComputableNetwork:
     def __init__(self, connection_plane_map: 'dict[str, LayerShape3D]',
                  connection_relationships_inverse: 'dict[str, list[str]]',
                  connection_map: 'dict[str, ndarray]', value_map: 'dict[str,ndarray]',
-                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : 'list[int]', activation_function):
+                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : 'list[int]',input_index : 'list[int]', activation_function):
         self.connection_map = connection_map
         self.connection_plane_map = connection_plane_map
         self.connection_relationships_inverse = connection_relationships_inverse
@@ -74,13 +74,19 @@ class ComputableNetwork:
         self.connection_z_map = connection_z_map
         self.calculation_order = calculation_order
         self.output_index = output_index
+        self.input_index = input_index
         self.activation_function = activation_function
 
     def input(self, input: ndarray):
         self.inputNdArray = input
         self.value_map[self.connection_z_map[0]][..., 0] = self.inputNdArray
         self.value_map[self.connection_z_map[0]][..., 1] = self.inputNdArray
-        
+    
+    def inputs(self, input: 'list[ndarray]'):
+        for index, input in enumerate(input):
+            self.value_map[self.connection_z_map[self.input_index[index]]][..., 0] = input
+            self.value_map[self.connection_z_map[self.input_index[index]]][..., 1] = input
+
     def compute(self):
         vectorized_activation_function = np.vectorize(self.activation_function)
         vectorizedRelu = np.vectorize(relu)
@@ -125,9 +131,9 @@ class ComputableNetwork:
     def output(self) -> 'list[ndarray]':
         # print(self.output_index)
         # print(self.connection_z_map)
-        return list(map(lambda index: self.value_map[self.connection_z_map[index+1]][..., 1], self.output_index))
+        return list(map(lambda index: self.value_map[self.connection_z_map[index]][..., 1], self.output_index))
     def outputUnActivated(self) -> ndarray:
-        return self.value_map[self.connection_z_map[self.output_index+1]][..., 0]
+        return self.value_map[self.connection_z_map[self.output_index]][..., 0]
 
 @dataclass
 class ComputableNetworkWithID:

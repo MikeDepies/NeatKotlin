@@ -422,13 +422,14 @@ class HyperNeatBuilder:
     network_design: NetworkDesign
     network_computer: NeatComputer
 
-    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float, output_layer : 'list[str]') -> None:
+    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float, output_layer : 'list[str]', input_layer : 'list[str]') -> None:
         self.network_design = network_design
         self.network_computer = network_computer
         self.hyper_shape = hyper_shape
         self.depth = depth
         self.connection_magnitude = connection_magnitude
         self.output_layer = output_layer
+        self.input_layer = input_layer
 
     def compute_connections_between_layers(self, layer_source: LayerShape3D, layer_target: LayerShape3D):
         source_width = layer_source.layer_plane.width
@@ -503,11 +504,13 @@ class HyperNeatBuilder:
         ndarray_map : 'Dict[str, ndarray]'= dict()
         connection_map : 'Dict[str, ndarray]'= dict()
         connection_zindex_map : 'Dict[int, str]'= dict()
+        zindex_map : 'Dict[str, int]'= dict()
         for p in network_design.connection_planes:
             connection_plane_map[p.layer_plane.id] = p
             ndarray_map[p.layer_plane.id] = np.zeros(
                 [p.layer_plane.height, p.layer_plane.width, 2])
             connection_zindex_map[p.z_origin] = p.layer_plane.id
+            zindex_map[p.layer_plane.id] = p.z_origin
         connection_count = 0
         for p in network_design.connection_planes:
             id = p.layer_plane.id
@@ -518,7 +521,9 @@ class HyperNeatBuilder:
                                    target_id] = self.compute_connections_between_layers(p, t)
                     connection_count += connection_map[id +
                                                        ":" + target_id].size
-        output_index = list(map(lambda layer: network_design.calculation_order.index(layer), self.output_layer))
+        output_index = list(map(lambda layer: zindex_map.get(layer), self.output_layer))
+        input_index = list(map(lambda layer: zindex_map.get(layer), self.input_layer))
+        #Need to create an inverted connection_zindex map and use that instead of calculation order to find indexes for output and input
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map,
-                                 ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, activation_function)
+                                 ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function)

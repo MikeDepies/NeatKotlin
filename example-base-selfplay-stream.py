@@ -24,8 +24,8 @@ from ControllerHelperBinned import ControllerHelper
 from DashHelper import DashHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
-from InputEmbederPacked import InputEmbederPacked
-from InputEmbederPacked3 import InputEmbederPacked3
+
+from InputEmbederPacked4 import InputEmbederPacked4
 from ModelHelper import ModelHelper
 
 
@@ -177,10 +177,10 @@ class Session:
                       melee.Character.CPTFALCON, melee.Character.PEACH, melee.Character.PIKACHU, melee.Character.ZELDA, melee.Character.GANONDORF, melee.Character.JIGGLYPUFF,
                       melee.Character.MARIO, melee.Character.DK, melee.Character.KIRBY, melee.Character.BOWSER, melee.Character.LINK, melee.Character.NESS, melee.Character.PEACH, melee.Character.YOSHI, melee.Character.MEWTWO, melee.Character.LUIGI, melee.Character.YLINK, melee.Character.DOC, melee.Character.GAMEANDWATCH, melee.Character.ROY]
 
-def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
+def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> 'list[np.ndarray]':
     positionNormalizer = 30.0
     actionNormalizer = 150.0
-    return InputEmbederPacked3(player_index, opponent_index,
+    return InputEmbederPacked4(player_index, opponent_index,
                            positionNormalizer, actionNormalizer).embed_input(gamestate)
 
 class ModelHandler:

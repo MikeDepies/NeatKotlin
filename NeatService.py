@@ -54,7 +54,11 @@ def process_model_data(data : Any) -> Tuple[str, HyperNeatBuilder]:
         map(lambda c: mapC(c), data["connectionPlanes"]))
     neat_model_data = data["neatModel"]
     output_layer_str = data["outputLayer"]
-    
+    input_layer_str = [] 
+    try:
+        input_layer_str = data["inputLayer"]
+    except:
+        print("No input layer")
     neat_model = parse_neat_model(neat_model_data)
     # print(neat_model.nodes[6])
     # print(neat_model.nodes[7])
@@ -70,7 +74,7 @@ def process_model_data(data : Any) -> Tuple[str, HyperNeatBuilder]:
     hyper_shape = HyperDimension3D(-1, 1, -1, 1, -1, 1)
     depth = int(data["depth"])
     
-    hyper_neat_builder = HyperNeatBuilder(network_design, computer, hyper_shape, depth, 3, output_layer_str)
+    hyper_neat_builder = HyperNeatBuilder(network_design, computer, hyper_shape, depth, 3, output_layer_str, input_layer_str)
     
     return (id, hyper_neat_builder)
 
@@ -101,7 +105,7 @@ def process_model_data_mcc(data : Any) -> Tuple[str, HyperNeatBuilder, StageTrac
     neat_model_data_agent = agent_blueprint["neatModel"]
     neat_model_data_child = data["child"]
     output_layer_str = agent_blueprint["outputLayer"]
-    
+    input_layer_str = agent_blueprint["inputLayer"]
     neat_model_agent = parse_neat_model(neat_model_data_agent)
     neat_model_child = parse_neat_model(neat_model_data_child)
     # print(neat_model.nodes[6])
@@ -122,8 +126,8 @@ def process_model_data_mcc(data : Any) -> Tuple[str, HyperNeatBuilder, StageTrac
     hyper_shape = HyperDimension3D(-1, 1, -1, 1, -1, 1)
     depth = int(agent_blueprint["depth"])
     
-    hyper_neat_builder_agent = HyperNeatBuilder(network_design, computer_agent, hyper_shape, depth, 3, output_layer_str)
-    hyper_neat_builder_child = HyperNeatBuilder(network_design, computer_child, hyper_shape, depth, 3, output_layer_str)
+    hyper_neat_builder_agent = HyperNeatBuilder(network_design, computer_agent, hyper_shape, depth, 3, output_layer_str, input_layer_str)
+    hyper_neat_builder_child = HyperNeatBuilder(network_design, computer_child, hyper_shape, depth, 3, output_layer_str, input_layer_str)
     
     return (id, hyper_neat_builder_agent, hyper_neat_builder_child)
 
@@ -140,7 +144,7 @@ def process_model_data_mcc_stage(data : Any) -> Tuple[str, HyperNeatBuilder, Hyp
     neat_model_data_agent = agent_blueprint["neatModel"]
     environment = data["environment"]
     output_layer_str = agent_blueprint["outputLayer"]
-    
+    input_layer_str = agent_blueprint["inputLayer"]
     neat_model_agent = parse_neat_model(neat_model_data_agent)
     
     # print(neat_model.nodes[6])
@@ -161,7 +165,7 @@ def process_model_data_mcc_stage(data : Any) -> Tuple[str, HyperNeatBuilder, Hyp
     hyper_shape = HyperDimension3D(-1, 1, -1, 1, -1, 1)
     depth = int(agent_blueprint["depth"])
     
-    hyper_neat_builder_agent = HyperNeatBuilder(network_design, computer_agent, hyper_shape, depth, 3, output_layer_str)
+    hyper_neat_builder_agent = HyperNeatBuilder(network_design, computer_agent, hyper_shape, depth, 3, output_layer_str, input_layer_str)
     
     
     return (id, hyper_neat_builder_agent, stage_track_gene)
@@ -194,6 +198,7 @@ def process_model_data_mcc_cpu_gene(data : Any) -> Tuple[str, HyperNeatBuilder, 
     neat_model_data_agent = agent_blueprint["neatModel"]
     environment = data["environment"]
     output_layer_str = agent_blueprint["outputLayer"]
+    input_layer_str = agent_blueprint["inputLayer"]
     
     neat_model_agent = parse_neat_model(neat_model_data_agent)
     
@@ -215,7 +220,7 @@ def process_model_data_mcc_cpu_gene(data : Any) -> Tuple[str, HyperNeatBuilder, 
     hyper_shape = HyperDimension3D(-1, 1, -1, 1, -1, 1)
     depth = int(agent_blueprint["depth"])
     
-    hyper_neat_builder_agent = HyperNeatBuilder(network_design, computer_agent, hyper_shape, depth, 3, output_layer_str)
+    hyper_neat_builder_agent = HyperNeatBuilder(network_design, computer_agent, hyper_shape, depth, 3, output_layer_str, input_layer_str)
     
     
     return (id, hyper_neat_builder_agent, cpu_gene)

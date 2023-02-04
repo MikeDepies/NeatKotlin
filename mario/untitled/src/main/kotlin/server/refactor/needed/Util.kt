@@ -29,7 +29,7 @@ val minSpeices = 5
 val maxSpecies = 15
 val speciesThresholdDelta = .0f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .3f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
 var speciesSharingDistance = .3f
 var shFunction = shFunction(speciesSharingDistance)
@@ -116,8 +116,8 @@ class KNNNoveltyArchiveWeighted(
 fun MarioDiscovery.toVector() = listOf(
     mushrooms.toFloat() * 20f,
     fireFlowers.toFloat() * 50f,
-    coins.toFloat() * 10f,
-    score.toFloat() / 10,
+    coins.toFloat() * 1f,
+    score.toFloat() / 100,
     flags.toFloat() * 30f,
     lifes.toFloat() * 10f,
 //    life.toFloat() * 100f,

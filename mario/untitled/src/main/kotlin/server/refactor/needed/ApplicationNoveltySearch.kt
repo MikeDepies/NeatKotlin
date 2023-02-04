@@ -111,7 +111,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val format = DateTimeFormatter.ofPattern("YYYYMMdd-HHmm")
     val runFolder = LocalDateTime.now().let { File("runs/run-${it.format(format)}") }
     runFolder.mkdirs()
-    get<WebSocketManager>().attachWSRoute()
+//    get<WebSocketManager>().attachWSRoute()
 //    val controller1 = get<IOController>(parameters = { DefinitionParameters(listOf(0)) })
 //    val controller2 = get<IOController>(parameters = { DefinitionParameters(listOf(1)) })
 //    fun IOController.simulationForController(populationSize: Int) = get<Simulation>(parameters = {
@@ -121,9 +121,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    })
 //    val (initialPopulation, populationEvolver, adjustedFitness) = controller1.simulationForController(500)
 
-    val evaluationChannels = get<EvaluationChannels>()
-    val evaluationChannels2 = get<EvaluationChannels>()
-    val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
+//    val evaluationChannels = get<EvaluationChannels>()
+//    val evaluationChannels2 = get<EvaluationChannels>()
+//    val evaluationMessageProcessor = get<EvaluationMessageProcessor>()
 //    generateFakeData(evaluationChannels)
 
 //    val b = Json { }.decodeFromString<List<ActionBehavior>>(
@@ -135,9 +135,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .85f
-    val survivalThreshold = .3f
-    val stagnation = 20
+    val mateChance = .6f
+    val survivalThreshold = .2f
+    val stagnation = 45
 
     val randomSeed: Int = 9 + evaluationId
     val addConnectionAttempts = 5
@@ -174,7 +174,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     ).mapIndexed { index, neatMutator ->
         NetworkWithId(neatMutator, UUID.randomUUID().toString())
     }
-    var settings = Settings(1f)
+    var settings = Settings(0f)
     var mapIndexed = population.mapIndexed { index, neatMutator -> neatMutator.id to neatMutator }.toMap()
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
 //    createTaskNetwork(population.first().toNetwork())
@@ -276,6 +276,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                         populationEvolver.speciationController.species(network.neatMutator).id,
                         network.neatMutator.hiddenNodes.size,
                         createNetwork.outputPlane.map { it.id },
+                        createNetwork.inputPlane.map { it.id },
                         network.neatMutator.toModel(),
                         createNetwork.depth
                     )
@@ -291,6 +292,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                         populationEvolver.speciationController.species(network.neatMutator).id,
                         network.neatMutator.hiddenNodes.size,
                         createNetwork.outputPlane.map { it.id },
+                        createNetwork.inputPlane.map { it.id },
                         network.neatMutator.toModel(),
                         createNetwork.depth
                     )

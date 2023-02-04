@@ -134,7 +134,7 @@ def get_network_novelty(host: str, port: int):
 
 
 def marioNovelty(queue: mp.Queue, render: Boolean):
-    env = gym_super_mario_bros.make('SuperMarioBros-1-2-v1')
+    env = gym_super_mario_bros.make('SuperMarioBros-v1')
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
@@ -206,14 +206,17 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         status = info["status"]
         stage = info["stage"]
         # print(state.shape)
+        # rgb2gray(state),
         state = rescale(
-            rgb2gray(state),
+            state,
             1 / 16,
-            # channel_axis=2
+            channel_axis=2
         )
+        # print(state.shape)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
         network = child_network
-        network.input((state / 42.5) - 3)
+        network.inputs([state[..., 0], state[..., 1], state[..., 2]])
+        # network.input((state / 255) )
         network.compute()
         output = network.output()
         # if (score != info["score"]):
@@ -234,7 +237,49 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         if framesSinceMaxXChange > 20 * 20 or reward < -14:
             idle = True
 
-        action = output.argmax(1)[0]
+        depad = output[0].argmax(1)[0]
+        button1 = output[1].argmax(1)[0]
+        button2 = output[2].argmax(1)[0]
+
+        depadDirection = "NOOP"
+        aPress = False
+        bPress = False
+        if (depad == 1):
+            depadDirection = "right"
+        elif (depad == 2):
+            depadDirection = "up"
+        elif (depad == 3):
+            depadDirection = "left"
+        elif (depad == 4):
+            depadDirection = "down"
+        if button1 == 1 or button2 == 1:
+            aPress = True
+        if button1 == 2 or button2 == 2:
+            bPress = True
+
+        action = 0
+        if (depadDirection == "right" and not aPress and not bPress):
+            action = 1
+        elif (depadDirection == "right" and aPress and not bPress):
+            action = 2
+        elif (depadDirection == "right" and not aPress and bPress):
+            action = 3
+        elif (depadDirection == "right" and aPress and bPress):
+            action = 4
+        elif (depadDirection == "left" and not aPress and not bPress):
+            action = 6
+        elif (depadDirection == "left" and aPress and not bPress):
+            action = 7
+        elif (depadDirection == "left" and not aPress and bPress):
+            action = 8
+        elif (depadDirection == "left" and aPress and bPress):
+            action = 9
+        elif (depadDirection == "down"):
+            action = 10
+        elif (depadDirection == "up"):
+            action = 11
+        elif (aPress):
+            action = 5
         # print(output)
         # print(output.shape)
         # print(action)
@@ -674,24 +719,24 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 12
     queue = mgr.Queue(process_num * 2)
     processes: List[mp.Process] = []
 
     for i in range(process_num):
-        p = mp.Process(target=mario_mcc_stage,
+        p = mp.Process(target=marioNovelty,
                        daemon=True, args=(queue, i < 0))
-        processes.append(p)
-        p.start()
-        p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         # processes.append(p)
         # p.start()
-        # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         # processes.append(p)
         # p.start()
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        processes.append(p)
+        p.start()
 
     for p in processes:
         p.join()

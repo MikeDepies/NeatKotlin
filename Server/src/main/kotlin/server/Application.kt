@@ -100,12 +100,12 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
-        50,
+        20,
         behaviorMeasureInt(
-            damageMultiplier = 6f,
-            actionMultiplier = .5f,
+            damageMultiplier = 3f,
+            actionMultiplier = 1f,
             killMultiplier = 100f,
             recoveryMultiplier = 3f
         )
@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 120, 5)
+    val evaluatorSettings = EvaluatorSettings(30, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Falco, 1),
+        ControllerConfiguration(Character.Falco, 3),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -242,6 +242,7 @@ private fun Application.routing(
                 0,
                 neatMutator.hiddenNodes.size,
                 createNetwork.outputPlane.map { it.id},
+                createNetwork.inputPlane.map { it.id },
                 neatMutator.toModel(),
                 createNetwork.depth,
                 orNull == null
@@ -284,6 +285,7 @@ private fun Application.routing(
                     0,
                     model.hiddenNodes.size,
                     createNetwork.outputPlane.map { it.id},
+                    createNetwork.inputPlane.map { it.id },
                     model.toModel(),
                     createNetwork.depth,
                     true
@@ -599,11 +601,11 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f)
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.55f)
+    val shFunction = shFunction(.5f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

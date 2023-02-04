@@ -6,13 +6,18 @@ private val logger = KotlinLogging.logger {  }
 class PopulationEvolver(
     val speciationController: SpeciationController,
     val scoreKeeper: SpeciesScoreKeeper,
-    val speciesLineage: SpeciesLineage,
+    var speciesLineage: SpeciesLineage,
     val neatExperiment: NeatExperiment,
     var generation: Int = 0,
     val standardCompatibilityTest: CompatibilityTest
 ) {
-
+    val stagnation = 30
     fun speciate(population: List<NeatMutator>) {
+
+        speciesLineage = SpeciesLineage(speciesLineage.species.map {speciesLineage.speciesGene(it)}.filter {
+            val generationImproved = scoreKeeper.getModelScore(it.species)?.generationLastImproved ?: 0
+            generation - generationImproved <= stagnation
+        })
         speciationController.speciate(population, speciesLineage, generation++, standardCompatibilityTest)
     }
 
@@ -44,7 +49,7 @@ class PopulationEvolver(
             mateChance = .60f,
             survivalThreshold = .2f,
             speciesScoreKeeper = scoreKeeper,
-            stagnation = 4000,
+            stagnation = stagnation,
             championThreshold = 5
         )
         return weightedReproduction(neatExperiment, speciationController, scoredPopulation, generation)
@@ -61,10 +66,10 @@ class PopulationEvolver(
 fun mutationDictionary(): List<MutationEntry> {
 
     return listOf(
-        .8f chanceToMutate getMutateConnections(.05f, .2f, 7f),
-        .02f chanceToMutate mutateAddNode,
-        .04f chanceToMutate mutateAddConnection,
-        .5f chanceToMutate getMutateBiasConnections(.05f, .2f, 7f),
+        .8f chanceToMutate getMutateConnections(.05f, .02f, 7f),
+        .04f chanceToMutate mutateAddNode,
+        .08f chanceToMutate mutateAddConnection,
+        .5f chanceToMutate getMutateBiasConnections(.05f, .02f, 7f),
         .02f chanceToMutate mutateToggleConnection,
         .02f chanceToMutate mutateNodeActivationFunction(),
     )

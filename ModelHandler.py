@@ -26,14 +26,14 @@ from ControllerHelperBinned import ControllerHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
 # from InputEmbederPacked import InputEmbederPacked
-from InputEmbederPacked3 import InputEmbederPacked3
+from InputEmbederPacked4 import InputEmbederPacked4
 from ModelHelper import ModelHelper
 
 
-def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> np.ndarray:
+def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> 'list[np.ndarray]':
     positionNormalizer = 30.0
     actionNormalizer = 150.0
-    return InputEmbederPacked3(player_index, opponent_index,
+    return InputEmbederPacked4(player_index, opponent_index,
                               positionNormalizer, actionNormalizer).embed_input(gamestate)
 
 class ModelHandler:

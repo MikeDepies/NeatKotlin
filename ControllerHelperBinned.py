@@ -50,8 +50,8 @@ class ControllerHelper:
         shape = analogOutput.shape
         return (maxAnalog[0] / (shape[0] - 1), maxAnalog[1] / (shape [1] - 1))
 
-    def process(self, network : ComputableNetwork, controller : melee.Controller, state : ndarray):
-        network.input(state)
+    def process(self, network : ComputableNetwork, controller : melee.Controller, state : 'list[ndarray]'):
+        network.inputs(state)
         network.compute()
         outputs = network.output()
         # print(outputs[0].shape)
