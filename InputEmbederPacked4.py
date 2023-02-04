@@ -174,4 +174,4 @@ class InputEmbederPacked4:
         self.applyPlatform(leftPlatform, state_stage[0, ...], 7)
         self.applyPlatform(topPlatform, state_stage[0, ...], 10)
         self.applyPlatform(rightPlatform, state_stage[0, ...], 13)
-        return [state, state_2, state_projectile, state_stage]
+        return [state, state_2, state_projectile, state_controller, state_stage]
