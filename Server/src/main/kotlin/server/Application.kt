@@ -104,8 +104,8 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
-            damageMultiplier = 1f,
-            actionMultiplier = 10f,
+            damageMultiplier = 10f,
+            actionMultiplier = 1f,
             killMultiplier = 500f,
             recoveryMultiplier = 20f
         )
