@@ -273,7 +273,7 @@ class Evaluator:
                 
                 # print(str(player.character) + " - " + str(player.action))
                 # print(player.speed_ground_x_self)
-                self.movement_frames += abs(player.speed_ground_x_self)
+                self.movement_frames += abs(player.speed_ground_x_self) * 5
             #     # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 # self.frames_without_damage -= abs(player.speed_ground_x_self)
                 # print(abs(player.speed_ground_x_self))
