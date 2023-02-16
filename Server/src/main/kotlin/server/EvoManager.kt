@@ -14,9 +14,10 @@ import neat.novelty.KNNNoveltyArchive
 import server.local.ModelEvaluationResult
 import server.message.endpoints.toModel
 import java.io.File
-import java.lang.Float.max
+
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.max
 import kotlin.math.sqrt
 
 private val log = KotlinLogging.logger { }
@@ -65,9 +66,7 @@ class EvoManager(
                     val scoredBehavior = scoreBehavior(
                         knnNoveltyArchive, it
                     )
-                    val behaviorScore = max(
-                        0f, scoredBehavior / max(1f, (it.score.totalFrames - (it.score.totalFramesHitstunOpponent + it.score.movement))) /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/
-                    ) // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
+                    val behaviorScore = max(0f, scoredBehavior + (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/) // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
                     while (knnNoveltyArchive.behaviors.size > 1_000_000) {
                         knnNoveltyArchive.behaviors.removeAt(0)
                     }
@@ -144,7 +143,10 @@ class EvoManager(
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
         populationEvolver.speciationController.speciesSet.forEach { species ->
             val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-            populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.random())
+            populationEvolver.speciesLineage.updateMascot(
+                species,
+                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
+            )
         }
 
         while (newPopulation.size < populationSize) {
@@ -168,9 +170,12 @@ class EvoManager(
     }
 
     private fun captureBestModel(
-        m: NeatMutator, behaviorScore: Float, populationEvolver: PopulationEvolver, modelEvaluationResult: ModelEvaluationResult
+        m: NeatMutator,
+        behaviorScore: Float,
+        populationEvolver: PopulationEvolver,
+        modelEvaluationResult: ModelEvaluationResult
     ) {
-        var tempBestModels : MutableList<ScoredModel> = ArrayList(bestModels)
+        var tempBestModels: MutableList<ScoredModel> = ArrayList(bestModels)
         val average = bestModels.map { it.score }.average()
         tempBestModels += ScoredModel(
             behaviorScore,
