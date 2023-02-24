@@ -133,7 +133,7 @@ fun createNetwork(): TaskNetworkBuilder {
             if (index > hiddenPlanes.size -5)
                 put(layerPlane, planeList.drop(index + 1).take(2) + outputPlanes)
             else
-                put(layerPlane, planeList.drop(5))
+                put(layerPlane, planeList.drop(index + 1).take(2))
         }
 //        put(outputPlane, planeList.drop(2))
     }

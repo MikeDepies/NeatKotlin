@@ -104,7 +104,7 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         10,
         behaviorMeasureInt(
-            damageMultiplier = 15f,
+            damageMultiplier = 1f,
             actionMultiplier = 1f,
             killMultiplier = 200f,
             recoveryMultiplier = 10f
@@ -207,7 +207,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Pikachu, 0),
-        ControllerConfiguration(Character.Falco, 3),
+        ControllerConfiguration(Character.Falco, 5),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
