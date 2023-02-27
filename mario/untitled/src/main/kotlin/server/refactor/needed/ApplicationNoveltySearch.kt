@@ -59,6 +59,7 @@ private val logger = KotlinLogging.logger { }
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.moduleNovelty(testing: Boolean = false) {
+
     install(io.ktor.websocket.WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
         timeout = Duration.ofSeconds(15)
@@ -135,7 +136,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .6f
+    val mateChance = .8f
     val survivalThreshold = .2f
     val stagnation = 45
 
@@ -199,7 +200,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(100,  settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(40,  settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }

@@ -107,16 +107,16 @@ fun Application.module() {
             damageMultiplier = 1f,
             actionMultiplier = 1f,
             killMultiplier = 200f,
-            recoveryMultiplier = 10f
+            recoveryMultiplier = 50f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
-            damageMultiplier = 6f,
-            actionMultiplier = 1.5f,
-            killMultiplier = 100f,
-            recoveryMultiplier = 3f
+            damageMultiplier = 1f,
+            actionMultiplier = 1f,
+            killMultiplier = 200f,
+            recoveryMultiplier = 50f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
@@ -137,7 +137,7 @@ fun Application.module() {
     val evoManager2 =
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
     launch { evoManager.start(initialPopulation) }
-//    launch { evoManager2.start(initialPopulation2) }
+    launch { evoManager2.start(initialPopulation2) }
     val dashboardManager = DashboardManager(
         evaluationId, StreamStats(
             0, 0, 0, 0
@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 30, 5)
+    val evaluatorSettings = EvaluatorSettings(15, 30, 5)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Pikachu, 0),
-        ControllerConfiguration(Character.Falco, 5),
+        ControllerConfiguration(Character.Falco, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -605,7 +605,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 12 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.25f)
+    val shFunction = shFunction(.35f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
