@@ -428,9 +428,9 @@ if __name__ == '__main__':
                        args=(queue_1, 0 ))
         processes.append(p)
         p.start()
-        # p = mp.Process(target=queueNetworks, daemon=True,
-        #                args=(queue_2, 1 ))
-        # processes.append(p)
-        # p.start()
+        p = mp.Process(target=queueNetworks, daemon=True,
+                       args=(queue_2, 1 ))
+        processes.append(p)
+        p.start()
     for p in processes:
         p.join()
