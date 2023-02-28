@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(15, 30, 5)
+    val evaluatorSettings = EvaluatorSettings(10, 300, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Pikachu, 0),
-        ControllerConfiguration(Character.Falco, 0),
+        ControllerConfiguration(Character.DonkeyKong, 0),
+        ControllerConfiguration(Character.Marth, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -605,7 +605,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 12 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.35f)
+    val shFunction = shFunction(.55f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
