@@ -103,8 +103,8 @@ class ModelHandler:
             # self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                     #    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
     def reset(self):
-        print("getting network...")
+        # print("getting network...")
         self.model_id, self.network = self.queue.get()
-        print("creating new evaluator")
+        # print("creating new evaluator")
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
