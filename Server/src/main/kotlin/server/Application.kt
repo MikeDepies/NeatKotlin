@@ -102,21 +102,21 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10,
+        40,
         behaviorMeasureInt(
             damageMultiplier = 1f,
-            actionMultiplier = 1f,
+            actionMultiplier = .1f,
             killMultiplier = 200f,
-            recoveryMultiplier = 50f
+            recoveryMultiplier = 10f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
             damageMultiplier = 1f,
-            actionMultiplier = 1f,
+            actionMultiplier = .1f,
             killMultiplier = 200f,
-            recoveryMultiplier = 50f
+            recoveryMultiplier = 10f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
@@ -203,7 +203,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 300, 12)
+    val evaluatorSettings = EvaluatorSettings(5, 300, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DonkeyKong, 0),
