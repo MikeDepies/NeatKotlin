@@ -31,7 +31,7 @@ val speciesThresholdDelta = .0f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .2f
+var speciesSharingDistance = .55f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -143,10 +143,10 @@ fun evolve(
     populationEvolver.sortPopulationByAdjustedScore(modelScores)
     populationEvolver.updateScores(modelScores)
     var newPopulation = populationEvolver.evolveNewPopulation(modelScores, neatExperiment)
-//    populationEvolver.speciationController.speciesSet.forEach { species ->
-//        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-//        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.random(neatExperiment.random))
-//    }
+    populationEvolver.speciationController.speciesSet.forEach { species ->
+        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+        populationEvolver.speciesLineage.updateMascot(species, speciesPopulation.random(neatExperiment.random))
+    }
     while (newPopulation.size < populationSize) {
         newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone(UUID.randomUUID())
     }

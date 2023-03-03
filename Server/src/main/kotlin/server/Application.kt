@@ -106,8 +106,8 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = .1f,
-            killMultiplier = 200f,
-            recoveryMultiplier = 10f
+            killMultiplier = 10f,
+            recoveryMultiplier = 2f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -115,8 +115,8 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = .1f,
-            killMultiplier = 200f,
-            recoveryMultiplier = 10f
+            killMultiplier = 10f,
+            recoveryMultiplier = 2f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
@@ -203,7 +203,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 300, 12)
+    val evaluatorSettings = EvaluatorSettings(5, 300, 7)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DonkeyKong, 0),

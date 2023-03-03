@@ -446,7 +446,7 @@ if __name__ == '__main__':
     data = r.json()
     configuration = processConfiguration(data)
     processes: List[mp.Process] = []
-    queue_1 = mgr.Queue(process_num)
+    queue_1 = mgr.Queue(process_num * 2)
     queue_2 = mgr.Queue(process_num * 2)
     stat_queue = mgr.Queue(20)
     stat_queue2 = mgr.Queue(20)

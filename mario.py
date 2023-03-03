@@ -234,7 +234,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 20 * 20 or reward < -14:
+        if framesSinceMaxXChange > 10 * 20 or reward < -14:
             idle = True
 
         depad = output[0].argmax(1)[0]
@@ -725,7 +725,7 @@ if __name__ == '__main__':
 
     for i in range(process_num):
         p = mp.Process(target=marioNovelty,
-                       daemon=True, args=(queue, i < 0))
+                       daemon=True, args=(queue, i < 3))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
