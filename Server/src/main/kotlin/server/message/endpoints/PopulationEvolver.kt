@@ -46,7 +46,7 @@ class PopulationEvolver(
         val mutationEntries = mutationDictionary()
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
-            mateChance = .80f,
+            mateChance = .60f,
             survivalThreshold = .3f,
             speciesScoreKeeper = scoreKeeper,
             stagnation = stagnation,

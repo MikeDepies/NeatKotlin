@@ -283,7 +283,6 @@ class Evaluator:
                 self.frames_without_damage += 1
             
             if self.player_took_damage(game_state):
-                    print("damage took")
                     self.frames_without_damage -= (60 * self.attack_timer)
 
             if self.player_dealt_damage(game_state):
