@@ -106,7 +106,7 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = .1f,
-            killMultiplier = 10f,
+            killMultiplier = 30f,
             recoveryMultiplier = 2f
         )
     )
@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 300, 7)
+    val evaluatorSettings = EvaluatorSettings(3, 120, 7)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DonkeyKong, 0),
-        ControllerConfiguration(Character.Marth, 5),
+        ControllerConfiguration(Character.DoctorMario, 0),
+        ControllerConfiguration(Character.Marth, 3),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
