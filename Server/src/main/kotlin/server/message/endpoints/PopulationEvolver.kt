@@ -16,7 +16,7 @@ class PopulationEvolver(
 
         speciesLineage = SpeciesLineage(speciesLineage.species.map {speciesLineage.speciesGene(it)}.filter {
             val generationImproved = scoreKeeper.getModelScore(it.species)?.generationLastImproved ?: 0
-            generation - generationImproved < stagnation
+            generation - generationImproved <= stagnation
         })
         speciationController.speciate(population, speciesLineage, generation++, standardCompatibilityTest)
     }
@@ -46,8 +46,8 @@ class PopulationEvolver(
         val mutationEntries = mutationDictionary()
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
-            mateChance = .60f,
-            survivalThreshold = .2f,
+            mateChance = .80f,
+            survivalThreshold = .1f,
             speciesScoreKeeper = scoreKeeper,
             stagnation = stagnation,
             championThreshold = 5

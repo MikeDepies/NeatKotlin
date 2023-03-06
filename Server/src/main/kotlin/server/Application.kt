@@ -107,7 +107,7 @@ fun Application.module() {
             damageMultiplier = 1f,
             actionMultiplier = .1f,
             killMultiplier = 30f,
-            recoveryMultiplier = 2f
+            recoveryMultiplier = 5f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 120, 7)
+    val evaluatorSettings = EvaluatorSettings(3, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Marth, 3),
+        ControllerConfiguration(Character.Marth, 9),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -605,7 +605,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.55f)
+    val shFunction = shFunction(.45f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
