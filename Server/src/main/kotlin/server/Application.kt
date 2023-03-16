@@ -100,14 +100,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 1000
     val knnNoveltyArchive = knnNoveltyArchive(
-        10,
+        20,
         behaviorMeasureInt(
-            damageMultiplier = 1f,
-            actionMultiplier = .1f,
-            killMultiplier = 30f,
-            recoveryMultiplier = 5f
+            damageMultiplier = 2f,
+            actionMultiplier = 1f,
+            killMultiplier = 100f,
+            recoveryMultiplier = 1f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -203,10 +203,10 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(15, 300, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DoctorMario, 0),
+        ControllerConfiguration(Character.Link, 0),
         ControllerConfiguration(Character.Marth, 9),
         MeleeStage.FinalDestination
     )
@@ -605,7 +605,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.45f)
+    val shFunction = shFunction(.25f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
@@ -617,14 +617,14 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         val maxInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
         val maxNodeInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
         val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions, addConnectionAttempts, 7f
+            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions, addConnectionAttempts, 2f
         )
 
         val population = models.map { it.toNeatMutator() }
         SimulationStart(simpleNeatExperiment, population, manifest)
     } else {
         val simpleNeatExperiment =
-            simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts, 7f)
+            simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts, 2f)
         val population = simpleNeatExperiment.generateInitialPopulation2(
             populationSize, 6, 2, Activation.CPPN.functions
         )

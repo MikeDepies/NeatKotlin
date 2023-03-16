@@ -136,9 +136,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .6f
-    val survivalThreshold = .3f
-    val stagnation = 45
+    val mateChance = .7f
+    val survivalThreshold = .2f
+    val stagnation = 150
 
     val randomSeed: Int = 9 + evaluationId
     val addConnectionAttempts = 5
@@ -169,7 +169,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
     val populationHistory = mutableListOf<List<NeatModel>>()
-    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 7f)
+    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
     var population = simpleNeatExperiment.generateInitialPopulation2(
         populationSize, 6, 2, activationFunctions1
     ).mapIndexed { index, neatMutator ->
@@ -200,7 +200,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(40,  settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(20,  settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }

@@ -131,9 +131,9 @@ fun createNetwork(): TaskNetworkBuilder {
         }
         hiddenPlanes.forEachIndexed { index, layerPlane ->
             if (index > hiddenPlanes.size -3)
-                put(layerPlane, planeList.drop(index + 1) + outputPlanes)
+                put(layerPlane, planeList.drop(index) + outputPlanes)
             else
-                put(layerPlane, planeList.drop(index + 1))
+                put(layerPlane, planeList.drop(index ))
         }
 //        put(outputPlane, planeList.drop(2))
     }

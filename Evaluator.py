@@ -227,7 +227,7 @@ class Evaluator:
             #and not self.frame_data.is_roll(player.character, player.action) and not self.frame_data.is_bmove(player.character, player.action)and not self.frame_data.is_attack(player.character, player.action)
             if toward_opponent and not self.frame_data.is_roll(player.character, player.action) :
                 self.total_distanceTowardOpponent += abs(x_diff)
-            if opponent.hitstun_frames_left > 1:
+            if opponent.hitstun_frames_left > 2:
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
                 self.total_frames_hitstun +=1
             if on_stage and self.knocked_off_stage:
