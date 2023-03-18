@@ -100,23 +100,23 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 1000
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
             damageMultiplier = 2f,
             actionMultiplier = 1f,
             killMultiplier = 100f,
-            recoveryMultiplier = 1f
+            recoveryMultiplier = 4f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         10,
         behaviorMeasureInt(
-            damageMultiplier = 1f,
-            actionMultiplier = .1f,
-            killMultiplier = 10f,
-            recoveryMultiplier = 2f
+            damageMultiplier = 2f,
+            actionMultiplier = 1f,
+            killMultiplier = 100f,
+            recoveryMultiplier = 4f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
@@ -206,8 +206,8 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(15, 300, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Link, 0),
-        ControllerConfiguration(Character.Marth, 9),
+        ControllerConfiguration(Character.Yoshi, 0),
+        ControllerConfiguration(Character.Marth, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -605,7 +605,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.25f)
+    val shFunction = shFunction(.3f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

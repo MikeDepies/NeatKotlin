@@ -43,8 +43,8 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index,
                                  controller, controller_helper, queue_1, configuration.evaluator)
     model_handler.reset()
-    # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2, configuration.evaluator)
-    # model_handler2.reset()
+    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2, configuration.evaluator)
+    model_handler2.reset()
     while True:
         game_state = console.step()
         if game_state is None:
@@ -67,9 +67,9 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
             #     controller_opponent.release_all()
             
             model_handler.evaluate(game_state)
-            # model_handler2.evaluate(game_state)
+            model_handler2.evaluate(game_state)
             model_handler.postEvaluate(game_state)
-            # model_handler2.postEvaluate(game_state)
+            model_handler2.postEvaluate(game_state)
             
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 # if model_handler.network is None:
@@ -431,9 +431,9 @@ if __name__ == '__main__':
                        args=(queue_1, 0 ))
         processes.append(p)
         p.start()
-        # p = mp.Process(target=queueNetworks, daemon=True,
-        #                args=(queue_2, 1 ))
-        # processes.append(p)
-        # p.start()
+        p = mp.Process(target=queueNetworks, daemon=True,
+                       args=(queue_2, 1 ))
+        processes.append(p)
+        p.start()
     for p in processes:
         p.join()
