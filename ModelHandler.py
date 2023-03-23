@@ -74,18 +74,18 @@ class ModelHandler:
                 self.network, self.controller, state)
             self.evaluator.evaluate_frame(game_state)
             # print("evaluating " + str(self.ai_controller_id))
-        # elif self.network is None:
-        #     # print("dead " + str(self.ai_controller_id))
-        #     self.controller.release_button(melee.Button.BUTTON_A)
-        #     self.controller.release_button(melee.Button.BUTTON_B)
-        #     if game_state.frame % 3 == 0:
-        #         self.controller.press_button(melee.Button.BUTTON_Y)
-        #     else:
-        #         self.controller.release_button(melee.Button.BUTTON_Y)
-        #     self.controller.release_button(melee.Button.BUTTON_Z)
-        #     self.controller.release_button(melee.Button.BUTTON_L)
-        #     self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
-        #     self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
+        elif self.network is None:
+            # print("dead " + str(self.ai_controller_id))
+            self.controller.release_button(melee.Button.BUTTON_A)
+            self.controller.release_button(melee.Button.BUTTON_B)
+            if game_state.frame % 3 == 0:
+                self.controller.press_button(melee.Button.BUTTON_Y)
+            else:
+                self.controller.release_button(melee.Button.BUTTON_Y)
+            self.controller.release_button(melee.Button.BUTTON_Z)
+            self.controller.release_button(melee.Button.BUTTON_L)
+            self.controller.press_shoulder(melee.Button.BUTTON_L, 0)
+            self.controller.tilt_analog(melee.Button.BUTTON_MAIN, 0, .5)
 
     def postEvaluate(self, game_state: melee.GameState):
         if self.evaluator.is_finished(game_state) and self.network is not None:
@@ -93,10 +93,10 @@ class ModelHandler:
             # print(behavior.actions)
             self.model_helper.send_evaluation_result(
                 self.model_id, behavior)
-            self.reset()
-            # self.network = None
-            # self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
-            #                         self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
+            # self.reset()
+            self.network = None
+            self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
+                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
 
             # self.model_id, self.network = self.queue.get()
             # print("creating new evaluator")

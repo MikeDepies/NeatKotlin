@@ -102,12 +102,12 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10,
+        20,
         behaviorMeasureInt(
             damageMultiplier = 2f,
             actionMultiplier = 1f,
             killMultiplier = 100f,
-            recoveryMultiplier = 4f
+            recoveryMultiplier = 3f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -203,12 +203,12 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(15, 60, 12)
+    val evaluatorSettings = EvaluatorSettings(15, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Luigi, 0),
-        ControllerConfiguration(Character.Marth, 3),
-        MeleeStage.FinalDestination
+        ControllerConfiguration(Character.Falco, 0),
+        ControllerConfiguration(Character.Marth, 5),
+        MeleeStage.BattleField
     )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
@@ -601,11 +601,11 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.25f)
+    val shFunction = shFunction(.35f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
