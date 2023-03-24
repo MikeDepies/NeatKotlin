@@ -66,7 +66,7 @@ def processPlayer(data : Any):
     return PlayerConfiguration(int(data["cpuLevel"]), parseCharacter(data["character"]))
 
 def processEvaluatorConfiguration(data : Any):
-    return EvaluatorConfiguration(int(data["attackTime"]), int(data["maxTime"]), int(data["actionLimit"]))
+    return EvaluatorConfiguration(int(data["attackTime"]), int(data["maxTime"]) * 4, int(data["actionLimit"]))
 
 
 def processConfiguration(data : Any):
