@@ -100,14 +100,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         20,
         behaviorMeasureInt(
             damageMultiplier = 2f,
             actionMultiplier = 1f,
             killMultiplier = 100f,
-            recoveryMultiplier = 8f
+            recoveryMultiplier = 12f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -206,7 +206,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(15, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Luigi, 0),
+        ControllerConfiguration(Character.YoungLink, 0),
         ControllerConfiguration(Character.Marth, 4),
         MeleeStage.BattleField
     )
@@ -605,7 +605,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.45f)
+    val shFunction = shFunction(.3f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

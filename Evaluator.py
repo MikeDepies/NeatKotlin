@@ -87,7 +87,7 @@ class Evaluator:
         self.total_frames_alive = 0
         self.movement_frames = 0
         self.excluded_actions = [melee.Action.SHIELD_BREAK_FALL, melee.Action.SHIELD_BREAK_DOWN_D, melee.Action.SHIELD_BREAK_DOWN_U, melee.Action.SHIELD_BREAK_TEETER, melee.Action.SHIELD_BREAK_FLY, melee.Action.SHIELD_BREAK_STAND_D, melee.Action.SHIELD_BREAK_STAND_U,
-                                 melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
+                                 melee.Action.CROUCH_START, melee.Action.CROUCH_END, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
                                  melee.Action.REBOUND, melee.Action.REBOUND_STOP, melee.Action.LANDING_SPECIAL, melee.Action.SHIELD_STUN,
                                  melee.Action.DAMAGE_FLY_HIGH, melee.Action.DAMAGE_FLY_LOW, melee.Action.DAMAGE_FLY_NEUTRAL, melee.Action.DAMAGE_FLY_ROLL,
@@ -95,7 +95,7 @@ class Evaluator:
                                  melee.Action.DAMAGE_NEUTRAL_2, melee.Action.DAMAGE_NEUTRAL_3, melee.Action.DAMAGE_SCREW, melee.Action.DAMAGE_SCREW_AIR,
                                  melee.Action.GRABBED, melee.Action.GRABBED_WAIT_HIGH, melee.Action.GRAB_PUMMELED, melee.Action.LYING_GROUND_DOWN, melee.Action.LYING_GROUND_UP_HIT, melee.Action.LYING_GROUND_UP, melee.Action.FALLING, melee.Action.ON_HALO_DESCENT, melee.Action.ON_HALO_WAIT,
                                  melee.Action.THROWN_BACK, melee.Action.THROWN_F_HIGH, melee.Action.THROWN_F_LOW, melee.Action.THROWN_DOWN, melee.Action.THROWN_DOWN_2, melee.Action.THROWN_FB, melee.Action.THROWN_FF, melee.Action.THROWN_UP, melee.Action.THROWN_FORWARD,
-                                 melee.Action.TUMBLING,melee.Action.AIRDODGE, melee.Action.SHIELD_START, melee.Action.SHIELD_RELEASE]
+                                 melee.Action.TUMBLING, melee.Action.SHIELD_START, melee.Action.SHIELD_RELEASE]
     # def log(self, log_message : str):
     #     self.logger.writeframe()
 
@@ -236,6 +236,7 @@ class Evaluator:
                     self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
                     self.damage_since_recovery = False
                 self.knocked_off_stage = False
+                self.knocked = False
                 if (len(self.recovery_actions) > 0):
                     self.recovery_actions_set.append(self.recovery_actions)
                 self.recovery_actions = []
