@@ -405,7 +405,7 @@ ZITABATA = 374""".split("\n")
     val map = list.map { it.split(" = ") }.map { it[1] to it[0] }.toMap()
     println("${map.size}")
     val actions = listOf(
-        55, 86, 66, 357, 45, 64, 352, 341, 235, 341, 64, 64, 65, 64, 64, 341, 64, 341, 64, 65, 69, 341, 64
+        217
     ).map { map[it.toString()] }
     actions.forEach {
         println(it)
