@@ -95,7 +95,7 @@ class Evaluator:
                                  melee.Action.DAMAGE_NEUTRAL_2, melee.Action.DAMAGE_NEUTRAL_3, melee.Action.DAMAGE_SCREW, melee.Action.DAMAGE_SCREW_AIR,
                                  melee.Action.GRABBED, melee.Action.GRABBED_WAIT_HIGH, melee.Action.GRAB_PUMMELED, melee.Action.LYING_GROUND_DOWN, melee.Action.LYING_GROUND_UP_HIT, melee.Action.LYING_GROUND_UP, melee.Action.FALLING, melee.Action.ON_HALO_DESCENT, melee.Action.ON_HALO_WAIT,
                                  melee.Action.THROWN_BACK, melee.Action.THROWN_F_HIGH, melee.Action.THROWN_F_LOW, melee.Action.THROWN_DOWN, melee.Action.THROWN_DOWN_2, melee.Action.THROWN_FB, melee.Action.THROWN_FF, melee.Action.THROWN_UP, melee.Action.THROWN_FORWARD,
-                                 melee.Action.TUMBLING, melee.Action.SHIELD_START, melee.Action.SHIELD_RELEASE]
+                                 melee.Action.TUMBLING, melee.Action.SHIELD_START, melee.Action.SHIELD_RELEASE, melee.Action.LOOPING_ATTACK_MIDDLE, melee.Action.LOOPING_ATTACK_END, melee.Action.LANDING]
     # def log(self, log_message : str):
     #     self.logger.writeframe()
 
