@@ -234,7 +234,7 @@ class Evaluator:
                 if self.hitstun_velocity  < 1:
                     self.hitstun_velocity = 1
                 elif self.hitstun_velocity < 3:
-                    self.hitstun_velocity += .1
+                    self.hitstun_velocity += 1/60
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
                 self.total_frames_hitstun += self.hitstun_velocity
             else:
