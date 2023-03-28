@@ -206,7 +206,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(15, 120, 8)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.YoungLink, 0),
+        ControllerConfiguration(Character.Fox, 0),
         ControllerConfiguration(Character.Marth, 7),
         MeleeStage.BattleField
     )
@@ -568,12 +568,13 @@ private fun behaviorMeasureInt(
     ).squared()
     val recovery = recoveryDistance.times(recoveryMultiplier)
         .squared()
-    val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
-    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
-        20f
-    ).squared()
-    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    (all + kills + damage  + recovery  /* + totalFramesHitstun*/)
+//    val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
+//    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
+//        20f
+//    ).squared()
+    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(30).squared()
+    val movement = (a.movement - b.movement).div(30).squared()
+    (all + kills + damage  + recovery  + totalFramesHitstun + movement)
 }
 //
 //
@@ -605,7 +606,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.25f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
