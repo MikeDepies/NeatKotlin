@@ -106,7 +106,7 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 2f,
             actionMultiplier = 1f,
-            killMultiplier = 100f,
+            killMultiplier = 300f,
             recoveryMultiplier = 12f
         )
     )
@@ -207,7 +207,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.YoungLink, 0),
-        ControllerConfiguration(Character.Marth, 4),
+        ControllerConfiguration(Character.Marth, 7),
         MeleeStage.BattleField
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -601,11 +601,11 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.3f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

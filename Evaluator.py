@@ -47,6 +47,7 @@ class Evaluator:
     frame_data = melee.framedata.FrameData()
     damage_action_available : bool
     total_frames_hitstun : int
+    hitstun_velocity : int
     total_frames_alive: int
     movement_frames : int
     def __init__(self, player: int, opponent: int, attack_timer: int , max_timer: int, action_limit: int, logger: melee.Logger = None) -> None:
@@ -84,8 +85,10 @@ class Evaluator:
         self.player_died = False
         self.damage_action_available = True
         self.total_frames_hitstun = 0
+        self.hitstun_velocity = 0
         self.total_frames_alive = 0
         self.movement_frames = 0
+        
         self.excluded_actions = [melee.Action.SHIELD_BREAK_FALL, melee.Action.SHIELD_BREAK_DOWN_D, melee.Action.SHIELD_BREAK_DOWN_U, melee.Action.SHIELD_BREAK_TEETER, melee.Action.SHIELD_BREAK_FLY, melee.Action.SHIELD_BREAK_STAND_D, melee.Action.SHIELD_BREAK_STAND_U,
                                  melee.Action.CROUCH_START, melee.Action.CROUCH_END, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
@@ -228,8 +231,14 @@ class Evaluator:
             if toward_opponent and not self.frame_data.is_roll(player.character, player.action) :
                 self.total_distanceTowardOpponent += abs(x_diff)
             if opponent.hitstun_frames_left > 2 and opponent.action not in [melee.Action.GRABBED, melee.Action.GRAB_PUMMELED]:
+                if self.hitstun_velocity  < 1:
+                    self.hitstun_velocity = 1
+                elif self.hitstun_velocity < 3:
+                    self.hitstun_velocity += .1
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
-                self.total_frames_hitstun +=1
+                self.total_frames_hitstun += self.hitstun_velocity
+            else:
+                self.hitstun_velocity -= .2
             if on_stage and self.knocked_off_stage:
                 if self.damage_since_recovery:
                     self.frames_without_damage -= 60 * self.attack_timer
