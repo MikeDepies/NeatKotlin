@@ -238,7 +238,7 @@ class Evaluator:
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
                 self.total_frames_hitstun += self.hitstun_velocity
             else:
-                self.hitstun_velocity -= .2
+                self.hitstun_velocity -= 1/60
             if on_stage and self.knocked_off_stage:
                 if self.damage_since_recovery:
                     self.frames_without_damage -= 60 * self.attack_timer

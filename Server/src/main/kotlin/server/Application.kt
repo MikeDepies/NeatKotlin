@@ -572,8 +572,8 @@ private fun behaviorMeasureInt(
 //    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20f
 //    ).squared()
-    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(30).squared()
-    val movement = (a.movement - b.movement).div(30).squared()
+    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
+    val movement = (a.movement - b.movement).div(5).squared()
     (all + kills + damage  + recovery  + totalFramesHitstun + movement)
 }
 //
