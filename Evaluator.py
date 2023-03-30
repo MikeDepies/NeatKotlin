@@ -233,7 +233,7 @@ class Evaluator:
             if opponent.hitstun_frames_left > 2 and opponent.action not in [melee.Action.GRABBED, melee.Action.GRAB_PUMMELED]:
                 if self.hitstun_velocity  < 1:
                     self.hitstun_velocity = 1
-                elif self.hitstun_velocity < 3:
+                elif self.hitstun_velocity < 5:
                     self.hitstun_velocity += 1/60
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
                 self.total_frames_hitstun += self.hitstun_velocity

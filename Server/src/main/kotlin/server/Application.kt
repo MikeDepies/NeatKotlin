@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(15, 120, 8)
+    val evaluatorSettings = EvaluatorSettings(15, 120, 5)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.Marth, 7),
+        ControllerConfiguration(Character.CaptainFalcon, 0),
+        ControllerConfiguration(Character.Marth, 6),
         MeleeStage.BattleField
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -572,8 +572,8 @@ private fun behaviorMeasureInt(
 //    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20f
 //    ).squared()
-    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    val movement = (a.movement - b.movement).div(5).squared()
+    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(20).squared()
+    val movement = (a.movement - b.movement).squared()
     (all + kills + damage  + recovery  + totalFramesHitstun + movement)
 }
 //
@@ -606,7 +606,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.25f)
+    val shFunction = shFunction(.4f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
