@@ -45,12 +45,13 @@ class Evaluator:
     logger: melee.Logger
     player_died: bool
     frame_data = melee.framedata.FrameData()
-    damage_action_available : bool
-    total_frames_hitstun : int
-    hitstun_velocity : int
+    damage_action_available: bool
+    total_frames_hitstun: int
+    hitstun_velocity: int
     total_frames_alive: int
-    movement_frames : int
-    def __init__(self, player: int, opponent: int, attack_timer: int , max_timer: int, action_limit: int, logger: melee.Logger = None) -> None:
+    movement_frames: int
+
+    def __init__(self, player: int, opponent: int, attack_timer: int, max_timer: int, action_limit: int, logger: melee.Logger = None) -> None:
         self.player_index = player
         self.opponent_index = opponent
         self.attack_timer = attack_timer
@@ -88,7 +89,7 @@ class Evaluator:
         self.hitstun_velocity = 0
         self.total_frames_alive = 0
         self.movement_frames = 0
-        
+
         self.excluded_actions = [melee.Action.SHIELD_BREAK_FALL, melee.Action.SHIELD_BREAK_DOWN_D, melee.Action.SHIELD_BREAK_DOWN_U, melee.Action.SHIELD_BREAK_TEETER, melee.Action.SHIELD_BREAK_FLY, melee.Action.SHIELD_BREAK_STAND_D, melee.Action.SHIELD_BREAK_STAND_U,
                                  melee.Action.CROUCH_START, melee.Action.CROUCH_END, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
@@ -98,7 +99,9 @@ class Evaluator:
                                  melee.Action.DAMAGE_NEUTRAL_2, melee.Action.DAMAGE_NEUTRAL_3, melee.Action.DAMAGE_SCREW, melee.Action.DAMAGE_SCREW_AIR,
                                  melee.Action.GRABBED, melee.Action.GRABBED_WAIT_HIGH, melee.Action.GRAB_PUMMELED, melee.Action.LYING_GROUND_DOWN, melee.Action.LYING_GROUND_UP_HIT, melee.Action.LYING_GROUND_UP, melee.Action.FALLING, melee.Action.ON_HALO_DESCENT, melee.Action.ON_HALO_WAIT,
                                  melee.Action.THROWN_BACK, melee.Action.THROWN_F_HIGH, melee.Action.THROWN_F_LOW, melee.Action.THROWN_DOWN, melee.Action.THROWN_DOWN_2, melee.Action.THROWN_FB, melee.Action.THROWN_FF, melee.Action.THROWN_UP, melee.Action.THROWN_FORWARD,
-                                 melee.Action.TUMBLING, melee.Action.SHIELD_START, melee.Action.SHIELD_RELEASE, melee.Action.LOOPING_ATTACK_MIDDLE, melee.Action.LOOPING_ATTACK_END, melee.Action.LANDING]
+                                 melee.Action.TUMBLING, melee.Action.SHIELD_START, melee.Action.SHIELD_RELEASE, melee.Action.LOOPING_ATTACK_MIDDLE, melee.Action.LOOPING_ATTACK_END, melee.Action.LANDING,
+                                 melee.Action.FAIR_LANDING, melee.Action.BAIR_LANDING, melee.Action.LANDING_SPECIAL, melee.Action.NAIR_LANDING, melee.Action.DAIR_LANDING, melee.Action.UAIR_LANDING,
+                                 melee.Action.DEAD_FALL, melee.Action.FALLING, melee.Action.FALLING_BACKWARD, melee.Action.FALLING_BACKWARD, melee.Action.SPECIAL_FALL_BACK, melee.Action.SPECIAL_FALL_FORWARD]
     # def log(self, log_message : str):
     #     self.logger.writeframe()
 
@@ -107,7 +110,7 @@ class Evaluator:
         return abs(player.position.x) < right_edge_distance or player.on_ground
 
     def is_rolling(self, player: PlayerState) -> bool:
-        return player.action in [melee.Action.ROLL_BACKWARD, melee.Action.ROLL_FORWARD, melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,melee.Action.AIRDODGE]
+        return player.action in [melee.Action.ROLL_BACKWARD, melee.Action.ROLL_FORWARD, melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP, melee.Action.AIRDODGE]
 
     def capture_action(self, player: PlayerState):
         if player.action.value in self.player_previous_actions or player.action in self.excluded_actions:
@@ -128,7 +131,6 @@ class Evaluator:
         opponent: PlayerState = game_state.players[self.opponent_index]
         return self.last_percent < player.percent
 
-
     def player_damage_amount(self, game_state: GameState) -> float:
         player: PlayerState = game_state.players[self.player_index]
         opponent: PlayerState = game_state.players[self.opponent_index]
@@ -147,15 +149,18 @@ class Evaluator:
         opponent_on_stage = self.is_on_stage(
             game_state, opponent) or opponent.action == melee.Action.EDGE_HANGING
         attack_timer_elapsed = self.frames_without_damage / \
-            60 > self.attack_timer and (not self.knocked and player_on_stage and opponent_on_stage)
+            60 > self.attack_timer and (
+                not self.knocked and player_on_stage and opponent_on_stage)
         max_timer_elapsed = self.total_frames / 60 > self.max_timer
         if max_timer_elapsed:
-            print("max_timer_elapsed: " + str(self.total_frames) + " / 60 -> " + str(self.max_timer) )
+            print("max_timer_elapsed: " + str(self.total_frames) +
+                  " / 60 -> " + str(self.max_timer))
         if attack_timer_elapsed:
-            print("attack_timer_elapsed: " + str(self.frames_without_damage) + " / 60 -> " + str(self.attack_timer) )
+            print("attack_timer_elapsed: " + str(self.frames_without_damage) +
+                  " / 60 -> " + str(self.attack_timer))
         # if self.player_died:
         #     print("player " + str(self.player_index) + " died.")
-        #player.stock == 0 #
+        # player.stock == 0 #
         return attack_timer_elapsed or max_timer_elapsed or self.player_died
 
     def storeFrameData(self, game_state: GameState) -> None:
@@ -198,7 +203,7 @@ class Evaluator:
         if self.last_x is None or game_state.frame < 0:
             self.storeFrameData(game_state)
         else:
-            
+
             # need handling for game ending and new one starting
             # stocks and other values get reset...
 
@@ -222,27 +227,29 @@ class Evaluator:
                 self.knocked_off_stage = True
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
-            self.total_frames_alive += pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3)) * 2), 2)
+            self.total_frames_alive += pow(max(0, 1 - abs(player.x / (
+                melee.EDGE_POSITION.get(game_state.stage) / 3)) * 2), 2)
             # print(str(pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)))
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
             # and not self.frame_data.is_roll(player.character, player.action)
-            #and not self.frame_data.is_roll(player.character, player.action) and not self.frame_data.is_bmove(player.character, player.action)and not self.frame_data.is_attack(player.character, player.action)
-            if toward_opponent and not self.frame_data.is_roll(player.character, player.action) :
+            # and not self.frame_data.is_roll(player.character, player.action) and not self.frame_data.is_bmove(player.character, player.action)and not self.frame_data.is_attack(player.character, player.action)
+            if toward_opponent and not self.frame_data.is_roll(player.character, player.action):
                 self.total_distanceTowardOpponent += abs(x_diff)
             if opponent.hitstun_frames_left > 2 and opponent.action not in [melee.Action.GRABBED, melee.Action.GRAB_PUMMELED]:
-                if self.hitstun_velocity  < 1:
+                if self.hitstun_velocity < 1:
                     self.hitstun_velocity = 1
                 elif self.hitstun_velocity < 5:
                     self.hitstun_velocity += 1/60
                 # print("action: " + str(opponent.action) + " -> ( " + str(opponent.hitstun_frames_left) + ") - " + str(opponent.hitlag_left))
                 self.total_frames_hitstun += self.hitstun_velocity
             else:
-                self.hitstun_velocity -= 1/60
+                self.hitstun_velocity -= .1
             if on_stage and self.knocked_off_stage:
                 if self.damage_since_recovery:
                     self.frames_without_damage -= 60 * self.attack_timer
-                    self.frames_without_damage  = max(self.frames_without_damage, -4 * self.attack_timer)
+                    self.frames_without_damage = max(
+                        self.frames_without_damage, -4 * self.attack_timer)
                     self.damage_since_recovery = False
                 self.knocked_off_stage = False
                 self.knocked = False
@@ -265,7 +272,7 @@ class Evaluator:
             if self.frames_since_opponent_unknocked > 90:
                 self.opponent_knocked = False
                 self.frames_since_opponent_unknocked = 0
-            
+
             #     # print("movement: " + str(self.movement_frames))
             #     if self.movement_frames > 15:
             #         if len(self.player_previous_actions) > 0:
@@ -280,18 +287,18 @@ class Evaluator:
             if opponent_on_stage and self.opponent_knocked_off_stage:
                 self.opponent_knocked_off_stage = False
             if player.speed_ground_x_self != 0 and not (player.action in self.excluded_actions or self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action) or self.frame_data.is_bmove(player.character, player.action) or self.frame_data.is_attack(player.character, player.action) or self.frame_data.is_grab(player.character, player.action)):
-                
+
                 # print(str(player.character) + " - " + str(player.action))
                 # print(player.speed_ground_x_self)
                 self.movement_frames += abs(player.speed_ground_x_self)
-                
+
             #     # self.total_distanceTowardOpponent += abs(player.speed_ground_x_self / 10)
                 # self.frames_without_damage -= abs(player.speed_ground_x_self)
                 # print(abs(player.speed_ground_x_self))
                 # pass
             if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
                 self.frames_without_damage += 1
-            
+
             # if self.player_took_damage(game_state):
             #         self.frames_without_damage -= (60 * self.attack_timer)
 
@@ -299,7 +306,7 @@ class Evaluator:
                 self.damage_since_recovery = True
                 # if game_state.distance < 22:
                 self.frames_without_damage -= 60 * self.attack_timer
-                
+
                 self.actions_without_damage = 0
                 # self.player_previous_actions.clear()
                 self.total_damage += self.player_damage_amount(game_state)
@@ -307,10 +314,10 @@ class Evaluator:
                     self.damage_actions.append(player.action.value)
                     self.damage_action_available = False
                 self.last_damage_action = player.action
-            
+
             # if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
             #     self.frames_without_damage += 5
-            
+
             # if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
             #     self.frames_without_damage += 6
             if self.previous_frame and self.previous_frame.players[self.player_index].action != player.action:
@@ -323,7 +330,7 @@ class Evaluator:
                     self.actions.append(player.action.value)
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
-            if self.player_lost_stock(game_state) :
+            if self.player_lost_stock(game_state):
                 self.recovery_actions.clear()
                 # if player.stock == 0:
                 # if not self.knocked:
@@ -340,7 +347,8 @@ class Evaluator:
                 self.actions_without_damage = 0
             # print(self.frames_without_damage)
             # update data to compare for next frame
-            self.frames_without_damage  = max(self.frames_without_damage, -6 * self.attack_timer)
+            self.frames_without_damage = max(
+                self.frames_without_damage, -6 * self.attack_timer)
             self.storeFrameData(game_state)
 
     def score(self, game_state: GameState) -> ActionBehavior:
