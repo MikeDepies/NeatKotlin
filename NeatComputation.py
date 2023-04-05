@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import reduce
-from math import exp, sin
+from math import exp, sin, sqrt
 from typing import Dict, List, Set, Tuple
 from ComputableNetwork import ComputableNetwork
 from HyperNeatDomain import HyperDimension3D, LayerShape3D, NetworkDesign
@@ -478,6 +478,8 @@ class HyperNeatBuilder:
                                           * total_hyper_y_distance) + self.hyper_shape.y_min
                         input[3] = target_hyper_x + target_x_origin
                         input[4] = target_hyper_y + target_y_origin
+                        # Length of connection
+                        input[6] = sqrt(pow(input[0] - input[3], 2) + pow(input[1] - input[4], 2) + pow(input[2] - input[5], 2))
                         self.network_computer.compute(input)
                         # print(input)
                         # print(self.network_computer.output_values())

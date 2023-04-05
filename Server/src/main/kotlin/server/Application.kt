@@ -100,12 +100,12 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
-        20,
+        10,
         behaviorMeasureInt(
             damageMultiplier = 2f,
-            actionMultiplier = 5f,
+            actionMultiplier = 1f,
             killMultiplier = 300f,
             recoveryMultiplier = 12f
         )
@@ -203,11 +203,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 60, 12)
+    val evaluatorSettings = EvaluatorSettings(15, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.Marth, 3),
+        ControllerConfiguration(Character.Yoshi, 0),
+        ControllerConfiguration(Character.Marth, 9),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -606,7 +606,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.3f)
 
 
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
@@ -627,7 +627,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         val simpleNeatExperiment =
             simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts, 2f)
         val population = simpleNeatExperiment.generateInitialPopulation2(
-            populationSize, 6, 2, Activation.CPPN.functions
+            populationSize, 7, 2, Activation.CPPN.functions
         )
         SimulationStart(
             simpleNeatExperiment,

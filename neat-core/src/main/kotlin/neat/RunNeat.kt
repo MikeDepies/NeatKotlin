@@ -4,16 +4,16 @@ import neat.model.NeatMutator
 import neat.mutation.*
 import java.util.*
 
-fun mutationDictionary(): List<MutationEntry> {
-    return listOf(
-        .8f chanceToMutate getMutateConnections(.05f),
-        .4f chanceToMutate mutateAddNode,
-        .4f chanceToMutate mutateAddConnection,
-        .1f chanceToMutate mutatePerturbBiasConnections(),
-        .11f chanceToMutate mutateToggleConnection,
-        .1f chanceToMutate mutateNodeActivationFunction(),
-    )
-}
+//fun mutationDictionary(): List<MutationEntry> {
+//    return listOf(
+//        .8f chanceToMutate getMutateConnections(.05f),
+//        .4f chanceToMutate mutateAddNode,
+//        .4f chanceToMutate mutateAddConnection,
+//        .1f chanceToMutate mutatePerturbBiasConnections(),
+//        .11f chanceToMutate mutateToggleConnection,
+//        .1f chanceToMutate mutateNodeActivationFunction(),
+//    )
+//}
 
 
 fun NeatBuilder.generationRules(): GenerationRules {

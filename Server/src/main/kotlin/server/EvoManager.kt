@@ -1,6 +1,7 @@
 package server
 
 import PopulationEvolver
+import createMutationDictionary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -148,10 +149,10 @@ class EvoManager(
             val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
             populationEvolver.speciesLineage.updateMascot(
                 species,
-                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
+                speciesPopulation/*.take(max(1, (speciesPopulation.size * .2).toInt()))*/.random()
             )
         }
-        val mutationEntries = mutationDictionary()
+        val mutationEntries = createMutationDictionary()
         while (newPopulation.size < populationSize) {
             newPopulation =
                 newPopulation + newPopulation.random(populationEvolver.neatExperiment.random).clone(UUID.randomUUID()).mutateModel(mutationEntries, populationEvolver.neatExperiment)
