@@ -458,7 +458,7 @@ class HyperNeatBuilder:
                           total_hyper_z_distance) + self.hyper_shape.z_min
         input : 'List[float]'= list()
 
-        for n in range(6):
+        for n in range(7):
             input.append(0)
         input[2] = source_hyper_z
         input[5] = target_hyper_z
