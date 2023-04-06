@@ -87,9 +87,9 @@ class ControllerHelper:
         if button1 == 6 or button2 == 6:
             leftShoulder = 1.0
         n = 15
-        print("controllerX: " + str(controller_state.main_stick[0]) + " controllerY: " + str(controller_state.main_stick[1]))
-        print("newX: " + str(main_stick_x) + " newY: " + str(main_stick_y))
-        print("=========")
+        # print("controllerX: " + str(controller_state.main_stick[0]) + " controllerY: " + str(controller_state.main_stick[1]))
+        # print("newX: " + str(main_stick_x) + " newY: " + str(main_stick_y))
+        # print("=========")
         new_main_x = ema(main_stick_x, self.main_x, n)
         new_main_y = ema(main_stick_y, self.main_y, n)
         new_c_x = ema(c_stick_x, self.c_x, n)
