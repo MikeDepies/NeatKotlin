@@ -124,12 +124,13 @@ class InputEmbederPacked4:
         state_controller[0, 1] = player0.controller_state.button[melee.Button.BUTTON_B]
         state_controller[0, 2] = player0.controller_state.button[melee.Button.BUTTON_Y]
         state_controller[0, 3] = player0.controller_state.button[melee.Button.BUTTON_Z]
-        state_controller[0, 4] = player0.controller_state.main_stick[1]
+        state_controller[0, 4] = player0.controller_state.main_stick[0]
         state_controller[0, 5] = player0.controller_state.main_stick[1]
         state_controller[0, 6] = player0.controller_state.c_stick[0]
         state_controller[0, 7] = player0.controller_state.c_stick[1]
         state_controller[0, 8] = player0.controller_state.l_shoulder
-
+        # print(str(player0.controller_state.main_stick))
+        # print(str(player0.controller_state))
         state_projectile: np.ndarray = np.zeros((8, 8))
         for index, projectile in enumerate(gamestate.projectiles[:8]):
             projectile: Projectile
