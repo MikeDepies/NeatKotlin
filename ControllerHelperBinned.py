@@ -16,7 +16,10 @@ def ema(close, prevEma, numSamples):
 
 
 class ControllerHelper:
-    
+    main_x = .5
+    main_y = .5
+    c_x = .5
+    c_y = .5
     def processMessage(self, message: Dict, controller: melee.Controller):
 
         if (message["a"] == True):
@@ -83,14 +86,26 @@ class ControllerHelper:
             leftShoulder = .31
         if button1 == 6 or button2 == 6:
             leftShoulder = 1.0
+        n = 15
+        print("controllerX: " + str(controller_state.main_stick[0]) + " controllerY: " + str(controller_state.main_stick[1]))
+        print("newX: " + str(main_stick_x) + " newY: " + str(main_stick_y))
+        print("=========")
+        new_main_x = ema(main_stick_x, self.main_x, n)
+        new_main_y = ema(main_stick_y, self.main_y, n)
+        new_c_x = ema(c_stick_x, self.c_x, n)
+        new_c_y = ema(c_stick_y, self.c_y, n)
         self.processMessage({
             "a": pressA,
             "b": pressB,
             "y": pressY,
             "z": pressZ,
-            "mainStickX": ema(main_stick_x, controller_state.main_stick[0], 15),
-            "mainStickY": ema(main_stick_y, controller_state.main_stick[1], 15),
-            "cStickX": ema(c_stick_x, controller_state.c_stick[0], 15),
-            "cStickY": ema(c_stick_y, controller_state.c_stick[1], 15),
+            "mainStickX": new_main_x,
+            "mainStickY": new_main_y,
+            "cStickX": new_c_x,
+            "cStickY": new_c_y,
             "leftShoulder": leftShoulder,
         }, controller)
+        self.main_x = new_main_x
+        self.main_y = new_main_y
+        self.c_x = new_c_x
+        self.c_y = new_c_y
