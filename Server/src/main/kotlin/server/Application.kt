@@ -206,8 +206,8 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(15, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Marth, 9),
+        ControllerConfiguration(Character.DoctorMario, 0),
+        ControllerConfiguration(Character.Fox, 4),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()

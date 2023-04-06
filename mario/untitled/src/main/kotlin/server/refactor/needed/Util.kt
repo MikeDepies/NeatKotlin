@@ -3,6 +3,7 @@ package server.refactor.needed
 import MessageWriter
 import PopulationEvolver
 import UserRef
+import createMutationDictionary
 import io.ktor.application.*
 import io.ktor.http.cio.websocket.*
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -29,9 +30,9 @@ val minSpeices = 5
 val maxSpecies = 15
 val speciesThresholdDelta = .0f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .32f
+var speciesSharingDistance = .3f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -127,7 +128,7 @@ fun MarioDiscovery.toVector() = listOf(
 //    (yPos.toFloat()) / 32,
 //    xPos.toFloat(),
 //    stageParts.toFloat(),
-//    time.toFloat()
+    time.toFloat()
 //    (min(10f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
@@ -147,11 +148,13 @@ fun evolve(
         val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
         populationEvolver.speciesLineage.updateMascot(
             species,
-            speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
+            speciesPopulation.random()
         )
+//        .take(max(1, (speciesPopulation.size * .2).toInt()))
     }
+    val mutationEntries = createMutationDictionary()
     while (newPopulation.size < populationSize) {
-        newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone(UUID.randomUUID())
+        newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone(UUID.randomUUID()).mutateModel(mutationEntries, neatExperiment)
     }
     if (populationEvolver.speciationController.speciesSet.size < minSpeices) {
         if (speciesSharingDistance > speciesThresholdDelta) {

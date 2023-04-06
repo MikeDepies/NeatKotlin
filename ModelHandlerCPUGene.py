@@ -46,7 +46,7 @@ class ModelHandlerMCC_CPU:
                 game_state, self.model_index, self.opponent_index)
             
             self.controller_helper.process(
-                self.network, self.controller, state)
+                self.network, self.controller, state, player0.controller_state)
             self.evaluator.evaluate_frame(game_state)
             # print("evaluating " + str(self.ai_controller_id))
         elif self.network is None:

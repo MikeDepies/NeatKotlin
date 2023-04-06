@@ -208,21 +208,22 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # print(state.shape)
         # rgb2gray(state),
         state = rescale(
-            state,
+           rgb2gray(state),# state,
             1 / 16,
-            channel_axis=2
+            # channel_axis=2
         )
         # print(state.shape)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
         network = child_network
-        network.inputs([state[..., 0], state[..., 1], state[..., 2]])
+        # [state[..., 0], state[..., 1], state[..., 2]]
+        network.inputs([state])
         # network.input((state / 255) )
         network.compute()
         output = network.output()
         # if (score != info["score"]):
         #     framesSinceMaxXChange = 0
         #     score = info["score"]
-        if abs(prevX - info["x_pos"]) > 16:
+        if abs(prevX - info["x_pos"]) > 64:
             # if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
             #     steps_left += 1
             #     prevXReset = info["x_pos"]
@@ -522,7 +523,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
             # channel_axis=2
         )  # * np.random.binomial(1, .25,  state.size)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
-        agent_network.input(state / 255.0)
+        agent_network.input([state])
         # network.input((state / 42.5) - 3)
         agent_network.compute()
         output = agent_network.output()

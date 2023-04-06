@@ -247,7 +247,7 @@ class ModelHandler:
             # if game_state.frame % 30 == 0:
             #     print("--------")
             #     print(state)
-            self.controller_helper.process(self.network, self.controller, state)
+            self.controller_helper.process(self.network, self.controller, state, player0.controller_state)
             self.evaluator.evaluate_frame(game_state)
             self.dashboard_evaluator.evaluate_frame(game_state)
         else:

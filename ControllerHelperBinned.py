@@ -8,7 +8,15 @@ from melee.enums import Button
 
 from ComputableNetwork import ComputableNetwork
 
+def emaWeight(numSamples):
+    return 2 / float(numSamples + 1)
+
+def ema(close, prevEma, numSamples):
+    return ((close-prevEma) * emaWeight(numSamples) ) + prevEma
+
+
 class ControllerHelper:
+    
     def processMessage(self, message: Dict, controller: melee.Controller):
 
         if (message["a"] == True):
@@ -50,7 +58,7 @@ class ControllerHelper:
         shape = analogOutput.shape
         return (maxAnalog[0] / (shape[0] - 1), maxAnalog[1] / (shape [1] - 1))
 
-    def process(self, network : ComputableNetwork, controller : melee.Controller, state : 'list[ndarray]'):
+    def process(self, network : ComputableNetwork, controller : melee.Controller, state : 'list[ndarray]', controller_state : melee.ControllerState):
         network.inputs(state)
         network.compute()
         outputs = network.output()
@@ -80,9 +88,9 @@ class ControllerHelper:
             "b": pressB,
             "y": pressY,
             "z": pressZ,
-            "mainStickX": main_stick_x,
-            "mainStickY": main_stick_y,
-            "cStickX": c_stick_x,
-            "cStickY": c_stick_y,
+            "mainStickX": ema(main_stick_x, controller_state.main_stick[0], 15),
+            "mainStickY": ema(main_stick_y, controller_state.main_stick[1], 15),
+            "cStickX": ema(c_stick_x, controller_state.c_stick[0], 15),
+            "cStickY": ema(c_stick_y, controller_state.c_stick[1], 15),
             "leftShoulder": leftShoulder,
         }, controller)
