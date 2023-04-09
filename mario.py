@@ -209,14 +209,15 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # rgb2gray(state),
         state = rescale(
            rgb2gray(state),# state,
-            1 / 16,
+            1 / 8,
             # channel_axis=2
         )
         # print(state.shape)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
         network = child_network
         # [state[..., 0], state[..., 1], state[..., 2]]
-        network.inputs([state])
+        
+        network.inputs([state, actionToNdArray(action)])
         # network.input((state / 255) )
         network.compute()
         output = network.output()
@@ -235,7 +236,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
 
-        if framesSinceMaxXChange > 10 * 20 or reward < -14:
+        if framesSinceMaxXChange > 40 * 20 or reward < -14:
             idle = True
 
         depad = output[0].argmax(1)[0]
@@ -290,7 +291,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         #     same_action_counter = max(0, same_action_counter - .1)
         # else:
         #     same_action_counter += .2
-        last_action = action
+        # last_action = action
         if render:
             env.render()
 
@@ -721,7 +722,7 @@ if __name__ == '__main__':
     # host = "localhost"
     # port = 8095
     process_num = 10
-    queue = mgr.Queue(process_num * 2)
+    queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 
     for i in range(process_num):
