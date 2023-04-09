@@ -59,18 +59,22 @@ class ComputableNetwork:
     connection_plane_map: 'dict[str, LayerShape3D]'
     connection_relationships_inverse: 'dict[str, list[str]]'
     connection_map: 'dict[str, ndarray]'
+    adaptive_map: 'dict[str, ndarray]'
     value_map: 'dict[str, ndarray]'
+    m_value_map: 'dict[str, ndarray]'
     connection_z_map: 'dict[int, str]'
     calculation_order: 'list[str]'
 
     def __init__(self, connection_plane_map: 'dict[str, LayerShape3D]',
                  connection_relationships_inverse: 'dict[str, list[str]]',
-                 connection_map: 'dict[str, ndarray]', value_map: 'dict[str,ndarray]',
+                 connection_map: 'dict[str, ndarray]',adaptive_map: 'dict[str, ndarray]', value_map: 'dict[str,ndarray]', m_value_map: 'dict[str, ndarray]',
                  connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : 'list[int]',input_index : 'list[int]', activation_function):
         self.connection_map = connection_map
+        self.adaptive_map = adaptive_map
         self.connection_plane_map = connection_plane_map
         self.connection_relationships_inverse = connection_relationships_inverse
         self.value_map = value_map
+        self.m_value_map = m_value_map
         self.connection_z_map = connection_z_map
         self.calculation_order = calculation_order
         self.output_index = output_index
@@ -95,41 +99,33 @@ class ComputableNetwork:
         vectorized_activation_function = np.vectorize(self.activation_function)
         vectorizedRelu = np.vectorize(relu)
         vectorized_sigmoial = np.vectorize(sigmoidal)
-        # print(self.connection_map.keys())
+        vectorized_tanh = np.vectorize(math.tanh)
         index = 0
         for c in self.calculation_order:
-            # if self.connection_plane_map[c].zOrigin == 4:
-            #     for s in sources:
-            #         print(s + ":" + c)
-            # print("new plane: " + str(c))
             if c in self.connection_relationships_inverse:
                 sources = self.connection_relationships_inverse[c]
                 filtered = filter(lambda s: (s + ":" + c) in self.connection_map, sources)
-                # print(len(list(filtered)))
                 filteredList = list(filtered)
-                # for s in filteredList:
-                #     print(self.value_map[s][..., 1].shape)
-                #     print(self.connection_map[s + ":" + c].shape)
-                # for s in sources:
-                #     print(s + ":" + c)
                 if len(filteredList) > 0:
                     signal = map(
                         lambda s: (self.value_map[s][..., 1] * self.connection_map[
                             s + ":" + c]).sum((2,3)), filteredList)
+                    # signal_mod = map(
+                    #     lambda s: (self.m_value_map[s] * self.adaptive_map[
+                    #         s + ":" + c][...,5]).sum((2,3)), filteredList)
                     
                     reduced = reduce(lambda d, d2: d + d2, signal)
+                    # m_reduced : ndarray = reduce(lambda d, d2: d + d2, signal_mod)
                     self.value_map[c][..., 0] = reduced
-                    # if (self.connection_plane_map[c].zOrigin < 4 ):
-                    #     self.value_map[c][..., 1] = vectorizedRelu(
-                    #         reduced)
-                    # else:
+                    # self.m_value_map[c] = vectorized_tanh(m_reduced / 2)
+                    # params = self.adaptive_map[c][...,0:4]
+                    # np.array([])
+                    # math.tanh
+
                     if index == len(self.calculation_order) -1:
                         self.value_map[c][..., 1] = vectorized_sigmoial(reduced)
                     else:
                         self.value_map[c][..., 1] = vectorized_activation_function(reduced)
-                    # print(" ===================>\tplane activated")
-                    # if self.connection_plane_map[c].zOrigin == 4:
-                    #     print(self.value_map[c][..., 1])
             index +=1
 
     def output(self) -> 'list[ndarray]':
