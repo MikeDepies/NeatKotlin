@@ -41,6 +41,7 @@ def gaussian(x: float):
     return exp(-pow(2.5 * x, 2))
 
 
+
 def activation_function(activation_fn: str):
     if activation_fn == "identity":
         return lambda v: v
@@ -56,6 +57,8 @@ def activation_function(activation_fn: str):
         return gaussian
     elif activation_fn == "linear":
         return linear
+    elif activation_fn == "abs":
+        return abs
     pass
 
 
@@ -446,6 +449,11 @@ class HyperNeatBuilder:
             layer_target.layer_plane.height, layer_target.layer_plane.width,
             layer_source.layer_plane.height, layer_source.layer_plane.width,
         ])
+        adaptive_ndarray = np.zeros([
+            layer_target.layer_plane.height, layer_target.layer_plane.width,
+            layer_source.layer_plane.height, layer_source.layer_plane.width,
+            6
+        ])
         total_hyper_x_distance = (
             self.hyper_shape.x_max - self.hyper_shape.x_min)
         total_hyper_y_distance = (
@@ -487,9 +495,11 @@ class HyperNeatBuilder:
                         weight = output_values[0]
                         express_value = output_values[1]
                         if (express_value > 0):
+                            # adaptive_ndarray[target_y, target_x, source_y,
+                            #                    source_x, ...] = output_values[2:]
                             connection_ndarray[target_y, target_x, source_y,
                                                source_x] = weight * self.connection_magnitude
-        return connection_ndarray
+        return [connection_ndarray, adaptive_ndarray]
 
     def filter_ndarrays(self, target_id : str, connection_plane_map : 'Dict[str, LayerShape3D]', connection_map : 'Dict[str, ndarray]'):
         network_design = self.network_design
@@ -504,13 +514,17 @@ class HyperNeatBuilder:
         network_design = self.network_design
         connection_plane_map : 'Dict[str, LayerShape3D]'= dict()
         ndarray_map : 'Dict[str, ndarray]'= dict()
+        m_ndarray_map : 'Dict[str, ndarray]'= dict()
         connection_map : 'Dict[str, ndarray]'= dict()
+        adaptive_map : 'Dict[str, ndarray]'= dict()
         connection_zindex_map : 'Dict[int, str]'= dict()
         zindex_map : 'Dict[str, int]'= dict()
         for p in network_design.connection_planes:
             connection_plane_map[p.layer_plane.id] = p
             ndarray_map[p.layer_plane.id] = np.zeros(
                 [p.layer_plane.height, p.layer_plane.width, 2])
+            m_ndarray_map[p.layer_plane.id] = np.zeros(
+                [p.layer_plane.height, p.layer_plane.width])
             # print( str(p.z_origin) +" - " + str(ndarray_map[p.layer_plane.id].shape))
             connection_zindex_map[p.z_origin] = p.layer_plane.id
             zindex_map[p.layer_plane.id] = p.z_origin
@@ -520,13 +534,16 @@ class HyperNeatBuilder:
             if p.layer_plane.id in network_design.connection_relationships:
                 for target_id in network_design.connection_relationships[p.layer_plane.id]:
                     t: LayerShape3D = connection_plane_map[target_id]
+                    connection_ndarray, adaptive_ndarray = self.compute_connections_between_layers(p, t)
                     connection_map[id + ":" +
-                                   target_id] = self.compute_connections_between_layers(p, t)
+                                   target_id] = connection_ndarray
+                    adaptive_map[id + ":" +
+                                   target_id] = adaptive_ndarray
                     connection_count += connection_map[id +
                                                        ":" + target_id].size
         output_index = list(map(lambda layer: zindex_map.get(layer), self.output_layer))
         input_index = list(map(lambda layer: zindex_map.get(layer), self.input_layer))
         #Need to create an inverted connection_zindex map and use that instead of calculation order to find indexes for output and input
         return ComputableNetwork(connection_plane_map,
-                                 network_design.target_connection_mapping, connection_map,
-                                 ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function)
+                                 network_design.target_connection_mapping, connection_map, adaptive_map,
+                                 ndarray_map, m_ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function)
