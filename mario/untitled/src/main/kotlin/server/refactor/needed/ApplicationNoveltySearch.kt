@@ -47,6 +47,7 @@ import kotlin.collections.shuffled
 import kotlin.collections.takeLast
 import kotlin.collections.toMap
 import kotlin.collections.toMutableMap
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 
@@ -136,9 +137,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .7f
+    val mateChance = .4f
     val survivalThreshold = .2f
-    val stagnation = 50
+    val stagnation = 30
 
     val randomSeed: Int = 0 + evaluationId
     val addConnectionAttempts = 5
@@ -151,7 +152,8 @@ fun Application.moduleNovelty(testing: Boolean = false) {
         Activation.CPPN.gaussian,
         Activation.CPPN.bipolarSigmoid,
         Activation.CPPN.sine,
-        Activation.CPPN.linear
+        Activation.CPPN.linear,
+        ActivationGene("abs") { it.absoluteValue }
     )
 //
 //    val models = loadPopulation(File("population/population.json"), 0).models
@@ -200,7 +202,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchive<MarioDiscovery>(80,  settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(5,  40,settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }

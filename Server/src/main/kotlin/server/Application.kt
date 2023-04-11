@@ -32,6 +32,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.absoluteValue
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -102,12 +103,12 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10,
+        5,
         behaviorMeasureInt(
             damageMultiplier = 2f,
-            actionMultiplier = 1f,
-            killMultiplier = 300f,
-            recoveryMultiplier = 12f
+            actionMultiplier = 2f,
+            killMultiplier = 100f,
+            recoveryMultiplier = 10f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -203,11 +204,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(15, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(3, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Fox, 4),
+        ControllerConfiguration(Character.DonkeyKong, 0),
+        ControllerConfiguration(Character.Fox, 1),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -572,9 +573,9 @@ private fun behaviorMeasureInt(
 //    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20f
 //    ).squared()
-    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    val movement = (a.movement - b.movement).squared()
-    (all + kills + damage  + recovery  + totalFramesHitstun + movement)
+//    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).squared()
+//    val movement = (a.movement - b.movement).squared()
+    ( all + kills + damage  + recovery )
 }
 //
 //
@@ -602,13 +603,14 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .21f, disjointCoefficient = 1f)
     val randomSeed: Int = 112 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
     val shFunction = shFunction(.3f)
 
 
+    val activationFunctions = Activation.CPPN.functions + ActivationGene("abs") {it.absoluteValue}
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
         val json = Json {}
         val manifest = json.decodeFromStream<Manifest>(File("population/${controllerId}_manifest.json").inputStream())
@@ -618,16 +620,16 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         val maxInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
         val maxNodeInnovation = models.map { model -> model.nodes.maxOf { it.node } }.maxOf { it } + 1
         val simpleNeatExperiment = simpleNeatExperiment(
-            random, maxInnovation, maxNodeInnovation, Activation.CPPN.functions, addConnectionAttempts, 2f
+            random, maxInnovation, maxNodeInnovation, activationFunctions, addConnectionAttempts, 2f
         )
 
         val population = models.map { it.toNeatMutator() }
         SimulationStart(simpleNeatExperiment, population, manifest)
     } else {
         val simpleNeatExperiment =
-            simpleNeatExperiment(random, 0, 0, Activation.CPPN.functions, addConnectionAttempts, 2f)
+            simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
         val population = simpleNeatExperiment.generateInitialPopulation2(
-            populationSize, 7, 2, Activation.CPPN.functions
+            populationSize, 7, 2, activationFunctions
         )
         SimulationStart(
             simpleNeatExperiment,

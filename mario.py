@@ -68,7 +68,7 @@ class GameEventHelper:
         return prev_info["life"] < info["life"]
 
     def stage_part_complete(self, info, stage_part_position: int):
-        return (info["x_pos"] / 32) > stage_part_position
+        return (info["x_pos"] / 128) > stage_part_position
 
 
 class GameEventCollector:
@@ -134,7 +134,7 @@ def get_network_novelty(host: str, port: int):
 
 
 def marioNovelty(queue: mp.Queue, render: Boolean):
-    env = gym_super_mario_bros.make('SuperMarioBros-v1')
+    env = gym_super_mario_bros.make('SuperMarioBros-1-2-v1')
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
@@ -524,7 +524,8 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
             # channel_axis=2
         )  # * np.random.binomial(1, .25,  state.size)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
-        agent_network.input([state])
+        
+        agent_network.inputs([state, actionToNdArray(action)])
         # network.input((state / 42.5) - 3)
         agent_network.compute()
         output = agent_network.output()
