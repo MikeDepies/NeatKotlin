@@ -99,9 +99,9 @@ class ControllerHelper:
             "b": pressB,
             "y": pressY,
             "z": pressZ,
-            "mainStickX": new_main_x,
-            "mainStickY": new_main_y,
-            "cStickX": new_c_x,
+            "mainStickX": c_stick_x,
+            "mainStickY": c_stick_y,
+            "cStickX": c_stick_x,
             "cStickY": new_c_y,
             "leftShoulder": leftShoulder,
         }, controller)

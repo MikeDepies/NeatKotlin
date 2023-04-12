@@ -104,7 +104,7 @@ class KNNNoveltyArchiveWeighted(
     override fun measure(behavior: MarioDiscovery): Float {
         if (maxDiscovery.stageParts < behavior.stageParts) maxDiscovery = behavior
         val expRatio = ((behavior.stageParts).toFloat()) / (maxDiscovery.stageParts)
-        val newK = k + (behavior.stageParts * 10).toInt()
+        val newK = k + (behavior.stageParts / 2).squared().toInt()
         val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
             .map { behaviorDistanceMeasureFunction(behavior, it) }.sorted().toList()
             .take(newK).average()
@@ -115,10 +115,10 @@ class KNNNoveltyArchiveWeighted(
 }
 
 fun MarioDiscovery.toVector() = listOf(
-    mushrooms.toFloat() * 10f,
-    fireFlowers.toFloat() * 40f,
+    mushrooms.toFloat() * 1f,
+    fireFlowers.toFloat() * 4f,
     coins.toFloat() * 1f,
-    score.toFloat() / 100,
+    score.toFloat() / 200,
     flags.toFloat() * 30f,
     lifes.toFloat() * 10f,
 //    life.toFloat() * 100f,
@@ -129,7 +129,7 @@ fun MarioDiscovery.toVector() = listOf(
 //    xPos.toFloat(),
 //    stageParts.toFloat(),
 //    time.toFloat()
-//    (min(10f, time.toFloat() / stageParts) * stageParts),
+    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
 //    stage.toFloat() * 100f
