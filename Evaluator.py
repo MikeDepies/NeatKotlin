@@ -320,7 +320,21 @@ class Evaluator:
             
             # if self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_shield(player.action):
             #     self.frames_without_damage += 6
-            move_capture = player.action_frame % 4 == 0 and player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.RUN_DIRECT, melee.Action.DASHING]
+            frame_mod = 4
+            if player.action == melee.Action.WALK_SLOW:
+                frame_mod = 10
+            elif player.action == melee.Action.WALK_MIDDLE:
+                frame_mod = 8
+            elif player.action == melee.Action.WALK_FAST:
+                frame_mod = 6
+            elif player.action == melee.Action.RUNNING:
+                frame_mod = 2
+            elif player.action == melee.Action.DASHING:
+                frame_mod = 2
+            elif player.action == melee.Action.RUN_DIRECT:
+                frame_mod = 2
+            
+            move_capture = player.action_frame % frame_mod == 0 and player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.RUN_DIRECT, melee.Action.DASHING]
             if self.previous_frame and (self.previous_frame.players[self.player_index].action != player.action or move_capture):
                 # self.frames_without_damage += 15
                 self.damage_action_available = True

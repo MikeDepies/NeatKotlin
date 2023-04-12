@@ -101,12 +101,12 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
             damageMultiplier = 2f,
-            actionMultiplier = 2f,
+            actionMultiplier = 1f,
             killMultiplier = 100f,
             recoveryMultiplier = 10f
         )
@@ -208,7 +208,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.GannonDorf, 0),
-        ControllerConfiguration(Character.Fox, 7),
+        ControllerConfiguration(Character.Fox, 9),
         MeleeStage.BattleField
     )
     val twitchBotService by inject<TwitchBotService>()
