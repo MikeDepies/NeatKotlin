@@ -75,18 +75,18 @@ data class ConnectionLocation(
 
 @Serializable
 data class NetworkBlueprint(
-    val id : String,
-    val connectionPlanes : List<LayerShape3D>,
-    val connectionRelationships : Map<String, List<String>>,
-    val targetConnectionMapping : Map<String, List<String>>,
-    val calculationOrder : List<String>,
+    val id: String,
+    val connectionPlanes: List<LayerShape3D>,
+    val connectionRelationships: Map<String, List<String>>,
+    val targetConnectionMapping: Map<String, List<String>>,
+    val calculationOrder: List<String>,
     val species: Int,
     val hiddenNodes: Int,
     val outputLayer: List<String>,
     val inputLayer: List<String>,
     val neatModel: NeatModel,
     val depth: Int,
-    val bestModel : Boolean
+    val bestModel: Boolean
 )
 
 fun layerPlane(height: Int, width: Int, id: String = UUID.randomUUID().toString()): LayerPlane {
@@ -115,14 +115,15 @@ fun createNetwork(): TaskNetworkBuilder {
 //    val plane4 = layerPlane(15, 15)
 //    val plane5 = layerPlane(15, 15)
     val inputPlanes = listOf(inputPlane, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage)
-    val hiddenPlanes = (0..10).map {
-        if (it < 2) layerPlane(12, 12) else layerPlane(9, 9)
+    val hiddenPlanes = (0..5).map {
+//        if (it < 2) layerPlane(12, 12) else
+        layerPlane(9, 9)
     }
     val analogPlane = layerPlane(17, 17)
     val analogCPlane = layerPlane(17, 17)
-    val button1Plane = layerPlane(1, 8)
-    val button2Plane = layerPlane(1, 8)
-    val outputPlanes = listOf(analogPlane, analogCPlane ,button1Plane,button2Plane)
+    val button1Plane = layerPlane(1, 7)
+    val button2Plane = layerPlane(1, 7)
+    val outputPlanes = listOf(analogPlane, analogCPlane, button1Plane, button2Plane)
     val computationOrder = hiddenPlanes + outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes
@@ -130,15 +131,15 @@ fun createNetwork(): TaskNetworkBuilder {
             put(it, planeList)
         }
         hiddenPlanes.forEachIndexed { index, layerPlane ->
-            if (index > hiddenPlanes.size -5)
-                put(layerPlane, planeList.drop(index) + outputPlanes)
+            if (index > hiddenPlanes.size - 10)
+                put(layerPlane, planeList + outputPlanes)
             else
-                put(layerPlane, planeList.drop(index ))
+                put(layerPlane, planeList.drop(index))
         }
 //        put(outputPlane, planeList.drop(2))
     }
     val planeZMap = buildMap<LayerPlane, Int> {
-        var zIndex =0
+        var zIndex = 0
 //        put(inputPlane, zIndex++)
         inputPlanes.forEach {
             put(it, zIndex++)
@@ -188,8 +189,10 @@ class TaskNetworkBuilder(
 ) {
     private val idZMap = planeZMap.mapKeys { it.key.id }
     val planes = (connectionMapping.values.flatten() + connectionMapping.keys).distinctBy { it.id }
-        .map { val zOrigin = idZMap.getValue(it.id)
-            LayerShape3D(it, 0, 0, zOrigin) }
+        .map {
+            val zOrigin = idZMap.getValue(it.id)
+            LayerShape3D(it, 0, 0, zOrigin)
+        }
 
 }
 

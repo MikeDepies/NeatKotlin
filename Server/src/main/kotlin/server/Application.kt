@@ -101,7 +101,7 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
@@ -204,11 +204,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(6, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(6, 120, 4)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.GannonDorf, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.Fox, 5),
         MeleeStage.BattleField
     )
     val twitchBotService by inject<TwitchBotService>()
