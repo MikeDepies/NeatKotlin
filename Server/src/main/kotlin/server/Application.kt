@@ -607,7 +607,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 12 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.2f)
+    val shFunction = shFunction(.3f)
 
 
     val activationFunctions = Activation.CPPN.functions + ActivationGene("abs") {it.absoluteValue}
