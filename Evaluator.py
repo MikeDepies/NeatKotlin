@@ -113,7 +113,7 @@ class Evaluator:
         return player.action in [melee.Action.ROLL_BACKWARD, melee.Action.ROLL_FORWARD, melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP, melee.Action.AIRDODGE]
 
     def capture_action(self, player: PlayerState):
-        if player.action.value in self.player_previous_actions or player.action in self.excluded_actions:
+        if player.action.value in self.player_previous_actions or player.action in self.excluded_actions or self.frame_data.is_attack(player.character, player.action):
             return False
         else:
             self.player_previous_actions.append(player.action.value)
