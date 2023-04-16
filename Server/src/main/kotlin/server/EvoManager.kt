@@ -149,7 +149,7 @@ class EvoManager(
             val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
             populationEvolver.speciesLineage.updateMascot(
                 species,
-                speciesPopulation/*.take(max(1, (speciesPopulation.size * .2).toInt()))*/.random()
+                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
             )
         }
         val mutationEntries = createMutationDictionary()
