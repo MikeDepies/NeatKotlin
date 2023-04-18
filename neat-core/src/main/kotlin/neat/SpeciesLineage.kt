@@ -7,6 +7,7 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
     fun addSpecies(species: Species, generationBorn: Int, mascot: NeatMutator) {
         map[species] = SpeciesGene(species, generationBorn, mascot)
     }
+
     val species get() = map.keys
 
     fun mascot(species: Species) = map.getValue(species).mascot
@@ -29,19 +30,28 @@ class SpeciesLineage(species: List<SpeciesGene> = listOf()) {
 
     val speciesLineageMap get() = map.toMap()
 }
-data class SpeciesScore(val species: Species, val modelScore: ModelScore, val generationLastImproved : Int)
+
+data class SpeciesAverageScore(val species: Species, val bestModel: ModelScore, val averageScore: Double)
+data class SpeciesScore(val species: Species, val modelScore: ModelScore, val generationLastImproved: Int)
 class SpeciesScoreKeeper {
     private val scoreMap = mutableMapOf<Species, SpeciesScore>()
     fun getModelScore(species: Species?) = scoreMap[species]
-    fun updateScores(modelScores: List<Pair<Species, ModelScore>>, generation : Int) {
-        modelScores.forEach { (species, modelScore) ->
+    fun updateScores(modelScores: List<Pair<Species, ModelScore>>, generation: Int) {
+        modelScores.groupBy({ it.first }) { it.second }.map { (species, modelScores) ->
+            SpeciesAverageScore(
+                species,
+                modelScores.maxByOrNull { it.fitness }!!,
+                modelScores.map { it.fitness }.average()
+            )
+        }.forEach { speciesAverageScore ->
+            val species = speciesAverageScore.species
             if (scoreMap.containsKey(species)) {
-                if (modelScore.fitness > scoreMap.getValue(species).modelScore.fitness) {
+                if (speciesAverageScore.averageScore > scoreMap.getValue(species).modelScore.fitness) {
 //                    println("update $species - ${modelScore.fitness} > ${scoreMap.getValue(species).fitness}")
-                    scoreMap[species] = SpeciesScore(species, modelScore, generation)
+                    scoreMap[species] = SpeciesScore(species, speciesAverageScore.bestModel.copy(fitness = speciesAverageScore.averageScore.toFloat()), generation)
                 }
             } else {
-                scoreMap[species] = SpeciesScore(species, modelScore, generation)
+                scoreMap[species] = SpeciesScore(species, speciesAverageScore.bestModel.copy(fitness = speciesAverageScore.averageScore.toFloat()), generation)
             }
         }
     }

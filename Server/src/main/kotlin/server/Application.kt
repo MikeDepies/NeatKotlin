@@ -105,9 +105,9 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
-            damageMultiplier = 10f,
+            damageMultiplier = 6f,
             actionMultiplier = 1f,
-            killMultiplier = 100f,
+            killMultiplier = 150f,
             recoveryMultiplier = 10f
         )
     )
@@ -204,12 +204,12 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 120, 3)
+    val evaluatorSettings = EvaluatorSettings(6, 120, 6)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.GannonDorf, 0),
-        ControllerConfiguration(Character.Fox, 5),
-        MeleeStage.BattleField
+        ControllerConfiguration(Character.Yoshi, 0),
+        ControllerConfiguration(Character.Fox, 7),
+        MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
