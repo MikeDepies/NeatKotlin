@@ -137,11 +137,11 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .4f
+    val mateChance = .7f
     val survivalThreshold = .2f
     val stagnation = 30
 
-    val randomSeed: Int = 0 + evaluationId
+    val randomSeed: Int = 20 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
@@ -202,7 +202,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(40,  40,settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(100,  40,settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }

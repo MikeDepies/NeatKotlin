@@ -1,5 +1,6 @@
 package server
 
+import KNNNoveltyArchiveWeighted
 import PopulationEvolver
 import createMutationDictionary
 import kotlinx.coroutines.Dispatchers
@@ -11,7 +12,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
-import neat.novelty.KNNNoveltyArchive
+//import neat.novelty.KNNNoveltyArchive
 import server.local.ModelEvaluationResult
 import server.message.endpoints.toModel
 import java.io.File
@@ -22,7 +23,8 @@ import kotlin.math.max
 import kotlin.math.sqrt
 
 private val log = KotlinLogging.logger { }
-
+//type KNNNoveltyArchive = KNNNoveltyArchiveWeighted
+typealias KNNNoveltyArchive<T> = KNNNoveltyArchiveWeighted
 class EvoManager(
     val populationSize: Int,
     val populationEvolver: PopulationEvolver,
@@ -149,7 +151,7 @@ class EvoManager(
             val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
             populationEvolver.speciesLineage.updateMascot(
                 species,
-                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
+                speciesPopulation.random()
             )
         }
         val mutationEntries = createMutationDictionary()
@@ -238,29 +240,29 @@ class EvoManager(
         else -> sqrt(knnNoveltyArchive.addBehavior(intifyActionBehavior(it.score)))
     }
 
-    private fun scoreAllBehavior(
-        knnNoveltyArchive: KNNNoveltyArchive<ActionSumBehavior>, it: ModelEvaluationResult
-    ): Float {
-
-        val behavior = it.score.let {
-            ActionSumBehavior(
-                it.allActions.size,
-                it.recovery.size,
-                it.kills,
-                it.totalDamageDone,
-                it.totalDistanceTowardOpponent,
-                it.playerDied
-            )
-        }
-        return when {
-            knnNoveltyArchive.size < 1 -> {
-                knnNoveltyArchive.addBehavior(behavior)
-                behavior.allActionsCount.toFloat()
-            }
-
-            else -> knnNoveltyArchive.addBehavior(behavior)
-        }
-    }
+//    private fun scoreAllBehavior(
+//        knnNoveltyArchive: KNNNoveltyArchive<ActionSumBehavior>, it: ModelEvaluationResult
+//    ): Float {
+//
+//        val behavior = it.score.let {
+//            ActionSumBehavior(
+//                it.allActions.size,
+//                it.recovery.size,
+//                it.kills,
+//                it.totalDamageDone,
+//                it.totalDistanceTowardOpponent,
+//                it.playerDied
+//            )
+//        }
+//        return when {
+//            knnNoveltyArchive.size < 1 -> {
+//                knnNoveltyArchive.addBehavior(behavior)
+//                behavior.allActionsCount.toFloat()
+//            }
+//
+//            else -> knnNoveltyArchive.addBehavior(behavior)
+//        }
+//    }
 
 }
 

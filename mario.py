@@ -134,7 +134,7 @@ def get_network_novelty(host: str, port: int):
 
 
 def marioNovelty(queue: mp.Queue, render: Boolean):
-    env = gym_super_mario_bros.make('SuperMarioBros-1-2-v1')
+    env = gym_super_mario_bros.make('SuperMarioBros-v1')
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
