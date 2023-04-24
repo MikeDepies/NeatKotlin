@@ -68,7 +68,7 @@ class GameEventHelper:
         return prev_info["life"] < info["life"]
 
     def stage_part_complete(self, info, stage_part_position: int):
-        return (info["x_pos"] / 128) > stage_part_position
+        return (info["x_pos"] / 32) > stage_part_position
 
 
 class GameEventCollector:

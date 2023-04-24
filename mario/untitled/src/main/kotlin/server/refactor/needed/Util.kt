@@ -104,7 +104,7 @@ class KNNNoveltyArchiveWeighted(
     override fun measure(behavior: MarioDiscovery): Float {
         if (maxDiscovery.stageParts < behavior.stageParts) maxDiscovery = behavior
         val expRatio = ((behavior.stageParts).toFloat()) / (maxDiscovery.stageParts)
-        val newK = k + (behavior.stageParts / 2).squared().toInt()
+        val newK = k + (behavior.stageParts / 4).squared().toInt()
         val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
             .map { behaviorDistanceMeasureFunction(behavior, it) }.sorted().toList()
             .take(newK).average()
@@ -122,14 +122,14 @@ fun MarioDiscovery.toVector() = listOf(
     flags.toFloat() * 30f,
     lifes.toFloat() * 10f,
 //    life.toFloat() * 100f,
-    xPos.toFloat() / 12,
+//    xPos.toFloat() / 12,
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
 //    (yPos.toFloat()) / 32,
 //    xPos.toFloat(),
-//    stageParts.toFloat(),
+    stageParts.toFloat() * 10,
 //    time.toFloat()
-//    (min(10f, time.toFloat() / stageParts) * stageParts),
+    (min(10f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
 //    stage.toFloat() * 100f
@@ -148,7 +148,7 @@ fun evolve(
         val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
         populationEvolver.speciesLineage.updateMascot(
             species,
-            speciesPopulation.random()
+            speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
         )
 //        .take(max(1, (speciesPopulation.size * .2).toInt()))
     }

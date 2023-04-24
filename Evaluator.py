@@ -113,7 +113,7 @@ class Evaluator:
         return player.action in [melee.Action.ROLL_BACKWARD, melee.Action.ROLL_FORWARD, melee.Action.SPOTDODGE, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP, melee.Action.AIRDODGE]
 
     def capture_action(self, player: PlayerState):
-        if player.action.value in self.player_previous_actions or player.action in self.excluded_actions or self.frame_data.is_attack(player.character, player.action) or self.frame_data.is_grab(player.character, player.action):
+        if player.action.value in self.player_previous_actions or player.action in self.excluded_actions:
             return False
         else:
             self.player_previous_actions.append(player.action.value)
@@ -310,9 +310,9 @@ class Evaluator:
                 self.actions_without_damage = 0
                 # self.player_previous_actions.clear()
                 self.total_damage += self.player_damage_amount(game_state)
-                # if self.damage_action_available:
-                self.damage_actions.append(player.action.value)
-                    # self.damage_action_available = False
+                if self.damage_action_available:
+                    self.damage_actions.append(player.action.value)
+                    self.damage_action_available = False
                 self.last_damage_action = player.action
 
             # if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):

@@ -205,11 +205,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(8, 120, 6)
+    val evaluatorSettings = EvaluatorSettings(6, 120, 14)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 5),
+        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
