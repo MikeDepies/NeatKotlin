@@ -1,6 +1,7 @@
 import mu.KotlinLogging
 import neat.novelty.NoveltyArchive
 import server.ActionBehaviorInt
+import server.squared
 import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 class KNNNoveltyArchiveWeighted(
@@ -21,7 +22,7 @@ class KNNNoveltyArchiveWeighted(
     }
 
     override fun measure(behavior: ActionBehaviorInt): Float {
-        val newK = k + (behavior.kills.size * multiplier) + ( behavior.allActions.size / 2) + (behavior.totalFrames.toInt() / 60) / 5
+        val newK = k + (behavior.kills.size * multiplier) + ( behavior.allActions.size / 5) + ((behavior.totalFrames.toInt() / 60) / 15).squared() + ( behavior.movement / 10).toInt()
         val distance = behaviors.parallelStream()
             .map { behaviorDistanceMeasureFunction(behavior, it) }.sorted().toList()
             .take(newK).average()

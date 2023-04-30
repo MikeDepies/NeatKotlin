@@ -11,7 +11,7 @@ class PopulationEvolver(
     var generation: Int = 0,
     val standardCompatibilityTest: CompatibilityTest
 ) {
-    val stagnation = 40
+    val stagnation = 80
     fun speciate(population: List<NeatMutator>) {
 
         speciesLineage = SpeciesLineage(speciesLineage.species.map {speciesLineage.speciesGene(it)}.filter {
@@ -67,8 +67,8 @@ fun createMutationDictionary(): List<MutationEntry> {
 
     return listOf(
         .9f chanceToMutate getMutateConnections(.1f, .001f, 2f),
-        .005f chanceToMutate mutateAddNode,
-        .03f chanceToMutate mutateAddConnection,
+        .003f chanceToMutate mutateAddNode,
+        .06f chanceToMutate mutateAddConnection,
         .9f chanceToMutate getMutateBiasConnections(.1f, .001f, 2f),
         .01f chanceToMutate mutateToggleConnection,
         .1f chanceToMutate mutateNodeActivationFunction(),
