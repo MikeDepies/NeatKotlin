@@ -25,7 +25,7 @@ def sigmoidal(x: float):
     elif x > 4:
         x = 4
 
-    return 1 / (1 + exp(-4.9 * x))
+    return 1 / (1 + np.exp(-4.9 * x))
 
 
 def linear(x: float):
@@ -50,7 +50,7 @@ def activation_function(activation_fn: str):
     elif activation_fn == "sine":
         return lambda x: sin(2 * x)
     elif activation_fn == "bipolarGaussian":
-        return lambda x: (2 * exp(pow(2.5 * x, 2) * -1)) - 1
+        return lambda x: (2 * np.exp(np.power(2.5 * x, 2) * -1)) - 1
     elif activation_fn == "bipolarSigmoid":
         return lambda x: (2 / (1 + np.exp(-4.9 * x))) - 1
     elif activation_fn == "gaussian":
