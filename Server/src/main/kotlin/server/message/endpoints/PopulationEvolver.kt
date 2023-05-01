@@ -68,9 +68,9 @@ fun createMutationDictionary(): List<MutationEntry> {
     return listOf(
         .9f chanceToMutate getMutateConnections(.1f, .001f, 2f),
         .003f chanceToMutate mutateAddNode,
-        .06f chanceToMutate mutateAddConnection,
+        .05f chanceToMutate mutateAddConnection,
         .9f chanceToMutate getMutateBiasConnections(.1f, .001f, 2f),
-        .01f chanceToMutate mutateToggleConnection,
+        .05f chanceToMutate mutateToggleConnection,
         .1f chanceToMutate mutateNodeActivationFunction(),
     )
 }

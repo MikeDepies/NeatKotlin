@@ -38,7 +38,7 @@ def linear(x: float):
 
 
 def gaussian(x: float):
-    return exp(-pow(2.5 * x, 2))
+    return np.exp(-np.power(2.5 * x, 2))
 
 
 
