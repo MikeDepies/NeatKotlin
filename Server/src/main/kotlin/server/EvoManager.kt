@@ -25,6 +25,7 @@ import kotlin.math.sqrt
 private val log = KotlinLogging.logger { }
 //type KNNNoveltyArchive = KNNNoveltyArchiveWeighted
 typealias KNNNoveltyArchive<T> = KNNNoveltyArchiveWeighted
+
 class EvoManager(
     val populationSize: Int,
     val populationEvolver: PopulationEvolver,
@@ -71,7 +72,10 @@ class EvoManager(
                     )
 
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
-                    val behaviorScore = max(0f, scoredBehavior)
+                    val behaviorScore = max(
+                        0f,
+                        scoredBehavior + it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60)
+                    )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
                     while (knnNoveltyArchive.behaviors.size > 2_000_000) {
                         knnNoveltyArchive.behaviors.removeAt(0)
@@ -157,7 +161,8 @@ class EvoManager(
         val mutationEntries = createMutationDictionary()
         while (newPopulation.size < populationSize) {
             newPopulation =
-                newPopulation + newPopulation.random(populationEvolver.neatExperiment.random).clone(UUID.randomUUID()).mutateModel(mutationEntries, populationEvolver.neatExperiment)
+                newPopulation + newPopulation.random(populationEvolver.neatExperiment.random).clone(UUID.randomUUID())
+                    .mutateModel(mutationEntries, populationEvolver.neatExperiment)
         }
         populationEvolver.speciate(newPopulation)
         if (newPopulation.size > populationSize) {

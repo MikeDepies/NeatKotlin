@@ -106,9 +106,9 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
-            damageMultiplier = 1f,
-            actionMultiplier = .1f,
-            killMultiplier = 100f,
+            damageMultiplier = 5f,
+            actionMultiplier = .5f,
+            killMultiplier = 200f,
             recoveryMultiplier = 5f
         )
     )
@@ -208,8 +208,8 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(5, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.GannonDorf, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.Pikachu, 0),
+        ControllerConfiguration(Character.Fox, 4),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -574,7 +574,7 @@ private fun behaviorMeasureInt(
 //    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20f
 //    ).squared()
-    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(120).squared()
+    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
     val movement = (a.movement - b.movement).div(50).squared()
     (all + kills + damage  + recovery + totalFramesHitstun + movement)
 }
@@ -600,7 +600,7 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 50,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 500,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
@@ -608,7 +608,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 12 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.42f)
+    val shFunction = shFunction(.3f)
 
 
     val activationFunctions = Activation.CPPN.functions + ActivationGene("abs") {it.absoluteValue}
