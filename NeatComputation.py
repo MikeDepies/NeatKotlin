@@ -539,11 +539,11 @@ class HyperNeatBuilder:
                                    target_id] = connection_ndarray
                     adaptive_map[id + ":" +
                                    target_id] = adaptive_ndarray
-                    connection_count += connection_map[id +
-                                                       ":" + target_id].size
+                    connection_count += connection_ndarray[connection_ndarray != 0].size
         output_index = list(map(lambda layer: zindex_map.get(layer), self.output_layer))
         input_index = list(map(lambda layer: zindex_map.get(layer), self.input_layer))
         #Need to create an inverted connection_zindex map and use that instead of calculation order to find indexes for output and input
+        print("Size of network: " + str(connection_count))
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map, adaptive_map,
                                  ndarray_map, m_ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function)

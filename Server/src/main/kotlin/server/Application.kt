@@ -104,12 +104,12 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        1,
+        5,
         behaviorMeasureInt(
-            damageMultiplier = 5f,
-            actionMultiplier = .5f,
+            damageMultiplier = 1f,
+            actionMultiplier = 1f,
             killMultiplier = 200f,
-            recoveryMultiplier = 5f
+            recoveryMultiplier = 25f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -205,11 +205,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 120, 12)
+    val evaluatorSettings = EvaluatorSettings(3, 120, 4)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Pikachu, 0),
-        ControllerConfiguration(Character.Fox, 4),
+        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Fox, 5),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -575,7 +575,7 @@ private fun behaviorMeasureInt(
 //        20f
 //    ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
-    val movement = (a.movement - b.movement).div(50).squared()
+    val movement = (a.movement - b.movement).div(10).squared()
     (all + kills + damage  + recovery + totalFramesHitstun + movement)
 }
 //
@@ -608,7 +608,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 12 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.5f)
+    val shFunction = shFunction(.45f)
 
 
     val activationFunctions = Activation.CPPN.functions + ActivationGene("abs") {it.absoluteValue}

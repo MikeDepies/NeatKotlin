@@ -1,5 +1,6 @@
 package server
 
+import Behavior
 import KNNNoveltyArchiveWeighted
 import PopulationEvolver
 import createMutationDictionary
@@ -68,7 +69,7 @@ class EvoManager(
                 val model = networkWithId
                 if (finishedScores[uuid] != true && model != null) {
                     val scoredBehavior = scoreBehavior(
-                        knnNoveltyArchive, it
+                        knnNoveltyArchive, it, model
                     )
 
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
@@ -177,6 +178,7 @@ class EvoManager(
                 }
             }
         }
+        knnNoveltyArchive.behaviors.removeAll { Species(it.species) !in populationEvolver.speciationController.speciesSet }
         return newPopulation.take(populationSize)
     }
 
@@ -235,14 +237,19 @@ class EvoManager(
     }
 
     private fun scoreBehavior(
-        knnNoveltyArchive: KNNNoveltyArchive<ActionBehaviorInt>, it: ModelEvaluationResult
-    ) = when {
-        knnNoveltyArchive.size < 1 -> {
-            knnNoveltyArchive.addBehavior(intifyActionBehavior(it.score))
-            it.score.allActions.size.toFloat()
-        }
+        knnNoveltyArchive: KNNNoveltyArchive<ActionBehaviorInt>, it: ModelEvaluationResult, model: NeatMutator
+    ): Float {
+        val species = populationEvolver.speciationController.species(model)
+        val intifyActionBehavior = intifyActionBehavior(it.score)
+        val behavior = Behavior(intifyActionBehavior, species.id)
+        return when {
+            knnNoveltyArchive.size < 1 -> {
+                knnNoveltyArchive.addBehavior(behavior)
+                it.score.allActions.size.toFloat()
+            }
 
-        else -> sqrt(knnNoveltyArchive.addBehavior(intifyActionBehavior(it.score)))
+            else -> sqrt(knnNoveltyArchive.addBehavior(behavior))
+        }
     }
 
 //    private fun scoreAllBehavior(
