@@ -104,12 +104,12 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        5,
+        1,
         behaviorMeasureInt(
-            damageMultiplier = 1f,
+            damageMultiplier = .1f,
             actionMultiplier = 1f,
-            killMultiplier = 200f,
-            recoveryMultiplier = 25f
+            killMultiplier = 100f,
+            recoveryMultiplier = 5f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -205,7 +205,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 120, 4)
+    val evaluatorSettings = EvaluatorSettings(3, 60, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
@@ -576,7 +576,7 @@ private fun behaviorMeasureInt(
 //    ).squared()
     val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
     val movement = (a.movement - b.movement).div(10).squared()
-    (all + kills + damage  + recovery + totalFramesHitstun + movement)
+    (all + kills + damage  + recovery + movement)
 }
 //
 //
@@ -600,15 +600,15 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 500,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 200,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .21f, disjointCoefficient = 1f)
     val randomSeed: Int = 12 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.45f)
+    val shFunction = shFunction(.2f)
 
 
     val activationFunctions = Activation.CPPN.functions + ActivationGene("abs") {it.absoluteValue}
