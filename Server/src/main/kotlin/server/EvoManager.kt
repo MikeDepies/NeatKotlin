@@ -178,7 +178,7 @@ class EvoManager(
                 }
             }
         }
-        knnNoveltyArchive.behaviors.removeAll { Species(it.species) !in populationEvolver.speciationController.speciesSet }
+//        knnNoveltyArchive.behaviors.removeAll { Species(it.species) !in populationEvolver.speciationController.speciesSet }
         return newPopulation.take(populationSize)
     }
 
