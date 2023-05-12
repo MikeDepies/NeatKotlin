@@ -102,14 +102,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
-            damageMultiplier = .1f,
+            damageMultiplier = 1f,
             actionMultiplier = 1f,
             killMultiplier = 100f,
-            recoveryMultiplier = 5f
+            recoveryMultiplier = 15f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -205,11 +205,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 180, 12)
+    val evaluatorSettings = EvaluatorSettings(2, 180, 15)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.Fox, 3),
+        ControllerConfiguration(Character.Mario, 0),
+        ControllerConfiguration(Character.Fox, 1),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -544,7 +544,7 @@ private fun behaviorMeasure(
 
 private fun behaviorMeasureInt(
     sequenceSeparator: Char = 2000.toChar(),
-    actionMultiplier: Float = 1f,
+    actionMultiplier: Float,
     killMultiplier: Float = 50f,
     damageMultiplier: Float = 2f,
     recoveryMultiplier: Float = 5f
@@ -574,9 +574,9 @@ private fun behaviorMeasureInt(
 //    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20f
 //    ).squared()
-    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(10).squared()
+    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(60).squared()
     val movement = (a.movement - b.movement).div(10).squared()
-    (all + kills + damage  + recovery + movement)
+    (all + kills + damage  + recovery + movement+ totalFramesHitstun)
 }
 //
 //
@@ -600,15 +600,15 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 20,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 30,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 12 + controllerId
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f)
+    val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.175f)
 
 
     val activationFunctions = Activation.CPPN.functions + ActivationGene("abs") {it.absoluteValue}
