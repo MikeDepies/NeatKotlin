@@ -107,7 +107,7 @@ fun Application.module() {
         1,
         behaviorMeasureInt(
             damageMultiplier = 1f,
-            actionMultiplier = 1f,
+            actionMultiplier = 0f,
             killMultiplier = 20f,
             recoveryMultiplier = 2f
         )
@@ -549,7 +549,7 @@ private fun behaviorMeasureInt(
     damageMultiplier: Float = 2f,
     recoveryMultiplier: Float = 5f
 ) = { a: ActionBehaviorInt, b: ActionBehaviorInt ->
-    val allActionDistance = levenshteinInt(a.allActions, b.allActions)
+//    val allActionDistance = levenshteinInt(a.allActions, b.allActions)
     val damageDistance = levenshteinInt(a.damage, b.damage)
     val killsDistance = levenshteinInt(a.kills, b.kills)
     val lhs = a.recovery
@@ -562,7 +562,7 @@ private fun behaviorMeasureInt(
 //        .squared() + (a.totalDamageDone - b.totalDamageDone).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20
 //    ).squared()
-    val all = allActionDistance.times(actionMultiplier).squared()
+//    val all = allActionDistance.times(actionMultiplier).squared()
     val kills = killsDistance.times(killMultiplier)
         .squared()
     val damage = damageDistance.times(
@@ -576,7 +576,7 @@ private fun behaviorMeasureInt(
 //    ).squared()
 //    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(60).squared()
 //    val movement = (a.movement - b.movement).div(10).squared()
-    (all + kills + damage  + recovery /*+ movement*/)
+    (/*all + */kills + damage  + recovery /*+ movement*/)
 }
 //
 //

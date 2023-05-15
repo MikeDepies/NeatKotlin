@@ -306,7 +306,7 @@ class Evaluator:
             if self.player_dealt_damage(game_state):
                 self.damage_since_recovery = True
                 # if game_state.distance < 22:
-                self.frames_without_damage -= 60 * self.attack_timer
+                # self.frames_without_damage -= 60 * self.attack_timer
 
                 self.actions_without_damage = 0
                 # self.player_previous_actions.clear()
@@ -343,6 +343,7 @@ class Evaluator:
                     # print("prev actions:")
                     # print(self.player_previous_actions)
                     # self.frames_without_damage -= 2
+                    self.frames_without_damage -= 60 * self.attack_timer
                     self.actions.append(player.action.value)
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
