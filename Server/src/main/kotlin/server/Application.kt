@@ -113,12 +113,12 @@ fun Application.module() {
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        10,
+        1,
         behaviorMeasureInt(
-            damageMultiplier = 2f,
-            actionMultiplier = 1f,
-            killMultiplier = 100f,
-            recoveryMultiplier = 8f
+            damageMultiplier = 1f,
+            actionMultiplier = 0f,
+            killMultiplier = 20f,
+            recoveryMultiplier = 2f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
@@ -209,7 +209,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.DonkeyKong, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -608,7 +608,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.55f)
+    val shFunction = shFunction(.45f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
