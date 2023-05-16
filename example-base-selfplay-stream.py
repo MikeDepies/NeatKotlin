@@ -247,6 +247,7 @@ class ModelHandler:
             # if game_state.frame % 30 == 0:
             #     print("--------")
             #     print(state)
+            # print(self.controller)
             self.controller_helper.process(self.network, self.controller, state, player0.controller_state)
             self.evaluator.evaluate_frame(game_state)
             self.dashboard_evaluator.evaluate_frame(game_state)
@@ -285,6 +286,7 @@ class ModelHandler:
     def reset(self):
         self.model_id, self.network = self.queue.get()
         self.stat_queue.put(self.model_id)
+        print(self.model_id)
         # mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
         # print(self.max_state)
         # if (self.max_state is not None):
@@ -312,10 +314,11 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     hand_counter = 0
     reset = 0
     controller_helper = ControllerHelper()
+    controller_helper2 = ControllerHelper()
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
     model_handler.reset()
-    # model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2, configuration.evaluator, stat_queue2)
-    # model_handler2.reset()
+    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper2, queue_2, configuration.evaluator, stat_queue2)
+    model_handler2.reset()
     while True:
         # print("step")
         game_state = console.step()
@@ -329,9 +332,9 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
             player0: PlayerState = game_state.players[player_index]
             player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state)
-            # model_handler2.evaluate(game_state)
+            model_handler2.evaluate(game_state)
             model_handler.postEvaluate(game_state)
-            # model_handler2.postEvaluate(game_state)
+            model_handler2.postEvaluate(game_state)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 print("no stocks! game over")
                 # if model_handler.network is None:
@@ -345,8 +348,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 evaluator_configuration = configuration.evaluator
                 model_handler.dashboard_evaluator = Evaluator(player_index, opponent_index, evaluator_configuration.attack_time,
                                    evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
-                # model_handler2.dashboard_evaluator = Evaluator(opponent_index, player_index, evaluator_configuration.attack_time,
-                #                    evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
+                model_handler2.dashboard_evaluator = Evaluator(opponent_index, player_index, evaluator_configuration.attack_time,
+                                   evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
             #     if random.random() >= .5:
             #         player_index = args.opponent
             #         opponent_index = args.port
@@ -411,7 +414,7 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, contro
         # try:
         id, builder = model_helper.randomBest()
         network = builder.create_ndarrays(sigmoidal)
-        
+        print(str(controller_index) + ": " + str(id))
         queue.put((id, network))
         
                 
@@ -463,8 +466,8 @@ if __name__ == '__main__':
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))
         processes.append(p)
         p.start()
-        # p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
-        # processes.append(p)
-        # p.start()
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
+        processes.append(p)
+        p.start()
     for p in processes:
         p.join()

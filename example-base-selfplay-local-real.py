@@ -40,10 +40,11 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
     ai_controller_id2 = 1
     reset = 0
     controller_helper = ControllerHelper()
+    controller_helper2 = ControllerHelper()
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index,
                                  controller, controller_helper, queue_1, configuration.evaluator)
     model_handler.reset()
-    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper, queue_2, configuration.evaluator)
+    model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper2, queue_2, configuration.evaluator)
     model_handler2.reset()
     while True:
         game_state = console.step()
