@@ -339,12 +339,14 @@ class Evaluator:
             if self.previous_frame and (self.previous_frame.players[self.player_index].action != player.action or move_capture):
                 # self.frames_without_damage += 15
                 self.damage_action_available = True
-                if self.capture_action(player) or move_capture:
+                action_capture = self.capture_action(player)
+                if action_capture or move_capture:
                     # print("prev actions:")
                     # print(self.player_previous_actions)
                     # self.frames_without_damage -= 2
                     self.frames_without_damage -= 60 * self.attack_timer
-                    self.actions.append(player.action.value)
+                    if action_capture:
+                        self.actions.append(player.action.value)
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
             if self.player_lost_stock(game_state):
