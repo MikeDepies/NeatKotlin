@@ -86,7 +86,7 @@ class ControllerHelper:
             leftShoulder = .31
         if button1 == 6 or button2 == 6:
             leftShoulder = 1.0
-        n = 1
+        n = 6
         # print("controllerX: " + str(controller_state.main_stick[0]) + " controllerY: " + str(controller_state.main_stick[1]))
         # print("newX: " + str(main_stick_x) + " newY: " + str(main_stick_y))
         # print("=========")
