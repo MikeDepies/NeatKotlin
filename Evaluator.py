@@ -356,7 +356,7 @@ class Evaluator:
                 # if player.stock == 0:
                 # if not self.knocked:
                 #     self.actions.clear()
-                if self.knocked:
+                if not self.knocked:
                     self.player_sd = True
                 self.player_died = True
 
