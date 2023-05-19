@@ -21,6 +21,7 @@ import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sqrt
 
 private val log = KotlinLogging.logger { }
@@ -76,7 +77,7 @@ class EvoManager(
                     val deathPenalty = if (it.score.playerDied) -20 else 0
                     val behaviorScore = max(
                         0f,
-                        scoredBehavior + it.score.totalDistanceTowardOpponent / 500 + deathPenalty//+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
+                        scoredBehavior + min(30f, it.score.totalDistanceTowardOpponent / 1000) + deathPenalty//+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
                     )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
                     while (knnNoveltyArchive.behaviors.size > 2_000_000) {

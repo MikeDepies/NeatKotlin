@@ -231,7 +231,7 @@ class Evaluator:
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
             self.total_frames_alive += pow(max(0, (1 - abs(player.x / (
-                melee.EDGE_POSITION.get(game_state.stage)))) * 2), 2)
+                melee.EDGE_POSITION.get(game_state.stage) /3 ))) * 2), 2)
             # print(str(pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)))
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
