@@ -106,19 +106,19 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
-            damageMultiplier = 1f,
+            damageMultiplier = 4f,
             actionMultiplier = 0f,
             killMultiplier = 20f,
-            recoveryMultiplier = 2f
+            recoveryMultiplier = 5f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
-            damageMultiplier = 1f,
+            damageMultiplier = 4f,
             actionMultiplier = 0f,
             killMultiplier = 20f,
-            recoveryMultiplier = 2f
+            recoveryMultiplier = 5f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
