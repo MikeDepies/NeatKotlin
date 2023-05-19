@@ -323,11 +323,11 @@ class Evaluator:
             #     self.frames_without_damage += 6
             frame_mod = 4
             if player.action == melee.Action.WALK_SLOW:
-                frame_mod = 20
+                frame_mod = 8
             elif player.action == melee.Action.WALK_MIDDLE:
-                frame_mod = 20
+                frame_mod = 8
             elif player.action == melee.Action.WALK_FAST:
-                frame_mod = 16
+                frame_mod = 8
             elif player.action == melee.Action.RUNNING:
                 frame_mod = 2
             elif player.action == melee.Action.DASHING:

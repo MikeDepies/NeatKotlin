@@ -197,20 +197,20 @@ class EvoControllerHandler(val map: Map<Int, EvoManager>, val dashboardManagerMa
 }
 
 fun character(controllerId: Int) = when (controllerId) {
-    0 -> Character.DoctorMario
-    1 -> Character.Falco
+    0 -> Character.DonkeyKong
+    1 -> Character.Yoshi
     else -> throw Exception()
 }
 
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 180, 14)
+    val evaluatorSettings = EvaluatorSettings(3, 180, 14)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DonkeyKong, 0),
         ControllerConfiguration(Character.Yoshi, 0),
-        MeleeStage.FinalDestination
+        MeleeStage.BattleField
     )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
