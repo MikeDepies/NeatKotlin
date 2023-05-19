@@ -44,6 +44,7 @@ class Evaluator:
     opponent_index: int
     logger: melee.Logger
     player_died: bool
+    player_sd: bool
     frame_data = melee.framedata.FrameData()
     damage_action_available: bool
     total_frames_hitstun: int
@@ -84,6 +85,7 @@ class Evaluator:
         self.player_previous_actions = list()
         self.last_damage_action = None
         self.player_died = False
+        self.player_sd = False
         self.damage_action_available = True
         self.total_frames_hitstun = 0
         self.hitstun_velocity = 0
@@ -354,6 +356,8 @@ class Evaluator:
                 # if player.stock == 0:
                 # if not self.knocked:
                 #     self.actions.clear()
+                if self.knocked:
+                    self.player_sd = True
                 self.player_died = True
 
             if self.opponent_lost_stock(game_state) and self.opponent_knocked:
@@ -373,4 +377,4 @@ class Evaluator:
     def score(self, game_state: GameState) -> ActionBehavior:
         return ActionBehavior(self.actions, self.kill_actions,
                               self.damage_actions, self.recovery_actions_set,
-                              self.total_damage, self.total_frames_alive, self.player_died, int(self.total_frames_hitstun), self.total_frames, self.movement_frames)
+                              self.total_damage, self.total_frames_alive, self.player_sd, int(self.total_frames_hitstun), self.total_frames, self.movement_frames)

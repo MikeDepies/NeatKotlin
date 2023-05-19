@@ -73,7 +73,7 @@ class EvoManager(
                     )
 
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
-                    val deathPenalty = if (it.score.playerDied) -10 else 0
+                    val deathPenalty = if (it.score.playerDied) -20 else 0
                     val behaviorScore = max(
                         0f,
                         scoredBehavior + it.score.totalDistanceTowardOpponent / 500 + deathPenalty//+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
