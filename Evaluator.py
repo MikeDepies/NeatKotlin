@@ -335,7 +335,7 @@ class Evaluator:
             elif player.action == melee.Action.RUN_DIRECT:
                 frame_mod = 2
             
-            move_capture = player.action_frame != 0 and player.action_frame % frame_mod == 0 and player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.RUN_DIRECT, melee.Action.DASHING]
+            move_capture = player.action_frame != 1 and player.action_frame % frame_mod == 0 and player.action in [melee.Action.WALK_FAST, melee.Action.WALK_MIDDLE, melee.Action.WALK_SLOW, melee.Action.RUNNING, melee.Action.RUN_DIRECT, melee.Action.DASHING]
             if self.previous_frame and (self.previous_frame.players[self.player_index].action != player.action or move_capture):
                 # self.frames_without_damage += 15
                 self.damage_action_available = True
