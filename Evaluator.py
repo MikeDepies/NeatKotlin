@@ -377,4 +377,4 @@ class Evaluator:
     def score(self, game_state: GameState) -> ActionBehavior:
         return ActionBehavior(self.actions, self.kill_actions,
                               self.damage_actions, self.recovery_actions_set,
-                              self.total_damage, self.total_frames_alive, self.player_sd, int(self.total_frames_hitstun), self.total_frames, self.movement_frames)
+                              self.total_damage, self.total_frames_alive, self.player_died, int(self.total_frames_hitstun), self.total_frames, self.movement_frames)

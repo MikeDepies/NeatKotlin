@@ -102,23 +102,23 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
-            damageMultiplier = 4f,
+            damageMultiplier = 1f,
             actionMultiplier = 0f,
             killMultiplier = 20f,
-            recoveryMultiplier = 5f
+            recoveryMultiplier = 2f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
-            damageMultiplier = 4f,
+            damageMultiplier = 1f,
             actionMultiplier = 0f,
             killMultiplier = 20f,
-            recoveryMultiplier = 5f
+            recoveryMultiplier = 2f
         )
     )
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
@@ -600,7 +600,7 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 100,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 10,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
@@ -608,7 +608,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.35f)
+    val shFunction = shFunction(.4f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
