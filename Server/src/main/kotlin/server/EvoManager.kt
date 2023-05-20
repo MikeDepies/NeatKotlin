@@ -74,10 +74,10 @@ class EvoManager(
                     )
 
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
-                    val deathPenalty = if (it.score.playerDied) -20 else 0
+                    val deathPenalty = if (it.score.playerDied) 0 else 0
                     val behaviorScore = max(
                         0f,
-                        scoredBehavior + it.score.totalDistanceTowardOpponent / 1000 + deathPenalty//+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
+                        scoredBehavior + it.score.totalDistanceTowardOpponent / 300 + it.score.totalFramesHitstunOpponent / 300 + deathPenalty//+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
                     )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
                     while (knnNoveltyArchive.behaviors.size > 2_000_000) {
