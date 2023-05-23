@@ -154,13 +154,13 @@ class EvoManager(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-        populationEvolver.speciationController.speciesSet.forEach { species ->
-            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-            populationEvolver.speciesLineage.updateMascot(
-                species,
-                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
-            )
-        }
+//        populationEvolver.speciationController.speciesSet.forEach { species ->
+//            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+//            populationEvolver.speciesLineage.updateMascot(
+//                species,
+//                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
+//            )
+//        }
         val mutationEntries = createMutationDictionary()
         while (newPopulation.size < populationSize) {
             newPopulation =
