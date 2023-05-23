@@ -104,7 +104,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        1,
+        40,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -113,7 +113,7 @@ fun Application.module() {
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        1,
+        80,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -604,11 +604,11 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 2 + controllerId
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
+    val randomSeed: Int = 88 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.35f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/

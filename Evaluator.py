@@ -299,8 +299,8 @@ class Evaluator:
                 # self.frames_without_damage -= abs(player.speed_ground_x_self)
                 # print(abs(player.speed_ground_x_self))
                 # pass
-            if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
-                self.frames_without_damage += 1
+            # if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
+            self.frames_without_damage += 1
 
             # if self.player_took_damage(game_state):
             #         self.frames_without_damage -= (60 * self.attack_timer)
