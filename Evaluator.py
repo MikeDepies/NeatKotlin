@@ -300,7 +300,9 @@ class Evaluator:
                 # print(abs(player.speed_ground_x_self))
                 # pass
             # if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
-            self.frames_without_damage += 1
+            if not self.knocked or game_state.frame % 10 == 0:
+                self.frames_without_damage += 1
+            
 
             # if self.player_took_damage(game_state):
             #         self.frames_without_damage -= (60 * self.attack_timer)
@@ -308,7 +310,7 @@ class Evaluator:
             if self.player_dealt_damage(game_state):
                 self.damage_since_recovery = True
                 # if game_state.distance < 22:
-                # self.frames_without_damage -= 60 * self.attack_timer
+                
 
                 self.actions_without_damage = 0
                 # self.player_previous_actions.clear()
@@ -316,6 +318,8 @@ class Evaluator:
                 # if self.damage_action_available:
                 self.damage_actions.append(player.action.value)
                     # self.damage_action_available = False
+                if self.last_damage_action != player.action:
+                    self.frames_without_damage -= 60 * self.attack_timer
                 self.last_damage_action = player.action
 
             # if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):

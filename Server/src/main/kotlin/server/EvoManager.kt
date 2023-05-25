@@ -77,12 +77,12 @@ class EvoManager(
                     val deathPenalty = if (it.score.playerDied) 0 else 0
                     val behaviorScore = max(
                         0f,
-                        scoredBehavior//+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
+                        scoredBehavior + (it.score.totalDistanceTowardOpponent / 1000) //+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
                     )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
-                    while (knnNoveltyArchive.behaviors.size > 2_000_000) {
-                        knnNoveltyArchive.behaviors.removeAt(0)
-                    }
+//                    while (knnNoveltyArchive.behaviors.size > 2_000_000) {
+//                        knnNoveltyArchive.behaviors.removeAt(0)
+//                    }
                     log.info { "$it" }
                     scores += FitnessModel(model, behaviorScore)
                     finishedScores[uuid] = true
@@ -154,13 +154,13 @@ class EvoManager(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-//        populationEvolver.speciationController.speciesSet.forEach { species ->
-//            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-//            populationEvolver.speciesLineage.updateMascot(
-//                species,
-//                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
-//            )
-//        }
+        populationEvolver.speciationController.speciesSet.forEach { species ->
+            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+            populationEvolver.speciesLineage.updateMascot(
+                species,
+                speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
+            )
+        }
         val mutationEntries = createMutationDictionary()
         while (newPopulation.size < populationSize) {
             newPopulation =
