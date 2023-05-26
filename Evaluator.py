@@ -231,7 +231,7 @@ class Evaluator:
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
             self.total_frames_alive += pow(max(0, (1 - abs(player.position.x / (
-                melee.EDGE_POSITION.get(game_state.stage) /2 ))) * 2), 2)
+                melee.EDGE_POSITION.get(game_state.stage) /3 ))) * 2), 2)
             # print(str(pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)))
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
@@ -352,7 +352,7 @@ class Evaluator:
                     # self.frames_without_damage -= 2
                     
                     if action_capture:
-                        self.frames_without_damage -= 60 * self.attack_timer
+                        self.frames_without_damage -= 20 * self.attack_timer
                         self.actions.append(player.action.value)
                     else:
                         self.frames_without_damage -= 5 * self.attack_timer

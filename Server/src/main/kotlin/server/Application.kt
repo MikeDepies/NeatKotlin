@@ -106,7 +106,7 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         40,
         behaviorMeasureInt(
-            damageMultiplier = 5f,
+            damageMultiplier = 1f,
             actionMultiplier = 0f,
             killMultiplier = 20f,
             recoveryMultiplier = 2f
@@ -117,7 +117,7 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
-            killMultiplier = 100f,
+            killMultiplier = 20f,
             recoveryMultiplier = 2f
         )
     )
@@ -205,7 +205,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 180, 20)
+    val evaluatorSettings = EvaluatorSettings(4, 180, 20)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
@@ -555,9 +555,9 @@ private fun behaviorMeasureInt(
     val lhs = a.recovery
     val rhs = b.recovery
 //    val minLen = lhs.length
-//    val recoveryDistance = levenshteinInt(
-//        lhs, rhs
-//    )
+    val recoveryDistance = levenshteinInt(
+        lhs, rhs
+    )
     //
 //        .squared() + (a.totalDamageDone - b.totalDamageDone).squared() + (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20
@@ -568,15 +568,15 @@ private fun behaviorMeasureInt(
     val damage = damageDistance.times(
         damageMultiplier
     ).squared()
-//    val recovery = recoveryDistance.times(recoveryMultiplier)
-//        .squared()
+    val recovery = recoveryDistance.times(recoveryMultiplier)
+        .squared()
 //    val damageDone = (a.totalDamageDone - b.totalDamageDone).squared()
 //    val totalDistanceToward = (a.totalDistanceTowardOpponent - b.totalDistanceTowardOpponent).div(
 //        20f
 //    ).squared()
 //    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(60).squared()
 //    val movement = (a.movement - b.movement).div(10).squared()
-    (/*all + */kills + damage  /*+ recovery*/ /*+ movement*/)
+    (/*all + */kills + damage  + recovery /*+ movement*/)
 }
 //
 //
@@ -608,7 +608,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 882 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.35f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
