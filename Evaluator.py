@@ -91,6 +91,7 @@ class Evaluator:
         self.hitstun_velocity = 0
         self.total_frames_alive = 0
         self.movement_frames = 0
+        self.actions_satisfied = True
 
         self.excluded_actions = []
         self.excluded_actions2 = [melee.Action.SHIELD_BREAK_FALL, melee.Action.SHIELD_BREAK_DOWN_D, melee.Action.SHIELD_BREAK_DOWN_U, melee.Action.SHIELD_BREAK_TEETER, melee.Action.SHIELD_BREAK_FLY, melee.Action.SHIELD_BREAK_STAND_D, melee.Action.SHIELD_BREAK_STAND_U,
@@ -319,8 +320,9 @@ class Evaluator:
                 # if self.damage_action_available:
                 self.damage_actions.append(player.action.value)
                     # self.damage_action_available = False
-                if self.last_damage_action != player.action:
+                if self.last_damage_action != player.action and self.actions_satisfied:
                     self.frames_without_damage -= 60 * self.attack_timer
+                    self.actions_satisfied = False
                 self.last_damage_action = player.action
 
             # if self.frame_data.is_bmove(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_attack(game_state.players[self.player_index].character, game_state.players[self.player_index].action) or self.frame_data.is_grab(game_state.players[self.player_index].character, game_state.players[self.player_index].action):
@@ -353,6 +355,7 @@ class Evaluator:
                     # self.frames_without_damage -= 2
                     
                     if action_capture:
+                        self.actions_satisfied = True
                         # self.frames_without_damage -= 5 * self.attack_timer
                         self.actions.append(player.action.value)
                     else:
