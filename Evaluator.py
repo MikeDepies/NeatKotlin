@@ -300,7 +300,7 @@ class Evaluator:
                 # print(abs(player.speed_ground_x_self))
                 # pass
             # if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
-            if not self.knocked or game_state.frame % 10 == 0:
+            if (not self.knocked or game_state.frame % 10 == 0) and not (self.opponent_knocked and game_state.distance > 20):
                 self.frames_without_damage += 1
             
 
@@ -352,7 +352,7 @@ class Evaluator:
                     # self.frames_without_damage -= 2
                     
                     if action_capture:
-                        self.frames_without_damage -= 20 * self.attack_timer
+                        self.frames_without_damage -= 5 * self.attack_timer
                         self.actions.append(player.action.value)
                     else:
                         self.frames_without_damage -= 5 * self.attack_timer
