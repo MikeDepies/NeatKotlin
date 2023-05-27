@@ -230,8 +230,9 @@ class Evaluator:
                 self.knocked_off_stage = True
             x_diff = player.position.x - self.last_x
             x_diff_opponent = opponent.position.x - player.position.x
-            self.total_frames_alive += pow(max(0, (1 - abs(player.position.x / (
-                melee.EDGE_POSITION.get(game_state.stage) /3 ))) * 2), 2)
+            if not self.knocked:
+                self.total_frames_alive += pow(max(0, (1 - abs(player.position.x / (
+                    melee.EDGE_POSITION.get(game_state.stage) /3 ))) * 2), 2)
             # print(str(pow(max(0, 1 - abs(player.x / (melee.EDGE_POSITION.get(game_state.stage) / 3))), 2)))
             toward_opponent = self.signOf(
                 x_diff) == self.signOf(x_diff_opponent)
@@ -300,7 +301,7 @@ class Evaluator:
                 # print(abs(player.speed_ground_x_self))
                 # pass
             # if not player.invulnerable and not self.opponent_knocked and not opponent.invulnerable and not self.knocked or (self.frame_data.is_roll(player.character, player.action) or self.frame_data.is_roll(opponent.character, opponent.action)):
-            if (not self.knocked or game_state.frame % 10 == 0) and (self.opponent_knocked and game_state.distance > 20 or not self.opponent_knocked):
+            if (not self.knocked or game_state.frame % 10 == 0):
                 self.frames_without_damage += 1
             
 
