@@ -128,7 +128,7 @@ fun createNetwork(): TaskNetworkBuilder {
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes
         inputPlanes.forEach {
-            put(it, planeList + outputPlanes)
+            put(it, planeList)
         }
         hiddenPlanes.forEachIndexed { index, layerPlane ->
 //            if (index > hiddenPlanes.size - 2)
