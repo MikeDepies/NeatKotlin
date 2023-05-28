@@ -319,7 +319,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     model_handler = ModelHandler(ai_controller_id, player_index, opponent_index, controller, controller_helper, queue_1, configuration.evaluator, stat_queue)
     model_handler.reset()
     model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper2, queue_2, configuration.evaluator, stat_queue2)
-    model_handler2.reset()
+    if configuration.player_2.cpu_level == 0:
+        model_handler2.reset()
     frame_delay = 15
     delay_game_state_provider = DelayGameState(frame_delay)
     while True:
@@ -338,9 +339,11 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
             player0: PlayerState = game_state_delayed.players[player_index]
             player1: PlayerState = game_state_delayed.players[opponent_index]
             model_handler.evaluate(game_state_delayed)
-            model_handler2.evaluate(game_state_delayed)
+            if configuration.player_2.cpu_level == 0:
+                model_handler2.evaluate(game_state_delayed)
             model_handler.postEvaluate(game_state_delayed)
-            model_handler2.postEvaluate(game_state_delayed)
+            if configuration.player_2.cpu_level == 0:
+                model_handler2.postEvaluate(game_state_delayed)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 print("no stocks! game over")
                 # if model_handler.network is None:
@@ -355,7 +358,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 evaluator_configuration = configuration.evaluator
                 model_handler.dashboard_evaluator = Evaluator(player_index, opponent_index, evaluator_configuration.attack_time,
                                    evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
-                model_handler2.dashboard_evaluator = Evaluator(opponent_index, player_index, evaluator_configuration.attack_time,
+                if configuration.player_2.cpu_level == 0:
+                    model_handler2.dashboard_evaluator = Evaluator(opponent_index, player_index, evaluator_configuration.attack_time,
                                    evaluator_configuration.max_time, evaluator_configuration.action_limit, None)
             #     if random.random() >= .5:
             #         player_index = args.opponent
@@ -463,9 +467,10 @@ if __name__ == '__main__':
     p = mp.Process(target=httpRequestProcess, daemon=True, args=(stat_queue,0))
     processes.append(p)
     p.start()
-    p = mp.Process(target=httpRequestProcess, daemon=True, args=(stat_queue2,1))
-    processes.append(p)
-    p.start()
+    if configuration.player_2.cpu_level == 0:
+        p = mp.Process(target=httpRequestProcess, daemon=True, args=(stat_queue2,1))
+        processes.append(p)
+        p.start()
     for i in range(process_num):
         p = mp.Process(target=console_loop, args=(queue_1, queue_2, configuration, stat_queue, stat_queue2))
         processes.append(p)
@@ -473,8 +478,9 @@ if __name__ == '__main__':
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue_1,mgr_dict, ns, 0))
         processes.append(p)
         p.start()
-        p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
-        processes.append(p)
-        p.start()
+        if configuration.player_2.cpu_level == 0:
+            p = mp.Process(target=queueNetworks, daemon=True, args=(queue_2,mgr_dict, ns, 1))
+            processes.append(p)
+            p.start()
     for p in processes:
         p.join()
