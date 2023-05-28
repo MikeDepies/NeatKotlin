@@ -331,6 +331,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
         
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
             game_state_delayed = delay_game_state_provider.newFrame(game_state)
+            if game_state_delayed is None:
+                continue
             hand_counter = 0
             reset = 0
             player0: PlayerState = game_state_delayed.players[player_index]

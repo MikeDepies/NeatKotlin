@@ -56,6 +56,8 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
             # print("game")
             game_state_delayed = gameStateProvider.newFrame(game_state)
+            if game_state_delayed is None:
+                continue
             player0: PlayerState = game_state_delayed.players[player_index]
             player1: PlayerState = game_state_delayed.players[opponent_index]
             # if model_handler2.network is not None:
