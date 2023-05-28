@@ -28,6 +28,7 @@ from InputEmbeder import InputEmbeder
 from InputEmbederPacked4 import InputEmbederPacked4
 from ModelHelper import ModelHelper
 
+from delayGameState import DelayGameState
 
 
 def check_port(value):
@@ -319,6 +320,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     model_handler.reset()
     model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper2, queue_2, configuration.evaluator, stat_queue2)
     model_handler2.reset()
+    frame_delay = 15
+    delay_game_state_provider = DelayGameState(frame_delay)
     while True:
         # print("step")
         game_state = console.step()
@@ -327,18 +330,20 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
             continue
         
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
+            game_state_delayed = delay_game_state_provider.newFrame(game_state)
             hand_counter = 0
             reset = 0
-            player0: PlayerState = game_state.players[player_index]
-            player1: PlayerState = game_state.players[opponent_index]
-            model_handler.evaluate(game_state)
-            model_handler2.evaluate(game_state)
-            model_handler.postEvaluate(game_state)
-            model_handler2.postEvaluate(game_state)
+            player0: PlayerState = game_state_delayed.players[player_index]
+            player1: PlayerState = game_state_delayed.players[opponent_index]
+            model_handler.evaluate(game_state_delayed)
+            model_handler2.evaluate(game_state_delayed)
+            model_handler.postEvaluate(game_state_delayed)
+            model_handler2.postEvaluate(game_state_delayed)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 print("no stocks! game over")
                 # if model_handler.network is None:
                 #     model_handler.reset()
+                delay_game_state_provider = DelayGameState(frame_delay)
                 controller_opponent.release_all()
                 controller_opponent.flush()
                 controller.release_all()

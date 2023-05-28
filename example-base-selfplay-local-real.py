@@ -21,7 +21,7 @@ from ModelHandlerMCC import ModelHandlerMCC
 from ModelHelper import ModelHelper
 from meleeConsole import startConsole
 from NeatComputation import HyperNeatBuilder
-
+from delayGameState import DelayGameState
 def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration: Configuration):
     console, controller, controller_opponent, args, log = startConsole(port)
     player_index = args.port
@@ -46,6 +46,7 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
     model_handler.reset()
     model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper2, queue_2, configuration.evaluator)
     model_handler2.reset()
+    gameStateProvider = DelayGameState(15)
     while True:
         game_state = console.step()
         if game_state is None:
@@ -54,23 +55,24 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
 
         if game_state.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
             # print("game")
-            player0: PlayerState = game_state.players[player_index]
-            player1: PlayerState = game_state.players[opponent_index]
+            game_state_delayed = gameStateProvider.newFrame(game_state)
+            player0: PlayerState = game_state_delayed.players[player_index]
+            player1: PlayerState = game_state_delayed.players[opponent_index]
             # if model_handler2.network is not None:
-            #     model_handler.evaluate(game_state)
-            #     model_handler.postEvaluate(game_state)
+            #     model_handler.evaluate(game_state_delayed)
+            #     model_handler.postEvaluate(game_state_delayed)
             # else:
             #     controller.release_all()
             # if model_handler.network is not None:
-            #     model_handler2.evaluate(game_state)
-            #     model_handler2.postEvaluate(game_state)
+            #     model_handler2.evaluate(game_state_delayed)
+            #     model_handler2.postEvaluate(game_state_delayed)
             # else:
             #     controller_opponent.release_all()
             
-            model_handler.evaluate(game_state)
-            model_handler2.evaluate(game_state)
-            model_handler.postEvaluate(game_state)
-            model_handler2.postEvaluate(game_state)
+            model_handler.evaluate(game_state_delayed)
+            model_handler2.evaluate(game_state_delayed)
+            model_handler.postEvaluate(game_state_delayed)
+            model_handler2.postEvaluate(game_state_delayed)
             if model_handler.network is None:
                 model_handler.reset()
             if model_handler2.network is None:
@@ -81,6 +83,7 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
                 # if model_handler2.network is None:
                 #     model_handler2.reset()
                 # print("no stocks! game over")
+                gameStateProvider = DelayGameState(15)
                 controller_opponent.release_all()
                 controller_opponent.flush()
                 controller.release_all()
