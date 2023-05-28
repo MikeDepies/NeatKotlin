@@ -113,7 +113,7 @@ fun Application.module() {
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        60,
+        1,
         behaviorMeasureInt(
             damageMultiplier = 2f,
             actionMultiplier = 0f,
@@ -205,7 +205,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(4, 180, 5)
+    val evaluatorSettings = EvaluatorSettings(10, 180, 5)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
