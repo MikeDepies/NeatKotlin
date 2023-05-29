@@ -356,7 +356,7 @@ class Evaluator:
                     
                     if action_capture:
                         self.actions_satisfied = True
-                        self.frames_without_damage -= 40
+                        self.frames_without_damage -= self.frame_data.frame_count(player.character,player.action)
                         self.actions.append(player.action.value)
                     else:
                         self.frames_without_damage -= 2
