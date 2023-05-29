@@ -356,7 +356,7 @@ class Evaluator:
                     
                     if action_capture:
                         self.actions_satisfied = True
-                        # self.frames_without_damage -= 5 * self.attack_timer
+                        self.frames_without_damage -= 40
                         self.actions.append(player.action.value)
                     else:
                         self.frames_without_damage -= 2
