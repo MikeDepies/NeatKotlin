@@ -108,8 +108,8 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
-            killMultiplier = 20f,
-            recoveryMultiplier = 2f
+            killMultiplier = 50f,
+            recoveryMultiplier = 5f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -205,7 +205,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(4, 180, 4)
+    val evaluatorSettings = EvaluatorSettings(5, 180, 15)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
@@ -565,6 +565,7 @@ private fun behaviorMeasureInt(
 //    val all = allActionDistance.times(actionMultiplier).squared()
     val kills = killsDistance.times(killMultiplier)
         .squared()
+
     val damage = damageDistance.times(
         damageMultiplier
     ).squared()
