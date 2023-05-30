@@ -191,22 +191,24 @@ class EvoManager(
         modelEvaluationResult: ModelEvaluationResult
     ) {
         var tempBestModels: MutableList<ScoredModel> = ArrayList(bestModels)
-        val average = bestModels.map { it.score }.average()
-        tempBestModels += ScoredModel(
-            behaviorScore,
-            populationEvolver.generation,
-            m,
-            modelEvaluationResult.modelId,
-            populationEvolver.speciationController.species(m).id
-        )
-        tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()
+//        val average = bestModels.map { it.score }.average()
+        if (tempBestModels.none { it.id == m.id.toString() }) {
+            tempBestModels += ScoredModel(
+                behaviorScore,
+                populationEvolver.generation,
+                m,
+                modelEvaluationResult.modelId,
+                populationEvolver.speciationController.species(m).id
+            )
+        }
+//        tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()
         tempBestModels.sortByDescending {
-            it.score - (populationEvolver.generation - it.generation) * (average / 10)
+            it.score - (populationEvolver.generation - it.generation) * (2)
         }
-        if (tempBestModels.size > 10) {
-            tempBestModels.removeAt(10)
-        }
-        bestModels = tempBestModels
+//        if (tempBestModels.size > 10) {
+//            tempBestModels.removeAt(10)
+//        }
+        bestModels = tempBestModels.take(10).toMutableList()
 
     }
 

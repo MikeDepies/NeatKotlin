@@ -102,14 +102,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
             killMultiplier = 20f,
-            recoveryMultiplier = 1f
+            recoveryMultiplier = 5f
         )
     )
     val knnNoveltyArchive2 = knnNoveltyArchive(
@@ -205,11 +205,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 180, 5)
+    val evaluatorSettings = EvaluatorSettings(2, 180, 5)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.CaptainFalcon, 3),
+        ControllerConfiguration(Character.CaptainFalcon, 9),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()

@@ -64,8 +64,8 @@ class ModelHandler:
         self.evaluator_configuration = evaluator_configuration
 
     def evaluate(self, game_state: melee.GameState, delayed_game_state : melee.GameState):
-        player0: PlayerState = game_state.players[self.model_index]
-        player1: PlayerState = game_state.players[self.opponent_index]
+        player0: PlayerState = delayed_game_state.players[self.model_index]
+        # player1: PlayerState = game_state.players[self.opponent_index]
         if self.network is not None and self.evaluator is not None:
             state = create_packed_state(
                 game_state, self.model_index, self.opponent_index)

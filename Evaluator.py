@@ -305,7 +305,9 @@ class Evaluator:
             # if (not self.knocked or game_state.frame % 10 == 0) and not player.invulnerable and not opponent.invulnerable:
             if  not self.opponent_knocked or self.opponent_knocked and game_state.distance < 10:
                 if not player.invulnerable or self.frame_data.is_roll(player.character, player.action):
-                    self.frames_without_damage += 1
+                    if not opponent.invulnerable or self.frame_data.is_roll(opponent.character, opponent.action):    
+                        if not self.knocked:
+                            self.frames_without_damage += 1
             
 
             # if self.player_took_damage(game_state):
@@ -362,7 +364,7 @@ class Evaluator:
                         self.frames_without_damage -= self.frame_data.frame_count(player.character,player.action) * 8
                         self.actions.append(player.action.value)
                     else:
-                        self.frames_without_damage -= 6
+                        self.frames_without_damage -= 20
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
             if self.player_lost_stock(game_state):
