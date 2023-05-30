@@ -221,7 +221,7 @@ class ModelHandler:
         self.stat_queue = stat_queue
         self.max_state = None
 
-    def evaluate(self, game_state : melee.GameState):
+    def evaluate(self, game_state : melee.GameState, delayed_game_state : melee.GameState):
         player0: PlayerState = game_state.players[self.model_index]
         player1: PlayerState = game_state.players[self.opponent_index]
         
@@ -240,7 +240,7 @@ class ModelHandler:
                 # mp.Process(target=self.dash_helper.updateKill, daemon=True).start()
         
         if self.network is not None and self.evaluator is not None and self.stale_counter < 60 * 6:    
-            state = create_packed_state(game_state, self.model_index, self.opponent_index)
+            state = create_packed_state(delayed_game_state, self.model_index, self.opponent_index)
             # if (self.max_state is not None):
             #     self.max_state = np.maximum(state, self.max_state)
             # else:
@@ -338,12 +338,12 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
             reset = 0
             player0: PlayerState = game_state_delayed.players[player_index]
             player1: PlayerState = game_state_delayed.players[opponent_index]
-            model_handler.evaluate(game_state_delayed)
+            model_handler.evaluate(game_state, game_state_delayed)
             if configuration.player_2.cpu_level == 0:
-                model_handler2.evaluate(game_state_delayed)
-            model_handler.postEvaluate(game_state_delayed)
+                model_handler2.evaluate(game_state, game_state_delayed)
+            model_handler.postEvaluate(game_state)
             if configuration.player_2.cpu_level == 0:
-                model_handler2.postEvaluate(game_state_delayed)
+                model_handler2.postEvaluate(game_state)
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
                 print("no stocks! game over")
                 # if model_handler.network is None:

@@ -72,12 +72,12 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
             # else:
             #     controller_opponent.release_all()
             
-            model_handler.evaluate(game_state_delayed)
+            model_handler.evaluate(game_state, game_state_delayed)
             if configuration.player_2.cpu_level == 0:
-                model_handler2.evaluate(game_state_delayed)
-            model_handler.postEvaluate(game_state_delayed)
+                model_handler2.evaluate(game_state, game_state_delayed)
+            model_handler.postEvaluate(game_state)
             if configuration.player_2.cpu_level == 0:
-                model_handler2.postEvaluate(game_state_delayed)
+                model_handler2.postEvaluate(game_state)
             if model_handler.network is None:
                 model_handler.reset()
             if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
