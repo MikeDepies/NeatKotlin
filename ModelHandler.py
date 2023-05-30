@@ -63,7 +63,7 @@ class ModelHandler:
         self.queue = queue
         self.evaluator_configuration = evaluator_configuration
 
-    def evaluate(self, game_state: melee.GameState):
+    def evaluate(self, game_state: melee.GameState, delayed_game_state : melee.GameState):
         player0: PlayerState = game_state.players[self.model_index]
         player1: PlayerState = game_state.players[self.opponent_index]
         if self.network is not None and self.evaluator is not None:
@@ -72,13 +72,13 @@ class ModelHandler:
             
             self.controller_helper.process(
                 self.network, self.controller, state, player0.controller_state)
-            self.evaluator.evaluate_frame(game_state)
+            self.evaluator.evaluate_frame(delayed_game_state)
             # print("evaluating " + str(self.ai_controller_id))
         elif self.network is None:
             # print("dead " + str(self.ai_controller_id))
             self.controller.release_button(melee.Button.BUTTON_A)
             self.controller.release_button(melee.Button.BUTTON_B)
-            if game_state.frame % 3 == 0:
+            if delayed_game_state.frame % 3 == 0:
                 self.controller.press_button(melee.Button.BUTTON_Y)
             else:
                 self.controller.release_button(melee.Button.BUTTON_Y)
