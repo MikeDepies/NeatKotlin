@@ -108,7 +108,7 @@ fun Application.module() {
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
-            killMultiplier = 50f,
+            killMultiplier = 20f,
             recoveryMultiplier = 1f
         )
     )
@@ -205,11 +205,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 180, 12)
+    val evaluatorSettings = EvaluatorSettings(2, 180, 8)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.CaptainFalcon, 7),
+        ControllerConfiguration(Character.CaptainFalcon, 3),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -601,7 +601,7 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 10,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 100,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
