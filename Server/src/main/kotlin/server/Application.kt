@@ -104,11 +104,11 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        40,
+        1,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
-            killMultiplier = 20f,
+            killMultiplier = 50f,
             recoveryMultiplier = 5f
         )
     )
@@ -205,11 +205,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 180, 5)
+    val evaluatorSettings = EvaluatorSettings(4, 40, 8)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.CaptainFalcon, 9),
+        ControllerConfiguration(Character.CaptainFalcon, 1),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()

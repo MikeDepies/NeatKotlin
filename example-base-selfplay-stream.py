@@ -336,8 +336,8 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
                 continue
             hand_counter = 0
             reset = 0
-            player0: PlayerState = game_state_delayed.players[player_index]
-            player1: PlayerState = game_state_delayed.players[opponent_index]
+            player0: PlayerState = game_state.players[player_index]
+            player1: PlayerState = game_state.players[opponent_index]
             model_handler.evaluate(game_state, game_state_delayed)
             if configuration.player_2.cpu_level == 0:
                 model_handler2.evaluate(game_state, game_state_delayed)

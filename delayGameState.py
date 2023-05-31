@@ -7,7 +7,7 @@ class DelayGameState:
     
     def newFrame(self, game_state : melee.GameState):
         self.frames.insert(0, game_state)
-        if len(self.frames) >= self.frame_delay:
+        if len(self.frames) > self.frame_delay:
             return self.frames.pop()
         else:
             return None
