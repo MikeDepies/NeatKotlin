@@ -306,8 +306,8 @@ class Evaluator:
             if  not self.opponent_knocked or self.opponent_knocked and game_state.distance < 10:
                 if not player.invulnerable or self.frame_data.is_roll(player.character, player.action):
                     if not opponent.invulnerable or self.frame_data.is_roll(opponent.character, opponent.action):    
-                        if not self.knocked:
-                            self.frames_without_damage += 1
+                        # if not self.knocked:
+                        self.frames_without_damage += 1
             
 
             # if self.player_took_damage(game_state):
