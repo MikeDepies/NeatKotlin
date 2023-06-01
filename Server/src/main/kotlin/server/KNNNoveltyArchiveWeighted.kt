@@ -5,9 +5,11 @@ import neat.novelty.NoveltyArchive
 import server.ActionBehaviorInt
 import server.squared
 import kotlin.streams.toList
-private val logger = KotlinLogging.logger {  }
+
+private val logger = KotlinLogging.logger { }
+
 @Serializable
-data class Behavior<T>(val behavior : T, val species : Int)
+data class Behavior<T>(val behavior: T, val species: Int)
 class KNNNoveltyArchiveWeighted(
     var k: Int,
     val multiplier: Int,
@@ -15,7 +17,8 @@ class KNNNoveltyArchiveWeighted(
     val behaviorDistanceMeasureFunction: (ActionBehaviorInt, ActionBehaviorInt) -> Float
 ) : NoveltyArchive<Behavior<ActionBehaviorInt>> {
     override val behaviors = mutableListOf<Behavior<ActionBehaviorInt>>()
-//    var maxDiscovery: MarioDiscovery = MarioDiscovery("", 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, )
+
+    //    var maxDiscovery: MarioDiscovery = MarioDiscovery("", 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, )
     override val size: Int
         get() = behaviors.size
 
@@ -27,7 +30,8 @@ class KNNNoveltyArchiveWeighted(
 
     override fun measure(b: Behavior<ActionBehaviorInt>): Float {
         val behavior = b.behavior
-        val newK = k + (behavior.kills.size.squared() * multiplier) + behavior.allActions.size / 10
+        val newK =
+            k + (behavior.kills.size.squared() * multiplier) + behavior.allActions.size + behavior.movement.toInt() / 10
         val distance = behaviors.parallelStream()
             .map { behaviorDistanceMeasureFunction(behavior, it.behavior) }.sorted().toList()
             .take(newK).average()

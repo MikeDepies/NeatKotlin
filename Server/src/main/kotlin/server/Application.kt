@@ -205,7 +205,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(1, 40, 8)
+    val evaluatorSettings = EvaluatorSettings(3, 40, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
@@ -577,7 +577,9 @@ private fun behaviorMeasureInt(
 //    ).squared()
 //    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(60).squared()
 //    val movement = (a.movement - b.movement).div(10).squared()
-    (/*all + */kills + damage  + recovery /*+ movement*/)
+    val allCount = (a.allActions.size - b.allActions.size).squared()
+    val damageDone = ((a.totalDamageDone - b.totalDamageDone) / 10).squared()
+    (/*all + */allCount + kills + damage  + recovery /*+ movement*/)
 }
 //
 //
