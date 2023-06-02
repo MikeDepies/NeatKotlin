@@ -31,7 +31,7 @@ class KNNNoveltyArchiveWeighted(
     override fun measure(b: Behavior<ActionBehaviorInt>): Float {
         val behavior = b.behavior
         val newK =
-            k + (behavior.kills.size.squared() * multiplier) + behavior.allActions.size + behavior.movement.toInt() / 10
+            k + (behavior.kills.size.squared() * multiplier) + behavior.allActions.size /10 + behavior.movement.toInt() / 10
         val distance = behaviors.parallelStream()
             .map { behaviorDistanceMeasureFunction(behavior, it.behavior) }.sorted().toList()
             .take(newK).average()

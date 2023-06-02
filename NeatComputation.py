@@ -41,7 +41,6 @@ def gaussian(x: float):
     return np.exp(-np.power(2.5 * x, 2))
 
 
-
 def activation_function(activation_fn: str):
     if activation_fn == "identity":
         return lambda v: v
@@ -97,14 +96,14 @@ def connections_to(nodes: List[NodeGeneModel], neat_model: NeatModel) -> List[Co
 
 
 def node_dict(nodes: List[NodeGeneModel]) -> Dict[int, NodeGeneModel]:
-    d : 'Dict[int, NodeGeneModel]'= dict()
+    d: 'Dict[int, NodeGeneModel]' = dict()
     for n in nodes:
         d[n.node] = n
     return d
 
 
 def create_network_node_map(nodes: List[NodeGeneModel]) -> Dict[int, NetworkNode]:
-    d : 'Dict[int, NetworkNode]'= dict()
+    d: 'Dict[int, NetworkNode]' = dict()
     for n in nodes:
         d[n.node] = NetworkNode(n.node, 0, 0, n.activation_function, n.bias)
     return d
@@ -115,8 +114,8 @@ def next_nodes(connections: List[ConnectionGeneModel], node_map: Dict[int, NodeG
 
 
 def next_nodes_to(connections: List[ConnectionGeneModel], node_map: Dict[int, NodeGeneModel]) -> List[NodeGeneModel]:
-    node_set : 'Set[int]' = set()
-    node_list : 'List[NodeGeneModel]'= list()
+    node_set: 'Set[int]' = set()
+    node_list: 'List[NodeGeneModel]' = list()
     for c in connections:
         if c.in_node not in node_set:
             node_set.add(c.in_node)
@@ -138,7 +137,7 @@ class LayerComputationInstruction:
 
 
 def create_node_index_dict(nodes: List[NetworkNode]):
-    node_dict : 'Dict[int, int]'= dict()
+    node_dict: 'Dict[int, int]' = dict()
     index = 0
     for n in nodes:
         node_dict[n.node] = index
@@ -157,8 +156,8 @@ def create_bias_ndarray(nodes: List[NetworkNode]) -> ndarray:
 
 
 def build_input_nodes(weight_instructions: List[WeightComputationInstruction]) -> List[NetworkNode]:
-    node_list : 'List[NetworkNode]'= list()
-    node_id_set : 'Set[int]' = set()
+    node_list: 'List[NetworkNode]' = list()
+    node_id_set: 'Set[int]' = set()
     for c in weight_instructions:
         if c.input_node.node not in node_id_set:
             node_list.append(c.input_node)
@@ -167,8 +166,8 @@ def build_input_nodes(weight_instructions: List[WeightComputationInstruction]) -
 
 
 def build_output_nodes(weight_instructions: List[WeightComputationInstruction]) -> List[NetworkNode]:
-    node_list : 'List[NetworkNode]'= list()
-    node_id_set : 'Set[int]'= set()
+    node_list: 'List[NetworkNode]' = list()
+    node_id_set: 'Set[int]' = set()
     for c in weight_instructions:
         if c.output_node.node not in node_id_set:
             node_list.append(c.output_node)
@@ -186,12 +185,13 @@ class NDLayerComputationInstruction:
 
 
 def create_ndlayer_computation_instructions(neat_model: NeatModel) -> List[NDLayerComputationInstruction]:
-    nd_layer_computation_instructions : 'List[NDLayerComputationInstruction]' = list()
+    nd_layer_computation_instructions: 'List[NDLayerComputationInstruction]' = list(
+    )
     network_node_map = create_network_node_map(neat_model.nodes)
     output_nodes_list = output_nodes(neat_model)
     node_map = node_dict(neat_model.nodes)
-    activation_set : 'List[NodeGeneModel]'= list()
-    active_set : 'List[NodeGeneModel]' = list(input_nodes(neat_model))
+    activation_set: 'List[NodeGeneModel]' = list()
+    active_set: 'List[NodeGeneModel]' = list(input_nodes(neat_model))
     # print(network_node_map)
     return nd_layer_computation_instructions
 
@@ -200,7 +200,8 @@ def convert_computation_instructions_to_ndarray_instructions_2(layer_computation
     # Create nd arrays for each layer of nodes
     # Create connection weight matrix between layers
     # Implement value forwarding for same node id but different ndarray
-    nd_layer_computation_instructions : 'List[NDLayerComputationInstruction]'= list()
+    nd_layer_computation_instructions: 'List[NDLayerComputationInstruction]' = list(
+    )
     # node_map = node_dict(neat_model.nodes)
     for index, layer_instruction in enumerate(layer_computation_instructions):
         output_nodes = build_output_nodes(layer_instruction.weightInstructions)
@@ -251,7 +252,8 @@ def convert_computation_instructions_to_ndarray_instructions(layer_computation_i
     # Create connection weight matrix between layers
     # Implement value forwarding for same node id but different ndarray
     index = 0
-    nd_layer_computation_instructions : 'List[NDLayerComputationInstruction]'= list()
+    nd_layer_computation_instructions: 'List[NDLayerComputationInstruction]' = list(
+    )
     for layer_instruction in layer_computation_instructions:
         target_length = len(layer_instruction.nodes)
         node_index_dict = create_node_index_dict(layer_instruction.nodes)
@@ -307,17 +309,16 @@ def compute_nd_instructions(nd_layer_computations: List[NDLayerComputationInstru
                 nd_layer.nd_nodes[0, index, 0] = 0
 
 
-
-
 def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List[NetworkNode], List[NetworkNode], List[LayerComputationInstruction]]:
     output_nodes_list = output_nodes(neat_model)
     node_map = node_dict(neat_model.nodes)
     input_nodes_list = input_nodes(neat_model)
     active_set = output_nodes_list
     network_node_map = create_network_node_map(neat_model.nodes)
-    layer_computation_instructions : 'List[LayerComputationInstruction]' = list()
-    connections_processed : 'Set[int]'= set()
-    
+    layer_computation_instructions: 'List[LayerComputationInstruction]' = list(
+    )
+    connections_processed: 'Set[int]' = set()
+
     while len(active_set) > 0:
         captured_set = active_set
         connections = list(filter(
@@ -326,22 +327,22 @@ def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List
             connections_processed.add(c.innovation)
         weight_computation_instruction_set = list(map(lambda c: WeightComputationInstruction(
             network_node_map[c.in_node], network_node_map[c.out_node], c.weight), connections))
-        
+
         layer_network_nodes = list(
             map(lambda n: network_node_map[n.node], captured_set))
         layer_computation_instructions.append(LayerComputationInstruction(
             layer_network_nodes, weight_computation_instruction_set))
-        
+
         active_set = list(
             next_nodes_to(connections, node_map))
     input_network_nodes = list(
         map(lambda n: network_node_map[n.node], input_nodes_list))
     output_network_nodes = list(
         map(lambda n: network_node_map[n.node], output_nodes_list))
-    
-    nodes_visited : 'Set[int]'= set()
+
+    nodes_visited: 'Set[int]' = set()
     for lci in layer_computation_instructions:
-        nodes_to_remove : 'List[NodeGeneModel]'= list()
+        nodes_to_remove: 'List[NodeGeneModel]' = list()
         for n in lci.nodes:
             if n.node not in nodes_visited:
                 nodes_visited.add(n.node)
@@ -425,7 +426,7 @@ class HyperNeatBuilder:
     network_design: NetworkDesign
     network_computer: NeatComputer
 
-    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float, output_layer : 'list[str]', input_layer : 'list[str]') -> None:
+    def __init__(self, network_design: NetworkDesign, network_computer: NeatComputer, hyper_shape: HyperDimension3D, depth: int, connection_magnitude: float, output_layer: 'list[str]', input_layer: 'list[str]') -> None:
         self.network_design = network_design
         self.network_computer = network_computer
         self.hyper_shape = hyper_shape
@@ -464,8 +465,9 @@ class HyperNeatBuilder:
                           total_hyper_z_distance) + self.hyper_shape.z_min
         target_hyper_z = ((target_z / self.depth) *
                           total_hyper_z_distance) + self.hyper_shape.z_min
-        input : 'List[float]'= list()
-
+        input: 'List[float]' = list()
+        connection_cost_sum = 0
+        connections_expressed = 0
         for n in range(7):
             input.append(0)
         input[2] = source_hyper_z
@@ -487,7 +489,9 @@ class HyperNeatBuilder:
                         input[3] = target_hyper_x + target_x_origin
                         input[4] = target_hyper_y + target_y_origin
                         # Length of connection
-                        input[6] = sqrt(pow(input[0] - input[3], 2) + pow(input[1] - input[4], 2) + pow(input[2] - input[5], 2))
+                        length = sqrt(pow(
+                            input[0] - input[3], 2) + pow(input[1] - input[4], 2) + pow(input[2] - input[5], 2))
+                        input[6] = length
                         self.network_computer.compute(input)
                         # print(input)
                         # print(self.network_computer.output_values())
@@ -495,30 +499,35 @@ class HyperNeatBuilder:
                         weight = output_values[0]
                         express_value = output_values[1]
                         if (express_value > 0):
+                            if weight != 0:
+                                connections_expressed += 1
+                                connection_cost_sum += length
                             # adaptive_ndarray[target_y, target_x, source_y,
                             #                    source_x, ...] = output_values[2:]
                             connection_ndarray[target_y, target_x, source_y,
                                                source_x] = weight * self.connection_magnitude
-        return [connection_ndarray, adaptive_ndarray]
+        return (connection_ndarray, adaptive_ndarray, connections_expressed, connection_cost_sum)
 
-    def filter_ndarrays(self, target_id : str, connection_plane_map : 'Dict[str, LayerShape3D]', connection_map : 'Dict[str, ndarray]'):
+    def filter_ndarrays(self, target_id: str, connection_plane_map: 'Dict[str, LayerShape3D]', connection_map: 'Dict[str, ndarray]'):
         network_design = self.network_design
         for source_id in network_design.target_connection_mapping[target_id]:
             connections = connection_map[source_id + ":" + target_id]
             # target y, x source y, x
-            
+
             pass
         pass
 
     def create_ndarrays(self, activation_function) -> ComputableNetwork:
         network_design = self.network_design
-        connection_plane_map : 'Dict[str, LayerShape3D]'= dict()
-        ndarray_map : 'Dict[str, ndarray]'= dict()
-        m_ndarray_map : 'Dict[str, ndarray]'= dict()
-        connection_map : 'Dict[str, ndarray]'= dict()
-        adaptive_map : 'Dict[str, ndarray]'= dict()
-        connection_zindex_map : 'Dict[int, str]'= dict()
-        zindex_map : 'Dict[str, int]'= dict()
+        connection_plane_map: 'Dict[str, LayerShape3D]' = dict()
+        ndarray_map: 'Dict[str, ndarray]' = dict()
+        m_ndarray_map: 'Dict[str, ndarray]' = dict()
+        connection_map: 'Dict[str, ndarray]' = dict()
+        adaptive_map: 'Dict[str, ndarray]' = dict()
+        connection_zindex_map: 'Dict[int, str]' = dict()
+        zindex_map: 'Dict[str, int]' = dict()
+        total_number_of_connections = 0
+        total_connection_cost = 0
         for p in network_design.connection_planes:
             connection_plane_map[p.layer_plane.id] = p
             ndarray_map[p.layer_plane.id] = np.zeros(
@@ -534,16 +543,21 @@ class HyperNeatBuilder:
             if p.layer_plane.id in network_design.connection_relationships:
                 for target_id in network_design.connection_relationships[p.layer_plane.id]:
                     t: LayerShape3D = connection_plane_map[target_id]
-                    connection_ndarray, adaptive_ndarray = self.compute_connections_between_layers(p, t)
+                    connection_ndarray, adaptive_ndarray, connections_expressed, connection_cost_sum = self.compute_connections_between_layers(
+                        p, t)
+                    total_connection_cost += connection_cost_sum
+                    total_number_of_connections += connections_expressed
                     connection_map[id + ":" +
                                    target_id] = connection_ndarray
                     adaptive_map[id + ":" +
-                                   target_id] = adaptive_ndarray
+                                 target_id] = adaptive_ndarray
                     connection_count += connection_ndarray[connection_ndarray != 0].size
-        output_index = list(map(lambda layer: zindex_map.get(layer), self.output_layer))
-        input_index = list(map(lambda layer: zindex_map.get(layer), self.input_layer))
-        #Need to create an inverted connection_zindex map and use that instead of calculation order to find indexes for output and input
+        output_index = list(
+            map(lambda layer: zindex_map.get(layer), self.output_layer))
+        input_index = list(
+            map(lambda layer: zindex_map.get(layer), self.input_layer))
+        # Need to create an inverted connection_zindex map and use that instead of calculation order to find indexes for output and input
         print("Size of network: " + str(connection_count))
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map, adaptive_map,
-                                 ndarray_map, m_ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function)
+                                 ndarray_map, m_ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function, total_number_of_connections, total_connection_cost)

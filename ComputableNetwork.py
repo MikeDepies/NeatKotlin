@@ -64,11 +64,13 @@ class ComputableNetwork:
     m_value_map: 'dict[str, ndarray]'
     connection_z_map: 'dict[int, str]'
     calculation_order: 'list[str]'
+    total_number_of_connections : float
+    total_connection_cost : float
 
     def __init__(self, connection_plane_map: 'dict[str, LayerShape3D]',
                  connection_relationships_inverse: 'dict[str, list[str]]',
                  connection_map: 'dict[str, ndarray]',adaptive_map: 'dict[str, ndarray]', value_map: 'dict[str,ndarray]', m_value_map: 'dict[str, ndarray]',
-                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : 'list[int]',input_index : 'list[int]', activation_function):
+                 connection_z_map: 'dict[int, str]', calculation_order: 'list[str]', output_index : 'list[int]',input_index : 'list[int]', activation_function, total_number_of_connections : float, total_connection_cost : float):
         self.connection_map = connection_map
         self.adaptive_map = adaptive_map
         self.connection_plane_map = connection_plane_map
@@ -80,6 +82,8 @@ class ComputableNetwork:
         self.output_index = output_index
         self.input_index = input_index
         self.activation_function = activation_function
+        self.total_connection_cost = total_connection_cost
+        self.total_number_of_connections = total_number_of_connections
 
     def input(self, input: ndarray):
         self.inputNdArray = input
