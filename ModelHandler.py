@@ -106,7 +106,9 @@ class ModelHandler:
         # print("getting network...")
         self.model_id, self.network = self.queue.get()
         print("Connections:" + str(self.network.total_number_of_connections) + "\tCost: " + str(self.network.total_connection_cost))
-        ratio : float = self.network.total_number_of_connections/ self.network.total_connection_cost
+        ratio : float = 1
+        if self.network.total_connection_cost != 0:
+            ratio = self.network.total_number_of_connections/ self.network.total_connection_cost
         # print("creating new evaluator")
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                    self.evaluator_configuration.max_time * ratio, self.evaluator_configuration.action_limit, None)
