@@ -289,7 +289,9 @@ class ModelHandler:
         self.stat_queue.put(self.model_id)
         print(self.model_id)
         print("Connections:" + str(self.network.total_number_of_connections) + "\tCost: " + str(self.network.total_connection_cost))
-        ratio : float = self.network.total_number_of_connections/ self.network.total_connection_cost
+        ratio : float = 1
+        if self.network.total_connection_cost != 0:
+            ratio = self.network.total_number_of_connections/ self.network.total_connection_cost
         print("time: " + str(self.evaluator_configuration.max_time * ratio) +  " ratio: " + str(ratio))
         # mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
         # print(self.max_state)
