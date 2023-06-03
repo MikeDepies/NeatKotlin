@@ -501,7 +501,7 @@ class HyperNeatBuilder:
                         if (express_value > 0):
                             if weight != 0:
                                 connections_expressed += 1
-                                connection_cost_sum += abs((length + 1) * weight)
+                                connection_cost_sum += abs((length ))
                             # adaptive_ndarray[target_y, target_x, source_y,
                             #                    source_x, ...] = output_values[2:]
                             connection_ndarray[target_y, target_x, source_y,
