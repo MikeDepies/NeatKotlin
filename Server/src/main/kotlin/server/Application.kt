@@ -563,7 +563,7 @@ private fun behaviorMeasureInt(
 //        20
 //    ).squared()
 //    val all = allActionDistance.times(actionMultiplier).squared()
-    val kills = killsDistance.times(killMultiplier)
+    val kills = killsDistance.times(killMultiplier * killsDistance.squared())
         .squared()
 
     val damage = damageDistance.times(
@@ -577,9 +577,9 @@ private fun behaviorMeasureInt(
 //    ).squared()
 //    val totalFramesHitstun = (a.totalFramesHitstunOpponent - b.totalFramesHitstunOpponent).div(60).squared()
 //    val movement = (a.movement - b.movement).div(10).squared()
-    val allCount = (a.allActions.size - b.allActions.size).squared()
-    val damageDone = ((a.totalDamageDone - b.totalDamageDone) / 10).squared()
-    (/*all + */allCount + kills + damage  + recovery /*+ movement*/)
+//    val allCount = (a.allActions.size - b.allActions.size).squared()
+//    val damageDone = ((a.totalDamageDone - b.totalDamageDone) / 10).squared()
+    (/*all + *//*allCount +*/ kills + damage  + recovery /*+ movement*/)
 }
 //
 //
