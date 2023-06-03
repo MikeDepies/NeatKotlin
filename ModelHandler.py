@@ -110,5 +110,5 @@ class ModelHandler:
         if self.network.total_connection_cost != 0:
             ratio = self.network.total_number_of_connections/ self.network.total_connection_cost
         # print("creating new evaluator")
-        self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
+        self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time* ratio,
                                    self.evaluator_configuration.max_time * ratio, self.evaluator_configuration.action_limit, None)
