@@ -603,7 +603,7 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 100,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 40,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
