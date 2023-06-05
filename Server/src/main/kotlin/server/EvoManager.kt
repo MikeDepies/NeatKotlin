@@ -72,7 +72,7 @@ class EvoManager(
                     val scoredBehavior = scoreBehavior(
                         knnNoveltyArchive, it, model
                     )
-
+//if (it.score.totalDamageDone <=0) 0f else
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
                     val deathPenalty = if (it.score.playerDied) 30 else 0
                     val behaviorScore = max(
