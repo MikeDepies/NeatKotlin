@@ -34,36 +34,36 @@ class InputEmbederPacked4:
         return statePosition + 3
 
     def applyPlayerState(self, player0: PlayerState, state: np.ndarray):
-        state[0, 0] = player0.action.value / 397
-        state[0, 1] = player0.action_frame / 60
-        state[0, 2] = player0.character.value  / 32
-        state[0, 3] = player0.ecb.bottom.x / self.positionNormalizer
-        state[0, 4] = player0.ecb.bottom.y / self.positionNormalizer
-        state[0, 5] = player0.ecb.top.x / self.positionNormalizer
-        state[0, 6] = player0.ecb.top.y / self.positionNormalizer
-        state[0, 7] = player0.ecb.left.x / self.positionNormalizer
-        state[0, 8] = player0.ecb.left.y / self.positionNormalizer
-        state[0, 9] = player0.ecb.right.x / self.positionNormalizer
-        state[0, 10] = player0.ecb.right.y / self.positionNormalizer
-        state[0, 11] = 0
+        state[0] = player0.action.value / 397
+        state[1] = player0.action_frame / 60
+        state[2] = player0.character.value  / 32
+        state[3] = player0.ecb.bottom.x / self.positionNormalizer
+        state[4] = player0.ecb.bottom.y / self.positionNormalizer
+        state[5] = player0.ecb.top.x / self.positionNormalizer
+        state[6] = player0.ecb.top.y / self.positionNormalizer
+        state[7] = player0.ecb.left.x / self.positionNormalizer
+        state[8] = player0.ecb.left.y / self.positionNormalizer
+        state[9] = player0.ecb.right.x / self.positionNormalizer
+        state[10] = player0.ecb.right.y / self.positionNormalizer
+        state[11] = 0
         if player0.facing:
-            state[0, 11] = 1
-        state[0, 12] = 0
+            state[11] = 1
+        state[12] = 0
         if player0.hitlag_left:
-            state[0, 12] = 1
-        state[0, 13] = player0.hitstun_frames_left / 60
-        state[0, 14] = player0.invulnerability_left / 60
-        state[0, 15] = 0
+            state[12] = 1
+        state[13] = player0.hitstun_frames_left / 60
+        state[14] = player0.invulnerability_left / 60
+        state[15] = 0
         if player0.invulnerable:
-            state[0, 15] = 1
-        state[0, 16] = 0
+            state[15] = 1
+        state[16] = 0
         if player0.jumps_left > 0:
-            state[0, 16] = 1
-        state[0, 17] = player0.percent / 100
-        state[0, 18] = player0.position.x / self.positionNormalizer
-        state[0, 19] = player0.position.y / self.positionNormalizer
-        state[0, 20] = player0.shield_strength / 60
-        state[0, 21] = player0.stock / 4
+            state[16] = 1
+        state[17] = player0.percent / 100
+        state[18] = player0.position.x / self.positionNormalizer
+        state[19] = player0.position.y / self.positionNormalizer
+        state[20] = player0.shield_strength / 60
+        state[21] = player0.stock / 4
         
 
     def embed_input(self, gamestate: GameState) -> 'list[np.ndarray]':
