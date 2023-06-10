@@ -32,7 +32,7 @@ class KNNNoveltyArchiveWeighted(
         val behavior = b.behavior
         val damageK = if (b.behavior.totalDamageDone > 0) 1 else 0
         val newK =
-            k + (behavior.kills.size.squared() * multiplier) + behavior.allActions.size / 2 + behavior.movement.toInt()
+            k + (behavior.kills.size.squared() * multiplier)
         val distance = behaviors.parallelStream()
             .map { behaviorDistanceMeasureFunction(behavior, it.behavior) }.sorted().toList()
             .take(newK*damageK).average()
