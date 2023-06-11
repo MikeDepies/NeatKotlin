@@ -502,7 +502,7 @@ class HyperNeatBuilder:
                             if weight != 0:
                                 l1 = abs(input[0] - input[3]) + abs(input[1] - input[4]) + abs(input[2] - input[5])
                                 connections_expressed += 1
-                                connection_cost_sum += (l1)
+                                connection_cost_sum += (l1-1)
                             # adaptive_ndarray[target_y, target_x, source_y,
                             #                    source_x, ...] = output_values[2:]
                             connection_ndarray[target_y, target_x, source_y,
@@ -559,7 +559,8 @@ class HyperNeatBuilder:
             map(lambda layer: zindex_map.get(layer), self.input_layer))
         # Need to create an inverted connection_zindex map and use that instead of calculation order to find indexes for output and input
         print("Size of network: " + str(connection_count))
-        total_connection_cost = total_connection_cost * .8
+        if total_connection_cost <= 0:
+            total_connection_cost = 1
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map, adaptive_map,
                                  ndarray_map, m_ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function, total_number_of_connections, total_connection_cost)
