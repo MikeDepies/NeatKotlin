@@ -66,16 +66,16 @@ class PopulationEvolver(
 fun createMutationDictionary(): List<MutationEntry> {
 
     return listOf(
-        .9f chanceToMutate getMutateConnections(.1f, .02f, 4f),
-        .01f chanceToMutate mutateAddNode,
-        .02f chanceToMutate mutateAddConnection,
-        .9f chanceToMutate getMutateBiasConnections(.1f, .02f, 4f),
+        .7f chanceToMutate getMutateConnections(.1f, .0002f, 4f),
+        .05f chanceToMutate mutateAddNode,
+        .05f chanceToMutate mutateAddConnection,
+        .7f chanceToMutate getMutateBiasConnections(.1f, .0002f, 4f),
         .01f chanceToMutate mutateToggleConnection,
         .1f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 
 fun mutateNodeActivationFunction(): Mutation = { neatMutator ->
-    val nodeGene = (neatMutator.hiddenNodes + neatMutator.outputNodes[0]).random(random)
+    val nodeGene = (neatMutator.hiddenNodes + neatMutator.outputNodes).random(random)
     nodeGene.activationFunction = (activationFunctions - nodeGene.activationFunction).random(random)
 }
