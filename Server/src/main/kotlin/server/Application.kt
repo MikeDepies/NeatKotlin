@@ -208,7 +208,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(3, 15, 8)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Falco, 0),
+        ControllerConfiguration(Character.Link, 0),
         ControllerConfiguration(Character.Falco, 3),
         MeleeStage.FinalDestination
     )
