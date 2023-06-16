@@ -474,15 +474,12 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 @OptIn(ExperimentalStdlibApi::class)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
-    val inputImagePlane = layerPlane(30, 32)
-    val inputImagePlane2 = layerPlane(1, 12)
+    val inputImagePlane = layerPlane(15, 16)
+//    val inputImagePlane2 = layerPlane(1, 12)
 //    val inputImagePlane3 = layerPlane(15, 16)
-    val inputPlanes = listOf(inputImagePlane, inputImagePlane2/*, inputImagePlane2, inputImagePlane3*/)
+    val inputPlanes = listOf(inputImagePlane/*, inputImagePlane2*//*, inputImagePlane2, inputImagePlane3*/)
     val hiddenPlanes = (0..4).map {
-         when {
-             it < 4 -> layerPlane(8,8)
-             else -> layerPlane(5,5)
-         }
+        layerPlane(4,4)
     }
     val analogPlane = layerPlane(1, 5)
     val button1Plane = layerPlane(1, 3)
@@ -491,12 +488,12 @@ fun createNetwork(): TaskNetworkBuilder {
     val computationOrder = hiddenPlanes + outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes
-        put(inputImagePlane, planeList)
-        put(inputImagePlane2, planeList)
+        put(inputImagePlane, planeList + outputPlanes)
+//        put(inputImagePlane2, planeList)
 //        put(inputImagePlane3, planeList)
         hiddenPlanes.forEachIndexed { index, layerPlane ->
 //            if (index > hiddenPlanes.size -20)
-                put(layerPlane, planeList.drop(index + 1) + outputPlanes)
+                put(layerPlane, planeList.drop(index+1) + outputPlanes)
 //            else
 //                put(layerPlane, planeList.drop(index))
         }
@@ -506,7 +503,7 @@ fun createNetwork(): TaskNetworkBuilder {
     val planeZMap = buildMap<LayerPlane, Int> {
         var zIndex =0
         put(inputImagePlane, zIndex++)
-        put(inputImagePlane2, zIndex++)
+//        put(inputImagePlane2, zIndex++)
 //        put(inputImagePlane3, zIndex++)
         hiddenPlanes.forEach {
             put(it, zIndex++)

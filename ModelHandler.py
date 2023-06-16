@@ -68,17 +68,17 @@ class ModelHandler:
         # player1: PlayerState = game_state.players[self.opponent_index]
         if self.network is not None and self.evaluator is not None:
             state = create_packed_state(
-                game_state, self.model_index, self.opponent_index)
+                delayed_game_state, self.model_index, self.opponent_index)
             
             self.controller_helper.process(
                 self.network, self.controller, state, player0.controller_state)
-            self.evaluator.evaluate_frame(delayed_game_state)
+            self.evaluator.evaluate_frame(game_state)
             # print("evaluating " + str(self.ai_controller_id))
         elif self.network is None:
             # print("dead " + str(self.ai_controller_id))
             self.controller.release_button(melee.Button.BUTTON_A)
             self.controller.release_button(melee.Button.BUTTON_B)
-            if delayed_game_state.frame % 3 == 0:
+            if game_state.frame % 3 == 0:
                 self.controller.press_button(melee.Button.BUTTON_Y)
             else:
                 self.controller.release_button(melee.Button.BUTTON_Y)

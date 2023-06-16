@@ -138,10 +138,21 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
+    config_seconds = 30
+    time_modifier = 0
     done = False
     network: ComputableNetwork
     # id, child_network = get_network_novelty(host, port)
     id, child_network = queue.get()
+    network = child_network
+    ratio : float = 1
+    network.total_connection_cost+= network.total_number_of_connections * time_modifier
+    # network.total_connection_cost = max(500, network.total_connection_cost)
+    if network.total_connection_cost != 0:
+        ratio = network.total_number_of_connections/ network.total_connection_cost
+    
+    time_seconds = config_seconds * ratio
+    print(str(id) + " - time: " + str(time_seconds) + " - ratio: " + str(ratio) + "(" + str(network.total_number_of_connections) + " / " + str(network.total_connection_cost) + ")")
     state = None
     score = 0
     stage = 0
@@ -149,17 +160,13 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     last_action = 0
     state = env.reset()
     prevX = 0
-    prevXReset = 0
     framesSinceMaxXChange = 0
     status = "small"
     startInfo = None
     idle = False
     game_event_helper = GameEventHelper()
     game_event_collector = GameEventCollector(game_event_helper, 1)
-    steps_left = 0
-    steps_right = 0
-    same_action_counter = 0
-    last_stage_part = 0
+    total_frames=0
 
     while True:
         if done or idle:
@@ -183,6 +190,15 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
                     "status": str(info["status"]),
                 }, host)
             id, child_network = queue.get()
+            network = child_network
+            total_frames=0
+            ratio : float = 1
+            network.total_connection_cost+= network.total_number_of_connections *time_modifier
+            # network.total_connection_cost = max(500, network.total_connection_cost)
+            if network.total_connection_cost != 0:
+                ratio = network.total_number_of_connections/ network.total_connection_cost
+            time_seconds = config_seconds * ratio
+            print(str(id) + " - time: " + str(time_seconds) + " - ratio: " + str(ratio) + "(" + str(network.total_number_of_connections) + " / " + str(network.total_connection_cost) + ")")
             startInfo = None
             prevX = 0
             steps_left = 0
@@ -209,15 +225,15 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # rgb2gray(state),
         state = rescale(
            rgb2gray(state),# state,
-            1 / 8,
+            1 / 16,
             # channel_axis=2
         )
         # print(state.shape)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
-        network = child_network
+        
         # [state[..., 0], state[..., 1], state[..., 2]]
         
-        network.inputs([state, actionToNdArray(action)])
+        network.inputs([state])
         # network.input((state / 255) )
         network.compute()
         output = network.output()
@@ -235,10 +251,10 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         else:
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
-
-        if framesSinceMaxXChange > 12 * 20 or reward < -14:
+        
+        if framesSinceMaxXChange > 20 * 20 or reward < -14 or total_frames > 20 * time_seconds:
             idle = True
-
+        total_frames +=1
         depad = output[0].argmax(1)[0]
         button1 = output[1].argmax(1)[0]
         button2 = output[2].argmax(1)[0]
@@ -722,13 +738,13 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 5
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 
     for i in range(process_num):
         p = mp.Process(target=marioNovelty,
-                       daemon=True, args=(queue, i < 0))
+                       daemon=True, args=(queue, i < 1))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queueModels, daemon=True, args=(queue,))

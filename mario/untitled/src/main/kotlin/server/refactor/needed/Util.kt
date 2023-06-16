@@ -28,11 +28,11 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .1f
+val speciesThresholdDelta = .3f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .3f
+var speciesSharingDistance = 1f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -104,7 +104,7 @@ class KNNNoveltyArchiveWeighted(
     override fun measure(behavior: MarioDiscovery): Float {
         if (maxDiscovery.stageParts < behavior.stageParts) maxDiscovery = behavior
         val expRatio = ((behavior.stageParts).toFloat()) / (maxDiscovery.stageParts)
-        val newK = k + (behavior.stageParts * 10 ).toInt()
+        val newK = k + (behavior.stageParts * 100 ).toInt()
         val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
             .map { behaviorDistanceMeasureFunction(behavior, it) }.sorted().toList()
             .take(newK).average()
@@ -115,21 +115,21 @@ class KNNNoveltyArchiveWeighted(
 }
 
 fun MarioDiscovery.toVector() = listOf(
-    mushrooms.toFloat() * 10f,
-    fireFlowers.toFloat() * 40f,
+    mushrooms.toFloat() * 1f,
+    fireFlowers.toFloat() * 3f,
     coins.toFloat() * 1f,
     score.toFloat() / 100,
     flags.toFloat() * 30f,
-    lifes.toFloat() * 10f,
+    lifes.toFloat() * 2f,
 //    life.toFloat() * 100f,
-//    xPos.toFloat() / 12,
+    (xPos / 128).toFloat(),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
-//    (yPos.toFloat()) / 32,
+    ((yPos) / 128).toFloat(),
 //    xPos.toFloat(),
 //    stageParts.toFloat(),
 //    time.toFloat()
-    (min(4f, time.toFloat() / stageParts) * stageParts),
+//    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
 //    stage.toFloat() * 100f
