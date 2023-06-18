@@ -122,7 +122,7 @@ fun MarioDiscovery.toVector() = listOf(
     flags.toFloat() * 30f,
     lifes.toFloat() * 5f,
 //    life.toFloat() * 100f,
-//    (xPos.toFloat() / 32),
+    (xPos.toFloat() / 32),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
 //    ((yPos) / 32).toFloat(),
