@@ -1,6 +1,7 @@
 package neat
 
 import neat.model.*
+import neat.mutation.Gaussian
 import java.util.*
 import kotlin.random.Random
 
@@ -11,6 +12,7 @@ import kotlin.random.Random
 interface NeatExperiment {
     val activationFunctions: List<ActivationGene>
     val random: Random
+    val gaussian : Gaussian
     fun mutateAddConnection(neatMutator: NeatMutator)
     fun mutateAddNode(neatMutator: NeatMutator)
     fun nextInnovation(): Int

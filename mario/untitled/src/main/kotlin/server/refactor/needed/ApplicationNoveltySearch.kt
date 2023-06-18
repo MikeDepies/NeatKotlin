@@ -137,25 +137,16 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
 
 
-    val mateChance = .7f
-    val survivalThreshold = .2f
+    val mateChance = .6f
+    val survivalThreshold = .4f
     val stagnation = 30
 
-    val randomSeed: Int = 20 + evaluationId
+    val randomSeed: Int = 10 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
     val winners = mutableListOf<ScoreAndModel>()
 
-    val activationFunctions1 = listOf(
-        Activation.CPPN.bipolarGaussian,
-        Activation.CPPN.gaussian,
-        Activation.CPPN.bipolarSigmoid,
-        Activation.CPPN.sine,
-        Activation.CPPN.linear,
-        ActivationGene("abs") { it.absoluteValue }
-    )
-//
 //    val models = loadPopulation(File("population/population.json"), 0).models
 //    logger.info { "population loaded with size of: ${models.size}" }
 //    val maxNodeInnovation = models.map { model -> model.connections.maxOf { it.innovation } }.maxOf { it } + 1
@@ -202,7 +193,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(100,  40,settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(20,  40,settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
     }
@@ -362,7 +353,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //                euclidean(toVector(it), toVector(it).map { 0f})
                 it.stageParts.toFloat()
             }
-            val score = b + it.time.toFloat() / 100//+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
+            val score = b//+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
 
             val model = mapIndexed[it.id]?.neatMutator

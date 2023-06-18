@@ -28,7 +28,20 @@ def relu(x: float):
 
     return x
 
+def mish(x):
+    return x * np.tanh(np.log(1 + np.exp(x)))
 
+def eswish(x, beta):
+    return x * sigmoid(beta * x) + (np.exp(x) - 1) * x
+
+def swish(x, beta):
+    return x * sigmoid(beta * x)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def swish1(x, beta):
+    return x * sigmoid(beta * x) + (1 - sigmoid(beta * x)) * x
 
 @dataclass
 class ConnectionLocation:
@@ -104,7 +117,9 @@ class ComputableNetwork:
         vectorizedRelu = np.vectorize(relu)
         vectorized_sigmoial = np.vectorize(sigmoidal)
         vectorized_tanh = np.vectorize(math.tanh)
-        index = 0
+        index = 1
+        # print(self.calculation_order)
+        # print(list(map(lambda s: self.connection_z_map[s], self.output_index)))
         for c in self.calculation_order:
             if c in self.connection_relationships_inverse:
                 sources = self.connection_relationships_inverse[c]
@@ -114,27 +129,17 @@ class ComputableNetwork:
                     signal = map(
                         lambda s: (self.value_map[s][..., 1] * self.connection_map[
                             s + ":" + c]).sum((2,3)), filteredList)
-                    # signal_mod = map(
-                    #     lambda s: (self.m_value_map[s] * self.adaptive_map[
-                    #         s + ":" + c][...,5]).sum((2,3)), filteredList)
-                    
                     reduced = reduce(lambda d, d2: d + d2, signal)
-                    # m_reduced : ndarray = reduce(lambda d, d2: d + d2, signal_mod)
                     self.value_map[c][..., 0] = reduced
-                    # self.m_value_map[c] = vectorized_tanh(m_reduced / 2)
-                    # params = self.adaptive_map[c][...,0:4]
-                    # np.array([])
-                    # math.tanh
-
-                    if index == len(self.calculation_order) -1:
+                    if index in self.output_index:
+                        # print(self.output_index)
                         self.value_map[c][..., 1] = vectorized_sigmoial(reduced)
                     else:
                         self.value_map[c][..., 1] = vectorized_activation_function(reduced)
             index +=1
+            # print(index)
 
     def output(self) -> 'list[ndarray]':
-        # print(self.output_index)
-        # print(self.connection_z_map)
         return list(map(lambda index: self.value_map[self.connection_z_map[index]][..., 1], self.output_index))
     def outputUnActivated(self) -> ndarray:
         return self.value_map[self.connection_z_map[self.output_index]][..., 0]
@@ -143,3 +148,27 @@ class ComputableNetwork:
 class ComputableNetworkWithID:
     id : str
     network : ComputableNetwork
+
+def convolution_layer(input_tensor, kernel, bias, stride=1, padding=0):
+    # Get the dimensions of the input tensor and kernel
+    input_channels, input_height, input_width = input_tensor.shape
+    kernel_channels, kernel_height, kernel_width = kernel.shape
+    
+    # Compute the dimensions of the output tensor
+    output_height = (input_height - kernel_height + 2 * padding) // stride + 1
+    output_width = (input_width - kernel_width + 2 * padding) // stride + 1
+    
+    # Apply padding to the input tensor
+    padded_input = np.pad(input_tensor, ((0, 0), (padding, padding), (padding, padding)), mode='constant')
+    
+    # Create an empty output tensor
+    output_tensor = np.zeros((kernel_channels, output_height, output_width))
+    
+    # Perform the convolution
+    for i in range(output_height):
+        for j in range(output_width):
+            for c in range(kernel_channels):
+                output_tensor[c, i, j] = np.sum(
+                    padded_input[:, i:i+kernel_height*stride:stride, j:j+kernel_width*stride:stride] * kernel[c]) + bias[c]
+    
+    return output_tensor

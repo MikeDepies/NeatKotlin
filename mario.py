@@ -68,7 +68,7 @@ class GameEventHelper:
         return prev_info["life"] < info["life"]
 
     def stage_part_complete(self, info, stage_part_position: int):
-        return (info["x_pos"] / 32) > stage_part_position
+        return (info["x_pos"] / 256) > stage_part_position
 
 
 class GameEventCollector:
@@ -138,7 +138,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
-    config_seconds = 30
+    config_seconds = 50
     time_modifier = 0
     done = False
     network: ComputableNetwork
@@ -252,7 +252,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         
-        if framesSinceMaxXChange > 20 * 20 or reward < -14 or total_frames > 20 * time_seconds:
+        if framesSinceMaxXChange > 10 * 20 or reward < -14 or total_frames > 20 * time_seconds:
             idle = True
         total_frames +=1
         depad = output[0].argmax(1)[0]
@@ -620,7 +620,7 @@ def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace):
         id, builder = get_network_novelty(host, port)
         if id not in mgr_dict:
             mgr_dict[id] = True
-            network = builder.create_ndarrays(sigmoidal)
+            network = builder.create_ndarrays(relu)
             ns.generation += 1
             queue.put((id, network))
         if ns.generation > 100_000:
@@ -738,7 +738,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 5
+    process_num = 10
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 

@@ -102,7 +102,7 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         30,
         behaviorMeasureInt(
@@ -205,11 +205,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 15, 8)
+    val evaluatorSettings = EvaluatorSettings(3, 15, 16)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.JigglyPuff, 0),
-        ControllerConfiguration(Character.Falco, 9),
+        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Falco, 3),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -611,7 +611,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 52 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1f)
+    val shFunction = shFunction(.65f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/

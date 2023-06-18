@@ -1,6 +1,7 @@
 package neat
 
 import neat.model.*
+import neat.mutation.Gaussian
 import java.util.*
 import kotlin.NoSuchElementException
 import kotlin.jvm.JvmName
@@ -35,7 +36,7 @@ class SimpleNeatExperiment(
     val addConnectionAttempts: Int,
     val weightRange: Float
 ) : NeatExperiment {
-
+    override val gaussian: Gaussian = Gaussian(random)
 //    private var innovation = innovation
 //    private var nodeInnovation = nodeInnovation
 //    override val neat.random: Random get() = neat.random
