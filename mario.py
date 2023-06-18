@@ -620,7 +620,7 @@ def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace):
         id, builder = get_network_novelty(host, port)
         if id not in mgr_dict:
             mgr_dict[id] = True
-            network = builder.create_ndarrays(relu)
+            network = builder.create_ndarrays(sigmoidal)
             ns.generation += 1
             queue.put((id, network))
         if ns.generation > 100_000:

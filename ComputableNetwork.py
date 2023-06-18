@@ -34,7 +34,7 @@ def mish(x):
 def eswish(x, beta):
     return x * sigmoid(beta * x) + (np.exp(x) - 1) * x
 
-def swish(x, beta):
+def swish(x, beta=.5):
     return x * sigmoid(beta * x)
 
 def sigmoid(x):
