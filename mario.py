@@ -21,7 +21,7 @@ from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 from dataclasses import dataclass
 from dacite import from_dict
 
-from ComputableNetwork import ComputableNetwork, relu, sigmoidal, swish
+from ComputableNetwork import ComputableNetwork, relu, sigmoidal, swish, mish
 from NeatService import process_model_data, process_model_data_mcc, process_model_data_mcc_stage, StageGene, StageTrackGene
 
 
@@ -622,7 +622,7 @@ def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace):
         id, builder = get_network_novelty(host, port)
         if id not in mgr_dict:
             mgr_dict[id] = True
-            network = builder.create_ndarrays(simple_swish)
+            network = builder.create_ndarrays(mish)
             ns.generation += 1
             queue.put((id, network))
         if ns.generation > 100_000:
@@ -720,7 +720,7 @@ def queueModels(queue : mp.Queue):
         try:
             population_type, agent_id, environment_id, builder_agent, environment = get_network_mcc_stage(host, port)
             tryCount =0
-            network = builder_agent.create_ndarrays(sigmoidal)
+            network = builder_agent.create_ndarrays(mish)
             queue.put((population_type, agent_id, environment_id, network, environment))
         except:
             time.sleep(1)

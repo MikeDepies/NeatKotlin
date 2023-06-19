@@ -205,7 +205,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 4, 16)
+    val evaluatorSettings = EvaluatorSettings(3, 20, 16)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
@@ -607,7 +607,7 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
     val randomSeed: Int = 52 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
