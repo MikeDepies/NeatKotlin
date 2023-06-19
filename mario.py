@@ -21,7 +21,7 @@ from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 from dataclasses import dataclass
 from dacite import from_dict
 
-from ComputableNetwork import ComputableNetwork, relu, sigmoidal
+from ComputableNetwork import ComputableNetwork, relu, sigmoidal, swish
 from NeatService import process_model_data, process_model_data_mcc, process_model_data_mcc_stage, StageGene, StageTrackGene
 
 
@@ -536,12 +536,12 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
         status = info["status"]
         state = rescale(
             rgb2gray(state),
-            1 / 8,
+            1 / 16,
             # channel_axis=2
         )  # * np.random.binomial(1, .25,  state.size)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
-        
-        agent_network.inputs([state, actionToNdArray(action)])
+        # , actionToNdArray(action)
+        agent_network.inputs([state])
         # network.input((state / 42.5) - 3)
         agent_network.compute()
         output = agent_network.output()
@@ -553,7 +553,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         stage_gene = stage_track_gene.stages[stage_index]
-        if framesSinceMaxXChange > 60 * 20 or reward < -14 or info["x_pos"] > stage_gene.distance:
+        if framesSinceMaxXChange > 20 * 20 or reward < -14 or info["x_pos"] > stage_gene.distance:
             idle = True
 
         depad = output[0].argmax(1)[0]
@@ -610,6 +610,8 @@ def actionToNdArray(value: int):
     array[0, value] = 1
     return array
 
+def simple_swish(x):
+    return swish(x, .1)
 
 def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace):
     host = "192.168.0.100"
@@ -620,7 +622,7 @@ def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace):
         id, builder = get_network_novelty(host, port)
         if id not in mgr_dict:
             mgr_dict[id] = True
-            network = builder.create_ndarrays(sigmoidal)
+            network = builder.create_ndarrays(simple_swish)
             ns.generation += 1
             queue.put((id, network))
         if ns.generation > 100_000:
@@ -743,19 +745,19 @@ if __name__ == '__main__':
     processes: List[mp.Process] = []
 
     for i in range(process_num):
-        p = mp.Process(target=marioNovelty,
+        p = mp.Process(target=mario_mcc_stage,
                        daemon=True, args=(queue, i < 1))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         # processes.append(p)
         # p.start()
-        # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
-        # processes.append(p)
-        # p.start()
-        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         processes.append(p)
         p.start()
+        # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        # processes.append(p)
+        # p.start()
 
     for p in processes:
         p.join()

@@ -11,7 +11,7 @@ from httpx import ReadTimeout, get
 
 import melee
 from melee.gamestate import GameState, PlayerState, Projectile
-from ComputableNetwork import ComputableNetwork, sigmoidal, swish
+from ComputableNetwork import ComputableNetwork, sigmoidal, swish,mish
 from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
 from ControllerHelperBinned import ControllerHelper
 from ModelHelperMCC import ModelHelperMCC, EvalResult
@@ -395,7 +395,7 @@ def queueNetworks(queue: mp.Queue, controller_index: int):
     while True:
         # try:
         id, builder, best = model_helper.getNetwork(controller_index)
-        network = builder.create_ndarrays(swish)
+        network = builder.create_ndarrays(mish)
         if queue.qsize() == 0 and best:
             queue.put((id, network))
             time.sleep(1.0)

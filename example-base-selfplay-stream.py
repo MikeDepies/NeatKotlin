@@ -18,7 +18,7 @@ import melee
 import numpy as np
 import faulthandler
 from melee.gamestate import GameState, PlayerState, Projectile
-from ComputableNetwork import ComputableNetwork, sigmoidal, swish
+from ComputableNetwork import ComputableNetwork, sigmoidal, swish, mish
 from Configuration import Configuration, EvaluatorConfiguration, processConfiguration
 from ControllerHelperBinned import ControllerHelper
 from DashHelper import DashHelper
@@ -429,7 +429,7 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, contro
     while True:
         # try:
         id, builder = model_helper.randomBest()
-        network = builder.create_ndarrays(swish)
+        network = builder.create_ndarrays(mish)
         print(str(controller_index) + ": " + str(id))
         queue.put((id, network))
         

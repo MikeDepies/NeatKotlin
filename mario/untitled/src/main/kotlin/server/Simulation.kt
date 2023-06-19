@@ -478,7 +478,7 @@ fun createNetwork(): TaskNetworkBuilder {
 //    val inputImagePlane2 = layerPlane(1, 12)
 //    val inputImagePlane3 = layerPlane(15, 16)
     val inputPlanes = listOf(inputImagePlane/*, inputImagePlane2*//*, inputImagePlane2, inputImagePlane3*/)
-    val hiddenPlanes = (0..10).map {
+    val hiddenPlanes = (0..4).map {
         layerPlane(4,4)
     }
     val analogPlane = layerPlane(1, 5)
@@ -493,10 +493,11 @@ fun createNetwork(): TaskNetworkBuilder {
 //        put(inputImagePlane3, planeList)
         hiddenPlanes.forEachIndexed { index, layerPlane ->
 //            if (index > hiddenPlanes.size -20)
-                put(layerPlane, planeList.drop(index+1) + outputPlanes)
+                put(layerPlane, planeList + outputPlanes)
 //            else
 //                put(layerPlane, planeList.drop(index))
         }
+
 //        put(outputPlane, planeList.drop(2))
     }
 //    println(connectionMapping)

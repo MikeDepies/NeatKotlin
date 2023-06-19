@@ -84,7 +84,7 @@ fun Application.moduleStageGene(testing: Boolean = false) {
         val random = Random(randomSeed)
         val addConnectionAttempts = 5
         val activationFunctions = Activation.CPPN.functions
-        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 7f)
+        val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
         var population = simpleNeatExperiment.generateInitialPopulation2(
             populationSize, 6, 2, activationFunctions
         ).mapIndexed { index, neatMutator ->
@@ -106,9 +106,9 @@ fun Application.moduleStageGene(testing: Boolean = false) {
     }
 //createPopulation(12)
 
-    val (neatExperiment, population) = loadModelsMCC(Random(12), "population/agent.json")
+    val (neatExperiment, population) = createPopulation(12)//loadModelsMCC(Random(12), "population/agent.json")
     //createPopulation(112) /**/
-    val environmentPopulation = loadModelsMCCStage("population/environment.json")
+    val environmentPopulation = createEnvironmentPopulation(neatExperiment)//loadModelsMCCStage("population/environment.json")
     //createEnvironmentPopulation(neatExperiment)//loadModelsMCCStage("population/environment.json")
 //        createEnvironmentPopulation(neatExperiment) //loadModels(Random(16), Activation.CPPN.functions, 5, "population/population_2.json")//createPopulation(15)
     val envOffspringFunction = environmentOffSpringFunction(
@@ -116,7 +116,7 @@ fun Application.moduleStageGene(testing: Boolean = false) {
             createStageMutationDictionary()
         )
     )
-    val agentOffspringFunction = offspringFunctionMCC(.1f, mutationDictionary)
+    val agentOffspringFunction = offspringFunctionMCC(.3f, mutationDictionary)
     val minimalCriterion = MinimalCriterionStage(
         Random(5),
         100,
