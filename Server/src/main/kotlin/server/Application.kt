@@ -607,7 +607,7 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .3f, disjointCoefficient = 1f)
     val randomSeed: Int = 52 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
