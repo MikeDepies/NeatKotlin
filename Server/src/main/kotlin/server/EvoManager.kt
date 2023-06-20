@@ -71,13 +71,13 @@ class EvoManager(
                 if (finishedScores[uuid] != true && model != null) {
                     val scoredBehavior = scoreBehavior(
                         knnNoveltyArchive, it, model
-                    )
+                    ) * 100
 //if (it.score.totalDamageDone <=0) 0f else
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
                     val deathPenalty = if (it.score.playerDied) 30 else 0
                     val behaviorScore = max(
                         0f,
-                        scoredBehavior + it.score.totalFrames / (5*60)// + it.score.totalDamageDone / 20 + it.score.kills.size * 10 /*+ it.score.totalDamageDone / 20 + it.score.kills.size * 10 *//*+ (it.score.totalDistanceTowardOpponent / 2000)*/ //+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
+                        (scoredBehavior * (it.score.kills.size + 1)) + it.score.totalFrames / (5*60)// + it.score.totalDamageDone / 20 + it.score.kills.size * 10 /*+ it.score.totalDamageDone / 20 + it.score.kills.size * 10 *//*+ (it.score.totalDistanceTowardOpponent / 2000)*/ //+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
                     )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
 //                    while (knnNoveltyArchive.behaviors.size > 2_000_000) {
@@ -249,7 +249,7 @@ class EvoManager(
         return when {
             knnNoveltyArchive.size < 1 -> {
                 knnNoveltyArchive.addBehavior(behavior)
-                it.score.allActions.size.toFloat()
+                0f
             }
 
             else -> sqrt(knnNoveltyArchive.addBehavior(behavior))

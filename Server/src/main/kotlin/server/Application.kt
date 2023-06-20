@@ -1,6 +1,7 @@
 package server
 
 import KNNNoveltyArchiveWeighted
+import fuzzyCompareObjects
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -104,14 +105,10 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        30,
-        behaviorMeasureInt(
-            damageMultiplier = 1f,
-            actionMultiplier = 0f,
-            killMultiplier = 20f,
-            recoveryMultiplier = 1f
-        )
-    )
+        3
+    ) { a,b ->
+        fuzzyCompareObjects(a,b).toFloat()
+    }
     val knnNoveltyArchive2 = knnNoveltyArchive(
         1,
         behaviorMeasureInt(
@@ -208,7 +205,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(3, 120, 16)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.DoctorMario, 0),
         ControllerConfiguration(Character.Falco, 3),
         MeleeStage.FinalDestination
     )
@@ -607,7 +604,7 @@ private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehavi
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .3f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
     val randomSeed: Int = 52 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
