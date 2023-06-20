@@ -244,7 +244,7 @@ def queueCpuGeneMCC(queue: mp.Queue):
         try:
             if (sleep == 0):
                 population_type, agent_id, environment_id, builder, cpu_gene = model_helper.getNetworks()
-                network = builder.create_ndarrays(sigmoidal)
+                network = builder.create_ndarrays(sigmoidal, sigmoidal)
 
             last_data = (population_type, agent_id,
                          environment_id, network, cpu_gene)

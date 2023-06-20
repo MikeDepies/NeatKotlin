@@ -395,7 +395,7 @@ def queueNetworks(queue: mp.Queue, controller_index: int):
     while True:
         # try:
         id, builder, best = model_helper.getNetwork(controller_index)
-        network = builder.create_ndarrays(mish)
+        network = builder.create_ndarrays(mish, mish)
         if queue.qsize() == 0 and best:
             queue.put((id, network))
             time.sleep(1.0)
@@ -410,8 +410,8 @@ def queueNetworkPairs(queue: mp.Queue):
     while True:
         try:
             id, builder, child, agent_controller_id, child_controller_id = model_helper.getNetworks()
-            network = builder.create_ndarrays(sigmoidal)
-            child_network = child.create_ndarrays(sigmoidal)
+            network = builder.create_ndarrays(sigmoidal, sigmoidal)
+            child_network = child.create_ndarrays(sigmoidal, sigmoidal)
             last_data = (id, network, child_network, agent_controller_id, child_controller_id)
             queue.put(last_data)
         except:

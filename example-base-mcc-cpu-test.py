@@ -216,7 +216,7 @@ def queueCpuGeneMCC(queue: mp.Queue):
     while True:
         try:
             id, builder = model_helper.randomBest(0)
-            network = builder.create_ndarrays(sigmoidal)
+            network = builder.create_ndarrays(sigmoidal, sigmoidal)
             cpu_gene = CPUGene(3, 1, 1, 0, 100, melee.Stage.FINAL_DESTINATION,
                                melee.Character.FALCO, melee.Character.FALCO, 0, 0, 0)
             last_data = (id, network, cpu_gene)

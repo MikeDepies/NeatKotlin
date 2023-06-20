@@ -622,7 +622,7 @@ def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace):
         id, builder = get_network_novelty(host, port)
         if id not in mgr_dict:
             mgr_dict[id] = True
-            network = builder.create_ndarrays(mish)
+            network = builder.create_ndarrays(mish, sigmoidal)
             ns.generation += 1
             queue.put((id, network))
         if ns.generation > 100_000:
@@ -701,7 +701,7 @@ def getNextModel():
         try:
             population_type, agent_id, environment_id, builder_agent, environment = get_network_mcc_stage(host, port)
 
-            network = builder_agent.create_ndarrays(sigmoidal)
+            network = builder_agent.create_ndarrays(sigmoidal, sigmoidal)
             return (population_type, agent_id, environment_id, network, environment)
         except:
             if tryCount < 5:
@@ -720,7 +720,7 @@ def queueModels(queue : mp.Queue):
         try:
             population_type, agent_id, environment_id, builder_agent, environment = get_network_mcc_stage(host, port)
             tryCount =0
-            network = builder_agent.create_ndarrays(mish)
+            network = builder_agent.create_ndarrays(mish, sigmoidal)
             queue.put((population_type, agent_id, environment_id, network, environment))
         except:
             time.sleep(1)

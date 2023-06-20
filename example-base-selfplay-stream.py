@@ -429,7 +429,7 @@ def queueNetworks(queue : mp.Queue, mgr_dict : DictProxy, ns : Namespace, contro
     while True:
         # try:
         id, builder = model_helper.randomBest()
-        network = builder.create_ndarrays(mish)
+        network = builder.create_ndarrays(mish, mish)
         print(str(controller_index) + ": " + str(id))
         queue.put((id, network))
         
