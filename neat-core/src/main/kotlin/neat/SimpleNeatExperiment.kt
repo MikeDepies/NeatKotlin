@@ -36,7 +36,7 @@ class SimpleNeatExperiment(
     val addConnectionAttempts: Int,
     val weightRange: Float
 ) : NeatExperiment {
-    override val gaussian: Gaussian = Gaussian(random)
+    override val gaussian: Gaussian = Gaussian(random, .5)
 //    private var innovation = innovation
 //    private var nodeInnovation = nodeInnovation
 //    override val neat.random: Random get() = neat.random
