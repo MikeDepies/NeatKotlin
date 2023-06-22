@@ -372,3 +372,4 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     }
 }
 data class ModelsRequest(val generations : Int, val skip : Int)
+

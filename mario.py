@@ -228,24 +228,11 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             1 / 16,
             # channel_axis=2
         )
-        # print(state.shape)
-        # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
-        
-        # [state[..., 0], state[..., 1], state[..., 2]]
-        
         network.inputs([state])
-        # network.input((state / 255) )
         network.compute()
         output = network.output()
-        # if (score != info["score"]):
-        #     framesSinceMaxXChange = 0
-        #     score = info["score"]
+        
         if abs(prevX - info["x_pos"]) > 16:
-            # if prevX > info["x_pos"] and abs(prevXReset - info["x_pos"]) > 4:
-            #     steps_left += 1
-            #     prevXReset = info["x_pos"]
-            # else:
-            #     steps_right += 1
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
         else:
@@ -720,7 +707,7 @@ def queueModels(queue : mp.Queue):
         try:
             population_type, agent_id, environment_id, builder_agent, environment = get_network_mcc_stage(host, port)
             tryCount =0
-            network = builder_agent.create_ndarrays(mish, sigmoidal)
+            network = builder_agent.create_ndarrays(mish, mish)
             queue.put((population_type, agent_id, environment_id, network, environment))
         except:
             time.sleep(1)
@@ -740,7 +727,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 15
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 

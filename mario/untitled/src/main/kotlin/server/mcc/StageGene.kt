@@ -3,11 +3,9 @@ package server.mcc
 import kotlinx.serialization.Serializable
 import neat.MutationRoll
 import neat.NeatExperiment
-import neat.mutation.Gaussian
 import neat.rollFrom
 import java.lang.Integer.max
 import java.util.*
-import kotlin.random.Random
 
 fun createStageMutationDictionary(): List<StageMutationEntry> {
     return listOf(
@@ -126,7 +124,7 @@ fun NeatExperiment.mutateDistance(stageGene: StageGene): StageGene {
     var nextStage = stageGene.stage
     var world = stageGene.world
 
-    var distance = stageGene.distance + ((gaussian.nextGaussian()* 8) + 8).toInt() * 16
+    var distance = stageGene.distance + random.nextInt(1, 16) * 16
 
     return stageGene.copy(world = world, stage = nextStage, distance = distance)
 }
@@ -187,4 +185,3 @@ val stageLengthMap = mapOf(
     StageID(8, 3) to 3664,
     StageID(8, 4) to 5120,
 )
-

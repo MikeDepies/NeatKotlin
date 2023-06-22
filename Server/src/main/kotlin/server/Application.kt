@@ -110,14 +110,16 @@ fun Application.module() {
         fuzzyCompareObjects(a,b).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        1,
+        5/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
             killMultiplier = 20f,
             recoveryMultiplier = 2f
-        )
-    )
+        )*/
+    ) { a,b ->
+        fuzzyCompareObjects(a,b).toFloat()
+    }
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
@@ -202,11 +204,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 60, 16)
+    val evaluatorSettings = EvaluatorSettings(5, 120, 16)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DonkeyKong, 0),
-        ControllerConfiguration(Character.Falco, 9),
+        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.CaptainFalcon, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -608,7 +610,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 52 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.5f)
+    val shFunction = shFunction(.4f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
