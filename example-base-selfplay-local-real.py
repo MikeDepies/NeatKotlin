@@ -395,7 +395,7 @@ def queueNetworks(queue: mp.Queue, controller_index: int):
     while True:
         # try:
         id, builder, best = model_helper.getNetwork(controller_index)
-        network = builder.create_ndarrays(mish, mish)
+        network = builder.create_ndarrays(sigmoidal, sigmoidal)
         if queue.qsize() == 0 and best:
             queue.put((id, network))
             time.sleep(1.0)

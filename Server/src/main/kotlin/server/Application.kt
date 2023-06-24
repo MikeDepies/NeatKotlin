@@ -2,6 +2,7 @@ package server
 
 import KNNNoveltyArchiveWeighted
 import fuzzyCompareObjects
+import compareSequencesNeedlemanWunsch
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -22,6 +23,7 @@ import neat.*
 import neat.model.NeatMutator
 import neat.novelty.KNNNoveltyArchive
 import neat.novelty.levenshtein
+import normalizedNeedlemanWunsch
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import server.local.*
@@ -107,7 +109,7 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         3
     ) { a,b ->
-        fuzzyCompareObjects(a,b).toFloat()
+        fuzzyCompareObjects(a,b, ::normalizedNeedlemanWunsch).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
         5/*,
@@ -118,7 +120,7 @@ fun Application.module() {
             recoveryMultiplier = 2f
         )*/
     ) { a,b ->
-        fuzzyCompareObjects(a,b).toFloat()
+        fuzzyCompareObjects(a,b, ::normalizedNeedlemanWunsch).toFloat()
     }
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
@@ -204,11 +206,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 120, 16)
+    val evaluatorSettings = EvaluatorSettings(5, 30, 16)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.CaptainFalcon, 0),
+        ControllerConfiguration(Character.Falco, 0),
         MeleeStage.FinalDestination
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -602,15 +604,15 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 1_000,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 10,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .5f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
     val randomSeed: Int = 52 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.25f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
@@ -630,7 +632,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         SimulationStart(simpleNeatExperiment, population, manifest)
     } else {
         val simpleNeatExperiment =
-            simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 6f)
+            simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
         val population = simpleNeatExperiment.generateInitialPopulation2(
             populationSize, 7, 2, activationFunctions
         )

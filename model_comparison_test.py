@@ -1,22 +1,21 @@
 #!/usr/bin/python3
 import argparse
-from dataclasses import dataclass
 import json
 import math
 import multiprocessing as mp
-from typing import Any, List
 import time
+from dataclasses import dataclass
+from typing import Any, List
 
 import numpy as np
 from melee.gamestate import GameState, PlayerState, Projectile
 
-
 from ControllerHelper import ControllerHelper
 from Evaluator import Evaluator
-from HyperNeatDomain import HyperDimension3D, LayerPlane, LayerShape3D, NetworkDesign
+from HyperNeatDomain import (HyperDimension3D, LayerPlane, LayerShape3D,
+                             NetworkDesign)
 from InputEmbeder import InputEmbeder
 from ModelHelper import ModelHelper
-from NeatComputation import HyperNeatBuilder, NDNeatComputer, NeatComputer, build_input_nodes, build_output_nodes, convert_computation_instructions_to_ndarray_instructions, convert_computation_instructions_to_ndarray_instructions_2,  create_layer_computation_instructions
 from NeatDomain import NeatModel, parse_neat_model
 from NeatService import NeatService
 

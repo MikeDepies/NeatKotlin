@@ -18,109 +18,102 @@ class NetworkNode:
     bias: float
 
 
-def sigmoidal(x: float):
-    # print(x)
-    if (x < -4):
-        x = -4
-    elif x > 4:
-        x = 4
-
+def sigmoidal(x: float) -> float:
+    """
+    Sigmoidal activation function.
+    :param x: Input to the function.
+    :return: Output after applying sigmoidal function.
+    """
+    x = np.clip(x, -4, 4)
     return 1 / (1 + np.exp(-4.9 * x))
 
 
-def linear(x: float):
-    if (x > 1):
-        return 1
-    elif x < -1:
-        return -1
-    else:
-        return x
+def linear(x: float) -> float:
+    """
+    Linear activation function with clipping.
+    :param x: Input to the function.
+    :return: Output after applying linear function.
+    """
+    return np.clip(x, -1, 1)
 
 
-def gaussian(x: float):
+def gaussian(x: float) -> float:
+    """
+    Gaussian activation function.
+    :param x: Input to the function.
+    :return: Output after applying gaussian function.
+    """
     return np.exp(-np.power(2.5 * x, 2))
 
 
 def activation_function(activation_fn: str):
-    if activation_fn == "identity":
-        return lambda v: v
-    elif activation_fn == "sigmoidal":
-        return sigmoidal
-    elif activation_fn == "sine":
-        return lambda x: sin(2 * x)
-    elif activation_fn == "bipolarGaussian":
-        return lambda x: (2 * np.exp(np.power(2.5 * x, 2) * -1)) - 1
-    elif activation_fn == "bipolarSigmoid":
-        return lambda x: (2 / (1 + np.exp(-4.9 * x))) - 1
-    elif activation_fn == "gaussian":
-        return gaussian
-    elif activation_fn == "linear":
-        return linear
-    elif activation_fn == "abs":
-        return abs
-    pass
+    """
+    Map activation function names to corresponding function definitions.
+    :param activation_fn: Activation function name.
+    :return: Corresponding activation function.
+    """
+    activation_dict = {
+        "identity": lambda v: v,
+        "sigmoidal": sigmoidal,
+        "sine": lambda x: sin(2 * x),
+        "bipolarGaussian": lambda x: (2 * np.exp(np.power(2.5 * x, 2) * -1)) - 1,
+        "bipolarSigmoid": lambda x: (2 / (1 + np.exp(-4.9 * x))) - 1,
+        "gaussian": gaussian,
+        "linear": linear,
+        "abs": abs,
+    }
+    
+    if activation_fn in activation_dict:
+        return activation_dict[activation_fn]
+    
+    raise ValueError(f"Invalid activation function: {activation_fn}")
 
+from typing import List, Dict, Tuple, Set, Any
+from functools import reduce
 
 def activate(network_node: NetworkNode):
+    """Apply the activation function to the node and reset its value."""
     activation_fn = activation_function(network_node.activation_function)
     network_node.value += network_node.bias
     network_node.activated_value = activation_fn(network_node.value)
     network_node.value = 0
 
 
-def flat_map(f, xs):
-    ys = []
-    for x in xs:
-        ys.extend(f(x))
-    return ys
+def flat_map(f, xs: List[Any]) -> List[Any]:
+    """Flatten a list of lists using a provided function."""
+    return [item for sublist in xs for item in f(sublist)]
 
 
 def input_nodes(neat_model: NeatModel) -> List[NodeGeneModel]:
-    return list(filter(lambda n: n.node_type == "Input", neat_model.nodes))
+    """Get the list of input nodes from the NEAT model."""
+    return [n for n in neat_model.nodes if n.node_type == "Input"]
 
 
 def output_nodes(neat_model: NeatModel) -> List[NodeGeneModel]:
-    return list(filter(lambda n: n.node_type == "Output", neat_model.nodes))
-
-
-def connections_from(nodes: List[NodeGeneModel], neat_model: NeatModel) -> List[ConnectionGeneModel]:
-    connections = neat_model.connections
-
-    return flat_map(lambda n: filter(lambda c: c.in_node == n.node and c.enabled, connections), nodes)
+    """Get the list of output nodes from the NEAT model."""
+    return [n for n in neat_model.nodes if n.node_type == "Output"]
 
 
 def connections_to(nodes: List[NodeGeneModel], neat_model: NeatModel) -> List[ConnectionGeneModel]:
+    """Get the list of connections to the provided nodes in the NEAT model."""
     connections = neat_model.connections
-
-    return flat_map(lambda n: filter(lambda c: c.out_node == n.node and c.enabled, connections), nodes)
+    return flat_map(lambda n: [c for c in connections if c.out_node == n.node and c.enabled], nodes)
 
 
 def node_dict(nodes: List[NodeGeneModel]) -> Dict[int, NodeGeneModel]:
-    d: 'Dict[int, NodeGeneModel]' = dict()
-    for n in nodes:
-        d[n.node] = n
-    return d
+    """Create a dictionary mapping node IDs to nodes."""
+    return {n.node: n for n in nodes}
 
 
 def create_network_node_map(nodes: List[NodeGeneModel]) -> Dict[int, NetworkNode]:
-    d: 'Dict[int, NetworkNode]' = dict()
-    for n in nodes:
-        d[n.node] = NetworkNode(n.node, 0, 0, n.activation_function, n.bias)
-    return d
-
-
-def next_nodes(connections: List[ConnectionGeneModel], node_map: Dict[int, NodeGeneModel]) -> List[NodeGeneModel]:
-    return list(map(lambda c: node_map[c.out_node], connections))
+    """Create a dictionary mapping node IDs to network nodes."""
+    return {n.node: NetworkNode(n.node, 0, 0, n.activation_function, n.bias) for n in nodes}
 
 
 def next_nodes_to(connections: List[ConnectionGeneModel], node_map: Dict[int, NodeGeneModel]) -> List[NodeGeneModel]:
-    node_set: 'Set[int]' = set()
-    node_list: 'List[NodeGeneModel]' = list()
-    for c in connections:
-        if c.in_node not in node_set:
-            node_set.add(c.in_node)
-            node_list.append(node_map[c.in_node])
-    return node_list
+    """Get the list of next nodes connected to the provided connections."""
+    node_set = {c.in_node for c in connections}
+    return [node_map[node_id] for node_id in node_set]
 
 
 @dataclass()
@@ -135,291 +128,92 @@ class LayerComputationInstruction:
     nodes: List[NetworkNode]
     weightInstructions: List[WeightComputationInstruction]
 
-
-def create_node_index_dict(nodes: List[NetworkNode]):
-    node_dict: 'Dict[int, int]' = dict()
-    index = 0
-    for n in nodes:
-        node_dict[n.node] = index
-        index += 1
-    return node_dict
-
-
-def create_bias_ndarray(nodes: List[NetworkNode]) -> ndarray:
-    length = len(nodes)
-    bias = np.zeros([1, length])
-    bias_index = 0
-    for n in nodes:
-        bias[0, bias_index] = n.bias
-        bias_index += 1
-    return bias
-
-
-def build_input_nodes(weight_instructions: List[WeightComputationInstruction]) -> List[NetworkNode]:
-    node_list: 'List[NetworkNode]' = list()
-    node_id_set: 'Set[int]' = set()
-    for c in weight_instructions:
-        if c.input_node.node not in node_id_set:
-            node_list.append(c.input_node)
-            node_id_set.add(c.input_node.node)
-    return node_list
-
-
-def build_output_nodes(weight_instructions: List[WeightComputationInstruction]) -> List[NetworkNode]:
-    node_list: 'List[NetworkNode]' = list()
-    node_id_set: 'Set[int]' = set()
-    for c in weight_instructions:
-        if c.output_node.node not in node_id_set:
-            node_list.append(c.output_node)
-            node_id_set.add(c.output_node.node)
-    return node_list
-
-
-@dataclass
-class NDLayerComputationInstruction:
-    nd_nodes: ndarray
-    nd_connections: ndarray
-    nd_bias: ndarray
-    node_dict: 'Dict[int, int]'
-    nodes: 'List[NetworkNode]'
-
-
-def create_ndlayer_computation_instructions(neat_model: NeatModel) -> List[NDLayerComputationInstruction]:
-    nd_layer_computation_instructions: 'List[NDLayerComputationInstruction]' = list(
-    )
-    network_node_map = create_network_node_map(neat_model.nodes)
-    output_nodes_list = output_nodes(neat_model)
-    node_map = node_dict(neat_model.nodes)
-    activation_set: 'List[NodeGeneModel]' = list()
-    active_set: 'List[NodeGeneModel]' = list(input_nodes(neat_model))
-    # print(network_node_map)
-    return nd_layer_computation_instructions
-
-
-def convert_computation_instructions_to_ndarray_instructions_2(layer_computation_instructions: List[LayerComputationInstruction]) -> List[NDLayerComputationInstruction]:
-    # Create nd arrays for each layer of nodes
-    # Create connection weight matrix between layers
-    # Implement value forwarding for same node id but different ndarray
-    nd_layer_computation_instructions: 'List[NDLayerComputationInstruction]' = list(
-    )
-    # node_map = node_dict(neat_model.nodes)
-    for index, layer_instruction in enumerate(layer_computation_instructions):
-        output_nodes = build_output_nodes(layer_instruction.weightInstructions)
-        input_nodes = build_input_nodes(layer_instruction.weightInstructions)
-        if (index == 0):
-            input_length = len(input_nodes)
-            target_length = len(output_nodes)
-            node_index_dict = create_node_index_dict(input_nodes)
-            nd_nodes = np.zeros([1, input_length, 2])
-            nd_bias = create_bias_ndarray(input_nodes)
-            nd_connections = np.zeros([1, input_length])
-            # print("index: " + str(index))
-            # print(input_length)
-            # print(target_length)
-            # print("node size: " + str(nd_nodes.shape))
-            nd_layer_computation_instructions.append(NDLayerComputationInstruction(
-                nd_nodes, nd_connections, nd_bias, node_index_dict, input_nodes))
-        elif index > 0:
-            prev_layer_computation = layer_computation_instructions[index - 1]
-            prev_ndlayer_computation = nd_layer_computation_instructions[index - 1]
-            prev_output_nodes = build_output_nodes(
-                prev_layer_computation.weightInstructions)
-            prev_input_nodes = build_input_nodes(
-                prev_layer_computation.weightInstructions)
-            input_length = len(prev_input_nodes)
-            target_length = len(prev_output_nodes)
-            input_node_index_dict = create_node_index_dict(prev_input_nodes)
-            output_node_index_dict = create_node_index_dict(prev_output_nodes)
-            nd_nodes = np.zeros([1, target_length, 2])
-            nd_bias = create_bias_ndarray(prev_output_nodes)
-            nd_connections = np.zeros([target_length, input_length])
-            # print("index: " + str(index))
-            # print(input_length)
-            # print(target_length)
-            # print("node size: " + str(nd_nodes.shape))
-            for c in prev_layer_computation.weightInstructions:
-                output_index = output_node_index_dict[c.output_node.node]
-                input_index = input_node_index_dict[c.input_node.node]
-                nd_connections[output_index, input_index] = c.connection_weight
-            nd_layer_computation_instructions.append(NDLayerComputationInstruction(
-                nd_nodes, nd_connections, nd_bias, output_node_index_dict, input_nodes))
-
-    return nd_layer_computation_instructions
-
-
-def convert_computation_instructions_to_ndarray_instructions(layer_computation_instructions: List[LayerComputationInstruction]) -> List[NDLayerComputationInstruction]:
-    # Create nd arrays for each layer of nodes
-    # Create connection weight matrix between layers
-    # Implement value forwarding for same node id but different ndarray
-    index = 0
-    nd_layer_computation_instructions: 'List[NDLayerComputationInstruction]' = list(
-    )
-    for layer_instruction in layer_computation_instructions:
-        target_length = len(layer_instruction.nodes)
-        node_index_dict = create_node_index_dict(layer_instruction.nodes)
-        nd_nodes = np.zeros([1, target_length, 2])
-        nd_bias = create_bias_ndarray(layer_instruction.nodes)
-
-        nd_connections = np.zeros([target_length, 1])
-        print(index)
-        print("----- " + str(len(layer_instruction.weightInstructions)))
-        if index > 0:
-            # need to find the proper prev_layer for each connection...
-            # otherwise backwards connections break
-            prev_layer_computation = layer_computation_instructions[index - 1]
-            source_length = len(prev_layer_computation.nodes)
-            nd_connections = np.zeros([target_length, source_length])
-            source_node_index_dict = create_node_index_dict(
-                prev_layer_computation.nodes)
-            for c in prev_layer_computation.weightInstructions:
-                # print(c)
-                print(str(index - 1) + " => " + str(index))
-                print(str(c.input_node.node) + " -> " + str(c.output_node.node))
-                input_index = source_node_index_dict[c.input_node.node]
-                output_index = node_index_dict[c.output_node.node]
-                # print(input_index)
-                # print(output_index)
-                # print(nd_connections.shape)
-                nd_connections[output_index, input_index] = c.connection_weight
-        nd_layer_computation_instructions.append(NDLayerComputationInstruction(
-            nd_nodes, nd_connections, nd_bias, node_index_dict, layer_instruction.nodes))
-        index += 1
-    return nd_layer_computation_instructions
-
-
-def compute_nd_instructions(nd_layer_computations: List[NDLayerComputationInstruction]):
-    for index, nd_layer in enumerate(nd_layer_computations):
-        # add bias and previous stored values
-        # perform activation functions on each node value
-        if index > 0:
-            prev_nd_layer = nd_layer_computations[index - 1]
-            # compute layer values
-            print(prev_nd_layer.nd_nodes[..., 1].shape)
-            print(nd_layer.nd_connections.shape)
-            nd_layer.nd_nodes[0, ..., 0] = (
-                prev_nd_layer.nd_nodes[0, ..., 1] * nd_layer.nd_connections).sum((1))  # + nd_layer.nd_bias
-
-            # activate layer
-            length = len(nd_layer.nodes)
-            for index in range(length):
-                activation_fn = activation_function(
-                    nd_layer.nodes[index].activation_function)
-                nd_layer.nd_nodes[0, index, 1] = activation_fn(
-                    nd_layer.nd_nodes[0, index, 0])
-                nd_layer.nd_nodes[0, index, 0] = 0
-
-
 def create_layer_computation_instructions_2(neat_model: NeatModel) -> Tuple[List[NetworkNode], List[NetworkNode], List[LayerComputationInstruction]]:
+    """
+    Create instructions for computing layers.
+    
+    Args:
+        neat_model (NeatModel): NEAT model to process.
+
+    Returns:
+        Tuple containing the list of input network nodes, output network nodes, and layer computation instructions.
+    """
     output_nodes_list = output_nodes(neat_model)
     node_map = node_dict(neat_model.nodes)
     input_nodes_list = input_nodes(neat_model)
     active_set = output_nodes_list
     network_node_map = create_network_node_map(neat_model.nodes)
-    layer_computation_instructions: 'List[LayerComputationInstruction]' = list(
-    )
-    connections_processed: 'Set[int]' = set()
+    layer_computation_instructions: List[LayerComputationInstruction] = []
+    connections_processed: Set[int] = set()
 
-    while len(active_set) > 0:
+    while active_set:
         captured_set = active_set
-        connections = list(filter(
-            lambda x: x.innovation not in connections_processed, connections_to(captured_set, neat_model)))
-        for c in connections:
-            connections_processed.add(c.innovation)
-        weight_computation_instruction_set = list(map(lambda c: WeightComputationInstruction(
-            network_node_map[c.in_node], network_node_map[c.out_node], c.weight), connections))
+        connections = [x for x in connections_to(captured_set, neat_model) if x.innovation not in connections_processed]
+        connections_processed.update([c.innovation for c in connections])
+        weight_computation_instruction_set = [WeightComputationInstruction(network_node_map[c.in_node], network_node_map[c.out_node], c.weight) for c in connections]
 
-        layer_network_nodes = list(
-            map(lambda n: network_node_map[n.node], captured_set))
-        layer_computation_instructions.append(LayerComputationInstruction(
-            layer_network_nodes, weight_computation_instruction_set))
+        layer_network_nodes = [network_node_map[n.node] for n in captured_set]
+        layer_computation_instructions.append(LayerComputationInstruction(layer_network_nodes, weight_computation_instruction_set))
 
-        active_set = list(
-            next_nodes_to(connections, node_map))
-    input_network_nodes = list(
-        map(lambda n: network_node_map[n.node], input_nodes_list))
-    output_network_nodes = list(
-        map(lambda n: network_node_map[n.node], output_nodes_list))
+        active_set = next_nodes_to(connections, node_map)
 
-    nodes_visited: 'Set[int]' = set()
+    input_network_nodes = [network_node_map[n.node] for n in input_nodes_list]
+    output_network_nodes = [network_node_map[n.node] for n in output_nodes_list]
+
+    nodes_visited: Set[int] = set()
     for lci in layer_computation_instructions:
-        nodes_to_remove: 'List[NodeGeneModel]' = list()
-        for n in lci.nodes:
-            if n.node not in nodes_visited:
-                nodes_visited.add(n.node)
-            else:
-                nodes_to_remove.append(n)
+        nodes_to_remove = [n for n in lci.nodes if n.node in nodes_visited]
+        nodes_visited.update([n.node for n in lci.nodes])
         for n in nodes_to_remove:
             lci.nodes.remove(n)
-    node_count = reduce(
-        lambda a, b: a + b, map(lambda l: len(l.nodes), layer_computation_instructions), 0)
-    # print("Nodes after prune: " + str(node_count))
-    # print(network_node_map)
     layer_computation_instructions.reverse()
     return (input_network_nodes, output_network_nodes, layer_computation_instructions)
 
 
 def compute_instructions(layer_computations: List[LayerComputationInstruction], output_nodes: List[NetworkNode], output: List[float]) -> List[float]:
+    """
+    Compute the layer instructions.
+    
+    Args:
+        layer_computations (List[LayerComputationInstruction]): Instructions to compute layers.
+        output_nodes (List[NetworkNode]): List of output nodes.
+        output (List[float]): List to store output values.
+
+    Returns:
+        List of output values after computation.
+    """
     for layer_computation in layer_computations:
         for weight_computation in layer_computation.weightInstructions:
-            weight_computation.output_node.value += weight_computation.input_node.activated_value * \
-                weight_computation.connection_weight
+            weight_computation.output_node.value += weight_computation.input_node.activated_value * weight_computation.connection_weight
         for node in layer_computation.nodes:
             activate(node)
-    index = 0
-    for x in output_nodes:
-        output[index] = x.activated_value
-        index += 1
+
+    for i, x in enumerate(output_nodes):
+        output[i] = x.activated_value
     return output
 
 
 class NeatComputer:
-    layer_computations: List[LayerComputationInstruction]
-    output_nodes: List[NetworkNode]
-    input_nodes: List[NetworkNode]
-    output: List[float]
+    """A class that represents the NEAT computation."""
 
-    def __init__(self, input_nodes: List[NetworkNode], output_nodes: List[NetworkNode], layer_computations: List[LayerComputationInstruction]) -> None:
+    def __init__(self, input_nodes: List[NetworkNode], output_nodes: List[NetworkNode], layer_computations: List[LayerComputationInstruction]):
         self.layer_computations = layer_computations
         self.input_nodes = input_nodes
         self.output_nodes = output_nodes
-        self.output = list()
-        for n in self.output_nodes:
-            self.output.append(0)
+        self.output = [0] * len(self.output_nodes)
 
     def compute(self, input: List[float]):
-        index = 0
-        for n in self.input_nodes:
-            self.input_nodes[index].value = input[index]
-            self.input_nodes[index].activated_value = input[index]
-            index += 1
-
-        compute_instructions(self.layer_computations,
-                             self.output_nodes, self.output)
+        """Perform the computation for the NEAT model."""
+        for index, value in enumerate(input):
+            self.input_nodes[index].value = value
+            self.input_nodes[index].activated_value = value
+        compute_instructions(self.layer_computations, self.output_nodes, self.output)
 
     def output_values(self) -> List[float]:
+        """Return the output values from the NEAT computation."""
         return self.output
 
 
-class NDNeatComputer:
-    layer_computations: List[NDLayerComputationInstruction]
-
-    input_nodes: ndarray
-    output_nodes: ndarray
-
-    def __init__(self, layer_computations: List[NDLayerComputationInstruction]) -> None:
-        self.layer_computations = layer_computations
-        last_index = len(layer_computations) - 1
-        self.input_nodes = layer_computations[0].nd_nodes
-        self.output_nodes = layer_computations[last_index].nd_nodes
-        # ensure that these references hold through assignment...?
-
-    def compute(self, input: List[float]):
-        self.input_nodes[0, ..., 0].put(0, input)
-        self.input_nodes[0, ..., 0].put(0, input)
-        compute_nd_instructions(self.layer_computations)
-
-    def output_values(self) -> List[float]:
-        return self.output_nodes[0, ..., 1].tolist()
 
 
 class HyperNeatBuilder:
@@ -564,3 +358,4 @@ class HyperNeatBuilder:
         return ComputableNetwork(connection_plane_map,
                                  network_design.target_connection_mapping, connection_map, adaptive_map,
                                  ndarray_map, m_ndarray_map, connection_zindex_map, network_design.calculation_order, output_index, input_index, activation_function, output_activation_function, total_number_of_connections, total_connection_cost)
+
