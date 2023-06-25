@@ -1,6 +1,7 @@
 package server
 
 import KNNNoveltyArchiveWeighted
+import calculateSequenceSimilarity
 import fuzzyCompareObjects
 import compareSequencesNeedlemanWunsch
 import io.ktor.http.*
@@ -18,6 +19,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import levenshteinDistanceNormalized
 import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
@@ -109,7 +111,7 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         3
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::normalizedNeedlemanWunsch).toFloat()
+        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
         5/*,
@@ -120,7 +122,7 @@ fun Application.module() {
             recoveryMultiplier = 2f
         )*/
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::normalizedNeedlemanWunsch).toFloat()
+        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
@@ -206,7 +208,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 30, 16)
+    val evaluatorSettings = EvaluatorSettings(5, 120, 16)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
@@ -604,15 +606,15 @@ private fun behaviorMeasureInt(
 //}
 
 private fun knnNoveltyArchive(k: Int, function: (ActionBehaviorInt, ActionBehaviorInt) -> Float) =
-    KNNNoveltyArchiveWeighted(k, 10,0f, behaviorDistanceMeasureFunction = function)
+    KNNNoveltyArchiveWeighted(k, 100,0f, behaviorDistanceMeasureFunction = function)
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 52 + controllerId
+    val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.25f)
+    val shFunction = shFunction(.2f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
