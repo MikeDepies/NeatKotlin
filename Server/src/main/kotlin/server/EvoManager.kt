@@ -74,15 +74,15 @@ class EvoManager(
                     ) * 100
 //if (it.score.totalDamageDone <=0) 0f else
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
-                    val deathPenalty = if (it.score.playerDied) .8f else 0f
+                    val deathPenalty = if (it.score.playerDied) max(.4f - it.score.recovery.size * .2f, 0f) else 0f
                     val behaviorScore = max(
                         0f,
                         (scoredBehavior * (it.score.kills.size/2f + 1 - deathPenalty)) /*+ it.score.totalFrames / (10*60)*/// + it.score.totalDamageDone / 20 + it.score.kills.size * 10 /*+ it.score.totalDamageDone / 20 + it.score.kills.size * 10 *//*+ (it.score.totalDistanceTowardOpponent / 2000)*/ //+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
                     )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
-//                    while (knnNoveltyArchive.behaviors.size > 2_000_000) {
-//                        knnNoveltyArchive.behaviors.removeAt(0)
-//                    }
+                    while (knnNoveltyArchive.behaviors.size > 200_000) {
+                        knnNoveltyArchive.behaviors.removeAt(0)
+                    }
                     log.info { "$it" }
                     scores += FitnessModel(model, behaviorScore)
                     finishedScores[uuid] = true

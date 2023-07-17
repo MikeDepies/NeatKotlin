@@ -52,10 +52,10 @@ fun mutateNodeActivationFunction(): Mutation = { neatMutator ->
 }
 fun createMutationDictionary(): List<MutationEntry> {
     return listOf(
-        .8f chanceToMutate getMutateConnections(.1f, .01f, 6f),
+        .8f chanceToMutate getMutateConnections(.1f, .02f, 2f),
         .1f chanceToMutate mutateAddNode,
         .1f chanceToMutate mutateAddConnection,
-        .8f chanceToMutate getMutateBiasConnections(.1f, .01f, 6f),
+        .8f chanceToMutate getMutateBiasConnections(.1f, .02f, 2f),
         .1f chanceToMutate mutateToggleConnection,
         .1f chanceToMutate mutateNodeActivationFunction(),
     )

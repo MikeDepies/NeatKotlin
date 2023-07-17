@@ -28,7 +28,7 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .0f
+val speciesThresholdDelta = .05f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure

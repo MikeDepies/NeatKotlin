@@ -47,7 +47,7 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
     model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper2, queue_2, configuration.evaluator)
     if configuration.player_2.cpu_level == 0:
         model_handler2.reset()
-    gameStateProvider = DelayGameState(15)
+    gameStateProvider = DelayGameState(0)
     while True:
         game_state = console.step()
         if game_state is None:
@@ -88,7 +88,7 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
                 # if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
                 #     model_handler2.reset()
                 print("no stocks! game over")
-                gameStateProvider = DelayGameState(15)
+                gameStateProvider = DelayGameState(0)
                 controller_opponent.release_all()
                 controller_opponent.flush()
                 controller.release_all()

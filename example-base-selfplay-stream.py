@@ -326,7 +326,7 @@ def console_loop(queue_1 : mp.Queue, queue_2 : mp.Queue, configuration: Configur
     model_handler2 = ModelHandler(ai_controller_id2, opponent_index, player_index, controller_opponent, controller_helper2, queue_2, configuration.evaluator, stat_queue2)
     if configuration.player_2.cpu_level == 0:
         model_handler2.reset()
-    frame_delay = 15
+    frame_delay = 0
     delay_game_state_provider = DelayGameState(frame_delay)
     while True:
         # print("step")
