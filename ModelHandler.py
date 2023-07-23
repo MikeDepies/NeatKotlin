@@ -73,7 +73,7 @@ class ModelHandler:
                 delayed_game_state, self.model_index, self.opponent_index)
             
             new_state = state + self.stateQueue.get_data()
-            print(new_state[0].shape)
+            # print(new_state[0].shape)
             self.controller_helper.process(
                 self.network, self.controller,new_state, player0.controller_state)
             self.stateQueue.add(self.network.output()[4])
