@@ -104,6 +104,7 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
 //    val inputPlane = layerPlane(4, 14)
+
     val inputPlane = layerPlane(2, 22)
 //    val inputPlane2 = layerPlane(5, 8)
 //    val inputPlaneController = layerPlane(1, 9)
@@ -114,7 +115,9 @@ fun createNetwork(): TaskNetworkBuilder {
 //    val plane3 = layerPlane(15, 15)
 //    val plane4 = layerPlane(15, 15)
 //    val plane5 = layerPlane(15, 15)
-    val inputPlanes = listOf(inputPlane/*, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage*/)
+    val inputPlanes = buildList<LayerPlane> { repeat(16) {
+        layerPlane(2, 22)
+    } }//listOf(inputPlane/*, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage*/)
     val hiddenPlanes = (0..0).map {
 //        if (it < 2) layerPlane(12, 12) else
         layerPlane(4,4)
