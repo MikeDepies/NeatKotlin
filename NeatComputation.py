@@ -354,8 +354,7 @@ class HyperNeatBuilder:
         # Need to create an inverted connection_zindex map and use that instead of calculation order to find indexes for output and input
         print("Size of network: " + str(connection_count))
         print(f'input layers: {len(self.input_layer)}')
-        print(f'input layers: {self.input_layer}')
-        print(f'input layers index: {len(input_index)}')
+     
         
         if total_connection_cost <= 0:
             total_connection_cost = 1

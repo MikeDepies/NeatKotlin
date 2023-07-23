@@ -252,6 +252,7 @@ private fun Application.routing(
                 createNetwork.depth,
                 orNull == null
             )
+//            logger.info { networkBlueprint.inputLayer }
             return networkBlueprint
         }
 

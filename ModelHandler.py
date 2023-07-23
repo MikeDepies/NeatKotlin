@@ -68,11 +68,10 @@ class ModelHandler:
         player0: PlayerState = delayed_game_state.players[self.model_index]
         # player1: PlayerState = game_state.players[self.opponent_index]
         if self.network is not None and self.evaluator is not None:
-            # print(len(self.network.input_index))
+            
             state = create_packed_state(
                 delayed_game_state, self.model_index, self.opponent_index)
             self.stateQueue.add(state)
-            # print(self.stateQueue.get_data())
             self.controller_helper.process(
                 self.network, self.controller, self.stateQueue.get_data(), player0.controller_state)
             self.evaluator.evaluate_frame(game_state)
@@ -113,7 +112,6 @@ class ModelHandler:
         if self.network.total_connection_cost != 0:
             ratio = self.network.total_number_of_connections/ self.network.total_connection_cost
         # print("creating new evaluator")
-        print(len(self.network.input_index))
         self.stateQueue = LimitedSizeList(len(self.network.input_index))
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                    self.evaluator_configuration.max_time * ratio, self.evaluator_configuration.action_limit, None)
