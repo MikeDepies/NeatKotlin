@@ -71,9 +71,12 @@ class ModelHandler:
             
             state = create_packed_state(
                 delayed_game_state, self.model_index, self.opponent_index)
-            self.stateQueue.add(state)
+            
+            
             self.controller_helper.process(
-                self.network, self.controller, self.stateQueue.get_data(), player0.controller_state)
+                self.network, self.controller,state + self.stateQueue.get_data(), player0.controller_state)
+            self.stateQueue.add(self.network.output()[4])
+            
             self.evaluator.evaluate_frame(game_state)
             # print("evaluating " + str(self.ai_controller_id))
         elif self.network is None:

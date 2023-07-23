@@ -3,7 +3,7 @@ package server
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class EvaluatorSettings(val attackTime : Int, val maxTime : Int, val actionLimit : Int)
+data class EvaluatorSettings(val attackTime: Int, val maxTime: Int, val actionLimit: Int)
 
 @Serializable
 enum class MeleeStage {
@@ -11,7 +11,13 @@ enum class MeleeStage {
 }
 
 @Serializable
-data class ControllerConfiguration(val character: Character, val cpuLevel : Int)
+data class ControllerConfiguration(val character: Character, val cpuLevel: Int)
 
 @Serializable
-data class PythonConfiguration(val evaluatorSettings: EvaluatorSettings, val player1 : ControllerConfiguration, val player2: ControllerConfiguration, val stage : MeleeStage)
+data class PythonConfiguration(
+    val evaluatorSettings: EvaluatorSettings,
+    val player1: ControllerConfiguration,
+    val player2: ControllerConfiguration,
+    val stage: MeleeStage,
+    val frameDelay : Int
+)

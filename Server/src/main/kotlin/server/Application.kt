@@ -159,10 +159,10 @@ fun Application.module() {
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
-                evaluationId2 to evoManager
+                evaluationId2 to evoManager2
             ), mapOf(
                 evaluationId to dashboardManager,
-                evaluationId2 to dashboardManager
+                evaluationId2 to dashboardManager2
             )
         )
     )
@@ -208,12 +208,13 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 60, 16)
+    val evaluatorSettings = EvaluatorSettings(5, 60, 16)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Fox, 9),
-        MeleeStage.FinalDestination
+        ControllerConfiguration(Character.Luigi, 0),
+        ControllerConfiguration(Character.Yoshi, 0),
+        MeleeStage.FinalDestination,
+        0
     )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
@@ -615,7 +616,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.2f)
 
 
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
