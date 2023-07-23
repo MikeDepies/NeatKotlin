@@ -68,7 +68,7 @@ class ModelHandler:
         player0: PlayerState = delayed_game_state.players[self.model_index]
         # player1: PlayerState = game_state.players[self.opponent_index]
         if self.network is not None and self.evaluator is not None:
-            print(len(self.network.input_index))
+            # print(len(self.network.input_index))
             state = create_packed_state(
                 delayed_game_state, self.model_index, self.opponent_index)
             self.stateQueue.add(state)
