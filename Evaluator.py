@@ -386,6 +386,7 @@ class Evaluator:
                     self.kill_actions.append(self.last_damage_action.value)
                 self.frames_without_damage -= 60 * self.attack_timer * 4
                 self.actions_without_damage = 0
+                self.opponent_knocked = False
             # print(self.frames_without_damage)
             # update data to compare for next frame
             self.frames_without_damage = max(
