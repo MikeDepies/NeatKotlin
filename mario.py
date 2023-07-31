@@ -23,7 +23,7 @@ from dacite import from_dict
 
 from ComputableNetwork import ComputableNetwork, relu, sigmoidal, swish, mish
 from NeatService import process_model_data, process_model_data_mcc, process_model_data_mcc_stage, StageGene, StageTrackGene
-
+from LimitedSizeList import LimitedSizeList
 
 def submitScore(data, host: str):
     # print(info["stage"])
@@ -463,7 +463,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
     state = env_mariogym.reset(options={
         "stages": [str(stage_gene.world)+"-"+str(stage_gene.stage)]
     })
-
+    stateQueue = LimitedSizeList(len(agent_network.input_index) - 1)
     # Iterate through each stage in track
     # exit the stage when dead, run out of time alotted, flag reached or completed the stageGene
     # Continue through iteration until complete or first failure
@@ -502,6 +502,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
                 prevX = 40
                 framesSinceMaxXChange = 0 * 20
                 game_event_collector = GameEventCollector(game_event_helper, 0)
+                stateQueue = LimitedSizeList(len(agent_network.input_index) - 1)
                 idle = False
             else:
                 idle = False
@@ -528,10 +529,12 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
         )  # * np.random.binomial(1, .25,  state.size)
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
         # , actionToNdArray(action)
-        agent_network.inputs([state])
+        
+        agent_network.inputs(state + stateQueue.get_data())
         # network.input((state / 42.5) - 3)
         agent_network.compute()
         output = agent_network.output()
+        stateQueue.add(output[3])
         if abs(prevX - info["x_pos"]) > 32:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
