@@ -212,7 +212,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Falco, 9),
+        ControllerConfiguration(Character.Falco, 7),
         MeleeStage.PokemonStadium,
         0
     )

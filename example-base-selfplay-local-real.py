@@ -71,11 +71,11 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
             #     model_handler2.postEvaluate(game_state_delayed)
             # else:
             #     controller_opponent.release_all()
-            if model_handler2.network is not None:
+            if model_handler2.network is not None or configuration.player_2.cpu_level == 0 :
                 model_handler.evaluate(game_state, game_state_delayed)
             if configuration.player_2.cpu_level == 0 and model_handler.network is not None:
                 model_handler2.evaluate(game_state, game_state_delayed)
-            if model_handler2.network is not None:
+            if model_handler2.network is not None or configuration.player_2.cpu_level == 0 :
                 model_handler.postEvaluate(game_state)
             if configuration.player_2.cpu_level == 0 and model_handler.network is not None:
                 model_handler2.postEvaluate(game_state)
@@ -84,7 +84,7 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
             # if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
             #     model_handler2.reset()
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
-                if model_handler.network is None:
+                if model_handler.network is None or configuration.player_2.cpu_level == 0 :
                     model_handler.reset()
                 if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
                     model_handler2.reset()
