@@ -68,7 +68,7 @@ class GameEventHelper:
         return prev_info["life"] < info["life"]
 
     def stage_part_complete(self, info, stage_part_position: int):
-        return (info["x_pos"] / 256) > stage_part_position
+        return (info["x_pos"] / 64) > stage_part_position
 
 
 class GameEventCollector:
@@ -167,7 +167,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     game_event_helper = GameEventHelper()
     game_event_collector = GameEventCollector(game_event_helper, 1)
     total_frames=0
-
+    stateQueue = LimitedSizeList(len(network.input_index) - 1)
     while True:
         if done or idle:
             state = env.reset()
@@ -204,6 +204,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             steps_left = 0
             steps_right = 0
             framesSinceMaxXChange = 0
+            stateQueue = LimitedSizeList(len(network.input_index) - 1)
             game_event_collector = GameEventCollector(game_event_helper, 1)
             idle = False
             last_stage_part = 0
@@ -225,13 +226,13 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # rgb2gray(state),
         state = rescale(
            rgb2gray(state),# state,
-            1 / 16,
+            1 / 8,
             # channel_axis=2
         )
-        network.inputs([state])
+        network.inputs([state] + stateQueue.get_data())
         network.compute()
         output = network.output()
-        
+        stateQueue.add(output[3])
         if abs(prevX - info["x_pos"]) > 16:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
@@ -239,7 +240,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         
-        if framesSinceMaxXChange > 10 * 20 or reward < -14 or total_frames > 20 * time_seconds:
+        if framesSinceMaxXChange > 20 * 20 or reward < -14:# or total_frames > 20 * time_seconds:
             idle = True
         total_frames +=1
         depad = output[0].argmax(1)[0]
@@ -530,7 +531,7 @@ def mario_mcc_stage(queue: mp.Queue, render: Boolean):
         # state = state  * np.random.binomial(1, .25,  state.size).reshape(state.shape)
         # , actionToNdArray(action)
         
-        agent_network.inputs(state + stateQueue.get_data())
+        agent_network.inputs([state] + stateQueue.get_data())
         # network.input((state / 42.5) - 3)
         agent_network.compute()
         output = agent_network.output()
@@ -612,7 +613,7 @@ def queueNetworks(queue: mp.Queue, mgr_dict: DictProxy, ns: Namespace):
         id, builder = get_network_novelty(host, port)
         if id not in mgr_dict:
             mgr_dict[id] = True
-            network = builder.create_ndarrays(mish, sigmoidal)
+            network = builder.create_ndarrays(sigmoidal, sigmoidal)
             ns.generation += 1
             queue.put((id, network))
         if ns.generation > 100_000:
@@ -730,24 +731,24 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 15
+    process_num = 10
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 
     for i in range(process_num):
-        p = mp.Process(target=mario_mcc_stage,
+        p = mp.Process(target=marioNovelty,
                        daemon=True, args=(queue, i < 1))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         # processes.append(p)
         # p.start()
-        p = mp.Process(target=queueModels, daemon=True, args=(queue,))
-        processes.append(p)
-        p.start()
-        # p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         # processes.append(p)
         # p.start()
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        processes.append(p)
+        p.start()
 
     for p in processes:
         p.join()
