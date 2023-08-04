@@ -70,7 +70,7 @@ class EvoManager(
                 val model = networkWithId
                 if (finishedScores[uuid] != true && model != null) {
 
-                    val scoredBehavior = it.score.kills.size * 100 + it.score.totalDamageDone / 100/*scoreBehavior(
+                    val scoredBehavior = it.score.kills.size + it.score.totalDamageDone / 100/*scoreBehavior(
                         knnNoveltyArchive, it, model
                     ) * 100*/
 //if (it.score.totalDamageDone <=0) 0f else
