@@ -28,6 +28,10 @@ private val log = KotlinLogging.logger { }
 //type KNNNoveltyArchive = KNNNoveltyArchiveWeighted
 typealias KNNNoveltyArchive<T> = KNNNoveltyArchiveWeighted
 
+enum class EvalMode {
+    Novelty, Objective
+}
+
 class EvoManager(
     val populationSize: Int,
     val populationEvolver: PopulationEvolver,
@@ -45,6 +49,7 @@ class EvoManager(
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var populationScoresChannel = Channel<PopulationScoreEntry>(Channel.UNLIMITED)
+    var mode = EvalMode.Novelty
 
     //    var seq = population.iterator()
     suspend fun start(
@@ -69,10 +74,13 @@ class EvoManager(
                 val networkWithId = mapIndexed[uuid]
                 val model = networkWithId
                 if (finishedScores[uuid] != true && model != null) {
-
-                    val scoredBehavior = it.score.kills.size + it.score.totalDamageDone / 100/*scoreBehavior(
-                        knnNoveltyArchive, it, model
-                    ) * 100*/
+                    val scoredBehavior = when (mode) {
+                        EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100
+                        EvalMode.Novelty -> scoreBehavior(
+                            knnNoveltyArchive, it, model
+                        ) * 100
+                    }
+                    /**/
 //if (it.score.totalDamageDone <=0) 0f else
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
                     val deathPenalty = if (it.score.playerDied) max(.8f - it.score.recovery.size * .1f, 0f) else 0f
@@ -180,6 +188,10 @@ class EvoManager(
                     speciesPopulation.remove(neatMutator)
                 }
             }
+        }
+        if (populationEvolver.generation % 30 == 0) {
+            mode = if (mode == EvalMode.Objective) EvalMode.Novelty else EvalMode.Objective
+            log.info { "New mode: $mode" }
         }
 //        knnNoveltyArchive.behaviors.removeAll { Species(it.species) !in populationEvolver.speciationController.speciesSet }
         return newPopulation.take(populationSize)

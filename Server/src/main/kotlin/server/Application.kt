@@ -111,7 +111,7 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         3
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
+        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
         5/*,
@@ -208,11 +208,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 30, 12)
+    val evaluatorSettings = EvaluatorSettings(3, 120, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Falco, 3),
+        ControllerConfiguration(Character.Bowser, 0),
         MeleeStage.PokemonStadium,
         0
     )
