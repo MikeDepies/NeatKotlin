@@ -296,7 +296,7 @@ class HyperNeatBuilder:
                             if weight != 0:
                                 l1 = abs(input[0] - input[3]) + abs(input[1] - input[4]) + abs(input[2] - input[5])
                                 connections_expressed += 1
-                                connection_cost_sum += (l1 - 1.2)
+                                connection_cost_sum += max(0, l1 - 3)
                             # adaptive_ndarray[target_y, target_x, source_y,
                             #                    source_x, ...] = output_values[2:]
                             connection_ndarray[target_y, target_x, source_y,

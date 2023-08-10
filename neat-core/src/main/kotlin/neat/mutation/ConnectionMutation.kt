@@ -16,7 +16,7 @@ fun NeatExperiment.perturbConnectionWeight(range: Float = standardWeightPerturba
     }
 }
 
-fun NeatExperiment.assignConnectionRandomWeight(range :Float = 2f): ConnectionMutation = { weight = randomWeight(random, range) }
+fun NeatExperiment.assignConnectionRandomWeight(range :Float = 2f): ConnectionMutation = { weight = weightPerturbation(range) }
 inline fun NeatExperiment.ifElseConnectionMutation(
     crossinline mutationRoll: MutationRoll,
     crossinline onRollSuccess: ConnectionMutation,

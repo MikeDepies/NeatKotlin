@@ -474,15 +474,15 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 @OptIn(ExperimentalStdlibApi::class)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
-    val inputImagePlane = layerPlane(30, 32)
+    val inputImagePlane = layerPlane(15, 16)
 //    val inputImagePlane2 = layerPlane(1, 12)
 //    val inputImagePlane3 = layerPlane(15, 16)
-    val inputPlanesEmbeddings = buildList<LayerPlane> { repeat(5) {
+    val inputPlanesEmbeddings = buildList<LayerPlane> { repeat(1) {
         add(layerPlane(4, 4))
     } }
     val inputPlanes = listOf(inputImagePlane/*, inputImagePlane2*//*, inputImagePlane2, inputImagePlane3*/)
-    val hiddenPlanes = (0..0).map {
-        layerPlane(8,8)
+    val hiddenPlanes = (0..4).map {
+        layerPlane(5,5)
     }
     val analogPlane = layerPlane(1, 5)
     val button1Plane = layerPlane(1, 3)
@@ -492,16 +492,16 @@ fun createNetwork(): TaskNetworkBuilder {
     val computationOrder = hiddenPlanes + outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes
-        put(inputImagePlane, planeList)
+        put(inputImagePlane, planeList + outputPlanes)
         inputPlanesEmbeddings.forEach {
-            put(it, planeList)
+            put(it, planeList + outputPlanes)
         }
 //        put(inputImagePlane2, planeList)
 //        put(inputImagePlane3, planeList)
         hiddenPlanes.forEachIndexed { index, layerPlane ->
 //            if (index > hiddenPlanes.size -20)
-            val planes = planeList.drop(index + 1).take(1)
-            put(layerPlane, planes.ifEmpty { outputPlanes })
+            val planes = planeList.drop(index + 1) + outputPlanes
+            put(layerPlane, planes)
 //            else
 //                put(layerPlane, planeList.drop(index))
         }

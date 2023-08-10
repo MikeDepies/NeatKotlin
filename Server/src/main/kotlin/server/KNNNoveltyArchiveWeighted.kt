@@ -24,6 +24,7 @@ class KNNNoveltyArchiveWeighted(
 
     override fun addBehavior(behavior: Behavior<ActionBehaviorInt>): Float {
         val distance = measure(behavior)
+//        logger.info { "DISTANCE: $distance" }
         if (distance > noveltyThreshold || size == 0) behaviors += behavior
         return distance
     }
@@ -32,12 +33,12 @@ class KNNNoveltyArchiveWeighted(
         val behavior = b.behavior
         val damageK = if (b.behavior.totalDamageDone > 0) 1 else 0
         val newK =
-            k + (behavior.kills.size.squared() * multiplier) + (behavior.totalDamageDone.toInt() / 10) + (behavior.recovery.size * 3)
+            k //+ (behavior.kills.size.squared() * multiplier) + (behavior.totalDamageDone.toInt() / 10) + (behavior.recovery.size * 3)
         val distance = behaviors.parallelStream()
             .map { behaviorDistanceMeasureFunction(behavior, it.behavior) }.sorted().toList()
-            .take(newK*damageK).average()
+            .take(newK).average()
             .toFloat()
-        logger.info { "K: $newK" }
+        logger.info { "K: $newK => $distance" }
         return if (distance.isNaN()) 0f else distance
     }
 }

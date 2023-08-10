@@ -138,7 +138,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
-    config_seconds = 50
+    config_seconds = 6
     time_modifier = 0
     done = False
     network: ComputableNetwork
@@ -226,21 +226,21 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # rgb2gray(state),
         state = rescale(
            rgb2gray(state),# state,
-            1 / 8,
+            1 / 16,
             # channel_axis=2
         )
         network.inputs([state] + stateQueue.get_data())
         network.compute()
         output = network.output()
         stateQueue.add(output[3])
-        if abs(prevX - info["x_pos"]) > 16:
+        if abs(prevX - info["x_pos"]) > 64:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
         else:
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
-        
-        if framesSinceMaxXChange > 20 * 20 or reward < -14:# or total_frames > 20 * time_seconds:
+        # framesSinceMaxXChange > 20 * 20 or 
+        if reward < -14 or total_frames > 20 * time_seconds or (game_event_collector.stage_parts < 2 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
             idle = True
         total_frames +=1
         depad = output[0].argmax(1)[0]
