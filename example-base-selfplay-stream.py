@@ -255,10 +255,14 @@ class ModelHandler:
             #     print("--------")
             #     print(state)
             # print(self.controller)
-            new_state = state + self.stateQueue.get_data()
+            if self.stateQueue.size_limit > 0:
+                new_state = state + self.stateQueue.get_data()
+            else:
+                new_state = state
             self.controller_helper.process(
                 self.network, self.controller, new_state, player0.controller_state)
-            self.stateQueue.add(self.network.output()[4])
+            if self.stateQueue.size_limit > 0:
+                self.stateQueue.add(self.network.output()[4])
             self.evaluator.evaluate_frame(game_state)
             self.dashboard_evaluator.evaluate_frame(game_state)
         else:
