@@ -229,10 +229,14 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             1 / 16,
             # channel_axis=2
         )
-        network.inputs([state] + stateQueue.get_data())
+        if stateQueue.size_limit > 0:
+            network.inputs([state] + stateQueue.get_data())
+        else:
+            network.inputs([state])
         network.compute()
         output = network.output()
-        stateQueue.add(output[3])
+        if stateQueue.size_limit > 0:
+            stateQueue.add(output[3])
         if abs(prevX - info["x_pos"]) > 64:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
@@ -240,7 +244,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         # framesSinceMaxXChange > 20 * 20 or 
-        if reward < -14 or total_frames > 20 * time_seconds or (game_event_collector.stage_parts < 2 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
+        if reward < -14 or total_frames > 20 * time_seconds or (game_event_collector.stage_parts < 20 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
             idle = True
         total_frames +=1
         depad = output[0].argmax(1)[0]
@@ -731,7 +735,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 5
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 

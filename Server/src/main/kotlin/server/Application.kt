@@ -107,9 +107,9 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
-        30
+        5
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
@@ -211,7 +211,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(3, 60*2, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
+        ControllerConfiguration(Character.Popo, 0),
         ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination,
         0
@@ -616,7 +616,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.9f)
+    val shFunction = shFunction(.8f)
 
     val weightRange = 4f
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/

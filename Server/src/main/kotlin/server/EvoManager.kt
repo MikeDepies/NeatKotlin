@@ -189,7 +189,7 @@ class EvoManager(
                 }
             }
         }
-        if (populationEvolver.generation % 30 == 0) {
+            if (populationEvolver.generation % 30 == 0) {
             mode = if (mode == EvalMode.Objective) EvalMode.Novelty else EvalMode.Objective
             log.info { "New mode: $mode" }
         }
