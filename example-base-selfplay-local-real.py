@@ -430,7 +430,7 @@ if __name__ == '__main__':
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
-    # configuration.player_2.cpu_level=5
+    configuration.player_2.cpu_level=5
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num)
     queue_2 = mgr.Queue(process_num)

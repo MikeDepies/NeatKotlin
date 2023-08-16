@@ -208,11 +208,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 60*2, 12)
+    val evaluatorSettings = EvaluatorSettings(3, 60*8, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Popo, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.Luigi, 0),
+        ControllerConfiguration(Character.Fox, 3),
         MeleeStage.FinalDestination,
         0
     )
@@ -616,7 +616,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.8f)
+    val shFunction = shFunction(.5f)
 
     val weightRange = 4f
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/

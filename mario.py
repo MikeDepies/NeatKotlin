@@ -68,7 +68,7 @@ class GameEventHelper:
         return prev_info["life"] < info["life"]
 
     def stage_part_complete(self, info, stage_part_position: int):
-        return (info["x_pos"] / 64) > stage_part_position
+        return (info["x_pos"] / 32) > stage_part_position
 
 
 class GameEventCollector:
@@ -138,7 +138,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
     host = "192.168.0.100"
     port = 8095
-    config_seconds = 6
+    config_seconds = 120
     time_modifier = 0
     done = False
     network: ComputableNetwork
@@ -226,7 +226,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # rgb2gray(state),
         state = rescale(
            rgb2gray(state),# state,
-            1 / 16,
+            1 / 8,
             # channel_axis=2
         )
         if stateQueue.size_limit > 0:
@@ -237,14 +237,14 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         output = network.output()
         if stateQueue.size_limit > 0:
             stateQueue.add(output[3])
-        if abs(prevX - info["x_pos"]) > 64:
+        if abs(prevX - info["x_pos"]) > 16:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
         else:
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         # framesSinceMaxXChange > 20 * 20 or 
-        if reward < -14 or total_frames > 20 * time_seconds or (game_event_collector.stage_parts < 20 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
+        if framesSinceMaxXChange > 20 * 20 or reward < -14 or total_frames > 20 * time_seconds or (game_event_collector.stage_parts < 20 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
             idle = True
         total_frames +=1
         depad = output[0].argmax(1)[0]
@@ -735,7 +735,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 5
+    process_num = 10
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 
