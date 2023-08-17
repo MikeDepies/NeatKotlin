@@ -324,7 +324,7 @@ class Evaluator:
                 # if self.damage_action_available:
                 self.damage_actions.append(player.action.value)
                     # self.damage_action_available = False
-                self.frames_without_damage -= 60 * self.attack_timer
+                # self.frames_without_damage -= 60 * self.attack_timer
                 if self.actions_satisfied:
                     self.actions_satisfied = False
                 self.last_damage_action = player.action
@@ -365,7 +365,7 @@ class Evaluator:
                         self.frames_without_damage -= 60
                         self.actions.append(player.action.value)
                     else:
-                        self.frames_without_damage -= 20
+                        self.frames_without_damage -= 60
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
             if self.player_lost_stock(game_state):
@@ -373,7 +373,7 @@ class Evaluator:
                 # if player.stock == 0:
                 # if not self.knocked:
                 #     self.actions.clear()
-                self.frames_without_damage += self.attack_timer * 60
+                # self.frames_without_damage += self.attack_timer * 60
                 if not self.knocked:
                     self.player_sd = True
                 self.player_died = True
