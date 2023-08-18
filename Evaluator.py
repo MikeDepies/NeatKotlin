@@ -362,7 +362,7 @@ class Evaluator:
                         self.actions_satisfied = True
                         # self.frame_data.frame_count(player.character,player.action)
                         # self.frames_without_damage -= 60 * self.attack_timer
-                        self.frames_without_damage -= 60
+                        self.frames_without_damage -= 20
                         self.actions.append(player.action.value)
                     else:
                         self.frames_without_damage -= 60
