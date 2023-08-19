@@ -300,15 +300,15 @@ class ModelHandler:
     def reset(self):
         self.model_id, self.network = self.queue.get()
         self.stat_queue.put(self.model_id)
-        print(self.model_id)
-        print("Connections:" + str(self.network.total_number_of_connections) +
-              "\tCost: " + str(self.network.total_connection_cost))
-        ratio: float = 1
-        if self.network.total_connection_cost != 0:
-            ratio = self.network.total_number_of_connections / \
-                self.network.total_connection_cost
-        print("time: " + str(self.evaluator_configuration.max_time *
-              ratio) + " ratio: " + str(ratio))
+        # print(self.model_id)
+        # print("Connections:" + str(self.network.total_number_of_connections) +
+        #       "\tCost: " + str(self.network.total_connection_cost))
+        # ratio: float = 1
+        # if self.network.total_connection_cost != 0:
+        #     ratio = self.network.total_number_of_connections / \
+        #         self.network.total_connection_cost
+        # print("time: " + str(self.evaluator_configuration.max_time *
+        #       ratio) + " ratio: " + str(ratio))
         # mp.Process(target=self.dash_helper.updateModel, daemon=True, args=(self.model_id,)).start()
         # print(self.max_state)
         # if (self.max_state is not None):
@@ -316,7 +316,7 @@ class ModelHandler:
         print("creating new evaluator")
         self.stateQueue = LimitedSizeList(len(self.network.input_index) - 1)
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
-                                   self.evaluator_configuration.max_time * ratio, self.evaluator_configuration.action_limit, None)
+                                   self.evaluator_configuration.max_time , self.evaluator_configuration.action_limit, None)
 
 
 def console_loop(queue_1: mp.Queue, queue_2: mp.Queue, configuration: Configuration, stat_queue: mp.Queue, stat_queue2: mp.Queue):
