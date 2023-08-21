@@ -190,7 +190,7 @@ class EvoManager(
             }
         }
             if (populationEvolver.generation % 30 == 0) {
-            mode = if (mode == EvalMode.Objective) EvalMode.Novelty else EvalMode.Objective
+//            mode = if (mode == EvalMode.Objective) EvalMode.Novelty else EvalMode.Objective
             log.info { "New mode: $mode" }
         }
 //        knnNoveltyArchive.behaviors.removeAll { Species(it.species) !in populationEvolver.speciationController.speciesSet }

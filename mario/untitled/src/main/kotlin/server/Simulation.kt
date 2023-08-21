@@ -477,22 +477,22 @@ fun createNetwork(): TaskNetworkBuilder {
     val inputImagePlane = layerPlane(30, 32)
 //    val inputImagePlane2 = layerPlane(1, 12)
 //    val inputImagePlane3 = layerPlane(15, 16)
-    val inputPlanesEmbeddings = buildList<LayerPlane> { repeat(5) {
+    val inputPlanesEmbeddings = buildList<LayerPlane> { repeat(0) {
         add(layerPlane(4, 4))
     } }
     val inputPlanes = listOf(inputImagePlane/*, inputImagePlane2*//*, inputImagePlane2, inputImagePlane3*/)
-    val hiddenPlanes = (0..0).map {
+    val hiddenPlanes = (0..4).map {
         layerPlane(5,5)
     }
     val analogPlane = layerPlane(1, 5)
     val button1Plane = layerPlane(1, 3)
     val button2Plane = layerPlane(1, 3)
     val stateEmbeddingOutput = layerPlane(4, 4)
-    val outputPlanes = listOf(analogPlane,button1Plane,button2Plane, stateEmbeddingOutput)
+    val outputPlanes = listOf(analogPlane,button1Plane,button2Plane)
     val computationOrder = hiddenPlanes + outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes
-        put(inputImagePlane, planeList + outputPlanes)
+        put(inputImagePlane, planeList)
         inputPlanesEmbeddings.forEach {
             put(it, planeList + outputPlanes)
         }
@@ -521,10 +521,9 @@ fun createNetwork(): TaskNetworkBuilder {
             put(it, zIndex++)
         }
 
-        put(analogPlane, zIndex++)
-        put(button1Plane, zIndex++)
-        put(button2Plane, zIndex++)
-        put(stateEmbeddingOutput, zIndex++)
+        outputPlanes.forEach {
+            put(it, zIndex++)
+        }
     }
     val targetConnectionMapping: Map<LayerPlane, List<LayerPlane>> = buildMap<LayerPlane, MutableList<LayerPlane>> {
         computationOrder.forEach {
