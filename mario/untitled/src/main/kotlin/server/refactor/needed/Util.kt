@@ -28,7 +28,7 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .05f
+val speciesThresholdDelta = .1f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
@@ -126,8 +126,8 @@ fun MarioDiscovery.toVector() = listOf(
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
 //    ((yPos) / 32).toFloat(),
-//    xPos.toFloat(),
-    stageParts.toFloat(),
+    xPos.toFloat(),
+//    stageParts.toFloat(),
 //    time.toFloat() / 20
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
@@ -144,14 +144,14 @@ fun evolve(
     populationEvolver.sortPopulationByAdjustedScore(modelScores)
     populationEvolver.updateScores(modelScores)
     var newPopulation = populationEvolver.evolveNewPopulation(modelScores, neatExperiment)
-//    populationEvolver.speciationController.speciesSet.forEach { species ->
-//        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-//        populationEvolver.speciesLineage.updateMascot(
-//            species,
-//            speciesPopulation.take(max(1, (speciesPopulation.size * .2).toInt())).random()
-//        )
-////        .take(max(1, (speciesPopulation.size * .2).toInt()))
-//    }
+    populationEvolver.speciationController.speciesSet.forEach { species ->
+        val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+        populationEvolver.speciesLineage.updateMascot(
+            species,
+            speciesPopulation.random()
+        )
+//        .take(max(1, (speciesPopulation.size * .2).toInt()))
+    }
     val mutationEntries = createMutationDictionary()
     while (newPopulation.size < populationSize) {
         newPopulation = newPopulation + newPopulation.random(neatExperiment.random).clone(UUID.randomUUID()).mutateModel(mutationEntries, neatExperiment)

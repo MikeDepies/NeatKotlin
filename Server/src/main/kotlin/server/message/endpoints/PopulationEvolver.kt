@@ -11,7 +11,7 @@ class PopulationEvolver(
     var generation: Int = 0,
     val standardCompatibilityTest: CompatibilityTest
 ) {
-    val stagnation = 60
+    val stagnation = 100
     fun speciate(population: List<NeatMutator>) {
 
         speciesLineage = SpeciesLineage(speciesLineage.species.map {speciesLineage.speciesGene(it)}.filter {
@@ -46,8 +46,8 @@ class PopulationEvolver(
         val mutationEntries = createMutationDictionary()
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
-            mateChance = .7f,
-            survivalThreshold = .2f,
+            mateChance = .9f,
+            survivalThreshold = .1f,
             speciesScoreKeeper = scoreKeeper,
             stagnation = stagnation,
             championThreshold = 5
@@ -66,16 +66,16 @@ class PopulationEvolver(
 fun createMutationDictionary(): List<MutationEntry> {
 
     return listOf(
-        .9f chanceToMutate getMutateConnections(.1f, .01f, 4f),
-        .01f chanceToMutate mutateAddNode,
-        .01f chanceToMutate mutateAddConnection,
-        .9f chanceToMutate getMutateBiasConnections(.1f, .01f, 4f),
-        .01f chanceToMutate mutateToggleConnection,
-        .01f chanceToMutate mutateNodeActivationFunction(),
+        .9f chanceToMutate getMutateConnections(.1f, .1f, 4f),
+        .03f chanceToMutate mutateAddNode,
+        .03f chanceToMutate mutateAddConnection,
+        .9f chanceToMutate getMutateBiasConnections(.1f, .1f, 4f),
+        .03f chanceToMutate mutateToggleConnection,
+        .03f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 
 fun mutateNodeActivationFunction(): Mutation = { neatMutator ->
-    val nodeGene = (neatMutator.hiddenNodes + neatMutator.outputNodes).random(random)
+    val nodeGene = (neatMutator.hiddenNodes + neatMutator.outputNodes[0]).random(random)
     nodeGene.activationFunction = (activationFunctions - nodeGene.activationFunction).random(random)
 }

@@ -226,7 +226,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # rgb2gray(state),
         state = rescale(
            rgb2gray(state),# state,
-            1 / 8,
+            1 / 16,
             # channel_axis=2
         )
         if stateQueue.size_limit > 0:
@@ -735,7 +735,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 5
     queue = mgr.Queue(process_num * 1)
     processes: List[mp.Process] = []
 

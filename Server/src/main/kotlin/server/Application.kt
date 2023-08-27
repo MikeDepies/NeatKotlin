@@ -109,12 +109,12 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        50
+        5
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
+        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        50/*,
+        5/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -122,7 +122,7 @@ fun Application.module() {
             recoveryMultiplier = 2f
         )*/
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
+        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
@@ -208,11 +208,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(3, 60*8, 12)
+    val evaluatorSettings = EvaluatorSettings(4, 60*2, 12)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
+        ControllerConfiguration(Character.Marth, 0),
         ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.Fox, 1),
         MeleeStage.FinalDestination,
         0
     )
@@ -616,7 +616,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.8f)
+    val shFunction = shFunction(.4f)
 
     val weightRange = 4f
     val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
