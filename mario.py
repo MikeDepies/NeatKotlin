@@ -167,7 +167,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     game_event_helper = GameEventHelper()
     game_event_collector = GameEventCollector(game_event_helper, 1)
     total_frames=0
-    stateQueue = LimitedSizeList(len(network.input_index) - 1)
+    stateQueue = LimitedSizeList(0) #len(network.input_index) - 1
     while True:
         if done or idle:
             state = env.reset()
@@ -204,7 +204,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             steps_left = 0
             steps_right = 0
             framesSinceMaxXChange = 0
-            stateQueue = LimitedSizeList(len(network.input_index) - 1)
+            stateQueue = LimitedSizeList(0) #len(network.input_index) - 1
             game_event_collector = GameEventCollector(game_event_helper, 1)
             idle = False
             last_stage_part = 0
@@ -229,10 +229,11 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             1 / 16,
             # channel_axis=2
         )
+        # print(np.ones((1,1)))
         if stateQueue.size_limit > 0:
             network.inputs([state] + stateQueue.get_data())
         else:
-            network.inputs([state])
+            network.inputs([state, np.ones((1,1))])
         network.compute()
         output = network.output()
         if stateQueue.size_limit > 0:

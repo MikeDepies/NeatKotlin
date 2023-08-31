@@ -28,11 +28,11 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .1f
+val speciesThresholdDelta = .0f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .5f
+var speciesSharingDistance = .7f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -126,9 +126,9 @@ fun MarioDiscovery.toVector() = listOf(
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
 //    ((yPos) / 32).toFloat(),
-    xPos.toFloat(),
-//    stageParts.toFloat(),
-//    time.toFloat() / 20
+//    xPos.toFloat(),
+    stageParts.toFloat(),
+//    time.toFloat()
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,

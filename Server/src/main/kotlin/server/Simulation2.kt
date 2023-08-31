@@ -104,7 +104,7 @@ data class NetworkShape(val width: Int, val height: Int, val depth: Int)
 fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
 //    val inputPlane = layerPlane(4, 14)
-
+    val bias = layerPlane(1, 1)
     val inputPlane = layerPlane(2, 22)
 //    val inputPlane2 = layerPlane(5, 8)
 //    val inputPlaneController = layerPlane(1, 9)
@@ -119,20 +119,21 @@ fun createNetwork(): TaskNetworkBuilder {
         add(layerPlane(10, 10))
     } }
     //listOf(inputPlane/*, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage*/)
-    val hiddenPlanes = (0..0).map {
+    val hiddenPlanes = (0..4).map {
 //        if (it < 2) layerPlane(12, 12) else
-        layerPlane(4,44)
+        layerPlane(2,11)
     }
     val analogPlane = layerPlane(9, 9)
     val analogCPlane = layerPlane(9, 9)
     val button1Plane = layerPlane(1, 8)
     val button2Plane = layerPlane(1, 8)
 //    val stateEmbeddingOutput = layerPlane(10, 10)
-    val outputPlanes = listOf(analogPlane, analogCPlane, button1Plane, button2Plane)
+    val outputPlanes = listOf(analogPlane, analogCPlane, button1Plane, button2Plane, bias)
     val computationOrder = hiddenPlanes + outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
         val planeList = hiddenPlanes
         put(inputPlane, planeList)
+        put(bias, planeList + outputPlanes)
         inputPlanes.forEach {
             put(it, planeList)
         }
