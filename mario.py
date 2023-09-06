@@ -167,7 +167,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     game_event_helper = GameEventHelper()
     game_event_collector = GameEventCollector(game_event_helper, 1)
     total_frames=0
-    stateQueue = LimitedSizeList(0) #len(network.input_index) - 1
+    stateQueue = LimitedSizeList(len(network.input_index) - 2) #len(network.input_index) - 1
     while True:
         if done or idle:
             state = env.reset()
@@ -204,7 +204,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             steps_left = 0
             steps_right = 0
             framesSinceMaxXChange = 0
-            stateQueue = LimitedSizeList(0) #len(network.input_index) - 1
+            stateQueue = LimitedSizeList(len(network.input_index) - 2) #len(network.input_index) - 2
             game_event_collector = GameEventCollector(game_event_helper, 1)
             idle = False
             last_stage_part = 0
@@ -231,7 +231,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         )
         # print(np.ones((1,1)))
         if stateQueue.size_limit > 0:
-            network.inputs([state] + stateQueue.get_data())
+            network.inputs([state, np.ones((1,1))] + stateQueue.get_data())
         else:
             network.inputs([state, np.ones((1,1))])
         network.compute()
@@ -751,6 +751,9 @@ if __name__ == '__main__':
         # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
         # processes.append(p)
         # p.start()
+        p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
+        processes.append(p)
+        
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         processes.append(p)
         p.start()

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import reduce
-from math import exp, sin, sqrt
+from math import exp, sin, sqrt, cos
 from typing import Dict, List, Set, Tuple
 from ComputableNetwork import ComputableNetwork
 from HyperNeatDomain import HyperDimension3D, LayerShape3D, NetworkDesign
@@ -55,7 +55,8 @@ def activation_function(activation_fn: str):
     activation_dict = {
         "identity": lambda v: v,
         "sigmoidal": sigmoidal,
-        "sine": lambda x: sin(2 * x),
+        "sine": lambda x: sin( x),
+        "cos": lambda x: cos( x),
         "bipolarGaussian": lambda x: (2 * np.exp(np.power(2.5 * x, 2) * -1)) - 1,
         "bipolarSigmoid": lambda x: (2 / (1 + np.exp(-4.9 * x))) - 1,
         "gaussian": gaussian,

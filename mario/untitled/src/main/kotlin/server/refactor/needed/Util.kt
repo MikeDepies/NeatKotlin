@@ -28,11 +28,11 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .0f
+val speciesThresholdDelta = .05f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .7f
+var speciesSharingDistance = .4f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -113,6 +113,27 @@ class KNNNoveltyArchiveWeighted(
         return if (distance.isNaN()) 0f else distance
     }
 }
+
+fun MarioDiscovery.toVectorInt() = listOf(
+    mushrooms,
+    fireFlowers,
+    coins,
+    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ),
+    flags,
+    lifes,
+//    life.toFloat() * 100f,
+    (xPos / 32),
+//    stage.toFloat() * 30,
+//    world.toFloat() * 30,
+//    ((yPos) / 32).toFloat(),
+//    xPos.toFloat(),
+//    stageParts,
+//    time,
+//    (min(4f, time.toFloat() / stageParts) * stageParts),
+//    xPos.toFloat() / 4f,
+    world,
+    stage
+)
 
 fun MarioDiscovery.toVector() = listOf(
     mushrooms.toFloat() * 5f,

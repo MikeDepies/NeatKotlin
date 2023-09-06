@@ -39,6 +39,8 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.absoluteValue
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -109,7 +111,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        50, 10
+        2, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
@@ -208,11 +210,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(4, 60*1, 12)
+    val evaluatorSettings = EvaluatorSettings(2, 60*2, 3)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DonkeyKong, 0),
-        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Yoshi, 0),
+        ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination,
         0
     )
@@ -613,13 +615,14 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
     val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 2 + controllerId
+    val randomSeed: Int = 22 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.7f)
+    val shFunction = shFunction(1f)
 
     val weightRange = 4f
-    val activationFunctions = Activation.CPPN.functions/* + ActivationGene("abs") {it.absoluteValue}*/
+
+    val activationFunctions = Activation.CPPN.functions - Activation.CPPN.sine/* + ActivationGene("abs") {it.absoluteValue}*/
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
         val json = Json {}
         val manifest = json.decodeFromStream<Manifest>(File("population/${controllerId}_manifest.json").inputStream())
@@ -680,7 +683,8 @@ fun List<Int>.actionString() = map { it.toChar() }.joinToString("")
 data class SimulationStart(
     val neatExperiment: NeatExperiment, val population: List<NeatMutator>, val manifest: Manifest
 )
-
+val sine = ActivationGene("sine") { sin(it) }
+val cos = ActivationGene("cos") { cos( it) }
 @Serializable
 enum class Character {
     Pikachu, Link, Bowser, CaptainFalcon, DonkeyKong, DoctorMario, Falco, Fox, GameAndWatch, GannonDorf, JigglyPuff, Kirby, Luigi, Mario, Marth, MewTwo, Nana, Ness, Peach, Pichu, Popo, Roy, Samus, Sheik, YoungLink, Yoshi, Zelda

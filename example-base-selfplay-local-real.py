@@ -79,15 +79,15 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
                 model_handler.postEvaluate(game_state)
             if configuration.player_2.cpu_level == 0 and model_handler.network is not None:
                 model_handler2.postEvaluate(game_state)
-            if model_handler.network is None:
-                model_handler.reset()
-            if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
-                model_handler2.reset()
+            # if model_handler.network is None:
+            #     model_handler.reset()
+            # if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
+            #     model_handler2.reset()
             if player0 and player0.stock == 0 or player1 and player1.stock == 0:
-                # if model_handler.network is None or configuration.player_2.cpu_level != 0 :
-                #     model_handler.reset()
-                # if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
-                #     model_handler2.reset()
+                if model_handler.network is None or configuration.player_2.cpu_level != 0 :
+                    model_handler.reset()
+                if configuration.player_2.cpu_level == 0 and model_handler2.network is None:
+                    model_handler2.reset()
                 print("no stocks! game over")
                 gameStateProvider = DelayGameState(0)
                 controller_opponent.release_all()
@@ -388,6 +388,18 @@ def console_loop_mcc_cpu_gene(port: int, queue_1: mp.Queue, configuration: Confi
                         melee.MenuHelper.choose_stage(configuration.stage, game_state, controller_opponent)
 
 
+
+def clearAllNetworks(queue: mp.Queue, controller_index: int):
+    host = "192.168.0.100"
+    model_helper = ModelHelper(controller_index, host)
+    
+    while True:
+        # try:
+        id, builder, best = model_helper.getNetwork(controller_index)
+        # network = builder.create_ndarrays(sigmoidal, sigmoidal)
+        if best:
+            
+            exit(0)
 
 def queueNetworks(queue: mp.Queue, controller_index: int):
     host = "192.168.0.100"
