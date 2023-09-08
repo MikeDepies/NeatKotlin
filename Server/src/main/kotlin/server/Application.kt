@@ -111,7 +111,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        2, 2
+        20, 20
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
@@ -210,7 +210,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(2, 60*2, 3)
+    val evaluatorSettings = EvaluatorSettings(5, 60*2, 3)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Yoshi, 0),
@@ -618,11 +618,11 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 22 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1f)
+    val shFunction = shFunction(1.2f)
 
     val weightRange = 4f
 
-    val activationFunctions = Activation.CPPN.functions - Activation.CPPN.sine/* + ActivationGene("abs") {it.absoluteValue}*/
+    val activationFunctions = Activation.CPPN.functions + cos/* + ActivationGene("abs") {it.absoluteValue}*/
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
         val json = Json {}
         val manifest = json.decodeFromStream<Manifest>(File("population/${controllerId}_manifest.json").inputStream())
