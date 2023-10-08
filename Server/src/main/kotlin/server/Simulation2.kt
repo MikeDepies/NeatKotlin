@@ -121,9 +121,9 @@ fun createNetwork(): TaskNetworkBuilder {
         }
     }
     //listOf(inputPlane/*, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage*/)
-    val hiddenPlanes = (0..4).map {
+    val hiddenPlanes = (0..1).map {
 //        if (it < 2) layerPlane(12, 12) else
-        layerPlane(2, 22)
+        layerPlane(10, 10)
     }
     val analogPlane = layerPlane(9, 9)
     val analogCPlane = layerPlane(9, 9)

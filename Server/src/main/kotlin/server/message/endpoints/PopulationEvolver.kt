@@ -2,7 +2,9 @@ import mu.KotlinLogging
 import neat.*
 import neat.model.NeatMutator
 import neat.mutation.*
-private val logger = KotlinLogging.logger {  }
+
+private val logger = KotlinLogging.logger { }
+
 class PopulationEvolver(
     val speciationController: SpeciationController,
     val scoreKeeper: SpeciesScoreKeeper,
@@ -11,10 +13,10 @@ class PopulationEvolver(
     var generation: Int = 0,
     val standardCompatibilityTest: CompatibilityTest
 ) {
-    val stagnation = 30
+    val stagnation = 50
     fun speciate(population: List<NeatMutator>) {
 
-        speciesLineage = SpeciesLineage(speciesLineage.species.map {speciesLineage.speciesGene(it)}.filter {
+        speciesLineage = SpeciesLineage(speciesLineage.species.map { speciesLineage.speciesGene(it) }.filter {
             val generationImproved = scoreKeeper.getModelScore(it.species)?.generationLastImproved ?: 0
             generation - generationImproved <= stagnation
         })
@@ -47,7 +49,7 @@ class PopulationEvolver(
         val weightedReproduction = weightedReproduction(
             mutationEntries = mutationEntries,
             mateChance = .7f,
-            survivalThreshold = .3f,
+            survivalThreshold = .2f,
             speciesScoreKeeper = scoreKeeper,
             stagnation = stagnation,
             championThreshold = 5
@@ -56,26 +58,31 @@ class PopulationEvolver(
     }
 
 
-
-    fun uniformMutationRateDictionary(mutationRate : Float, mutations : List<Mutation>): List<MutationEntry> {
-        return mutations.map { (mutationRate / mutations.size) chanceToMutate  it }
+    fun uniformMutationRateDictionary(mutationRate: Float, mutations: List<Mutation>): List<MutationEntry> {
+        return mutations.map { (mutationRate / mutations.size) chanceToMutate it }
     }
 
 }
 
 fun createMutationDictionary(): List<MutationEntry> {
-
+    val connectionMutations = listOf(
+        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .01f, assignRange = 4f),
+        getMutateBiasConnections(.1f, .01f, 4f)
+    )
     return listOf(
-        .7f chanceToMutate getMutateConnections(.1f, .01f, 4f),
-        .02f chanceToMutate mutateAddNode,
-        .02f chanceToMutate mutateAddConnection,
-        .7f chanceToMutate getMutateBiasConnections(.1f, .01f, 4f),
-        .02f chanceToMutate mutateToggleConnection,
-        .02f chanceToMutate mutateNodeActivationFunction(),
+        .9f chanceToMutate multiMutation(connectionMutations),
+        .01f chanceToMutate mutateAddNode,
+        .01f chanceToMutate mutateAddConnection,
+        .01f chanceToMutate mutateToggleConnection,
+        .01f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 
 fun mutateNodeActivationFunction(): Mutation = { neatMutator ->
     val nodeGene = (neatMutator.hiddenNodes + neatMutator.outputNodes[0]).random(random)
     nodeGene.activationFunction = (activationFunctions - nodeGene.activationFunction).random(random)
+}
+
+fun multiMutation(mutations: List<Mutation>): Mutation = { neatMutator ->
+    mutations.forEach { it(this, neatMutator) }
 }

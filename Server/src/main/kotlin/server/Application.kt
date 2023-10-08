@@ -109,14 +109,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
-        20, 20
+        100, 0
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
+        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        5, 10/*,
+        100, 0/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -210,11 +210,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 60*2, 3)
+    val evaluatorSettings = EvaluatorSettings(1, 30, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Fox, 5),
         MeleeStage.FinalDestination,
         0
     )
@@ -341,6 +341,10 @@ private fun Application.routing(
 
         route("/dashboard") {
             route("/stream") {
+                post<ModelsRequest>("/clearBest") {
+                    evoHandler.evoManager(it.controllerId).bestModels.clear()
+                    call.respond("Cleared.")
+                }
                 post<ModelsRequest>("/addWin") {
                     val dashboardManager = evoHandler.dashboardManager(it.controllerId)
                     dashboardManager.wins += 1
@@ -618,7 +622,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 22 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1.2f)
+    val shFunction = shFunction(.6f)
 
     val weightRange = 4f
 
