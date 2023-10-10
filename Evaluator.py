@@ -377,6 +377,8 @@ class Evaluator:
                 if not self.knocked:
                     self.player_sd = True
                 self.player_died = True
+                self.knocked_off_stage = False
+                self.knocked = False
 
             if self.opponent_lost_stock(game_state) and self.opponent_knocked:
                 previous_frame_opponent: PlayerState = self.previous_frame.players[
