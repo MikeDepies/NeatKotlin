@@ -111,7 +111,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        100, 0
+        10, 0
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
