@@ -73,7 +73,7 @@ class ModelHandler:
             state = create_packed_state(
                 delayed_game_state, self.model_index, self.opponent_index)
             if self.stateQueue.size_limit > 0:
-                new_state = state + self.bias + self.stateQueue.get_data()
+                new_state = state + [self.bias] + self.stateQueue.get_data()
             else:
                 new_state = state + self.bias
             self.controller_helper.process(
