@@ -111,7 +111,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10, 0
+        100, 0
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
@@ -213,7 +213,7 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(60*8, 60*8, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.GannonDorf, 0),
+        ControllerConfiguration(Character.DoctorMario, 0),
         ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination,
         0

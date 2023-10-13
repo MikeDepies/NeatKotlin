@@ -62,7 +62,7 @@ class ModelHandler:
         self.model_id = ""
         self.queue = queue
         self.evaluator_configuration = evaluator_configuration
-        self.stateQueue = LimitedSizeList(0)
+        self.stateQueue = LimitedSizeList(20)
         self.bias = np.ones((1,1))
 
     def evaluate(self, game_state: melee.GameState, delayed_game_state : melee.GameState):
@@ -73,13 +73,14 @@ class ModelHandler:
             state = create_packed_state(
                 delayed_game_state, self.model_index, self.opponent_index)
             if self.stateQueue.size_limit > 0:
-                new_state = state + self.stateQueue.get_data()
+                new_state = state + self.bias + self.stateQueue.get_data()
             else:
                 new_state = state + self.bias
             self.controller_helper.process(
                 self.network, self.controller,new_state, player0.controller_state)
             if self.stateQueue.size_limit > 0:
-                self.stateQueue.add(self.network.output()[4])
+                # self.stateQueue.add(self.network.output()[4])
+                self.stateQueue.add(state)
             
             self.evaluator.evaluate_frame(game_state)
             # print("evaluating " + str(self.ai_controller_id))
@@ -119,6 +120,6 @@ class ModelHandler:
         if self.network.total_connection_cost != 0:
             ratio = self.network.total_number_of_connections/ self.network.total_connection_cost
         # print("creating new evaluator")
-        self.stateQueue = LimitedSizeList(0) #len(self.network.input_index) - 1
+        self.stateQueue = LimitedSizeList(20) #len(self.network.input_index) - 1
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
