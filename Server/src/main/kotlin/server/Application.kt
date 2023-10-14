@@ -111,9 +111,9 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10, 0
+        100, 0
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
+        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
         100, 0/*,
@@ -622,7 +622,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 22 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.8f)
+    val shFunction = shFunction(.5f)
 
     val weightRange = 4f
 
