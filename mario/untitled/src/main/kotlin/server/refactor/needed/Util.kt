@@ -30,7 +30,7 @@ val minSpeices = 5
 val maxSpecies = 15
 val speciesThresholdDelta = .05f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
 var speciesSharingDistance = .4f
 var shFunction = shFunction(speciesSharingDistance)
@@ -119,20 +119,20 @@ fun MarioDiscovery.toVectorInt() = listOf(
     fireFlowers,
     coins,
     (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ),
-    flags,
+//    flags,
     lifes,
 //    life.toFloat() * 100f,
-    (xPos / 32),
+//    (xPos / 32),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
 //    ((yPos) / 32).toFloat(),
 //    xPos.toFloat(),
 //    stageParts,
-//    time,
+    time,
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
-    world,
-    stage
+//    world,
+//    stage
 )
 
 fun MarioDiscovery.toVector() = listOf(
@@ -148,7 +148,7 @@ fun MarioDiscovery.toVector() = listOf(
 //    world.toFloat() * 30,
 //    ((yPos) / 32).toFloat(),
 //    xPos.toFloat(),
-    stageParts.toFloat(),
+//    stageParts.toFloat(),
 //    time.toFloat()
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,

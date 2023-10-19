@@ -24,6 +24,7 @@ import neat.novelty.euclidean
 import org.koin.ktor.ext.Koin
 import org.koin.ktor.ext.get
 import server.*
+import server.mcc.StageID
 import server.message.endpoints.NeatModel
 import server.message.endpoints.toModel
 import server.server.WebSocketManager
@@ -135,7 +136,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 
     val evaluationId = 0
     val populationSize = 200
-    val mateChance = .9f
+    val mateChance = .7f
     val survivalThreshold = .2f
     val stagnation = 60
 
@@ -162,7 +163,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationHistory = mutableListOf<List<NeatModel>>()
     val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
     var population = simpleNeatExperiment.generateInitialPopulation2(
-        populationSize, 7, 2, activationFunctions - Activation.CPPN.sine
+        populationSize, 7, 2, activationFunctions
     ).mapIndexed { index, neatMutator ->
         NetworkWithId(neatMutator, UUID.randomUUID().toString())
     }
@@ -191,10 +192,10 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(30,  40,settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(30, 0, settings.noveltyThreshold) { a, b ->
 //        val euclidean = euclidean(a.toVector(), b.toVector())
 //        euclidean
-        levenshteinDistanceNormalized(a.toVectorInt(),b.toVectorInt())
+        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
     }
 //    knnNoveltyArchive.behaviors.addAll(behaviors)
 
@@ -294,6 +295,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
             }
         }
     }
+    val scoreList = mutableListOf<MarioDiscovery>()
     val scoreChannel = Channel<MarioDiscovery>(Channel.UNLIMITED)
     routing {
         get("/model/request") {
@@ -323,8 +325,8 @@ fun Application.moduleNovelty(testing: Boolean = false) {
         get("behaviors") {
             val numberOfBehaviors = call.parameters["n"]
             val message = if (numberOfBehaviors == null) {
-                knnNoveltyArchive.behaviors
-            } else knnNoveltyArchive.behaviors.takeLast(numberOfBehaviors.toInt())
+                scoreList
+            } else scoreList.takeLast(numberOfBehaviors.toInt())
             call.respond(message)
         }
         get("settings") {
@@ -341,6 +343,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 
 
     }
+    fun calcScore(it: MarioDiscovery): Float {
+        return it.flags + (it.xPos.toFloat() / server.mcc.stageLengthMap[StageID(it.world, it.stage)]!!)
+    }
     launch(Dispatchers.Default) {
         for (it in scoreChannel) {
             val populationEvolver = simulation.populationEvolver
@@ -352,9 +357,17 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //                euclidean(toVector(it), toVector(it).map { 0f})
                 it.stageParts.toFloat()
             }
-            val score = b * 100 /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
+            val score = calcScore(it) + b
+            /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
+            scoreList.add(it)
 
+            if (scoreList.size > 1000) {
+//                scoreList.sortByDescending { calcScore(it) }
+                while (scoreList.size > 1000) {
+                    scoreList.removeFirst()
+                }
+            }
             val model = mapIndexed[it.id]?.neatMutator
             if (finishedScores[it.id] != true && model != null) {
                 if (it.flags > 0) winners += ScoreAndModel(model.toModel(), it, score)
@@ -370,5 +383,6 @@ fun Application.moduleNovelty(testing: Boolean = false) {
         }
     }
 }
-data class ModelsRequest(val generations : Int, val skip : Int)
+
+data class ModelsRequest(val generations: Int, val skip: Int)
 
