@@ -138,9 +138,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
     val mateChance = .7f
     val survivalThreshold = .2f
-    val stagnation = 20
+    val stagnation = 100
 
-    val randomSeed: Int = 5 + evaluationId
+    val randomSeed: Int = 225 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
@@ -357,7 +357,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //                euclidean(toVector(it), toVector(it).map { 0f})
                 it.stageParts.toFloat()
             }
-            val score = calcScore(it) + b
+            val score = b
             /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
             scoreList.add(it)

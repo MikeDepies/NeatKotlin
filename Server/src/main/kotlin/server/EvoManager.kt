@@ -219,7 +219,7 @@ class EvoManager(
         }
 //        tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()
         tempBestModels.sortByDescending {
-            it.score - (populationEvolver.generation - it.generation) * (10)
+            it.score - (populationEvolver.generation - it.generation) * (.1)
         }
 //        if (tempBestModels.size > 10) {
 //            tempBestModels.removeAt(10)

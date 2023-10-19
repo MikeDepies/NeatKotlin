@@ -136,20 +136,21 @@ fun MarioDiscovery.toVectorInt() = listOf(
 )
 
 fun MarioDiscovery.toVector() = listOf(
-    mushrooms.toFloat() * 5f,
-    fireFlowers.toFloat() * 10f,
-    coins.toFloat() * 1f,
-    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ).toFloat() / 100,
-    flags.toFloat() * 30f,
-    lifes.toFloat() * 5f,
+//    mushrooms.toFloat() * 5f,
+//    fireFlowers.toFloat() * 10f,
+//    coins.toFloat() * 1f,
+    score.toFloat(),
+//    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ).toFloat() / 100,
+//    flags.toFloat() * 30f,
+//    lifes.toFloat() * 5f,
 //    life.toFloat() * 100f,
 //    (xPos.toFloat() / 32),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
-//    ((yPos) / 32).toFloat(),
-//    xPos.toFloat(),
+    ((yPos)).toFloat(),
+    xPos.toFloat(),
 //    stageParts.toFloat(),
-//    time.toFloat()
+    time.toFloat()
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,

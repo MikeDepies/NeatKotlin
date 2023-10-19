@@ -237,7 +237,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         network.compute()
         output = network.output()
         if stateQueue.size_limit > 0:
-            stateQueue.add(output[3])
+            stateQueue.add(state)
         if abs(prevX - info["x_pos"]) > 16:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
@@ -737,7 +737,7 @@ if __name__ == '__main__':
     # host = "localhost"
     # port = 8095
     process_num = 5
-    queue = mgr.Queue(process_num * 1)
+    queue = mgr.Queue(process_num * 3)
     processes: List[mp.Process] = []
 
     for i in range(process_num):
@@ -753,7 +753,7 @@ if __name__ == '__main__':
         # p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         processes.append(p)
-        
+        p.start()
         p = mp.Process(target=queueNetworks, daemon=True, args=(queue,mgr_dict, ns))
         processes.append(p)
         p.start()
