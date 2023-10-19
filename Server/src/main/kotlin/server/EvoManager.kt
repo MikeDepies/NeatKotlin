@@ -49,7 +49,7 @@ class EvoManager(
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var populationScoresChannel = Channel<PopulationScoreEntry>(Channel.UNLIMITED)
-    var mode = EvalMode.Novelty
+    var mode = EvalMode.Objective
 
     //    var seq = population.iterator()
     suspend fun start(
@@ -78,7 +78,7 @@ class EvoManager(
 //                        mode = EvalMode.Objective
 //                    }
                     val scoredBehavior = when (mode) {
-                        EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100
+                        EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size / 100f + it.score.movement / 50
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
                         ) * 100
@@ -89,7 +89,7 @@ class EvoManager(
                     val deathPenalty = if (it.score.playerDied) max(.8f - it.score.recovery.size * .1f, 0f) else 0f
                     val behaviorScore = max(
                         0f,
-                        (scoredBehavior * max(1, it.score.kills.size) /** (it.score.kills.size + 1 + (it.score.recovery.size / 10f))*//* * (it.score.kills.size/2f + 1 - deathPenalty)*/) /*+ it.score.totalFrames / (10*60)*/// + it.score.totalDamageDone / 20 + it.score.kills.size * 10 /*+ it.score.totalDamageDone / 20 + it.score.kills.size * 10 *//*+ (it.score.totalDistanceTowardOpponent / 2000)*/ //+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
+                        (scoredBehavior /** max(1, it.score.kills.size)*/ /** (it.score.kills.size + 1 + (it.score.recovery.size / 10f))*//* * (it.score.kills.size/2f + 1 - deathPenalty)*/) /*+ it.score.totalFrames / (10*60)*/// + it.score.totalDamageDone / 20 + it.score.kills.size * 10 /*+ it.score.totalDamageDone / 20 + it.score.kills.size * 10 *//*+ (it.score.totalDistanceTowardOpponent / 2000)*/ //+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
                     )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
 //                    while (knnNoveltyArchive.behaviors.size > 200_000) {
