@@ -138,7 +138,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationSize = 200
     val mateChance = .7f
     val survivalThreshold = .2f
-    val stagnation = 60
+    val stagnation = 20
 
     val randomSeed: Int = 5 + evaluationId
     val addConnectionAttempts = 5
@@ -193,9 +193,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
     val knnNoveltyArchive = KNNNoveltyArchiveWeighted(30, 0, settings.noveltyThreshold) { a, b ->
-//        val euclidean = euclidean(a.toVector(), b.toVector())
-//        euclidean
-        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
+        val euclidean = euclidean(a.toVector(), b.toVector())
+        euclidean
+//        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
     }
 //    knnNoveltyArchive.behaviors.addAll(behaviors)
 

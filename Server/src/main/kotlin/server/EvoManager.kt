@@ -49,7 +49,7 @@ class EvoManager(
     var finishedScores = population.mapIndexed { index, neatMutator -> neatMutator.id to false }.toMap().toMutableMap()
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var populationScoresChannel = Channel<PopulationScoreEntry>(Channel.UNLIMITED)
-    var mode = EvalMode.Objective
+    var mode = EvalMode.Novelty
 
     //    var seq = population.iterator()
     suspend fun start(
@@ -78,7 +78,7 @@ class EvoManager(
 //                        mode = EvalMode.Objective
 //                    }
                     val scoredBehavior = when (mode) {
-                        EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size / 100f + it.score.movement / 50
+                        EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
                         ) * 100
@@ -103,7 +103,7 @@ class EvoManager(
                     }" else "No Species"
                     log.info { "${character(evaluationId)} - [G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $behaviorScore " }
 
-                    captureBestModel(model, behaviorScore, populationEvolver, it)
+                    captureBestModel(model, it.score.kills.size * 10 + it.score.totalDamageDone / 100, populationEvolver, it)
                 }
                 if (scores.size == populationSize) {
                     evolutionInProgress = true
