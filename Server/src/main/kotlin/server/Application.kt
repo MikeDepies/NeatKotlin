@@ -210,11 +210,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(60*1, 60*1, 15)
+    val evaluatorSettings = EvaluatorSettings(60*2, 60*2, 15)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Fox, 4),
+        ControllerConfiguration(Character.Fox, 1),
         MeleeStage.FinalDestination,
         0
     )
