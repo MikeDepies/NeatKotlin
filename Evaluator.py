@@ -165,7 +165,7 @@ class Evaluator:
         # if self.player_died:
         #     print("player " + str(self.player_index) + " died.")
         # player.stock == 0 #
-        return attack_timer_elapsed or max_timer_elapsed or player.stock == 0 # self.player_died
+        return attack_timer_elapsed or max_timer_elapsed or player.stock == 0 or self.player_sd
 
     def storeFrameData(self, game_state: GameState) -> None:
         player: PlayerState = game_state.players[self.player_index]
