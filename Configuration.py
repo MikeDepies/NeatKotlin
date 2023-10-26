@@ -20,6 +20,7 @@ class Configuration:
     player_1 : PlayerConfiguration
     player_2 : PlayerConfiguration
     evaluator : EvaluatorConfiguration
+    frame_delay: int
 
 
 def parseCharacter(character_string : str):
@@ -75,4 +76,5 @@ def processConfiguration(data : Any):
     player_1 = processPlayer(data["player1"])
     player_2 = processPlayer(data["player2"])
     evaluator_configuration = processEvaluatorConfiguration(data["evaluatorSettings"])
-    return Configuration(stage, player_1, player_2, evaluator_configuration)
+    frameDelay = int(data["frameDelay"])
+    return Configuration(stage, player_1, player_2, evaluator_configuration, frameDelay)

@@ -111,7 +111,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        30, 10
+        40, 40
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
@@ -161,7 +161,7 @@ fun Application.module() {
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
-                evaluationId2 to evoManager2
+                evaluationId2 to evoManager
             ), mapOf(
                 evaluationId to dashboardManager,
                 evaluationId2 to dashboardManager2
@@ -210,11 +210,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(60*2, 60*2, 15)
+    val evaluatorSettings = EvaluatorSettings(60*1, 60*1, 15)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DoctorMario, 0),
-        ControllerConfiguration(Character.Fox, 1),
+        ControllerConfiguration(Character.Roy, 0),
+        ControllerConfiguration(Character.Roy, 0),
         MeleeStage.FinalDestination,
         0
     )
@@ -618,11 +618,11 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
-    val randomSeed: Int = 22 + controllerId
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f)
+    val randomSeed: Int = 233 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.7f)
+    val shFunction = shFunction(.2f)
 
     val weightRange = 4f
 

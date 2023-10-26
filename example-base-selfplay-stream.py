@@ -346,7 +346,7 @@ def console_loop(queue_1: mp.Queue, queue_2: mp.Queue, configuration: Configurat
                                   controller_opponent, controller_helper2, queue_2, configuration.evaluator, stat_queue2)
     if configuration.player_2.cpu_level == 0:
         model_handler2.reset()
-    frame_delay = 0
+    frame_delay = configuration.frame_delay
     delay_game_state_provider = DelayGameState(frame_delay)
     while True:
         # print("step")
@@ -482,7 +482,7 @@ if __name__ == '__main__':
     r = get("http://localhost:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
-    # configuration.player_2.cpu_level=5
+    configuration.player_2.cpu_level=9
     # configuration.evaluator.attack_time=5
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num)

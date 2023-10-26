@@ -30,9 +30,9 @@ val minSpeices = 5
 val maxSpecies = 15
 val speciesThresholdDelta = .05f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .4f
+var speciesSharingDistance = .2f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -118,7 +118,7 @@ fun MarioDiscovery.toVectorInt() = listOf(
     mushrooms,
     fireFlowers,
     coins,
-    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ),
+    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ) / 100,
 //    flags,
     lifes,
 //    life.toFloat() * 100f,
@@ -147,10 +147,10 @@ fun MarioDiscovery.toVector() = listOf(
 //    (xPos.toFloat() / 32),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
-    ((yPos)).toFloat(),
-    xPos.toFloat(),
-//    stageParts.toFloat(),
-    time.toFloat()
+//    ((yPos)).toFloat(),
+//    xPos.toFloat(),
+    stageParts.toFloat(),
+//    time.toFloat()
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,
