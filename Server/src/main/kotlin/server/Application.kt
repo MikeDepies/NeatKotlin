@@ -214,7 +214,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Roy, 0),
-        ControllerConfiguration(Character.Roy, 0),
+        ControllerConfiguration(Character.Fox, 0),
         MeleeStage.FinalDestination,
         0
     )
@@ -622,7 +622,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 233 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.2f)
+    val shFunction = shFunction(.3f)
 
     val weightRange = 4f
 

@@ -171,7 +171,7 @@ fun NeatExperiment.generateInitialPopulation2(
 //        clone.outputNodes.forEach {
 //            it.activationFunction = activationFunctions.random(random)
 //        }
-        clone.outputNodes[0].activationFunction = activationFunctions.random(random)
+        clone.outputNodes[0].activationFunction = Activation.CPPN.linear//activationFunctions.random(random)
         clone.outputNodes[1].activationFunction =  Activation.CPPN.linear
         clone
     }

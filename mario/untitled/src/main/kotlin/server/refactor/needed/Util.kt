@@ -28,7 +28,7 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .05f
+val speciesThresholdDelta = .2f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
@@ -104,7 +104,7 @@ class KNNNoveltyArchiveWeighted(
     override fun measure(behavior: MarioDiscovery): Float {
         if (maxDiscovery.stageParts < behavior.stageParts) maxDiscovery = behavior
         val expRatio = ((behavior.stageParts).toFloat()) / (maxDiscovery.stageParts)
-        val newK = k //+ behavior.stageParts.squared()
+        val newK = k + (behavior.stageParts / 8).squared() * 2
         val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
             .map { behaviorDistanceMeasureFunction(behavior, it) }.sorted().toList()
             .take(newK).average()
@@ -139,7 +139,7 @@ fun MarioDiscovery.toVector() = listOf(
 //    mushrooms.toFloat() * 5f,
 //    fireFlowers.toFloat() * 10f,
 //    coins.toFloat() * 1f,
-    score.toFloat(),
+    score.toFloat() / 100,
 //    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ).toFloat() / 100,
 //    flags.toFloat() * 30f,
 //    lifes.toFloat() * 5f,
