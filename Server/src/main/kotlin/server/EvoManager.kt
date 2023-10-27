@@ -82,7 +82,7 @@ class EvoManager(
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
-                        ) * 100 * (max(1, it.score.kills.size) + it.score.recovery.size * .1f - deathPenalty)
+                        ) * 100 * ((1 + it.score.kills.size) + it.score.recovery.size * .1f - deathPenalty)
                     }
                     /**/
 //if (it.score.totalDamageDone <=0) 0f else

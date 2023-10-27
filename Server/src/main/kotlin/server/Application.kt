@@ -214,7 +214,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.Fox, 3),
         MeleeStage.FinalDestination,
         0
     )
@@ -618,11 +618,11 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
     val randomSeed: Int = 233 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.7f)
 
     val weightRange = 4f
 
