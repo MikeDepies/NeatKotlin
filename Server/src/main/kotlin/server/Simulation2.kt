@@ -116,7 +116,7 @@ fun createNetwork(): TaskNetworkBuilder {
 //    val plane4 = layerPlane(15, 15)
 //    val plane5 = layerPlane(15, 15)
     val inputPlanes = buildList<LayerPlane> {
-        repeat(5) {
+        repeat(60) {
             add(layerPlane(2, 22))
         }
     }

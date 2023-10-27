@@ -444,8 +444,8 @@ if __name__ == '__main__':
     configuration = processConfiguration(data)
     configuration.evaluator.max_time = 4 * 60
     processes: List[mp.Process] = []
-    queue_1 = mgr.Queue(process_num)
-    queue_2 = mgr.Queue(process_num)
+    queue_1 = mgr.Queue(5)
+    queue_2 = mgr.Queue(5)
     
     for i in range(process_num):
         p = mp.Process(target=console_loop, args=(
