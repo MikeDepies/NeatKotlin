@@ -502,12 +502,15 @@ fun createNetwork(): TaskNetworkBuilder {
 //        put(inputImagePlane3, planeList)
         hiddenPlanes.forEachIndexed { index, layerPlane ->
 //            if (index > hiddenPlanes.size -20)
-            val planes = planeList.drop(index + 1) + outputPlanes
+            val planes = planeList + outputPlanes
             put(layerPlane, planes)
 //            else
 //                put(layerPlane, planeList.drop(index))
         }
 
+        outputPlanes.forEach { outputPlane ->
+            put(outputPlane, planeList)
+        }
 //        put(outputPlane, planeList.drop(2))
     }
 //    println(connectionMapping)

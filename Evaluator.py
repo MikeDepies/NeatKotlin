@@ -395,7 +395,7 @@ class Evaluator:
             # print(self.frames_without_damage)
             # update data to compare for next frame
             self.frames_without_damage = max(
-                self.frames_without_damage, -6 * self.attack_timer)
+                self.frames_without_damage,  self.attack_timer)
             self.storeFrameData(game_state)
 
     def score(self, game_state: GameState) -> ActionBehavior:
