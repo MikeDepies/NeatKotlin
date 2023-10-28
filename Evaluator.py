@@ -254,9 +254,7 @@ class Evaluator:
                 self.hitstun_velocity -= .1
             if on_stage and self.knocked_off_stage:
                 if self.damage_since_recovery:
-                    self.frames_without_damage -= 60 * self.attack_timer
-                    self.frames_without_damage = max(
-                        self.frames_without_damage, -4 * self.attack_timer)
+                    # self.frames_without_damage -= 60 * self.attack_timer
                     self.damage_since_recovery = False
                 self.knocked_off_stage = False
                 self.knocked = False
@@ -365,10 +363,10 @@ class Evaluator:
                         self.actions_satisfied = True
                         # self.frame_data.frame_count(player.character,player.action)
                         # self.frames_without_damage -= 60 * self.attack_timer
-                        self.frames_without_damage -= 30
+                        # self.frames_without_damage -= 30
                         self.actions.append(player.action.value)
-                    else:
-                        self.frames_without_damage -= 60
+                    # else:
+                    #     self.frames_without_damage -= 60
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
             if self.player_lost_stock(game_state):
