@@ -32,7 +32,7 @@ val speciesThresholdDelta = .2f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .2f
+var speciesSharingDistance = .5f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)

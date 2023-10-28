@@ -442,7 +442,7 @@ if __name__ == '__main__':
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
-    configuration.evaluator.max_time = 4 * 60
+    # configuration.evaluator.max_time = 4 * 60
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(5)
     queue_2 = mgr.Queue(5)

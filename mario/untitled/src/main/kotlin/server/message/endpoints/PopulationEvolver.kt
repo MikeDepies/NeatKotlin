@@ -9,7 +9,7 @@ class PopulationEvolver(
     var speciesLineage: SpeciesLineage,
     var weightedReproduction: NeatExperiment.(SpeciationController, List<ModelScore>, Int) -> List<NeatMutator>,
 ) {
-    val stagnation = 100
+    val stagnation = 20
     fun speciate(population: List<NeatMutator>, compatibilityTest: CompatibilityTest) {
         speciesLineage = SpeciesLineage(speciesLineage.species.map { speciesLineage.speciesGene(it) }.filter {
             val generationImproved = scoreKeeper.getModelScore(it.species)?.generationLastImproved ?: 0
@@ -54,15 +54,15 @@ fun mutateNodeActivationFunction(): Mutation = { neatMutator ->
 
 fun createMutationDictionary(): List<MutationEntry> {
     val connectionMutations = listOf(
-        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .01f, assignRange = 4f),
-        getMutateBiasConnections(.1f, .01f, 4f)
+        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .001f, assignRange = 4f),
+        getMutateBiasConnections(.1f, .001f, 4f)
     )
     return listOf(
         .9f chanceToMutate multiMutation(connectionMutations),
         .01f chanceToMutate mutateAddNode,
         .03f chanceToMutate mutateAddConnection,
         .03f chanceToMutate mutateToggleConnection,
-        .1f chanceToMutate mutateNodeActivationFunction(),
+        .03f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 

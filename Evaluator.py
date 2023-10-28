@@ -309,7 +309,7 @@ class Evaluator:
                         # if not self.knocked:
                         self.frames_without_damage += 1
             if self.opponent_knocked:
-                self.frames_without_damage -= 1
+                self.frames_without_damage -= 4
 
             # if self.player_took_damage(game_state):
             #         self.frames_without_damage -= (60 * self.attack_timer)
@@ -387,8 +387,8 @@ class Evaluator:
                 # self.kill_actions.append(previous_frame_opponent.action.value)
                 if self.last_damage_action is not None:
                     self.kill_actions.append(self.last_damage_action.value)
-                self.frames_without_damage -= 60 * self.attack_timer
-                self.actions_without_damage = 0
+                # self.frames_without_damage -= 60 * self.attack_timer
+                # self.actions_without_damage = 0
                 # self.total_frames -= 30*60
                 # if self.total_frames < 0:
                 #     self.total_frames = 0
