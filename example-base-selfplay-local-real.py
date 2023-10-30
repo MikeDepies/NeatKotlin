@@ -415,6 +415,15 @@ def queueNetworks(queue: mp.Queue, controller_index: int):
         elif not best:
             queue.put((id, network))
 
+def queueBestNetworks(queue: mp.Queue, controller_index: int):
+    host = "localhost"
+    model_helper = ModelHelper(controller_index, host)
+    while True:
+        # try:
+        id, builder = model_helper.randomBest()
+        network = builder.create_ndarrays(sigmoidal, sigmoidal)
+        print(str(controller_index) + ": " + str(id))
+        queue.put((id, network))
 
 def queueNetworkPairs(queue: mp.Queue):
     host = "192.168.0.100"
@@ -434,7 +443,7 @@ def queueNetworkPairs(queue: mp.Queue):
 if __name__ == '__main__':
     mgr = mp.Manager()
     mgr_dict = mgr.dict()
-    ns = mgr.Namespace()
+    # ns = mgr.Namespace()
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
