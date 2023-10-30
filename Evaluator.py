@@ -309,7 +309,7 @@ class Evaluator:
                         # if not self.knocked:
                         self.frames_without_damage += 1
             if self.opponent_knocked:
-                self.frames_without_damage -= 10
+                self.frames_without_damage -= 4
 
             # if self.player_took_damage(game_state):
             #         self.frames_without_damage -= (60 * self.attack_timer)

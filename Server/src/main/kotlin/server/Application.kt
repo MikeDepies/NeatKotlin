@@ -210,7 +210,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(8, 60*2, 25)
+    val evaluatorSettings = EvaluatorSettings(30, 60*2, 25)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DonkeyKong, 0),
