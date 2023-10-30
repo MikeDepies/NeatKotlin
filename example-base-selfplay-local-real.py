@@ -416,7 +416,7 @@ def queueNetworks(queue: mp.Queue, controller_index: int):
             queue.put((id, network))
 
 def queueBestNetworks(queue: mp.Queue, controller_index: int):
-    host = "localhost"
+    host = "192.168.0.100"
     model_helper = ModelHelper(controller_index, host)
     while True:
         # try:
