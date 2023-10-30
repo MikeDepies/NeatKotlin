@@ -82,7 +82,7 @@ class EvoManager(
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
-                        ) * 100 * ((1 + it.score.kills.size) + it.score.recovery.size * .25f ) *  deathPenalty
+                        ) * 100 * ((1 + it.score.kills.size) + it.score.recovery.size * 1f ) *  deathPenalty
                     }
                     /**/
 //if (it.score.totalDamageDone <=0) 0f else
@@ -93,7 +93,7 @@ class EvoManager(
                         (scoredBehavior /** max(1, it.score.kills.size)*/ /** (it.score.kills.size + 1 + (it.score.recovery.size / 10f))*//* * (it.score.kills.size/2f + 1 - deathPenalty)*/) /*+ it.score.totalFrames / (10*60)*/// + it.score.totalDamageDone / 20 + it.score.kills.size * 10 /*+ it.score.totalDamageDone / 20 + it.score.kills.size * 10 *//*+ (it.score.totalDistanceTowardOpponent / 2000)*/ //+ it.score.kills.size*30 + (it.score.totalFrames.toInt() / 60) + it.score.totalFramesHitstunOpponent/120
                     )
                     /*+ (it.score.totalFrames + it.score.totalFramesHitstunOpponent + it.score.movement) / 60*/  /*+ (it.score.totalFrames/10) + (it.score.totalDamageDone / 10f + it.score.kills.size * 200f)*/ /*- if (it.score.playerDied) 100 else 0*/ // + (it.score.totalFrames / 60) + (it.score.totalDistanceTowardOpponent / 20) + (it.score.kills.size * 20f) + it.score.totalDamageDone / 10f
-                    while (knnNoveltyArchive.behaviors.size > 500_000) {
+                    while (knnNoveltyArchive.behaviors.size > 50_000) {
                         knnNoveltyArchive.behaviors.removeAt(0)
                     }
                     log.info { "$it" }
