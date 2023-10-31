@@ -466,7 +466,7 @@ if __name__ == '__main__':
         processes.append(p)
         p.start()
         if configuration.player_2.cpu_level == 0:
-            p = mp.Process(target=queueBestNetworks, daemon=True,
+            p = mp.Process(target=queueNetworks, daemon=True,
                         args=(queue_2, 1 ))
             processes.append(p)
             p.start()

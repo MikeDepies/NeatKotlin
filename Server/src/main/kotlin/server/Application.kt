@@ -111,12 +111,12 @@ fun Application.module() {
 
     val populationSize = 1000
     val knnNoveltyArchive = knnNoveltyArchive(
-        20, 40
+        100, 40
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        100, 0/*,
+        40, 40/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -124,7 +124,7 @@ fun Application.module() {
             recoveryMultiplier = 2f
         )*/
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
+        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
@@ -161,7 +161,7 @@ fun Application.module() {
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
-                evaluationId2 to evoManager
+                evaluationId2 to evoManager2
             ), mapOf(
                 evaluationId to dashboardManager,
                 evaluationId2 to dashboardManager2
@@ -210,11 +210,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(30, 60*2, 25)
+    val evaluatorSettings = EvaluatorSettings(4, 60*8, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DonkeyKong, 0),
-        ControllerConfiguration(Character.DonkeyKong, 7),
+        ControllerConfiguration(Character.Yoshi, 0),
+        ControllerConfiguration(Character.Fox, 0),
         MeleeStage.FinalDestination,
         0
     )
@@ -622,7 +622,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 233 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.7f)
+    val shFunction = shFunction(.9f)
 
     val weightRange = 4f
 

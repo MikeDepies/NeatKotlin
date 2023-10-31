@@ -77,12 +77,12 @@ class EvoManager(
 //                    if (populationEvolver.generation > 500 && mode == EvalMode.Novelty) {
 //                        mode = EvalMode.Objective
 //                    }
-                    val deathPenalty = if (it.score.playerDied) .2f else 1f
+                    val deathPenalty = if (it.score.playerDied) .8f else 1f
                     val scoredBehavior = when (mode) {
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
-                        ) * 100 * ((1 + it.score.kills.size) + it.score.recovery.size * 1f ) *  deathPenalty
+                        ) * 100 * ((1 + it.score.kills.size) + it.score.recovery.size * .1f - deathPenalty )
                     }
                     /**/
 //if (it.score.totalDamageDone <=0) 0f else
