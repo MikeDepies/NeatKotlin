@@ -742,13 +742,13 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 10
+    process_num = 20
     queue = mgr.Queue(process_num * 3)
     processes: List[mp.Process] = []
 
     for i in range(process_num):
         p = mp.Process(target=marioNovelty,
-                       daemon=True, args=(queue, i < 1))
+                       daemon=True, args=(queue, i < 0))
         processes.append(p)
         p.start()
         # p = mp.Process(target=queueModels, daemon=True, args=(queue,))
