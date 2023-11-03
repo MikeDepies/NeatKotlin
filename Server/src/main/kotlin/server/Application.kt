@@ -109,14 +109,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 1000
     val knnNoveltyArchive = knnNoveltyArchive(
-        10, 20
+        100, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        40, 20/*,
+        40, 2/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -202,19 +202,19 @@ class EvoControllerHandler(val map: Map<Int, EvoManager>, val dashboardManagerMa
 }
 
 fun character(controllerId: Int) = when (controllerId) {
-    0 -> Character.DonkeyKong
-    1 -> Character.Yoshi
+    0 -> Character.Bowser
+    1 -> Character.Mario
     else -> throw Exception()
 }
 
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 60*8, 10)
+    val evaluatorSettings = EvaluatorSettings(8, 60*8, 10)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Yoshi, 0),
-        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Bowser, 0),
+        ControllerConfiguration(Character.Mario, 0),
         MeleeStage.FinalDestination,
         0
     )
@@ -622,7 +622,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 233 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.9f)
+    val shFunction = shFunction(1.4f)
 
     val weightRange = 4f
 
