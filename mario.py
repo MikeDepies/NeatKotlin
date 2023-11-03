@@ -238,14 +238,14 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         output = network.output()
         if stateQueue.size_limit > 0:
             stateQueue.add(state)
-        if abs(prevX - info["x_pos"]) > 32:
+        if abs(prevX - info["x_pos"]) > 64:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
         else:
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         # framesSinceMaxXChange > 20 * 20 or 
-        if framesSinceMaxXChange > 20 * 10 or reward < -14 or (game_event_collector.stage_parts < 20 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
+        if framesSinceMaxXChange > 20 * 30 or reward < -14 or (game_event_collector.stage_parts < 20 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
             idle = True
         total_frames +=1
         depad = output[0].argmax(1)[0]

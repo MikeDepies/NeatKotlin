@@ -135,8 +135,8 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 200
-    val mateChance = .7f
+    val populationSize = 1000
+    val mateChance = .9f
     val survivalThreshold = .2f
     val stagnation = 60
 
@@ -369,9 +369,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                     scoreList.removeFirst()
                 }
             }
-            while (knnNoveltyArchive.behaviors.size > 5_000) {
-                knnNoveltyArchive.behaviors.removeAt(0)
-            }
+//            while (knnNoveltyArchive.behaviors.size > 5_000) {
+//                knnNoveltyArchive.behaviors.removeAt(0)
+//            }
             val model = mapIndexed[it.id]?.neatMutator
             if (finishedScores[it.id] != true && model != null) {
                 if (it.flags > 0) winners += ScoreAndModel(model.toModel(), it, score)
