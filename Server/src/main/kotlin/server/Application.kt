@@ -109,14 +109,14 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 1000
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        100, 40
+        10, 20
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        40, 40/*,
+        40, 20/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,

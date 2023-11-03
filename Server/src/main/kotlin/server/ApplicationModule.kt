@@ -160,7 +160,7 @@ fun NeatExperiment.generateInitialPopulation2(
 //        mutateAddNode(neatMutator)
 //
 //    }
-    val mutateBias = getMutateBiasConnections(1f, 2.5f, 4f)
+    val mutateBias = getMutateBiasConnections(1f, 2.5f, 8f)
     return (0 until populationSize).map {
         val clone = neatMutator.clone(UUID.randomUUID())
         clone.connections.forEach { connectionGene ->
