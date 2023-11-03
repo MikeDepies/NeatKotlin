@@ -135,7 +135,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 1000
+    val populationSize = 5000
     val mateChance = .9f
     val survivalThreshold = .2f
     val stagnation = 60
@@ -192,7 +192,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(10, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(50, 0, settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
 //        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
@@ -349,31 +349,32 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     launch(Dispatchers.Default) {
         for (it in scoreChannel) {
             val populationEvolver = simulation.populationEvolver
-            val b = if (knnNoveltyArchive.size > 0) {
-                val addBehavior = knnNoveltyArchive.addBehavior(it)
-                (if (addBehavior < knnNoveltyArchive.noveltyThreshold) 0f else addBehavior)
-            } else {
-                knnNoveltyArchive.addBehavior(it)
+            val model = mapIndexed[it.id]?.neatMutator
+            if (finishedScores[it.id] != true && model != null) {
+                val b = if (knnNoveltyArchive.size > 0) {
+                    val addBehavior = knnNoveltyArchive.addBehavior(it)
+                    (if (addBehavior < knnNoveltyArchive.noveltyThreshold) 0f else addBehavior)
+                } else {
+                    knnNoveltyArchive.addBehavior(it)
 //                euclidean(toVector(it), toVector(it).map { 0f})
-                it.stageParts.toFloat()
-            }
-            val levelCompleteRatio = it.xPos / server.mcc.stageLengthMap[StageID(it.world, it.stage)]!!
-            val score = b * (1f + it.flags * 100 + levelCompleteRatio * 10)
-            /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
-//            knnNoveltyArchive.behaviors.add(it)
-            scoreList.add(it)
-
-            if (scoreList.size > 1000) {
-//                scoreList.sortByDescending { calcScore(it) }
-                while (scoreList.size > 1000) {
-                    scoreList.removeFirst()
+                    it.stageParts.toFloat()
                 }
-            }
+                val levelCompleteRatio = it.xPos / server.mcc.stageLengthMap[StageID(it.world, it.stage)]!!
+                val score = b * (1f + it.flags * 100 + levelCompleteRatio * 10)
+                /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
+//            knnNoveltyArchive.behaviors.add(it)
+                scoreList.add(it)
+
+                if (scoreList.size > 1000) {
+//                scoreList.sortByDescending { calcScore(it) }
+                    while (scoreList.size > 1000) {
+                        scoreList.removeFirst()
+                    }
+                }
 //            while (knnNoveltyArchive.behaviors.size > 5_000) {
 //                knnNoveltyArchive.behaviors.removeAt(0)
 //            }
-            val model = mapIndexed[it.id]?.neatMutator
-            if (finishedScores[it.id] != true && model != null) {
+
                 if (it.flags > 0) winners += ScoreAndModel(model.toModel(), it, score)
                 scores += FitnessModel(model, score)
                 finishedScores[it.id] = true
