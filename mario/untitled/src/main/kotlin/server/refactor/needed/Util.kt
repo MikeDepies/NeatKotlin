@@ -26,9 +26,9 @@ import kotlin.math.min
 import kotlin.streams.toList
 
 private val logger = KotlinLogging.logger {  }
-val minSpeices = 5
+val minSpeices = 2
 val maxSpecies = 15
-val speciesThresholdDelta = .2f
+val speciesThresholdDelta = .05f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
@@ -150,7 +150,7 @@ fun MarioDiscovery.toVector() = listOf(
 //    ((yPos)).toFloat(),
 //    xPos.toFloat(),
 //    stageParts.toFloat(),
-//    time.toFloat()
+    time.toFloat()
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,

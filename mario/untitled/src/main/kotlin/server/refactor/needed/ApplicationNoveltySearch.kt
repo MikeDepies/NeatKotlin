@@ -136,11 +136,11 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 
     val evaluationId = 0
     val populationSize = 200
-    val mateChance = .8f
+    val mateChance = .7f
     val survivalThreshold = .2f
-    val stagnation = 20
+    val stagnation = 60
 
-    val randomSeed: Int = 225 + evaluationId
+    val randomSeed: Int = 25 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions
     val random = Random(randomSeed)
@@ -192,7 +192,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(30, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(10, 0, settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
 //        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
@@ -358,7 +358,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                 it.stageParts.toFloat()
             }
             val levelCompleteRatio = it.xPos / server.mcc.stageLengthMap[StageID(it.world, it.stage)]!!
-            val score = b * (1f + it.flags + levelCompleteRatio)
+            val score = b * (1f + it.flags * 100 + levelCompleteRatio * 10)
             /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
             scoreList.add(it)
@@ -368,6 +368,9 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                 while (scoreList.size > 1000) {
                     scoreList.removeFirst()
                 }
+            }
+            while (knnNoveltyArchive.behaviors.size > 5_000) {
+                knnNoveltyArchive.behaviors.removeAt(0)
             }
             val model = mapIndexed[it.id]?.neatMutator
             if (finishedScores[it.id] != true && model != null) {

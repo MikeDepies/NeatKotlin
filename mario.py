@@ -226,7 +226,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         # rgb2gray(state),
         state = rescale(
            rgb2gray(state),# state,
-            1 / 16,
+            1 / 8,
             # channel_axis=2
         )
         # print(np.ones((1,1)))
@@ -238,20 +238,26 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         output = network.output()
         if stateQueue.size_limit > 0:
             stateQueue.add(state)
-        if abs(prevX - info["x_pos"]) > 16:
+        if abs(prevX - info["x_pos"]) > 32:
             framesSinceMaxXChange = 0
             prevX = info["x_pos"]
         else:
             framesSinceMaxXChange += 1
         framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
         # framesSinceMaxXChange > 20 * 20 or 
-        if framesSinceMaxXChange > 20 * 20 or reward < -14 or total_frames > 20 * time_seconds or (game_event_collector.stage_parts < 20 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
+        if framesSinceMaxXChange > 20 * 10 or reward < -14 or (game_event_collector.stage_parts < 20 and total_frames > (game_event_collector.stage_parts + 1)  * (20 * 20)):
             idle = True
         total_frames +=1
         depad = output[0].argmax(1)[0]
         button1 = output[1].argmax(1)[0]
         button2 = output[2].argmax(1)[0]
-
+        if (output[0][0,depad]) < .5:
+            depad = 0
+        if (output[1][0,button1]) < .5:
+            button1 = 0
+        if (output[2][0,button2]) < .5:
+            button2 = 0
+        
         depadDirection = "NOOP"
         aPress = False
         bPress = False
@@ -701,7 +707,7 @@ def getNextModel():
             return (population_type, agent_id, environment_id, network, environment)
         except:
             if tryCount < 5:
-                get("http://localhost:8095/fillModels")
+                get("http://192.168.0.100:8095/fillModels")
                 tryCount +=1
             else:
                 exit()
@@ -736,7 +742,7 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 5
+    process_num = 10
     queue = mgr.Queue(process_num * 3)
     processes: List[mp.Process] = []
 

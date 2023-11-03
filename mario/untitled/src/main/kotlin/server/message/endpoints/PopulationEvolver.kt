@@ -9,7 +9,7 @@ class PopulationEvolver(
     var speciesLineage: SpeciesLineage,
     var weightedReproduction: NeatExperiment.(SpeciationController, List<ModelScore>, Int) -> List<NeatMutator>,
 ) {
-    val stagnation = 20
+    val stagnation = 60
     fun speciate(population: List<NeatMutator>, compatibilityTest: CompatibilityTest) {
         speciesLineage = SpeciesLineage(speciesLineage.species.map { speciesLineage.speciesGene(it) }.filter {
             val generationImproved = scoreKeeper.getModelScore(it.species)?.generationLastImproved ?: 0
