@@ -135,7 +135,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //    networkEvaluatorOutputBridgeLoop(evaluationMessageProcessor, listOf(controller1))
 
     val evaluationId = 0
-    val populationSize = 5000
+    val populationSize = 200
     val mateChance = .9f
     val survivalThreshold = .2f
     val stagnation = 60
@@ -161,7 +161,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
     val populationHistory = mutableListOf<List<NeatModel>>()
-    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
+    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 8f)
     var population = simpleNeatExperiment.generateInitialPopulation2(
         populationSize, 7, 2, activationFunctions
     ).mapIndexed { index, neatMutator ->
