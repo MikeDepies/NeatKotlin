@@ -214,7 +214,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Bowser, 0),
-        ControllerConfiguration(Character.Mario, 0),
+        ControllerConfiguration(Character.Mario, 7),
         MeleeStage.FinalDestination,
         0
     )
@@ -622,9 +622,9 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.7f)
+    val shFunction = shFunction(.6f)
 
-    val weightRange = 4f
+    val weightRange = 8f
 
     val activationFunctions = Activation.CPPN.functions + cos/* + ActivationGene("abs") {it.absoluteValue}*/
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
