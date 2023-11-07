@@ -309,7 +309,7 @@ class Evaluator:
                         # if not self.knocked:
                         self.frames_without_damage += 1
             if self.opponent_knocked:
-                self.frames_without_damage -= 4
+                self.frames_without_damage -= 1
             # if self.knocked:
             #     self.frames_without_damage -=1
 
@@ -367,7 +367,7 @@ class Evaluator:
                         # self.frames_without_damage -= 60 * self.attack_timer
                         # self.frames_without_damage -= 30
                         self.actions.append(player.action.value)
-                    else:
+                    elif not move_capture:
                         self.frames_without_damage += 60
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
