@@ -274,7 +274,7 @@ class Evaluator:
                 self.frames_since_opponent_unknocked += 1
 
             # grace period for opponent landing. Allowing for combos to continue under the same string.
-            if self.frames_since_opponent_unknocked > 5:
+            if self.frames_since_opponent_unknocked > 10:
                 self.opponent_knocked = False
                 self.frames_since_opponent_unknocked = 0
 
@@ -310,8 +310,8 @@ class Evaluator:
                         self.frames_without_damage += 1
             if self.opponent_knocked:
                 self.frames_without_damage -= 4
-            if self.knocked:
-                self.frames_without_damage -=1
+            # if self.knocked:
+            #     self.frames_without_damage -=1
 
             # if self.player_took_damage(game_state):
             #         self.frames_without_damage -= (60 * self.attack_timer)
@@ -367,8 +367,7 @@ class Evaluator:
                         # self.frames_without_damage -= 60 * self.attack_timer
                         # self.frames_without_damage -= 30
                         self.actions.append(player.action.value)
-                    else:
-                        self.frames_without_damage += 20
+                    
                 if self.knocked_off_stage and player.action not in self.excluded_actions or player.action == melee.Action.AIRDODGE:
                     self.recovery_actions.append(player.action.value)
             if self.player_lost_stock(game_state):

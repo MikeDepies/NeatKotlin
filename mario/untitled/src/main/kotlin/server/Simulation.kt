@@ -507,9 +507,9 @@ fun createNetwork(): TaskNetworkBuilder {
 //                put(layerPlane, planeList.drop(index))
         }
 
-//        outputPlanes.forEach { outputPlane ->
-//            put(outputPlane, planeList)
-//        }
+        outputPlanes.forEach { outputPlane ->
+            put(outputPlane, planeList.take(1))
+        }
 //        put(outputPlane, planeList.drop(2))
     }
 //    println(connectionMapping)
