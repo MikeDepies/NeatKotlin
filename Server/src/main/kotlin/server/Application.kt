@@ -109,7 +109,7 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         20, 2
     ) { a,b ->
@@ -210,7 +210,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 60*4, 10)
+    val evaluatorSettings = EvaluatorSettings(60, 60*4, 20)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
