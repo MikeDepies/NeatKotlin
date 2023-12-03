@@ -111,7 +111,7 @@ fun Application.module() {
 
     val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
-        20, 2
+        40, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
@@ -210,11 +210,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(60, 60*4, 20)
+    val evaluatorSettings = EvaluatorSettings(10, 60*4, 20)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.Mario, 7),
+        ControllerConfiguration(Character.Mario, 0),
         MeleeStage.FinalDestination,
         0
     )
@@ -622,7 +622,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.3f)
+    val shFunction = shFunction(.2f)
 
     val weightRange = 8f
 

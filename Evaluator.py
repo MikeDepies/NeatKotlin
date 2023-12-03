@@ -310,8 +310,8 @@ class Evaluator:
                         self.frames_without_damage += 1
             if self.opponent_knocked:
                 self.frames_without_damage -= 1
-            # if self.knocked:
-            #     self.frames_without_damage -=1
+            if self.knocked:
+                self.frames_without_damage -=1
 
             # if self.player_took_damage(game_state):
             #         self.frames_without_damage -= (60 * self.attack_timer)
@@ -376,7 +376,7 @@ class Evaluator:
                 # if player.stock == 0:
                 # if not self.knocked:
                 #     self.actions.clear()
-                self.frames_without_damage += (self.attack_timer ) * 60
+                # self.frames_without_damage += (self.attack_timer ) * 60
                 if not self.knocked:
                     self.player_sd = True
                 self.player_died = True

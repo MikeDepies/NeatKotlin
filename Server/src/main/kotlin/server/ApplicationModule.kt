@@ -275,7 +275,7 @@ fun ConnectionGeneModel.connectionGene(): ConnectionGene {
     return ConnectionGene(inNode, outNode, weight, enabled, innovation)
 }
 
-val toMap = (Activation.CPPN.functions + Activation.identity).toMap { it.name }
+val toMap = (Activation.CPPN.functions + Activation.identity + cos).toMap { it.name }
 fun NodeGeneModel.nodeGene(): NodeGene {
 
     return NodeGene(node, bias, nodeType.nodeType(), toMap.getValue(activationFunction))
