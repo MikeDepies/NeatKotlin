@@ -29,13 +29,13 @@ def console_loop(port: int, queue_1: mp.Queue, queue_2: mp.Queue, configuration:
     
     controller_orig = controller
     controller_opponent_orig = controller_opponent
-    # if random.random() >= .5:
-    #     player_index = args.opponent
-    #     opponent_index = args.port
-    #     temp_controller = controller_orig
-    #     controller = controller_opponent_orig
-    #     controller_opponent = temp_controller
-    #     # print(configuration.player_1.character)
+    if random.random() >= .5:
+        player_index = args.opponent
+        opponent_index = args.port
+        temp_controller = controller_orig
+        controller = controller_opponent_orig
+        controller_opponent = temp_controller
+        # print(configuration.player_1.character)
     ai_controller_id = 0
     ai_controller_id2 = 1
     reset = 0
