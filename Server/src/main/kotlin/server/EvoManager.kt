@@ -21,8 +21,6 @@ import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.sqrt
 
 private val log = KotlinLogging.logger { }
 //type KNNNoveltyArchive = KNNNoveltyArchiveWeighted
@@ -78,12 +76,15 @@ class EvoManager(
 //                        mode = EvalMode.Objective
 //                    }
                     val deathPenalty = if (it.score.playerDied) .8f else 0f
-                    val scoredBehavior = when (mode) {
+                    fun getScoredBehavior(evalMode: EvalMode) = when (evalMode) {
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
-                        ) * 100 * ((1 + it.score.kills.size * 1f) /*+ (it.score.recovery.size * .4f)*/ - deathPenalty )
+                        ) * 100 * ((1 + it.score.kills.size)- deathPenalty  )
+                        /** 100 * ((1 + it.score.kills.size * 1f) *//*+ (it.score.recovery.size * .4f)*//* - deathPenalty )*/
                     }
+
+                    val scoredBehavior = getScoredBehavior(mode)
                     /**/
 //if (it.score.totalDamageDone <=0) 0f else
 //                     + it.score.kills.size * 20 + it.score.totalDamageDone / 10 + it.score.movement / 20
@@ -104,7 +105,9 @@ class EvoManager(
                     }" else "No Species"
                     log.info { "${character(evaluationId)} - [G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $behaviorScore " }
 
-                    captureBestModel(model, it.score.kills.size * 10 + it.score.totalDamageDone / 100, populationEvolver, it)
+                    captureBestModel(model, behaviorScore, populationEvolver, it) {
+                        it.score - (populationEvolver.generation - it.generation) * (2f)
+                    }
                 }
                 if (scores.size == populationSize) {
                     evolutionInProgress = true
@@ -205,7 +208,8 @@ class EvoManager(
         m: NeatMutator,
         behaviorScore: Float,
         populationEvolver: PopulationEvolver,
-        modelEvaluationResult: ModelEvaluationResult
+        modelEvaluationResult: ModelEvaluationResult,
+        sortFunction: (ScoredModel) -> Float?
     ) {
         var tempBestModels: MutableList<ScoredModel> = ArrayList(bestModels)
 //        val average = bestModels.map { it.score }.average()
@@ -219,9 +223,7 @@ class EvoManager(
             )
         }
 //        tempBestModels = tempBestModels.distinctBy { it.id }.toMutableList()
-        tempBestModels.sortByDescending {
-            it.score - (populationEvolver.generation - it.generation) * (10)
-        }
+        tempBestModels.sortByDescending(sortFunction)
 //        if (tempBestModels.size > 10) {
 //            tempBestModels.removeAt(10)
 //        }

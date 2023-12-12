@@ -1,5 +1,6 @@
 package server
 
+import Behavior
 import KNNNoveltyArchiveWeighted
 import calculateSequenceSimilarity
 import fuzzyCompareObjects
@@ -109,9 +110,9 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        40, 2
+        10, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
@@ -131,7 +132,7 @@ fun Application.module() {
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = false
+        load = true
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -187,7 +188,7 @@ fun Application.dashboardLoop(
 }
 
 private fun actionBehaviors(noveltyArchiveJson: String) = Json { }.decodeFromString(
-    ListSerializer(ActionBehaviorInt.serializer()),
+    ListSerializer(Behavior.serializer(ActionBehaviorInt.serializer())),
     File(noveltyArchiveJson).bufferedReader().lineSequence().joinToString("")
 )
 
@@ -210,11 +211,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 60*4, 20)
+    val evaluatorSettings = EvaluatorSettings(20, 60*1, 20)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.CaptainFalcon, 0),
-        ControllerConfiguration(Character.Mario, 0),
+        ControllerConfiguration(Character.Falco, 0),
+        ControllerConfiguration(Character.Mario, 3),
         MeleeStage.FinalDestination,
         0
     )
@@ -618,13 +619,13 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.2f)
+    val shFunction = shFunction(.7f)
 
-    val weightRange = 8f
+    val weightRange = 4f
 
     val activationFunctions = Activation.CPPN.functions + cos/* + ActivationGene("abs") {it.absoluteValue}*/
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {

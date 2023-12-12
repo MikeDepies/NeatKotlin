@@ -326,13 +326,13 @@ def console_loop(queue_1: mp.Queue, queue_2: mp.Queue, configuration: Configurat
     opponent_index = args.opponent
     controller_orig = controller
     controller_opponent_orig = controller_opponent
-    if random.random() >= .5:
-        player_index = args.opponent
-        opponent_index = args.port
-        temp_controller = controller_orig
-        controller = controller_opponent_orig
-        controller_opponent = temp_controller
-        # print(configuration.player_1.character)
+    # if random.random() >= .5:
+    #     player_index = args.opponent
+    #     opponent_index = args.port
+    #     temp_controller = controller_orig
+    #     controller = controller_opponent_orig
+    #     controller_opponent = temp_controller
+    #     # print(configuration.player_1.character)
     ai_controller_id = 0
     ai_controller_id2 = 1
     hand_counter = 0
@@ -482,7 +482,7 @@ if __name__ == '__main__':
     r = get("http://localhost:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
-    # configuration.player_2.cpu_level=9
+    configuration.player_2.cpu_level=4
     # configuration.evaluator.attack_time=5
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(process_num)
