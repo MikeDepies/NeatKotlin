@@ -392,6 +392,7 @@ class Evaluator:
                 self.frames_without_damage -= 60 * self.attack_timer/2
                 # self.actions_without_damage = 0
                 # self.total_frames -= 30*60
+                self.max_timer += 10* 60
                 # if self.total_frames < 0:
                 #     self.total_frames = 0
                 self.opponent_knocked = False
