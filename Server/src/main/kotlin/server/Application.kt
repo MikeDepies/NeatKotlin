@@ -127,7 +127,7 @@ fun Application.module() {
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
-    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
+//    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
 //    knnNoveltyArchive2.behaviors.addAll(b)
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
