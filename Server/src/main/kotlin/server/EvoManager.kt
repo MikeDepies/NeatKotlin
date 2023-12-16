@@ -106,7 +106,7 @@ class EvoManager(
                     log.info { "${character(evaluationId)} - [G${populationEvolver.generation}][S${species} / ${populationEvolver.speciationController.speciesSet.size}] Model (${scores.size}) Score: $behaviorScore " }
 
                     captureBestModel(model, behaviorScore, populationEvolver, it) {
-                        it.score - (populationEvolver.generation - it.generation) * (2f)
+                        it.score - (populationEvolver.generation - it.generation) * (5f)
                     }
                 }
                 if (scores.size == populationSize) {
