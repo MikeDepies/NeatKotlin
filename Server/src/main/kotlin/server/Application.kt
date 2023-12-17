@@ -117,7 +117,7 @@ fun Application.module() {
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        40, 2/*,
+        10, 2/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -215,7 +215,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Falco, 0),
-        ControllerConfiguration(Character.Mario, 3),
+        ControllerConfiguration(Character.Mario, 0),
         MeleeStage.FinalDestination,
         0
     )
