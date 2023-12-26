@@ -447,11 +447,14 @@ if __name__ == '__main__':
     # ns = mgr.Namespace()
     # host = "localhost"
     # port = 8095
-    process_num = 15
+    process_num = 25
     r = get("http://192.168.0.100:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
-    # configuration.player_2.cpu_level=9
+    if random.random() > .5:
+        configuration.player_1.cpu_level=5
+    else:
+        configuration.player_2.cpu_level=5
     # configuration.evaluator.max_time = 4 * 60
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(5)
