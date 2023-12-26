@@ -128,11 +128,11 @@ fun Application.module() {
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
 //    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
-//    knnNoveltyArchive2.behaviors.addAll(b)
+//    knnNoveltyArchive2.behaviors.addAll(actionBehaviors("population/1_noveltyArchive.json"))
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = true
+        load = false
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -216,7 +216,7 @@ private fun Application.routing(
         evaluatorSettings,
         ControllerConfiguration(Character.Falco, 0),
         ControllerConfiguration(Character.Mario, 0),
-        MeleeStage.FinalDestination,
+        MeleeStage.BattleField,
         0
     )
     val twitchBotService by inject<TwitchBotService>()
