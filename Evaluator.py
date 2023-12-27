@@ -383,14 +383,15 @@ class Evaluator:
                 self.player_died = True
                 self.knocked_off_stage = False
                 self.knocked = False
-
+            if self.opponent_lost_stock(game_state):
+                self.frames_without_damage -= 60 * self.attack_timer/2
             if self.opponent_lost_stock(game_state) and self.opponent_knocked:
                 previous_frame_opponent: PlayerState = self.previous_frame.players[
                     self.opponent_index]
                 # self.kill_actions.append(previous_frame_opponent.action.value)
                 if self.last_damage_action is not None:
                     self.kill_actions.append(self.last_damage_action.value)
-                self.frames_without_damage -= 60 * self.attack_timer/2
+                
                 # self.actions_without_damage = 0
                 # self.total_frames -= 30*60
                 self.max_timer += 20

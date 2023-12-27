@@ -214,9 +214,9 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(20, 60*1, 20)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Falco, 0),
+        ControllerConfiguration(Character.Fox, 0),
         ControllerConfiguration(Character.Mario, 0),
-        MeleeStage.BattleField,
+        MeleeStage.FinalDestination,
         0
     )
     val twitchBotService by inject<TwitchBotService>()
@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1.5f)
+    val shFunction = shFunction(1.1f)
 
     val weightRange = 4f
 
