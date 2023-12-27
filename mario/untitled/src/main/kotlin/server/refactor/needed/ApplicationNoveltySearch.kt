@@ -136,7 +136,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 
     val evaluationId = 0
     val populationSize = 200
-    val mateChance = .9f
+    val mateChance = .8f
     val survivalThreshold = .2f
     val stagnation = 60
 
@@ -161,7 +161,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 //        File("population/noveltyArchive.json").bufferedReader().lineSequence().joinToString("")
 //    )
     val populationHistory = mutableListOf<List<NeatModel>>()
-    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 8f)
+    val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 4f)
     var population = simpleNeatExperiment.generateInitialPopulation2(
         populationSize, 7, 2, activationFunctions
     ).mapIndexed { index, neatMutator ->
@@ -192,7 +192,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(50, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(10, 0, settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
 //        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
@@ -360,7 +360,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                     it.stageParts.toFloat()
                 }
                 val levelCompleteRatio = it.xPos / server.mcc.stageLengthMap[StageID(it.world, it.stage)]!!
-                val score = b * (1f + it.flags * 100 + levelCompleteRatio * 10)
+                val score = b * (1f + it.flags * 100 + levelCompleteRatio * 100)
                 /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
                 scoreList.add(it)

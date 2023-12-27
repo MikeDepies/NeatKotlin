@@ -188,7 +188,7 @@ fun createNetwork(): TaskNetworkBuilder {
         targetConnectionMapping,
         planeZMap,
         planeZMap.values.maxOrNull()!!,
-        computationOrder,
+        computationOrder.reversed(),
         outputPlanes,
         listOf(inputPlane) + bias + inputPlanes
     )

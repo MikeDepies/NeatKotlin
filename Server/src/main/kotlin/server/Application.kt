@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.7f)
+    val shFunction = shFunction(1.5f)
 
     val weightRange = 4f
 
