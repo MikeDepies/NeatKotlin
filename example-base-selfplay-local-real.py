@@ -452,13 +452,14 @@ if __name__ == '__main__':
     data = r.json()
     
         
-    # configuration.evaluator.max_time = 4 * 60
+    
     processes: List[mp.Process] = []
     queue_1 = mgr.Queue(5)
     queue_2 = mgr.Queue(5)
     
     for i in range(process_num):
         configuration = processConfiguration(data)
+        configuration.evaluator.max_time = 3 * 60
         # if random.random() > .5:
         #     configuration.player_1.cpu_level=5
         # else:
