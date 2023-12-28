@@ -377,7 +377,7 @@ class Evaluator:
                 # if not self.knocked:
                 #     self.actions.clear()
                 # self.frames_without_damage += (self.attack_timer) * 60
-                self.max_timer -= 20
+                # self.max_timer -= 20
                 # if not self.knocked:
                 #     self.player_sd = True
                 self.player_died = True
