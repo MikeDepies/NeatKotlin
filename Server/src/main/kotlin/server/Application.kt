@@ -215,7 +215,7 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.GameAndWatch, 0),
+        ControllerConfiguration(Character.DonkeyKong, 0),
         MeleeStage.FinalDestination,
         0
     )
