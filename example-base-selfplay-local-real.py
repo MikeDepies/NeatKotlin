@@ -459,7 +459,7 @@ if __name__ == '__main__':
     
     for i in range(process_num):
         configuration = processConfiguration(data)
-        configuration.evaluator.max_time = 3 * 60
+        # configuration.evaluator.max_time = 3 * 60
         # if random.random() > .5:
         #     configuration.player_1.cpu_level=5
         # else:

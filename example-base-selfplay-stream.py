@@ -482,7 +482,7 @@ if __name__ == '__main__':
     r = get("http://localhost:8091/configuration")
     data = r.json()
     configuration = processConfiguration(data)
-    configuration.evaluator.max_time = 3 * 60
+    # configuration.evaluator.max_time = 3 * 60
     # configuration.player_2.cpu_level=9
     # configuration.evaluator.attack_time=5
     processes: List[mp.Process] = []
