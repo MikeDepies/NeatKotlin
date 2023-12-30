@@ -28,11 +28,11 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 2
 val maxSpecies = 15
-val speciesThresholdDelta = .05f
+val speciesThresholdDelta = .1f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
-val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f, normalize = 1)
+val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .5f
+var speciesSharingDistance = 1f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -104,7 +104,7 @@ class KNNNoveltyArchiveWeighted(
     override fun measure(behavior: MarioDiscovery): Float {
         if (maxDiscovery.stageParts < behavior.stageParts) maxDiscovery = behavior
         val expRatio = ((behavior.stageParts).toFloat()) / (maxDiscovery.stageParts)
-        val newK = k //+ (behavior.stageParts / 8).squared() * 2
+        val newK = k + behavior.stageParts * 10
         val distance = behaviors.parallelStream().filter { behaviorFilter(behavior, it) }
             .map { behaviorDistanceMeasureFunction(behavior, it) }.sorted().toList()
             .take(newK).average()
@@ -138,16 +138,16 @@ fun MarioDiscovery.toVectorInt() = listOf(
 fun MarioDiscovery.toVector() = listOf(
 //    mushrooms.toFloat() * 5f,
 //    fireFlowers.toFloat() * 10f,
-//    coins.toFloat() * 1f,
+    coins.toFloat() * 1f,
     score.toFloat() / 100,
 //    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ).toFloat() / 100,
 //    flags.toFloat() * 30f,
 //    lifes.toFloat() * 5f,
 //    life.toFloat() * 100f,
-    (xPos.toFloat() / 32f),
+//    (xPos.toFloat() / 32f),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
-//    ((yPos)).toFloat(),
+//    ((yPos)).toFloat() /32f,
 //    xPos.toFloat(),
 //    stageParts.toFloat(),
     time.toFloat() / 10

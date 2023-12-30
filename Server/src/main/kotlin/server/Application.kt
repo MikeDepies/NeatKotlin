@@ -117,7 +117,7 @@ fun Application.module() {
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
-        10, 2/*,
+        5, 2/*,
         behaviorMeasureInt(
             damageMultiplier = 1f,
             actionMultiplier = 0f,
@@ -215,9 +215,9 @@ private fun Application.routing(
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.DonkeyKong, 0),
+        ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination,
-        0
+        12
     )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1.1f)
+    val shFunction = shFunction(.9f)
 
     val weightRange = 4f
 
