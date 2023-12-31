@@ -66,14 +66,14 @@ class PopulationEvolver(
 
 fun createMutationDictionary(): List<MutationEntry> {
     val connectionMutations = listOf(
-        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .1f, assignRange = 4f),
-        getMutateBiasConnections(.1f, .1f, 4f)
+        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .01f, assignRange = 4f),
+        getMutateBiasConnections(.1f, .01f, 4f)
     )
     return listOf(
         .9f chanceToMutate multiMutation(connectionMutations),
         .03f chanceToMutate mutateAddNode,
         .03f chanceToMutate mutateAddConnection,
-        .03f chanceToMutate mutateToggleConnection,
+        .1f chanceToMutate mutateToggleConnection,
         .03f chanceToMutate mutateNodeActivationFunction(),
     )
 }

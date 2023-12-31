@@ -216,9 +216,9 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         if (startInfo == None):
             startInfo = info
         if (status != info["status"]):
-            framesSinceMaxXChange = 0
+            framesSinceMaxXChange -= 20*10
         if (stage != info["stage"]):
-            framesSinceMaxXChange = 0
+            framesSinceMaxXChange -= 20*10
 
         status = info["status"]
         stage = info["stage"]
@@ -239,7 +239,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         if stateQueue.size_limit > 0:
             stateQueue.add(state)
         if abs(prevX - info["x_pos"]) > 32:
-            framesSinceMaxXChange = 0
+            framesSinceMaxXChange -= 20*10
             prevX = info["x_pos"]
         else:
             framesSinceMaxXChange += 1
