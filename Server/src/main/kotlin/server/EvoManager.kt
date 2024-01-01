@@ -75,7 +75,7 @@ class EvoManager(
 //                    if (populationEvolver.generation > 500 && mode == EvalMode.Novelty) {
 //                        mode = EvalMode.Objective
 //                    }
-                    val deathPenalty = if (it.score.playerDied) .8f else 0f
+                    val deathPenalty = it.score.totalDeaths * .2f
                     fun getScoredBehavior(evalMode: EvalMode) = when (evalMode) {
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
@@ -240,7 +240,8 @@ class EvoManager(
             it.damage.actionString(),
             it.totalDamageDone,
             it.totalDistanceTowardOpponent,
-            it.playerDied
+            it.playerDied,
+            it.totalDeaths
         )
     }
 
@@ -256,7 +257,8 @@ class EvoManager(
             it.playerDied,
             it.totalFramesHitstunOpponent,
             it.totalFrames.toFloat(),
-            it.movement
+            it.movement,
+            it.totalDeaths
         )
     }
 

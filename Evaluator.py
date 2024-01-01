@@ -94,6 +94,7 @@ class Evaluator:
         self.actions_satisfied = True
         self.current_damage = 0
         self.excluded_actions = []
+        self.total_deaths = 0
         self.excluded_actions2 = [melee.Action.SHIELD_BREAK_FALL, melee.Action.SHIELD_BREAK_DOWN_D, melee.Action.SHIELD_BREAK_DOWN_U, melee.Action.SHIELD_BREAK_TEETER, melee.Action.SHIELD_BREAK_FLY, melee.Action.SHIELD_BREAK_STAND_D, melee.Action.SHIELD_BREAK_STAND_U,
                                  melee.Action.CROUCH_START, melee.Action.CROUCH_END, melee.Action.GROUND_ROLL_SPOT_DOWN, melee.Action.GROUND_SPOT_UP,
                                  melee.Action.DAMAGE_AIR_1, melee.Action.DAMAGE_AIR_2, melee.Action.DAMAGE_AIR_3,
@@ -382,6 +383,7 @@ class Evaluator:
                 #     self.player_sd = True
                 self.player_died = True
                 self.knocked_off_stage = False
+                self.total_deaths+=1
             #     self.knocked = False
             # if self.opponent_lost_stock(game_state):
             #     self.frames_without_damage -= 60 * self.attack_timer/2
@@ -407,4 +409,4 @@ class Evaluator:
     def score(self, game_state: GameState) -> ActionBehavior:
         return ActionBehavior(self.actions, self.kill_actions,
                               self.damage_actions, self.recovery_actions_set,
-                              self.current_damage, self.total_frames_alive, self.player_sd, int(self.total_frames_hitstun), self.total_frames, self.movement_frames)
+                              self.current_damage, self.total_frames_alive, self.player_sd, int(self.total_frames_hitstun), self.total_frames, self.movement_frames, self.total_deaths)
