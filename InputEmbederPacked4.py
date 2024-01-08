@@ -72,6 +72,6 @@ class InputEmbederPacked4:
         self.applyPlayerState(player0, state[0, ...])
         player1: PlayerState = gamestate.players[self.opponent_index]
         self.applyPlayerState(player1, state[1, ...])
-        state[0,22] = melee.EDGE_POSITION.get(gamestate.stage)
-        state[1,22] = melee.EDGE_POSITION.get(gamestate.stage) * -1
+        state[0,22] = melee.EDGE_POSITION.get(gamestate.stage) / self.actionNormalizer
+        state[1,22] = (melee.EDGE_POSITION.get(gamestate.stage) / self.actionNormalizer) * -1
         return [state]
