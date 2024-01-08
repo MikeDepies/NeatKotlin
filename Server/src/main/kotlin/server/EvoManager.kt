@@ -75,12 +75,12 @@ class EvoManager(
 //                    if (populationEvolver.generation > 500 && mode == EvalMode.Novelty) {
 //                        mode = EvalMode.Objective
 //                    }
-                    val deathPenalty = it.score.totalDeaths * .2f
+                    val deathPenalty = it.score.totalDeaths * .4f
                     fun getScoredBehavior(evalMode: EvalMode) = when (evalMode) {
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
-                        ) * 100 * ((1 + it.score.kills.size)- deathPenalty  )
+                        ) * 100 * max((1 + it.score.kills.size) - deathPenalty + it.score.recovery.size * .1f, 0f  )
                         /** 100 * ((1 + it.score.kills.size * 1f) *//*+ (it.score.recovery.size * .4f)*//* - deathPenalty )*/
                     }
 
@@ -247,8 +247,8 @@ class EvoManager(
 
     fun intifyActionBehavior(it: ActionBehavior): ActionBehaviorInt {
         return ActionBehaviorInt(
-            it.allActions,
-//            listOf(),
+//            it.allActions,
+            listOf(),
             it.recovery.flatten(),
             it.kills,
             it.damage,

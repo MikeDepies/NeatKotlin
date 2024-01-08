@@ -105,7 +105,7 @@ fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
 //    val inputPlane = layerPlane(4, 14)
     val bias = layerPlane(1, 1)
-    val inputPlane = layerPlane(2, 22)
+    val inputPlane = layerPlane(2, 23)
 //    val inputPlane2 = layerPlane(5, 8)
 //    val inputPlaneController = layerPlane(1, 9)
 //    val inputPlaneProjectile = layerPlane(8, 8)
@@ -123,10 +123,10 @@ fun createNetwork(): TaskNetworkBuilder {
     //listOf(inputPlane/*, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage*/)
     val hiddenPlanes = (0 until 1).map {
 //        if (it < 2) layerPlane(12, 12) else
-        layerPlane(5,5)
+        layerPlane(2,2)
     }
-    val analogPlane = layerPlane(9, 9)
-    val analogCPlane = layerPlane(9, 9)
+    val analogPlane = layerPlane(5, 5)
+    val analogCPlane = layerPlane(5, 5)
     val button1Plane = layerPlane(1, 8)
     val button2Plane = layerPlane(1, 8)
 //    val stateEmbeddingOutput = layerPlane(10, 10)

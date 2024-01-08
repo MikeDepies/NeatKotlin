@@ -132,7 +132,7 @@ fun Application.module() {
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = false
+        load = true
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -140,7 +140,7 @@ fun Application.module() {
     val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(
         1,
         populationSize,
-        false
+        true
     )
     val evoManager2 =
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
@@ -214,10 +214,10 @@ private fun Application.routing(
     val evaluatorSettings = EvaluatorSettings(20, 60*2, 30)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Fox, 0),
-        ControllerConfiguration(Character.Fox, 3),
+        ControllerConfiguration(Character.Pikachu, 0),
+        ControllerConfiguration(Character.JigglyPuff, 0),
         MeleeStage.FinalDestination,
-        20
+        0
     )
     val twitchBotService by inject<TwitchBotService>()
     var lastModel1: TwitchModel? = null
@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1.1f)
+    val shFunction = shFunction(.9f)
 
     val weightRange = 4f
 

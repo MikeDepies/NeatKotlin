@@ -67,10 +67,11 @@ class InputEmbederPacked4:
         
 
     def embed_input(self, gamestate: GameState) -> 'list[np.ndarray]':
-        state: np.ndarray = np.zeros((2, 22))
+        state: np.ndarray = np.zeros((2, 23))
         player0: PlayerState = gamestate.players[self.player_index]
         self.applyPlayerState(player0, state[0, ...])
         player1: PlayerState = gamestate.players[self.opponent_index]
         self.applyPlayerState(player1, state[1, ...])
-
+        state[0,22] = melee.EDGE_POSITION.get(gamestate.stage)
+        state[1,22] = melee.EDGE_POSITION.get(gamestate.stage) * -1
         return [state]
