@@ -127,8 +127,8 @@ fun Application.module() {
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
-//    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
-//    knnNoveltyArchive2.behaviors.addAll(actionBehaviors("population/1_noveltyArchive.json"))
+    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
+    knnNoveltyArchive2.behaviors.addAll(actionBehaviors("population/1_noveltyArchive.json"))
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
@@ -211,7 +211,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 60*2, 30)
+    val evaluatorSettings = EvaluatorSettings(10, 60*2, 40)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Pikachu, 0),
@@ -619,11 +619,11 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f)
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.9f)
+    val shFunction = shFunction(.45f)
 
     val weightRange = 4f
 
