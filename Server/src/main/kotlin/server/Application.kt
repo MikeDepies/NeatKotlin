@@ -114,7 +114,7 @@ fun Application.module() {
     val knnNoveltyArchive = knnNoveltyArchive(
         3, 2
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
+        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
     val knnNoveltyArchive2 = knnNoveltyArchive(
         5, 2/*,
