@@ -125,14 +125,14 @@ fun Application.module() {
             recoveryMultiplier = 2f
         )*/
     ) { a,b ->
-        fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
+        fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
     knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
     knnNoveltyArchive2.behaviors.addAll(actionBehaviors("population/1_noveltyArchive.json"))
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = true
+        load = false
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -140,7 +140,7 @@ fun Application.module() {
     val (initialPopulation2, populationEvolver2, adjustedFitness2) = simulationForController(
         1,
         populationSize,
-        true
+        false
     )
     val evoManager2 =
         EvoManager(populationSize, populationEvolver2, adjustedFitness2, evaluationId2, runFolder, knnNoveltyArchive2)
@@ -211,11 +211,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 60*2, 40)
+    val evaluatorSettings = EvaluatorSettings(10, 60*4, 40)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.Pikachu, 0),
         ControllerConfiguration(Character.JigglyPuff, 0),
+        ControllerConfiguration(Character.Fox, 5),
         MeleeStage.FinalDestination,
         0
     )
@@ -619,11 +619,11 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .2f, disjointCoefficient = 1f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.45f)
+    val shFunction = shFunction(.7f)
 
     val weightRange = 4f
 
