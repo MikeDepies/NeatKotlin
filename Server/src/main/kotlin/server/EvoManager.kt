@@ -75,7 +75,7 @@ class EvoManager(
 //                    if (populationEvolver.generation > 500 && mode == EvalMode.Novelty) {
 //                        mode = EvalMode.Objective
 //                    }
-                    val deathPenalty = it.score.totalDeaths * .4f
+                    val deathPenalty = it.score.totalDeaths * .8f
                     fun getScoredBehavior(evalMode: EvalMode) = when (evalMode) {
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
@@ -247,8 +247,8 @@ class EvoManager(
 
     fun intifyActionBehavior(it: ActionBehavior): ActionBehaviorInt {
         return ActionBehaviorInt(
-            it.allActions,
-//            listOf(),
+//            it.allActions,
+            listOf(),
             it.recovery.flatten(),
             it.kills,
             it.damage,

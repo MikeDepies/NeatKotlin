@@ -127,12 +127,12 @@ fun Application.module() {
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::levenshteinDistanceNormalized).toFloat()
     }
-    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
-    knnNoveltyArchive2.behaviors.addAll(actionBehaviors("population/1_noveltyArchive.json"))
+//    knnNoveltyArchive.behaviors.addAll(actionBehaviors("population/0_noveltyArchive.json"))
+//    knnNoveltyArchive2.behaviors.addAll(actionBehaviors("population/1_noveltyArchive.json"))
     val (initialPopulation, populationEvolver, adjustedFitness) = simulationForController(
         controllerId = 0,
         populationSize = populationSize,
-        load = false
+        load = true
     )
     val evoManager =
         EvoManager(populationSize, populationEvolver, adjustedFitness, evaluationId, runFolder, knnNoveltyArchive)
@@ -211,11 +211,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(10, 60*4, 40)
+    val evaluatorSettings = EvaluatorSettings(30, 60*1, 30)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.JigglyPuff, 0),
-        ControllerConfiguration(Character.Fox, 5),
+        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Fox, 7),
         MeleeStage.FinalDestination,
         0
     )
