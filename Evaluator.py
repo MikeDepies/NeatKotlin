@@ -394,7 +394,7 @@ class Evaluator:
                 if self.last_damage_action is not None:
                     self.kill_actions.append(self.last_damage_action.value)
                 
-                # self.actions_without_damage = 0
+                self.actions_without_damage -= self.attack_timer * 60
                 # self.total_frames -= 30*60
                 # self.max_timer += 20
                 # if self.total_frames < 0:
