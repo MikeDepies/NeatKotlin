@@ -121,7 +121,11 @@ fun createNetwork(): TaskNetworkBuilder {
         }
     }
     //listOf(inputPlane/*, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage*/)
-    val hiddenPlanes = (0 until 5).map {
+    val hiddenPlanes = (0 until 15).map {
+//        if (it < 2) layerPlane(12, 12) else
+        layerPlane(4,4)
+    }
+    val hiddenPlanes2 = (0 until 2).map {
 //        if (it < 2) layerPlane(12, 12) else
         layerPlane(4,4)
     }
@@ -131,22 +135,38 @@ fun createNetwork(): TaskNetworkBuilder {
     val button2Plane = layerPlane(1, 8)
 //    val stateEmbeddingOutput = layerPlane(10, 10)
     val outputPlanes = listOf(analogPlane, analogCPlane, button1Plane, button2Plane)
-    val computationOrder = hiddenPlanes + outputPlanes
+    val computationOrder = hiddenPlanes + /*hiddenPlanes2 +*/ outputPlanes
     val connectionMapping = buildMap<LayerPlane, List<LayerPlane>> {
-        val planeList = hiddenPlanes
-        put(inputPlane, planeList + outputPlanes)
-        put(bias, planeList + outputPlanes)
+
+        put(inputPlane, hiddenPlanes + /*hiddenPlanes2+*/ outputPlanes/*hiddenPlanes.filterIndexed { index, layerPlane -> index % 5 == 0 }*/)
+        put(bias, hiddenPlanes + /*hiddenPlanes2+*/ outputPlanes)
         inputPlanes.forEach {
-            put(it, planeList)
+            put(it, hiddenPlanes+ hiddenPlanes2)
         }
-        hiddenPlanes.forEachIndexed { index, layerPlane ->
-//            if (index > hiddenPlanes.size - 2)
-//            .take(1).ifEmpty { outputPlanes }
-            val planes = planeList + outputPlanes
-            put(layerPlane, outputPlanes)
-//            else
-//                put(layerPlane, planeList.drop(index + 1))
+        hiddenPlanes.chunked(5).forEach {layerGroup ->
+            layerGroup.forEachIndexed { index, layer ->
+                if (index == layerGroup.lastIndex)
+                    put(layer, outputPlanes)
+                else
+                    put(layer, layerGroup.drop(index+1) + outputPlanes)
+            }
         }
+
+//            hiddenPlanes2.forEachIndexed { index, layer ->
+//                if (index == hiddenPlanes2.lastIndex)
+//                    put(layer, outputPlanes)
+//                else
+//                    put(layer, hiddenPlanes2.drop(index+1))
+//            }
+
+//        hiddenPlanes.forEachIndexed { index, layerPlane ->
+////            if (index > hiddenPlanes.size - 2)
+////            .take(1).ifEmpty { outputPlanes }
+//            val planes = planeList + outputPlanes
+//            put(layerPlane, outputPlanes)
+////            else
+////                put(layerPlane, planeList.drop(index + 1))
+//        }
 //        outputPlanes.forEach { outputPlane ->
 //            put(outputPlane, planeList + outputPlanes)
 //        }
@@ -160,7 +180,10 @@ fun createNetwork(): TaskNetworkBuilder {
         put(bias, zIndex++)
         hiddenPlanes.forEach {
             put(it, zIndex++)
-        }
+        }/*
+        hiddenPlanes2.forEach {
+            put(it, zIndex++)
+        }*/
         outputPlanes.forEach {
             put(it, zIndex++)
         }
