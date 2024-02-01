@@ -110,9 +110,9 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 1000
     val knnNoveltyArchive = knnNoveltyArchive(
-        30, 2
+        3, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(1f)
+    val shFunction = shFunction(.7f)
 
     val weightRange = 2f
 
