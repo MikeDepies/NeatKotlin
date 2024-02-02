@@ -247,8 +247,8 @@ class EvoManager(
 
     fun intifyActionBehavior(it: ActionBehavior): ActionBehaviorInt {
         return ActionBehaviorInt(
-//            it.allActions,
-            listOf(),
+            it.allActions,
+//            listOf(),
             it.recovery.flatten(),
             it.kills,
             it.damage,
