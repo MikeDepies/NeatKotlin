@@ -171,13 +171,13 @@ fun NeatExperiment.generateInitialPopulation2(
         clone.hiddenNodes.forEach {
             it.bias = random.nextDouble(-2.0, 2.0).toFloat()
         }
-        mutateBias(this, clone)
+//        mutateBias(this, clone)
 
 //        clone.outputNodes.forEach {
 //            it.activationFunction = activationFunctions.random(random)
 //        }
         clone.outputNodes[0].activationFunction = activationFunctions.random(random)
-        clone.outputNodes[1].activationFunction = activationFunctions.random(random)//  Activation.CPPN.linear
+        clone.outputNodes[1].activationFunction =  Activation.CPPN.linear
         clone
     }
 }

@@ -150,7 +150,7 @@ fun MarioDiscovery.toVector() = listOf(
 //    ((yPos)).toFloat() /32f,
 //    xPos.toFloat(),
     stageParts.toFloat(),
-    time.toFloat()
+//    time.toFloat()
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,

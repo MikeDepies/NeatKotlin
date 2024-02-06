@@ -159,7 +159,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
     action = 0  # no op
     last_action = 0
     state = env.reset()
-    prevX = 0
+    prevX = 40
     framesSinceMaxXChange = 0
     status = "small"
     startInfo = None
@@ -200,7 +200,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             time_seconds = config_seconds * ratio
             print(str(id) + " - time: " + str(time_seconds) + " - ratio: " + str(ratio) + "(" + str(network.total_number_of_connections) + " / " + str(network.total_connection_cost) + ")")
             startInfo = None
-            prevX = 0
+            prevX = 40
             steps_left = 0
             steps_right = 0
             framesSinceMaxXChange = 0
@@ -243,7 +243,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
             prevX = info["x_pos"]
         else:
             framesSinceMaxXChange += 1
-        framesSinceMaxXChange = max(-10 * 20, framesSinceMaxXChange)
+        framesSinceMaxXChange = max(-30 * 20, framesSinceMaxXChange)
         # framesSinceMaxXChange > 20 * 20 or 
         if framesSinceMaxXChange > 20 * 10 or reward < -14:
             idle = True

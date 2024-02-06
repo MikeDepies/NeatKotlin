@@ -292,16 +292,28 @@ class HyperNeatBuilder:
                         # print(self.network_computer.output_values())
                         output_values = self.network_computer.output_values()
                         weight = output_values[0]
-                        express_value = output_values[1]
-                        if (express_value > 0):
-                            if weight != 0:
-                                l1 = abs(input[0] - input[3]) + abs(input[1] - input[4]) + abs(input[2] - input[5])
-                                connections_expressed += 1
-                                connection_cost_sum += max(0, l1 - 3)
-                            # adaptive_ndarray[target_y, target_x, source_y,
-                            #                    source_x, ...] = output_values[2:]
-                            connection_ndarray[target_y, target_x, source_y,
-                                               source_x] = weight * self.connection_magnitude
+                        if (len(output_values) > 1):
+                            express_value = output_values[1]
+                            if (express_value > 0):
+                                if weight != 0:
+                                    l1 = abs(input[0] - input[3]) + abs(input[1] - input[4]) + abs(input[2] - input[5])
+                                    connections_expressed += 1
+                                    connection_cost_sum += max(0, l1 - 3)
+                                # adaptive_ndarray[target_y, target_x, source_y,
+                                #                    source_x, ...] = output_values[2:]
+                                connection_ndarray[target_y, target_x, source_y,
+                                                source_x] = weight * self.connection_magnitude
+                        else:
+                            threshold = .3
+                            if abs(weight) > threshold:
+                                if weight > 0:
+                                    normalized_weight = (weight - threshold) / (1-threshold)
+                                else:
+                                    normalized_weight = (weight + threshold) / (1-threshold)
+                                
+                                connection_ndarray[target_y, target_x, source_y,
+                                                source_x] = normalized_weight * self.connection_magnitude
+
         return (connection_ndarray, adaptive_ndarray, connections_expressed, connection_cost_sum)
 
     def filter_ndarrays(self, target_id: str, connection_plane_map: 'Dict[str, LayerShape3D]', connection_map: 'Dict[str, ndarray]'):

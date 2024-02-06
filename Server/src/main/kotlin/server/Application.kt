@@ -110,9 +110,9 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
-        3, 2
+        30, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
@@ -211,11 +211,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 60*2, 40)
+    val evaluatorSettings = EvaluatorSettings(5, 60*8, 20)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.DonkeyKong, 0),
-        ControllerConfiguration(Character.Fox, 5),
+        ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination,
         0
     )
@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.4f)
+    val shFunction = shFunction(.2f)
 
     val weightRange = 2f
 
@@ -647,7 +647,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         val simpleNeatExperiment =
             simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, weightRange)
         val population = simpleNeatExperiment.generateInitialPopulation2(
-            populationSize, 7, 2, activationFunctions
+            populationSize, 7, 1, activationFunctions
         )
         SimulationStart(
             simpleNeatExperiment,
