@@ -71,10 +71,10 @@ fun createMutationDictionary(): List<MutationEntry> {
     )
     return listOf(
         .9f chanceToMutate multiMutation(connectionMutations),
-        .01f chanceToMutate mutateAddNode,
-        .01f chanceToMutate mutateAddConnection,
+        .03f chanceToMutate mutateAddNode,
+        .03f chanceToMutate mutateAddConnection,
         .1f chanceToMutate mutateToggleConnection,
-        .01f chanceToMutate mutateNodeActivationFunction(),
+        .03f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 

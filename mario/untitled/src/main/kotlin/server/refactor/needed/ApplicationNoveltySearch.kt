@@ -136,8 +136,8 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 
     val evaluationId = 0
     val populationSize = 200
-    val mateChance = .9f
-    val survivalThreshold = .2f
+    val mateChance = .8f
+    val survivalThreshold = .3f
     val stagnation = 60
 
     val randomSeed: Int = 25 + evaluationId
@@ -163,7 +163,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationHistory = mutableListOf<List<NeatModel>>()
     val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
     var population = simpleNeatExperiment.generateInitialPopulation2(
-        populationSize, 7, 2, activationFunctions
+        populationSize, 7, 1, activationFunctions
     ).mapIndexed { index, neatMutator ->
         NetworkWithId(neatMutator, UUID.randomUUID().toString())
     }

@@ -504,7 +504,7 @@ fun createNetwork(): TaskNetworkBuilder {
                 if (index == layerGroup.lastIndex)
                     put(layer, outputPlanes)
                 else
-                    put(layer, layerGroup.drop(index + 1).take(1))
+                    put(layer, layerGroup.drop(index + 1))
             }
         }
 

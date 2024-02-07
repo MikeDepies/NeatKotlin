@@ -110,7 +110,7 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
         30, 2
     ) { a,b ->
@@ -211,11 +211,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 60*8, 20)
+    val evaluatorSettings = EvaluatorSettings(20, 60*2, 30)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
-        ControllerConfiguration(Character.DonkeyKong, 0),
-        ControllerConfiguration(Character.Fox, 9),
+        ControllerConfiguration(Character.Mario, 0),
+        ControllerConfiguration(Character.Fox, 0),
         MeleeStage.FinalDestination,
         0
     )
@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.2f)
+    val shFunction = shFunction(.5f)
 
     val weightRange = 2f
 
