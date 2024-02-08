@@ -70,11 +70,11 @@ fun createMutationDictionary(): List<MutationEntry> {
         getMutateBiasConnections(.1f, .001f, 2f)
     )
     return listOf(
-        .9f chanceToMutate multiMutation(connectionMutations),
-        .03f chanceToMutate mutateAddNode,
-        .03f chanceToMutate mutateAddConnection,
-        .1f chanceToMutate mutateToggleConnection,
-        .03f chanceToMutate mutateNodeActivationFunction(),
+        .3f chanceToMutate multiMutation(connectionMutations),
+        .3f chanceToMutate mutateAddNode,
+        .3f chanceToMutate mutateAddConnection,
+        .3f chanceToMutate mutateToggleConnection,
+        .3f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 

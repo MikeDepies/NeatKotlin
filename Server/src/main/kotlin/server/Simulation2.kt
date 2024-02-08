@@ -146,9 +146,9 @@ fun createNetwork(): TaskNetworkBuilder {
         hiddenPlanes.chunked(5).forEach {layerGroup ->
             layerGroup.forEachIndexed { index, layer ->
                 if (index == layerGroup.lastIndex)
-                    put(layer, layerGroup + outputPlanes)
+                    put(layer, outputPlanes)
                 else
-                    put(layer, layerGroup + outputPlanes)
+                    put(layer, layerGroup.drop(index+1) + outputPlanes)
             }
         }
 
@@ -167,9 +167,9 @@ fun createNetwork(): TaskNetworkBuilder {
 ////            else
 ////                put(layerPlane, planeList.drop(index + 1))
 //        }
-        outputPlanes.forEach { outputPlane ->
-            put(outputPlane, hiddenPlanes + outputPlanes)
-        }
+//        outputPlanes.forEach { outputPlane ->
+//            put(outputPlane, planeList + outputPlanes)
+//        }
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         var zIndex = 0
