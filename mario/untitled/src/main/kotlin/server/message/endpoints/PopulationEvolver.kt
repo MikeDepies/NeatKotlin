@@ -58,11 +58,11 @@ fun createMutationDictionary(): List<MutationEntry> {
         getMutateBiasConnections(.1f, .001f, 2f)
     )
     return listOf(
-        .9f chanceToMutate multiMutation(connectionMutations),
-        .01f chanceToMutate mutateAddNode,
-        .01f chanceToMutate mutateAddConnection,
-        .01f chanceToMutate mutateToggleConnection,
-        .01f chanceToMutate mutateNodeActivationFunction(),
+        .6f chanceToMutate multiMutation(connectionMutations),
+        .1f chanceToMutate mutateAddNode,
+        .1f chanceToMutate mutateAddConnection,
+        .1f chanceToMutate mutateToggleConnection,
+        .1f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 
