@@ -304,7 +304,7 @@ class HyperNeatBuilder:
                                 connection_ndarray[target_y, target_x, source_y,
                                                 source_x] = weight * self.connection_magnitude
                         else:
-                            threshold = .1
+                            threshold = .99
                             if abs(weight) > threshold:
                                 if weight > 0:
                                     normalized_weight = (weight - threshold) / (1-threshold)
