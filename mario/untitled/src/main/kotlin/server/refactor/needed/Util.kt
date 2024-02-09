@@ -28,11 +28,11 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 2
 val maxSpecies = 15
-val speciesThresholdDelta = 0f
+val speciesThresholdDelta = .1f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
-var distanceFunction = cppnGeneRuler::measure
-var speciesSharingDistance = .4f
+var distanceFunction = dist
+var speciesSharingDistance = 2f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)

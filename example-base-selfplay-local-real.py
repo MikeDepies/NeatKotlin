@@ -463,7 +463,7 @@ if __name__ == '__main__':
         # if random.random() > .5:
         #     configuration.player_1.cpu_level=5
         # else:
-        #     configuration.player_2.cpu_level=5
+        configuration.player_2.cpu_level=5
         p = mp.Process(target=console_loop, args=(
             i + 51460, queue_1, queue_2, configuration), daemon=True)
         processes.append(p)

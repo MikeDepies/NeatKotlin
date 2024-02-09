@@ -549,7 +549,7 @@ fun createNetwork(): TaskNetworkBuilder {
         targetConnectionMapping,
         planeZMap,
         planeZMap.values.maxOrNull()!!,
-        computationOrder.reversed(),
+        computationOrder/*.reversed()*/,
         outputPlanes,
         inputPlanes + inputPlanesEmbeddings
     )

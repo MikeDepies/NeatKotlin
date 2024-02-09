@@ -110,7 +110,7 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 200
+    val populationSize = 500
     val knnNoveltyArchive = knnNoveltyArchive(
         30, 2
     ) { a,b ->
@@ -211,7 +211,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(5, 60*8, 30)
+    val evaluatorSettings = EvaluatorSettings(20, 60*8, 35)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Mario, 0),
@@ -619,13 +619,13 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f)
+//    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 2f, disjointCoefficient = .5f)
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(.6f)
+    val shFunction = shFunction(2f)
 
-    val weightRange = 2f
+    val weightRange = 2.5f
 
     val activationFunctions = Activation.CPPN.functions + cos/* + ActivationGene("abs") {it.absoluteValue}*/
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
@@ -657,17 +657,20 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     }
 
     val compatibilityDistanceFunction = compatibilityDistanceFunction(2f, 2f, 1f)
+
     val standardCompatibilityTest = standardCompatibilityTest({
         shFunction(it)
     }, { a, b ->
-        cppnGeneRuler.measure(a, b)
+        compatibilityDistanceFunction(a,b)
+//        cppnGeneRuler.measure(a, b)
     })
     val speciesId = (manifest.scoreLineageModel.speciesMap.keys.maxOrNull() ?: -1) + 1
     return simulation(
         standardCompatibilityTest,
         controllerId,
         distanceFunction = { a, b ->
-            cppnGeneRuler.measure(a, b)
+            compatibilityDistanceFunction(a,b)
+//            cppnGeneRuler.measure(a, b)
         },
         sharingFunction = {
             shFunction(it)
