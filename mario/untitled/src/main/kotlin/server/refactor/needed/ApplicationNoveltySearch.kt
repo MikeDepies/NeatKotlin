@@ -360,7 +360,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
                     it.stageParts.toFloat()
                 }
                 val levelCompleteRatio = it.xPos.toFloat() / server.mcc.stageLengthMap[StageID(it.world, it.stage)]!!
-                val score = b * (1f + it.flags * 100 + levelCompleteRatio * 100)
+                val score = b //* (1f + it.flags * 100 + levelCompleteRatio * 100)
                 /** (it.stageParts)*///+ ((it.stageParts * 8) / (it.time)) + ((it.stage -1) + (it.world -1) * 4)  * 200f
 //            knnNoveltyArchive.behaviors.add(it)
                 scoreList.add(it)

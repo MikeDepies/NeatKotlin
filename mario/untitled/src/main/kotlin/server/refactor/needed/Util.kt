@@ -26,7 +26,7 @@ import kotlin.math.min
 import kotlin.streams.toList
 
 private val logger = KotlinLogging.logger {  }
-val minSpeices = 2
+val minSpeices = 5
 val maxSpecies = 15
 val speciesThresholdDelta = .1f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
@@ -147,9 +147,9 @@ fun MarioDiscovery.toVector() = listOf(
 //    (xPos.toFloat() / 32f),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
-//    ((yPos)).toFloat() /1f,
-//    xPos.toFloat(),
-    stageParts.toFloat(),
+    ((yPos)).toFloat() /32f,
+    xPos.toFloat() /32f,
+//    stageParts.toFloat(),
 //    time.toFloat()
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,

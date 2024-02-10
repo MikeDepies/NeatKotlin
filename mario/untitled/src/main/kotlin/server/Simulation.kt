@@ -481,8 +481,8 @@ fun createNetwork(): TaskNetworkBuilder {
         add(layerPlane(30, 32))
     } }
     val inputPlanes = listOf(inputImagePlane, bias/*, inputImagePlane2*//*, inputImagePlane2, inputImagePlane3*/)
-    val hiddenPlanes = (0 until 5).map {
-        layerPlane(4,4)
+    val hiddenPlanes = (0 until 1).map {
+        layerPlane(8,8)
     }
     val analogPlane = layerPlane(1, 5)
     val button1Plane = layerPlane(1, 3)

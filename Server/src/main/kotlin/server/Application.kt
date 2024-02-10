@@ -110,9 +110,9 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        30, 2
+        5, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
@@ -162,7 +162,7 @@ fun Application.module() {
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
-                evaluationId2 to evoManager2
+                evaluationId2 to evoManager
             ), mapOf(
                 evaluationId to dashboardManager,
                 evaluationId2 to dashboardManager2
@@ -211,11 +211,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 60*8, 35)
+    val evaluatorSettings = EvaluatorSettings(20, 60*4, 35)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Mario, 0),
-        ControllerConfiguration(Character.Fox, 3),
+        ControllerConfiguration(Character.Fox, 0),
         MeleeStage.FinalDestination,
         0
     )
@@ -623,9 +623,9 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(2f)
+    val shFunction = shFunction(5f)
 
-    val weightRange = 2.5f
+    val weightRange = 2f
 
     val activationFunctions = Activation.CPPN.functions + cos/* + ActivationGene("abs") {it.absoluteValue}*/
     val (simpleNeatExperiment, population, manifest) = if (loadModels) {
