@@ -180,7 +180,7 @@ fun NeatExperiment.generateInitialPopulation2(
             connectionGene.weight = random.nextDouble(-2.0, 2.0).toFloat()
 //            assignConnectionRandomWeight(connectionGene)
         }
-        clone.hiddenNodes.forEach {
+        (clone.hiddenNodes + clone.outputNodes).forEach {
             it.bias = random.nextDouble(-2.0, 2.0).toFloat()
         }
 //        mutateBias(this, clone)

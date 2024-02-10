@@ -49,6 +49,7 @@ import kotlin.collections.takeLast
 import kotlin.collections.toMap
 import kotlin.collections.toMutableMap
 import kotlin.math.absoluteValue
+import kotlin.math.cos
 import kotlin.random.Random
 
 
@@ -139,10 +140,10 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val mateChance = .9f
     val survivalThreshold = .2f
     val stagnation = 40
-
-    val randomSeed: Int = 25 + evaluationId
+    val cos = ActivationGene("cos") { cos( it) }
+    val randomSeed: Int = 5 + evaluationId
     val addConnectionAttempts = 5
-    val activationFunctions = Activation.CPPN.functions
+    val activationFunctions = Activation.CPPN.functions + cos
     val random = Random(randomSeed)
     val winners = mutableListOf<ScoreAndModel>()
 
@@ -192,7 +193,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(30, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(200, 0, settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
 //        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
