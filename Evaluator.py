@@ -255,7 +255,7 @@ class Evaluator:
                 self.hitstun_velocity -= .1
             if on_stage and self.knocked_off_stage:
                 if self.damage_since_recovery:
-                    self.frames_without_damage -= 60 * self.attack_timer
+                    # self.frames_without_damage -= 60 * self.attack_timer
                     self.damage_since_recovery = False
                 self.knocked_off_stage = False
                 self.knocked = False

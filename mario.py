@@ -216,9 +216,9 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         if (startInfo == None):
             startInfo = info
         if (status != info["status"]):
-            framesSinceMaxXChange -= 20*10
+            framesSinceMaxXChange = 0
         if (stage != info["stage"]):
-            framesSinceMaxXChange -= 20*10
+            framesSinceMaxXChange = 0
 
         status = info["status"]
         stage = info["stage"]
@@ -239,7 +239,7 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         if stateQueue.size_limit > 0:
             stateQueue.add(state)
         if abs(prevX - info["x_pos"]) > 32:
-            framesSinceMaxXChange -= 20*10
+            framesSinceMaxXChange = 0
             prevX = info["x_pos"]
         else:
             framesSinceMaxXChange += 1
@@ -251,12 +251,12 @@ def marioNovelty(queue: mp.Queue, render: Boolean):
         depad = output[0].argmax(1)[0]
         button1 = output[1].argmax(1)[0]
         button2 = output[2].argmax(1)[0]
-        if (output[0][0,depad]) < .5:
-            depad = 0
-        if (output[1][0,button1]) < .5:
-            button1 = 0
-        if (output[2][0,button2]) < .5:
-            button2 = 0
+        # if (output[0][0,depad]) < .5:
+        #     depad = 0
+        # if (output[1][0,button1]) < .5:
+        #     button1 = 0
+        # if (output[2][0,button2]) < .5:
+        #     button2 = 0
         
         depadDirection = "NOOP"
         aPress = False

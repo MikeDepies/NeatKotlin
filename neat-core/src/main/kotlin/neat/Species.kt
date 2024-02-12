@@ -202,7 +202,7 @@ fun SpeciationController.reproduce(
 
     return keys.sortedBy { it.id }.associateWith { species ->
         val speciesPopulation = speciesReport.speciesMap.getValue(species)
-            .let { it.take(max(championThreshold, (it.size * survivalThreshold).toInt())) }
+            .let { it.take(max(1, (it.size * survivalThreshold).toInt())) }
         val offspring = speciesReport.speciesOffspringMap.getValue(species)
 
         val champions =

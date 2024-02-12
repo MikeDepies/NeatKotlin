@@ -54,15 +54,15 @@ fun mutateNodeActivationFunction(): Mutation = { neatMutator ->
 
 fun createMutationDictionary(): List<MutationEntry> {
     val connectionMutations = listOf(
-        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .01f, assignRange = 2f),
-        getMutateBiasConnections(.1f, .01f, 2f)
+        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .1f, assignRange = 2f),
+        getMutateBiasConnections(.1f, .1f, 2f)
     )
     return listOf(
-        .4f chanceToMutate multiMutation(connectionMutations),
-        .1f chanceToMutate mutateAddNode,
-        .1f chanceToMutate mutateAddConnection,
-        .1f chanceToMutate mutateToggleConnection,
-        .1f chanceToMutate mutateNodeActivationFunction(),
+        .8f chanceToMutate multiMutation(connectionMutations),
+        .02f chanceToMutate mutateAddNode,
+        .02f chanceToMutate mutateAddConnection,
+        .02f chanceToMutate mutateToggleConnection,
+        .02f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 

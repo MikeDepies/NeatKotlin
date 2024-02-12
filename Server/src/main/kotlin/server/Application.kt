@@ -162,7 +162,7 @@ fun Application.module() {
         EvoControllerHandler(
             mapOf(
                 evaluationId to evoManager,
-                evaluationId2 to evoManager
+                evaluationId2 to evoManager2
             ), mapOf(
                 evaluationId to dashboardManager,
                 evaluationId2 to dashboardManager2
@@ -211,11 +211,11 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 60*4, 35)
+    val evaluatorSettings = EvaluatorSettings(10, 60*4, 35)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Mario, 0),
-        ControllerConfiguration(Character.Fox, 0),
+        ControllerConfiguration(Character.Fox, 9),
         MeleeStage.FinalDestination,
         0
     )
@@ -619,11 +619,11 @@ private fun knnNoveltyArchive(k: Int, multiple: Int, function: (ActionBehaviorIn
 
 
 fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): Simulation {
-//    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 2f, disjointCoefficient = .5f)
+    val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = .1f, disjointCoefficient = 1f)
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(5f)
+    val shFunction = shFunction(.5f)
 
     val weightRange = 2f
 
@@ -656,21 +656,21 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
         )
     }
 
-    val compatibilityDistanceFunction = compatibilityDistanceFunction(2f, 2f, 1f)
+//    val compatibilityDistanceFunction = compatibilityDistanceFunction(2f, 2f, 1f)
 
     val standardCompatibilityTest = standardCompatibilityTest({
         shFunction(it)
     }, { a, b ->
-        compatibilityDistanceFunction(a,b)
-//        cppnGeneRuler.measure(a, b)
+//        compatibilityDistanceFunction(a,b)
+        cppnGeneRuler.measure(a, b)
     })
     val speciesId = (manifest.scoreLineageModel.speciesMap.keys.maxOrNull() ?: -1) + 1
     return simulation(
         standardCompatibilityTest,
         controllerId,
         distanceFunction = { a, b ->
-            compatibilityDistanceFunction(a,b)
-//            cppnGeneRuler.measure(a, b)
+//            compatibilityDistanceFunction(a,b)
+            cppnGeneRuler.measure(a, b)
         },
         sharingFunction = {
             shFunction(it)

@@ -137,11 +137,11 @@ fun Application.moduleNovelty(testing: Boolean = false) {
 
     val evaluationId = 0
     val populationSize = 200
-    val mateChance = .9f
-    val survivalThreshold = .2f
-    val stagnation = 40
+    val mateChance = .8f
+    val survivalThreshold = .3f
+    val stagnation = 60
     val cos = ActivationGene("cos") { cos( it) }
-    val randomSeed: Int = 5 + evaluationId
+    val randomSeed: Int = 2215 + evaluationId
     val addConnectionAttempts = 5
     val activationFunctions = Activation.CPPN.functions + cos
     val random = Random(randomSeed)
@@ -164,7 +164,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     val populationHistory = mutableListOf<List<NeatModel>>()
     val simpleNeatExperiment = simpleNeatExperiment(random, 0, 0, activationFunctions, addConnectionAttempts, 2f)
     var population = simpleNeatExperiment.generateInitialPopulation2(
-        populationSize, 7, 1, activationFunctions
+        populationSize, 7, 2, activationFunctions
     ).mapIndexed { index, neatMutator ->
         NetworkWithId(neatMutator, UUID.randomUUID().toString())
     }
@@ -193,7 +193,7 @@ fun Application.moduleNovelty(testing: Boolean = false) {
     var scores = mutableListOf<FitnessModel<NeatMutator>>()
     var seq = population.iterator()
     var activeModel: NetworkWithId = population.first()
-    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(200, 0, settings.noveltyThreshold) { a, b ->
+    val knnNoveltyArchive = KNNNoveltyArchiveWeighted(50, 0, settings.noveltyThreshold) { a, b ->
         val euclidean = euclidean(a.toVector(), b.toVector())
         euclidean
 //        levenshteinDistanceNormalized(a.toVectorInt(), b.toVectorInt())
