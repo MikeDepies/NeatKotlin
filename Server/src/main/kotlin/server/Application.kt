@@ -110,7 +110,7 @@ fun Application.module() {
     fun simulationForController(controllerId: Int, populationSize: Int, load: Boolean): Simulation =
         simulationFor(controllerId, populationSize, load)
 
-    val populationSize = 500
+    val populationSize = 100
     val knnNoveltyArchive = knnNoveltyArchive(
         20, 2
     ) { a,b ->

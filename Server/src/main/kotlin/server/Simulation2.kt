@@ -105,7 +105,7 @@ fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
 //    val inputPlane = layerPlane(4, 14)
     val bias = layerPlane(1, 1)
-    val inputPlane = layerPlane(17, 65)
+    val inputPlane = layerPlane(30, 37)
 //    val inputPlane2 = layerPlane(5, 8)
 //    val inputPlaneController = layerPlane(1, 9)
 //    val inputPlaneProjectile = layerPlane(8, 8)
@@ -145,10 +145,10 @@ fun createNetwork(): TaskNetworkBuilder {
         }
         hiddenPlanes.chunked(5).forEach {layerGroup ->
             layerGroup.forEachIndexed { index, layer ->
-                if (index == layerGroup.lastIndex)
-                    put(layer, outputPlanes)
-                else
-                    put(layer, layerGroup.drop(index+1) + outputPlanes)
+//                if (index == layerGroup.lastIndex)
+//                    put(layer, outputPlanes)
+//                else
+                    put(layer, layerGroup/*.drop(index+1)*/ + outputPlanes)
             }
         }
 
@@ -167,9 +167,9 @@ fun createNetwork(): TaskNetworkBuilder {
 ////            else
 ////                put(layerPlane, planeList.drop(index + 1))
 //        }
-//        outputPlanes.forEach { outputPlane ->
-//            put(outputPlane, planeList + outputPlanes)
-//        }
+        outputPlanes.forEach { outputPlane ->
+            put(outputPlane, hiddenPlanes + outputPlanes)
+        }
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         var zIndex = 0

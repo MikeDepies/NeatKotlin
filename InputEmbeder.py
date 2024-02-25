@@ -97,7 +97,7 @@ class InputEmbeder:
         return statePosition + 436
 
     def embed_input(self, gamestate: GameState):
-        state: np.ndarray = np.zeros((1, 1105))
+        state: np.ndarray = np.zeros((1, 1110))
         player0: PlayerState = gamestate.players[self.player_index]
 
         statePosition = self.applyPlayerState(player0, state, 0)
@@ -155,4 +155,4 @@ class InputEmbeder:
         # print("Non-zero state values and their indices:")
         # for index in zip(*non_zero_elements):
         #     print(f"Index: {index}, Value: {state[index]}")
-        return [state.reshape([17, 65])]
+        return [state.reshape([30, 37])]
