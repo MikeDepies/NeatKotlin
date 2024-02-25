@@ -54,21 +54,52 @@ fun mutateNodeActivationFunction(): Mutation = { neatMutator ->
 
 fun createMutationDictionary(): List<MutationEntry> {
     val connectionMutations = listOf(
-        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .1f, assignRange = 2f),
-        getMutateBiasConnections(.1f, .1f, 2f)
+        getMutateConnections(chanceToReassignWeights = .1f, perturbRange = .01f, assignRange = 2f),
+
+        getMutateBiasConnections(.1f, .01f, 2f)
     )
     return listOf(
-        .8f chanceToMutate multiMutation(connectionMutations),
-        .02f chanceToMutate mutateAddNode,
-        .02f chanceToMutate mutateAddConnection,
-        .02f chanceToMutate mutateToggleConnection,
-        .02f chanceToMutate mutateNodeActivationFunction(),
+        .9f chanceToMutate multiMutation(connectionMutations),
+        .01f chanceToMutate mutateAddNode,
+        .01f chanceToMutate mutateAddConnection,
+        .01f chanceToMutate mutateToggleConnection,
+        .01f chanceToMutate mutateNodeActivationFunction(),
     )
 }
 
 fun uniformMutationRateDictionary(mutationRate: Float, mutations: List<Mutation>): List<MutationEntry> {
     return mutations.map { (mutationRate / mutations.size) chanceToMutate it }
 }
+
+fun getMutateBiasConnections(chanceToReassignWeights: Float, perturbRange : Float = standardWeightPerturbationRange, assignRange : Float = 2f): Mutation = { neatMutator ->
+    val perturb = this.random.nextFloat() > chanceToReassignWeights
+    (neatMutator.hiddenNodes + neatMutator.outputNodes).forEach {
+        if (perturb) {
+            val weightPerturbation = weightPerturbation(perturbRange)
+            it.bias += weightPerturbation
+        } else {
+            it.bias = random.nextDouble(-assignRange.toDouble(), assignRange.toDouble()).toFloat()
+        }
+    }
+    /*val node = neatMutator.inputNodes[biasNode]
+    neatMutator.connectionsFrom(node).forEach { connectionGene ->
+        val weightPerturbation = weightPerturbation(range)
+        connectionGene.weight += weightPerturbation
+    }*/
+}
+
+fun getMutateConnections(chanceToReassignWeights: Float, perturbRange : Float = standardWeightPerturbationRange, assignRange : Float = 2f): Mutation = { neatMutator ->
+    val c = getMutateConnectionWeight(chanceToReassignWeights, perturbRange, assignRange)
+    neatMutator.connections.forEach { connectionGene ->
+        c(connectionGene)
+    }
+}
+fun NeatExperiment.assignConnectionRandomWeight(range :Float = 2f): ConnectionMutation = { weight = random.nextDouble(-range.toDouble(), range.toDouble()).toFloat() }
+fun NeatExperiment.getMutateConnectionWeight(chanceToReassignWeights: Float, perturbRange : Float = standardWeightPerturbationRange, assignRange : Float = 2f): ConnectionMutation = ifElseConnectionMutation(
+    rollFrom(chanceToReassignWeights),
+    assignConnectionRandomWeight(assignRange),
+    perturbConnectionWeight(range = perturbRange)
+)
 
 fun main() {
     val w = 10

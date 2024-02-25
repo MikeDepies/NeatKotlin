@@ -25,8 +25,8 @@ from Configuration import Configuration, EvaluatorConfiguration, processConfigur
 from ControllerHelperBinned import ControllerHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
-# from InputEmbederPacked import InputEmbederPacked
-from InputEmbederPacked4 import InputEmbederPacked4
+# from InputEmbederPacked4 import InputEmbederPacked4
+from InputEmbeder import InputEmbeder as InputEmbederPacked4
 from ModelHelper import ModelHelper
 from LimitedSizeList import LimitedSizeList
 

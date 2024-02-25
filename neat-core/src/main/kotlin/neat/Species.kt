@@ -206,7 +206,7 @@ fun SpeciationController.reproduce(
         val offspring = speciesReport.speciesOffspringMap.getValue(species)
 
         val champions =
-            if (offspring >= championThreshold) listOf(speciesReport.championMap.getValue(species)) else emptyList()
+            if (offspring >= championThreshold) listOf(speciesPopulation.first().neatMutator) else emptyList()
         val newGenerationPopulation = champions + (champions.size until offspring).map {
             offspringFunction(neatExperiment, speciesPopulation)
         }

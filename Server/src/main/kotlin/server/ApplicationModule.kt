@@ -102,7 +102,7 @@ data class EvaluatorIdSet(val agentId: Int, val evaluationId: Int, val generatio
 fun NeatExperiment.connectNodes2(simpleNeatMutator: NeatMutator) {
     for (input in simpleNeatMutator.inputNodes) {
         newConnection(input, simpleNeatMutator.outputNodes[0], simpleNeatMutator)
-//        newConnection(input, simpleNeatMutator.outputNodes[1], simpleNeatMutator)
+        newConnection(input, simpleNeatMutator.outputNodes[1], simpleNeatMutator)
     }
 }
 
@@ -173,10 +173,10 @@ fun NeatExperiment.generateInitialPopulation2(
         }
 //        mutateBias(this, clone)
 
-//        clone.outputNodes.forEach {
-//            it.activationFunction = activationFunctions.random(random)
-//        }
-        clone.outputNodes[0].activationFunction = activationFunctions.random(random)
+        clone.outputNodes.forEach {
+            it.activationFunction = activationFunctions.random(random)
+        }
+//        clone.outputNodes[0].activationFunction = activationFunctions.random(random)
 //        clone.outputNodes[1].activationFunction =  Activation.CPPN.linear
         clone
     }

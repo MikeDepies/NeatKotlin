@@ -124,11 +124,11 @@ class InputEmbeder:
               5] = (blastzones[3]) / self.positionNormalizer
         statePosition += 6
         statePosition = self.applyPlatform(
-            leftPlatform, state, statePosition, self.positionNormalizer)
+            leftPlatform, state, statePosition)
         statePosition = self.applyPlatform(
-            topPlatform, state, statePosition, self.positionNormalizer)
+            topPlatform, state, statePosition)
         statePosition = self.applyPlatform(
-            rightPlatform, state, statePosition, self.positionNormalizer)
+            rightPlatform, state, statePosition)
         state[0, statePosition] = (
             gamestate.distance) / self.positionNormalizer
         statePosition += 1
@@ -151,3 +151,4 @@ class InputEmbeder:
             statePosition += 1
             self.embedCategory(state, statePosition, projectile.subtype, 11)
             statePosition += 11
+        return [state]

@@ -130,7 +130,7 @@ fun NeatExperiment.createNeatMutator2(
 fun NeatExperiment.connectNodes2(simpleNeatMutator: NeatMutator) {
     for (input in simpleNeatMutator.inputNodes) {
         newConnection(input, simpleNeatMutator.outputNodes[0], simpleNeatMutator)
-        newConnection(input, simpleNeatMutator.outputNodes[1], simpleNeatMutator)
+//        newConnection(input, simpleNeatMutator.outputNodes[1], simpleNeatMutator)
     }
 }
 fun NeatExperiment.generateInitialPopulation2(

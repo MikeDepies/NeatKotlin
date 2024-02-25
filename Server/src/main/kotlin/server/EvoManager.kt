@@ -75,12 +75,12 @@ class EvoManager(
 //                    if (populationEvolver.generation > 500 && mode == EvalMode.Novelty) {
 //                        mode = EvalMode.Objective
 //                    }
-                    val deathPenalty = it.score.totalDeaths * .3f
+                    val deathPenalty = it.score.totalDeaths * .2f
                     fun getScoredBehavior(evalMode: EvalMode) = when (evalMode) {
                         EvalMode.Objective -> it.score.kills.size * 10 + it.score.totalDamageDone / 100 + it.score.allActions.size.toFloat() / 50
                         EvalMode.Novelty -> scoreBehavior(
                             knnNoveltyArchive, it, model
-                        ) * 100 * max((1 + it.score.kills.size) - deathPenalty + it.score.recovery.size * .2f, 0f  )
+                        ) * 100 * max((1 + it.score.kills.size) - deathPenalty + it.score.recovery.size * .05f, 0f  )
                         /** 100 * ((1 + it.score.kills.size * 1f) *//*+ (it.score.recovery.size * .4f)*//* - deathPenalty )*/
                     }
 
@@ -170,13 +170,13 @@ class EvoManager(
         populationEvolver.sortPopulationByAdjustedScore(modelScores)
         populationEvolver.updateScores(modelScores)
         var newPopulation = populationEvolver.evolveNewPopulation(modelScores)
-//        populationEvolver.speciationController.speciesSet.forEach { species ->
-//            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
-//            populationEvolver.speciesLineage.updateMascot(
-//                species,
-//                speciesPopulation.take(max(1, (speciesPopulation.size).toInt())).random()
-//            )
-//        }
+        populationEvolver.speciationController.speciesSet.forEach { species ->
+            val speciesPopulation = populationEvolver.speciationController.getSpeciesPopulation(species)
+            populationEvolver.speciesLineage.updateMascot(
+                species,
+                speciesPopulation.first()
+            )
+        }
         val mutationEntries = createMutationDictionary()
         while (newPopulation.size < populationSize) {
             newPopulation =

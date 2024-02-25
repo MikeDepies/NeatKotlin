@@ -29,14 +29,14 @@ class Evaluator:
     total_frames: int
     off_stage_time: int
     total_distanceTowardOpponent: float
-    previous_frame: GameState or None
-    last_x: int or None
-    last_percent: float or None
-    last_opponent_percent: float or None
+    previous_frame: GameState | None
+    last_x: int | None
+    last_percent: float | None
+    last_opponent_percent: float | None
     player_previous_actions: List[int]
-    player_previous_action: melee.Action or None
-    opponent_previous_action: melee.Action or None
-    last_damage_action: melee.Action or None
+    player_previous_action: melee.Action | None
+    opponent_previous_action: melee.Action | None
+    last_damage_action: melee.Action | None
     action_limit: int
     attack_timer: int
     max_timer: int
