@@ -31,7 +31,7 @@ from ModelHelper import ModelHelper
 from LimitedSizeList import LimitedSizeList
 
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> 'list[np.ndarray]':
-    positionNormalizer = 30.0
+    positionNormalizer = 100.0
     actionNormalizer = 150.0
     return InputEmbederPacked4(player_index, opponent_index,
                               positionNormalizer, actionNormalizer).embed_input(gamestate)
