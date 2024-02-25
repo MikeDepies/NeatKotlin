@@ -25,13 +25,13 @@ from Configuration import Configuration, EvaluatorConfiguration, processConfigur
 from ControllerHelperBinned import ControllerHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
-# from InputEmbederPacked4 import InputEmbederPacked4
-from InputEmbeder import InputEmbeder as InputEmbederPacked4
+# from InputEmbederPacked import InputEmbederPacked
+from InputEmbederPacked4 import InputEmbederPacked4
 from ModelHelper import ModelHelper
 from LimitedSizeList import LimitedSizeList
 
 def create_packed_state(gamestate: GameState, player_index: int, opponent_index: int) -> 'list[np.ndarray]':
-    positionNormalizer = 100.0
+    positionNormalizer = 30.0
     actionNormalizer = 150.0
     return InputEmbederPacked4(player_index, opponent_index,
                               positionNormalizer, actionNormalizer).embed_input(gamestate)
