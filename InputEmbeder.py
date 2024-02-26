@@ -34,19 +34,14 @@ class InputEmbeder:
         return statePosition + 3
 
     def applyPlayerState(self, player0: PlayerState, state: np.ndarray, statePosition):
-        state[0, statePosition + 0] = player0.speed_air_x_self / \
-            5
-        state[0, statePosition + 1] = player0.speed_ground_x_self / \
-            5
-        state[0, statePosition + 2] = player0.speed_x_attack / \
-            5
-        state[0, statePosition + 3] = player0.speed_y_attack / \
-            5
-        state[0, statePosition + 4] = player0.speed_y_self / \
-            5
+        state[0, statePosition + 0] = player0.speed_air_x_self * .5
+        state[0, statePosition + 1] = player0.speed_ground_x_self * .5
+        state[0, statePosition + 2] = player0.speed_x_attack * .5
+        state[0, statePosition + 3] = player0.speed_y_attack * .5
+        state[0, statePosition + 4] = player0.speed_y_self * .5
         state[0, statePosition +
               5] = ((player0.percent / self.positionNormalizer))
-        state[0, statePosition + 6] = ((player0.shield_strength / 60))
+        state[0, statePosition + 6] = ((player0.shield_strength * .01))
         state[0, statePosition + 7] = ((player0.stock / 4))
         state[0, statePosition + 8] = (
             (player0.action_frame / 60.0))
@@ -61,43 +56,39 @@ class InputEmbeder:
         state[0, statePosition + 413] = (
             (player0.invulnerability_left / 60.0))
         state[0, statePosition + 414] = ((player0.jumps_left / 2))
-        state[0, statePosition + 415] = ((player0.x / self.positionNormalizer))
-        state[0, statePosition + 416] = ((player0.y / self.positionNormalizer))
+        state[0, statePosition + 415] = ((player0.x * .05))
+        state[0, statePosition + 416] = ((player0.y * .05))
 
-        rangeForward = self.frame_data.range_forward(
-            player0.character, player0.action, player0.action_frame)
-        rangeBackward = self.frame_data.range_backward(
-            player0.character, player0.action, player0.action_frame)
-        if (math.isnan(rangeBackward)):
-            rangeBackward = 0
-        if (math.isnan(rangeForward)):
-            rangeForward = 0
-        self.embedCategory(state, statePosition + 417, self.frame_data.attack_state(
-            player0.character, player0.action, player0.action_frame).value, 4)
+        # rangeForward = self.frame_data.range_forward(
+        #     player0.character, player0.action, player0.action_frame)
+        # rangeBackward = self.frame_data.range_backward(
+        #     player0.character, player0.action, player0.action_frame)
+        # if (math.isnan(rangeBackward)):
+        #     rangeBackward = 0
+        # if (math.isnan(rangeForward)):
+        #     rangeForward = 0
+        # self.embedCategory(state, statePosition + 417, self.frame_data.attack_state(
+        #     player0.character, player0.action, player0.action_frame).value, 4)
         # self.embedCategory(state, statePosition + 421,
         #                    self.frame_data.hitbox_count(player0.character, player0.action), 6)
-        state[0, statePosition + 421] = (
-            (self.frame_data.hitbox_count(player0.character, player0.action) / 5))
-        state[0, statePosition +
-              422] = ((rangeForward / self.positionNormalizer))
-        state[0, statePosition +
-              423] = ((rangeBackward / self.positionNormalizer))
+        # state[0, statePosition + 421] = (
+        #     (self.frame_data.hitbox_count(player0.character, player0.action) / 5))
 
-        state[0, statePosition + 424] = 1 if player0.facing else 0
-        state[0, statePosition + 425] = 1 if player0.off_stage else 0
-        state[0, statePosition + 426] = 1 if player0.on_ground else 0
-        state[0, statePosition + 427] = 1 if self.frame_data.is_attack(
-            player0.character, player0.action) else 0
-        state[0, statePosition + 428] = 1 if self.frame_data.is_grab(
-            player0.character, player0.action) else 0
-        state[0, statePosition + 429] = 1 if self.frame_data.is_bmove(
-            player0.character, player0.action) else 0
-        state[0, statePosition + 430] = 1 if self.frame_data.is_roll(
-            player0.character, player0.action) else 0
-        return statePosition + 431
+        state[0, statePosition + 417] = 1 if player0.facing else -1
+        # state[0, statePosition + 422] = 1 if player0.off_stage else 0
+        state[0, statePosition + 418] = 1 if player0.on_ground else 0
+        # state[0, statePosition + 424] = 1 if self.frame_data.is_attack(
+        #     player0.character, player0.action) else 0
+        # state[0, statePosition + 425] = 1 if self.frame_data.is_grab(
+        #     player0.character, player0.action) else 0
+        # state[0, statePosition + 426] = 1 if self.frame_data.is_bmove(
+        #     player0.character, player0.action) else 0
+        # state[0, statePosition + 427] = 1 if self.frame_data.is_roll(
+        #     player0.character, player0.action) else 0
+        return statePosition + 419
 
     def embed_input(self, gamestate: GameState):
-        state: np.ndarray = np.zeros((1, 1110))
+        state: np.ndarray = np.zeros((1, 1000))
         player0: PlayerState = gamestate.players[self.player_index]
 
         statePosition = self.applyPlayerState(player0, state, 0)
@@ -133,7 +124,7 @@ class InputEmbeder:
             gamestate.distance) / self.positionNormalizer
         statePosition += 1
         # # state[0, 63] = (gamestate.projectiles) / self.positionNormalizer
-        for projectile in gamestate.projectiles[:10]:
+        for projectile in gamestate.projectiles[:2]:
             projectile: Projectile
             self.embedCategory(state, statePosition, projectile.owner, 4)
             statePosition += 4

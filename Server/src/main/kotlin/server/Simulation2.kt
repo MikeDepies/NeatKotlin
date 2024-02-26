@@ -105,7 +105,7 @@ fun createNetwork(): TaskNetworkBuilder {
     val networkShape = NetworkShape(1, 1, 1)
 //    val inputPlane = layerPlane(4, 14)
     val bias = layerPlane(1, 1)
-    val inputPlane = layerPlane(30, 37)
+    val inputPlane = layerPlane(25, 40)
 //    val inputPlane2 = layerPlane(5, 8)
 //    val inputPlaneController = layerPlane(1, 9)
 //    val inputPlaneProjectile = layerPlane(8, 8)
