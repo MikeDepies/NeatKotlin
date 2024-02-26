@@ -26,11 +26,11 @@ class InputEmbeder:
 
     def applyPlatform(self, platform, state, statePosition):
         if (platform[0]):
-            state[0, statePosition + 0] = platform[0] / self.positionNormalizer
+            state[0, statePosition + 0] = platform[0] * .05
         if (platform[1]):
-            state[0, statePosition + 1] = platform[1] / self.positionNormalizer
+            state[0, statePosition + 1] = platform[1] * .05
         if (platform[2]):
-            state[0, statePosition + 2] = platform[2] / self.positionNormalizer
+            state[0, statePosition + 2] = platform[2] * .05
         return statePosition + 3
 
     def applyPlayerState(self, player0: PlayerState, state: np.ndarray, statePosition):
@@ -40,7 +40,7 @@ class InputEmbeder:
         state[0, statePosition + 3] = player0.speed_y_attack * .5
         state[0, statePosition + 4] = player0.speed_y_self * .5
         state[0, statePosition +
-              5] = ((player0.percent / self.positionNormalizer))
+              5] = ((player0.percent * .05))
         state[0, statePosition + 6] = ((player0.shield_strength * .01))
         state[0, statePosition + 7] = ((player0.stock / 4))
         state[0, statePosition + 8] = (
@@ -101,18 +101,18 @@ class InputEmbeder:
         leftPlatform = melee.stages.left_platform_position(gamestate.stage)
         topPlatform = melee.stages.top_platform_position(gamestate.stage)
         rightPlatform = melee.stages.right_platform_position(gamestate.stage)
-        state[0, statePosition] = edge / self.positionNormalizer
-        state[0, statePosition + 1] = (edge * -1) / self.positionNormalizer
+        state[0, statePosition] = edge * .05
+        state[0, statePosition + 1] = (edge * -1) * .05
         blastzones: tuple[float, float, float,
                           float] = melee.stages.BLASTZONES[gamestate.stage]
         state[0, statePosition +
-              2] = (blastzones[0]) / self.positionNormalizer
+              2] = (blastzones[0]) * .05
         state[0, statePosition +
-              3] = (blastzones[1]) / self.positionNormalizer
+              3] = (blastzones[1]) * .05
         state[0, statePosition +
-              4] = (blastzones[2]) / self.positionNormalizer
+              4] = (blastzones[2]) * .05
         state[0, statePosition +
-              5] = (blastzones[3]) / self.positionNormalizer
+              5] = (blastzones[3]) * .05
         statePosition += 6
         statePosition = self.applyPlatform(
             leftPlatform, state, statePosition)
@@ -121,24 +121,24 @@ class InputEmbeder:
         statePosition = self.applyPlatform(
             rightPlatform, state, statePosition)
         state[0, statePosition] = (
-            gamestate.distance) / self.positionNormalizer
+            gamestate.distance) * .05
         statePosition += 1
-        # # state[0, 63] = (gamestate.projectiles) / self.positionNormalizer
+        # # state[0, 63] = (gamestate.projectiles) * .05
         for projectile in gamestate.projectiles[:2]:
             projectile: Projectile
             self.embedCategory(state, statePosition, projectile.owner, 4)
             statePosition += 4
             state[0, statePosition] = float(
-                projectile.position.x) / self.positionNormalizer
+                projectile.position.x) * .05
             statePosition += 1
             state[0, statePosition] = float(
-                projectile.position.y) / self.positionNormalizer
+                projectile.position.y) * .05
             statePosition += 1
             state[0, statePosition] = float(
-                projectile.speed.x) / self.positionNormalizer
+                projectile.speed.x) * .05
             statePosition += 1
             state[0, statePosition] = float(
-                projectile.speed.y) / self.positionNormalizer
+                projectile.speed.y) * .05
             statePosition += 1
             self.embedCategory(state, statePosition, projectile.subtype, 11)
             statePosition += 11
