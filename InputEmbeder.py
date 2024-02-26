@@ -35,31 +35,31 @@ class InputEmbeder:
 
     def applyPlayerState(self, player0: PlayerState, state: np.ndarray, statePosition):
         state[0, statePosition + 0] = player0.speed_air_x_self / \
-            self.positionNormalizer
+            5
         state[0, statePosition + 1] = player0.speed_ground_x_self / \
-            self.positionNormalizer
+            5
         state[0, statePosition + 2] = player0.speed_x_attack / \
-            self.positionNormalizer
+            5
         state[0, statePosition + 3] = player0.speed_y_attack / \
-            self.positionNormalizer
+            5
         state[0, statePosition + 4] = player0.speed_y_self / \
-            self.positionNormalizer
+            5
         state[0, statePosition +
               5] = ((player0.percent / self.positionNormalizer))
         state[0, statePosition + 6] = ((player0.shield_strength / 60))
         state[0, statePosition + 7] = ((player0.stock / 4))
         state[0, statePosition + 8] = (
-            (player0.action_frame / self.actionNormalizer))
+            (player0.action_frame / 60.0))
         state[0, statePosition + 9] = (
-            (player0.hitstun_frames_left / self.actionNormalizer))
+            (player0.hitstun_frames_left / 60.0))
         self.embedCategory(state, statePosition + 10,
                            player0.character.value, 26)
         self.embedCategory(state, statePosition + 36,
                            player0.action.value, 386)
         state[0, statePosition +
-              412] = ((player0.iasa / self.actionNormalizer))
+              412] = ((player0.iasa / 60.0))
         state[0, statePosition + 413] = (
-            (player0.invulnerability_left / self.actionNormalizer))
+            (player0.invulnerability_left / 60.0))
         state[0, statePosition + 414] = ((player0.jumps_left / 2))
         state[0, statePosition + 415] = ((player0.x / self.positionNormalizer))
         state[0, statePosition + 416] = ((player0.y / self.positionNormalizer))
@@ -151,8 +151,8 @@ class InputEmbeder:
             statePosition += 1
             self.embedCategory(state, statePosition, projectile.subtype, 11)
             statePosition += 11
-        # non_zero_elements = np.nonzero(state)
-        # print("Non-zero state values and their indices:")
-        # for index in zip(*non_zero_elements):
-        #     print(f"Index: {index}, Value: {state[index]}")
+        non_zero_elements = np.nonzero(state)
+        print("Non-zero state values and their indices:")
+        for index in zip(*non_zero_elements):
+            print(f"Index: {index}, Value: {state[index]}")
         return [state.reshape([30, 37])]

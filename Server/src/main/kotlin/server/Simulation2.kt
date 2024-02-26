@@ -121,9 +121,9 @@ fun createNetwork(): TaskNetworkBuilder {
         }
     }
     //listOf(inputPlane/*, inputPlane2, inputPlaneProjectile, inputPlaneController, inputStage*/)
-    val hiddenPlanes = (0 until 1).map {
+    val hiddenPlanes = (0 until 5).map {
 //        if (it < 2) layerPlane(12, 12) else
-        layerPlane(10,10)
+        layerPlane(4,4)
     }
 //    val hiddenPlanes2 = (0 until 2).map {
 ////        if (it < 2) layerPlane(12, 12) else
@@ -145,10 +145,10 @@ fun createNetwork(): TaskNetworkBuilder {
         }
         hiddenPlanes.chunked(5).forEach {layerGroup ->
             layerGroup.forEachIndexed { index, layer ->
-//                if (index == layerGroup.lastIndex)
-//                    put(layer, outputPlanes)
-//                else
-                    put(layer, layerGroup/*.drop(index+1)*/ + outputPlanes)
+                if (index == layerGroup.lastIndex)
+                    put(layer, outputPlanes)
+                else
+                    put(layer, layerGroup.drop(index+1) + outputPlanes)
             }
         }
 
@@ -167,9 +167,9 @@ fun createNetwork(): TaskNetworkBuilder {
 ////            else
 ////                put(layerPlane, planeList.drop(index + 1))
 //        }
-        outputPlanes.forEach { outputPlane ->
-            put(outputPlane, hiddenPlanes + outputPlanes)
-        }
+//        outputPlanes.forEach { outputPlane ->
+//            put(outputPlane, planeList + outputPlanes)
+//        }
     }
     val planeZMap = buildMap<LayerPlane, Int> {
         var zIndex = 0
