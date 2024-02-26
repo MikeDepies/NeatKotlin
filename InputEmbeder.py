@@ -151,8 +151,8 @@ class InputEmbeder:
             statePosition += 1
             self.embedCategory(state, statePosition, projectile.subtype, 11)
             statePosition += 11
-        non_zero_elements = np.nonzero(state)
-        print("Non-zero state values and their indices:")
-        for index in zip(*non_zero_elements):
-            print(f"Index: {index}, Value: {state[index]}")
+        # non_zero_elements = np.nonzero(state)
+        # print("Non-zero state values and their indices:")
+        # for index in zip(*non_zero_elements):
+        #     print(f"Index: {index}, Value: {state[index]}")
         return [state.reshape([30, 37])]
