@@ -146,4 +146,4 @@ class InputEmbeder:
         # print("Non-zero state values and their indices:")
         # for index in zip(*non_zero_elements):
         #     print(f"Index: {index}, Value: {state[index]}")
-        return [state.reshape([30, 37])]
+        return [state.reshape([25, 40])]
