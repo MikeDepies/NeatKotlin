@@ -74,27 +74,27 @@ class InputEmbeder:
             rangeForward = 0
         self.embedCategory(state, statePosition + 417, self.frame_data.attack_state(
             player0.character, player0.action, player0.action_frame).value, 4)
-        self.embedCategory(state, statePosition + 421,
-                           self.frame_data.hitbox_count(player0.character, player0.action), 6)
+        # self.embedCategory(state, statePosition + 421,
+        #                    self.frame_data.hitbox_count(player0.character, player0.action), 6)
         state[0, statePosition + 421] = (
             (self.frame_data.hitbox_count(player0.character, player0.action) / 5))
         state[0, statePosition +
-              427] = ((rangeForward / self.positionNormalizer))
+              422] = ((rangeForward / self.positionNormalizer))
         state[0, statePosition +
-              428] = ((rangeBackward / self.positionNormalizer))
+              423] = ((rangeBackward / self.positionNormalizer))
 
-        state[0, statePosition + 429] = 1 if player0.facing else 0
-        state[0, statePosition + 430] = 1 if player0.off_stage else 0
-        state[0, statePosition + 431] = 1 if player0.on_ground else 0
-        state[0, statePosition + 432] = 1 if self.frame_data.is_attack(
+        state[0, statePosition + 424] = 1 if player0.facing else 0
+        state[0, statePosition + 425] = 1 if player0.off_stage else 0
+        state[0, statePosition + 426] = 1 if player0.on_ground else 0
+        state[0, statePosition + 427] = 1 if self.frame_data.is_attack(
             player0.character, player0.action) else 0
-        state[0, statePosition + 433] = 1 if self.frame_data.is_grab(
+        state[0, statePosition + 428] = 1 if self.frame_data.is_grab(
             player0.character, player0.action) else 0
-        state[0, statePosition + 434] = 1 if self.frame_data.is_bmove(
+        state[0, statePosition + 429] = 1 if self.frame_data.is_bmove(
             player0.character, player0.action) else 0
-        state[0, statePosition + 435] = 1 if self.frame_data.is_roll(
+        state[0, statePosition + 430] = 1 if self.frame_data.is_roll(
             player0.character, player0.action) else 0
-        return statePosition + 436
+        return statePosition + 431
 
     def embed_input(self, gamestate: GameState):
         state: np.ndarray = np.zeros((1, 1110))
@@ -151,8 +151,8 @@ class InputEmbeder:
             statePosition += 1
             self.embedCategory(state, statePosition, projectile.subtype, 11)
             statePosition += 11
-        # non_zero_elements = np.nonzero(state)
-        # print("Non-zero state values and their indices:")
-        # for index in zip(*non_zero_elements):
-        #     print(f"Index: {index}, Value: {state[index]}")
+        non_zero_elements = np.nonzero(state)
+        print("Non-zero state values and their indices:")
+        for index in zip(*non_zero_elements):
+            print(f"Index: {index}, Value: {state[index]}")
         return [state.reshape([30, 37])]
