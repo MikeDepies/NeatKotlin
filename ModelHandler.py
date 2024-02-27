@@ -76,7 +76,7 @@ class ModelHandler:
                 new_state = state + [self.bias] + self.stateQueue.get_data()
             else:
                 new_state = state + [self.bias]
-            
+            print("PROCESS CONTROLLER")
             self.controller_helper.process(
                 self.network, self.controller,new_state, player0.controller_state)
             if self.stateQueue.size_limit > 0:
@@ -121,6 +121,6 @@ class ModelHandler:
         if self.network.total_connection_cost != 0:
             ratio = self.network.total_number_of_connections/ self.network.total_connection_cost
         # print("creating new evaluator")
-        self.stateQueue = LimitedSizeList(len(self.network.input_index)-2) #len(self.network.input_index) - 1
+        self.stateQueue = LimitedSizeList(len(self.network.input_index)-3) #len(self.network.input_index) - 1
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                    self.evaluator_configuration.max_time, self.evaluator_configuration.action_limit, None)
