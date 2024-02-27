@@ -107,12 +107,9 @@ class ComputableNetwork:
     def inputs(self, inputs: 'list[ndarray]'):
         # print(self.input_index)
         for index, input in enumerate(inputs):
-            print(index)
-            print(input.shape)
-            
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 0] = input
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 1] = input
-        print("==============OVER")
+
 
     def compute(self):
         vectorized_activation_function = np.vectorize(self.activation_function)

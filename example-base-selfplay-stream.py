@@ -315,7 +315,7 @@ class ModelHandler:
         # if (self.max_state is not None):
         #     self.max_state = np.zeros(self.max_state.shape)
         print("creating new evaluator")
-        self.stateQueue = LimitedSizeList(len(self.network.input_index)-2)
+        self.stateQueue = LimitedSizeList(len(self.network.input_index)-3)
         self.evaluator = Evaluator(self.model_index, self.opponent_index, self.evaluator_configuration.attack_time,
                                    self.evaluator_configuration.max_time , self.evaluator_configuration.action_limit, None)
 

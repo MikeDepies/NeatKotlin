@@ -76,7 +76,6 @@ class ModelHandler:
                 new_state = state + [self.bias] + self.stateQueue.get_data()
             else:
                 new_state = state + [self.bias]
-            print("PROCESS CONTROLLER")
             self.controller_helper.process(
                 self.network, self.controller,new_state, player0.controller_state)
             if self.stateQueue.size_limit > 0:
