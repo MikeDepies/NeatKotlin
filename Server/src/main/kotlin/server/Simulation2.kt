@@ -178,6 +178,7 @@ fun createNetwork(): TaskNetworkBuilder {
             put(it, zIndex++)
         }
         put(inputPlane, zIndex++)
+        put(inputPlane2, zIndex++)
         put(bias, zIndex++)
         hiddenPlanes.forEach {
             put(it, zIndex++)

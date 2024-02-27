@@ -75,7 +75,6 @@ class InputEmbederPacked4:
         player1: PlayerState = gamestate.players[self.opponent_index]
         self.applyPlayerState(player1, state[1, ...])
         self.embedCategory(player_action[1,...], 0, player0.action.value, 397)
-        self.embedCategory(player_action, 397, player1.action.value, 397)
         edge_position = melee.EDGE_POSITION.get(gamestate.stage, 0)  # Provide a default value of 0 if not found
         state[0, 22] = edge_position / self.actionNormalizer
         state[1, 22] = -edge_position / self.actionNormalizer
