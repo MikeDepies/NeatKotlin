@@ -112,6 +112,7 @@ class ComputableNetwork:
             
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 0] = input
             self.value_map[self.connection_z_map[self.input_index[index]]][..., 1] = input
+        print("==============OVER")
 
     def compute(self):
         vectorized_activation_function = np.vectorize(self.activation_function)
