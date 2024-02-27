@@ -28,11 +28,11 @@ import kotlin.streams.toList
 private val logger = KotlinLogging.logger {  }
 val minSpeices = 5
 val maxSpecies = 15
-val speciesThresholdDelta = .4f
+val speciesThresholdDelta = .0f
 val dist = compatibilityDistanceFunction(2f, 2f, 1f)
 val cppnGeneRuler = CPPNGeneRuler(weightCoefficient = 1f, disjointCoefficient = 1f, normalize = 1)
 var distanceFunction = dist
-var speciesSharingDistance = 4f
+var speciesSharingDistance = 2f
 var shFunction = shFunction(speciesSharingDistance)
 @Serializable
 data class ScoreAndModel(val model: NeatModel, val score: MarioDiscovery, val scoreValue: Float)
@@ -136,10 +136,10 @@ fun MarioDiscovery.toVectorInt() = listOf(
 )
 
 fun MarioDiscovery.toVector() = listOf(
-//    mushrooms.toFloat() * 5f,
-//    fireFlowers.toFloat() * 10f,
-    coins.toFloat() * 1f,
-    score.toFloat() / 100,
+    mushrooms.toFloat(),
+    fireFlowers.toFloat(),
+    coins.toFloat(),
+    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ) / 100f,
 //    (score - (mushrooms*1000 + fireFlowers*1000 + coins * 200) ).toFloat() / 100,
 //    flags.toFloat() * 30f,
 //    lifes.toFloat() * 5f,
@@ -147,10 +147,10 @@ fun MarioDiscovery.toVector() = listOf(
 //    (xPos.toFloat() / 32f),
 //    stage.toFloat() * 30,
 //    world.toFloat() * 30,
-    ((yPos)).toFloat(),
-    xPos.toFloat(),
+    ((yPos)).toFloat() /32,
+    xPos.toFloat() /32,
 //    stageParts.toFloat(),
-    time.toFloat()
+    time.toFloat() / 10
 //    (min(4f, time.toFloat() / stageParts) * stageParts),
 //    xPos.toFloat() / 4f,
 //    world.toFloat() * 100f,

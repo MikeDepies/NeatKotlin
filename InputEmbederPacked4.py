@@ -17,7 +17,7 @@ class InputEmbederPacked4:
         self.positionNormalizer = positionNormalizer
         self.actionNormalizer = actionNormalizer
 
-    def embedCategory(self, state, statePosition, embedValue, embedSize):
+    def embedCategory(self, state : np.ndarray, statePosition : int, embedValue : int, embedSize : int):
         for i in range(0, embedSize):
             if (i == embedValue):
                 state[statePosition + i] = 1
@@ -68,10 +68,15 @@ class InputEmbederPacked4:
 
     def embed_input(self, gamestate: GameState) -> 'list[np.ndarray]':
         state: np.ndarray = np.zeros((2, 23))
+        player_action = np.zeros((2, 397))
         player0: PlayerState = gamestate.players[self.player_index]
         self.applyPlayerState(player0, state[0, ...])
+        self.embedCategory(player_action[0,...], 0, player0.action.value, 397)
         player1: PlayerState = gamestate.players[self.opponent_index]
         self.applyPlayerState(player1, state[1, ...])
-        state[0,22] = melee.EDGE_POSITION.get(gamestate.stage) / self.actionNormalizer
-        state[1,22] = (melee.EDGE_POSITION.get(gamestate.stage) / self.actionNormalizer) * -1
-        return [state]
+        self.embedCategory(player_action[1,...], 0, player0.action.value, 397)
+        self.embedCategory(player_action, 397, player1.action.value, 397)
+        edge_position = melee.EDGE_POSITION.get(gamestate.stage, 0)  # Provide a default value of 0 if not found
+        state[0, 22] = edge_position / self.actionNormalizer
+        state[1, 22] = -edge_position / self.actionNormalizer
+        return [state, player_action]

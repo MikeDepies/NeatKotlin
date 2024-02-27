@@ -25,7 +25,7 @@ from DashHelper import DashHelper
 from Evaluator import Evaluator
 from InputEmbeder import InputEmbeder
 
-from InputEmbeder import InputEmbeder as InputEmbederPacked4
+from InputEmbederPacked4 import InputEmbederPacked4
 from ModelHelper import ModelHelper
 
 from delayGameState import DelayGameState
