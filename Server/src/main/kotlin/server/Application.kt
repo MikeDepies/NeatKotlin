@@ -112,7 +112,7 @@ fun Application.module() {
 
     val populationSize = 200
     val knnNoveltyArchive = knnNoveltyArchive(
-        10, 2
+        5, 2
     ) { a,b ->
         fuzzyCompareObjects(a,b, ::calculateSequenceSimilarity).toFloat()
     }
@@ -211,7 +211,7 @@ fun character(controllerId: Int) = when (controllerId) {
 private fun Application.routing(
     evoHandler: EvoControllerHandler,
 ) {
-    val evaluatorSettings = EvaluatorSettings(20, 60*1, 15)
+    val evaluatorSettings = EvaluatorSettings(20, 60*8, 15)
     val pythonConfiguration = PythonConfiguration(
         evaluatorSettings,
         ControllerConfiguration(Character.Mario, 0),
@@ -623,7 +623,7 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val randomSeed: Int = 2 + controllerId
     val random = Random(randomSeed)
     val addConnectionAttempts = 5
-    val shFunction = shFunction(3f)
+    val shFunction = shFunction(.4f)
 
     val weightRange = 2f
 
@@ -661,16 +661,16 @@ fun simulationFor(controllerId: Int, populationSize: Int, loadModels: Boolean): 
     val standardCompatibilityTest = standardCompatibilityTest({
         shFunction(it)
     }, { a, b ->
-        compatibilityDistanceFunction(a,b)
-//        cppnGeneRuler.measure(a, b)
+//        compatibilityDistanceFunction(a,b)
+        cppnGeneRuler.measure(a, b)
     })
     val speciesId = (manifest.scoreLineageModel.speciesMap.keys.maxOrNull() ?: -1) + 1
     return simulation(
         standardCompatibilityTest,
         controllerId,
         distanceFunction = { a, b ->
-            compatibilityDistanceFunction(a,b)
-//            cppnGeneRuler.measure(a, b)
+//            compatibilityDistanceFunction(a,b)
+            cppnGeneRuler.measure(a, b)
         },
         sharingFunction = {
             shFunction(it)
